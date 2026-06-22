@@ -1,0 +1,10 @@
+{
+  "name": "@ffai/config",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"@ffai/config build placeholder (shared eslint/tsconfig/prettier in F0.2)\"",
+    "lint": "echo \"@ffai/config lint placeholder (F0.2)\"",
+    "test": "echo \"@ffai/config test placeholder (test harness in F0.8)\""
+  }
+}

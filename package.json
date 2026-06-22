@@ -1,0 +1,19 @@
+{
+  "name": "ffai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fin Flow AI — monorepo (Turborepo + pnpm). Phase 0 / F0.1.",
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "dev": "turbo run dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.18"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@ffai/db",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo \"@ffai/db build placeholder (Prisma lands in F0.4)\"",
+    "lint": "echo \"@ffai/db lint placeholder (shared config in F0.2)\"",
+    "test": "echo \"@ffai/db test placeholder (test harness in F0.8)\""
+  }
+}

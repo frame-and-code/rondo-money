@@ -1,0 +1,11 @@
+{
+  "name": "@ffai/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"@ffai/api dev placeholder (NestJS lands in F0.4)\"",
+    "build": "echo \"@ffai/api build placeholder (NestJS lands in F0.4)\"",
+    "lint": "echo \"@ffai/api lint placeholder (shared config in F0.2)\"",
+    "test": "echo \"@ffai/api test placeholder (test harness in F0.8)\""
+  }
+}
