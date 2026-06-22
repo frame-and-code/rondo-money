@@ -1,0 +1,11 @@
+{
+  "name": "@ffai/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"@ffai/web dev placeholder (Next.js lands in F0.5)\"",
+    "build": "echo \"@ffai/web build placeholder (Next.js lands in F0.5)\"",
+    "lint": "echo \"@ffai/web lint placeholder (shared config in F0.2)\"",
+    "test": "echo \"@ffai/web test placeholder (test harness in F0.8)\""
+  }
+}

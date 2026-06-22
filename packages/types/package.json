@@ -1,0 +1,12 @@
+{
+  "name": "@ffai/types",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "echo \"@ffai/types build placeholder (tsconfig in F0.2)\"",
+    "lint": "echo \"@ffai/types lint placeholder (shared config in F0.2)\"",
+    "test": "echo \"@ffai/types test placeholder (test harness in F0.8)\""
+  }
+}
