@@ -20,6 +20,7 @@ Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — m
 - `apps/api` — NestJS (REST). Skeleton — F0.4.
 - `packages/db` — Prisma schema and migrations (F0.4); grows incrementally per phase.
 - `packages/types` — shared DTOs; money as `BigInt` in minor units.
+- `packages/api-client` — typed API client generated from the NestJS OpenAPI spec (F1, ADR-002); web consumes it instead of hand-written fetch.
 - `packages/config` — shared configs: eslint / tsconfig / prettier (F0.2).
 - `packages/ui` — UI components, shadcn/ui (F0.6).
 
@@ -30,10 +31,12 @@ Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — m
 ## Cross-cutting principles
 
 - Do not store derived state (balance, RTA, "Available", net worth) — compute it on the fly.
-- Money is integer minor units in `BigInt`; the number of digits comes from the currency (ISO 4217), not a hardcoded "2".
-- Every record carries `userId` (and `budgetId`) — groundwork for RLS.
-- Mutations go only through a single write point (atomic: state + the `ChangeLog` journal).
-- Invariant 5.5: `RTA + Σ Available = Σ Balance` — keep it green (the basis of automated tests).
+- Money is integer minor units in `BigInt`; the digit count comes from the currency (ISO 4217), not a hardcoded "2". Over the wire, serialize money as a **string** (JSON has no native BigInt) — convention lives in `packages/types`.
+- Every record carries `userId` (and `budgetId`) — groundwork for RLS. Reads are auto-scoped by a Prisma Client Extension, but it does **not** cover `$queryRaw`/`$executeRaw` — scope raw aggregates (balance/RTA/Available) explicitly through a context-aware repository, and prefer enabling Postgres RLS once raw aggregates exist (RLS covers raw SQL; expect a per-request `SET LOCAL` with pooling).
+- Mutations go only through a single write point (atomic: state + the `ChangeLog` journal). A transfer's two legs share a `transferId` and are created/edited/deleted/undone together in one transaction. undo/redo are themselves logged mutations (redo tracked by a cursor, not by rewriting history).
+- Invariant 5.5: `RTA + Σ Available = Σ Balance` — keep it green, checked over **all-time** aggregates (a future-month assignment lowers RTA before it shows in any month's Available, so a per-month reconciliation won't balance — that's expected). Cover with property-based tests (fast-check).
+- Dates are plain calendar dates (no time-of-day); "today" and month bucketing (`YYYY-MM`) use one fixed reference timezone (the budget's).
+- Deleting a category must keep its past Activity counted in the aggregates (block while referenced / reassign / soft-delete) — never orphan an expense.
 - Grow the DB schema incrementally: each phase brings its own migration.
 - Write tests together with the feature; don't accrue debt. Green `main` ships to dev (Railway).
 
