@@ -2,7 +2,7 @@
   "name": "ffai",
   "version": "0.0.0",
   "private": true,
-  "description": "Fin Flow AI — monorepo (Turborepo + pnpm). Phase 0 / F0.1.",
+  "description": "Fin Flow AI — zero-based budgeting app. Monorepo on Turborepo + pnpm.",
   "packageManager": "pnpm@11.8.0",
   "engines": {
     "node": ">=20"
@@ -10,10 +10,26 @@
   "scripts": {
     "build": "turbo run build",
     "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "dev": "turbo run dev"
+    "dev": "turbo run dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "prettier --write",
+      "eslint"
+    ],
+    "*.{json,jsonc,md,mdx,yml,yaml,css}": "prettier --write"
   },
   "devDependencies": {
+    "@ffai/config": "workspace:*",
+    "eslint": "^10.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.8.4",
     "turbo": "^2.9.18"
   }
 }
