@@ -1,4 +1,5 @@
 > ⛔ NEVER commit on your own. Only `git add`. `git commit` and `git push` are done by the user only.
+> If you are on the main branch, before starting a new feature, create a new branch from the main.
 
 # CLAUDE.md
 

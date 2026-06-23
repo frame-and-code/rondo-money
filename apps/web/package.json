@@ -5,7 +5,14 @@
   "scripts": {
     "dev": "echo \"@ffai/web dev placeholder (Next.js lands in F0.5)\"",
     "build": "echo \"@ffai/web build placeholder (Next.js lands in F0.5)\"",
-    "lint": "echo \"@ffai/web lint placeholder (shared config in F0.2)\"",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"@ffai/web test placeholder (test harness in F0.8)\""
+  },
+  "devDependencies": {
+    "@ffai/config": "workspace:*",
+    "eslint": "^10.0.1",
+    "prettier": "^3.8.4",
+    "typescript": "^6.0.3"
   }
 }
