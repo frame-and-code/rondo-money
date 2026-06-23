@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ffai
+      POSTGRES_PASSWORD: ffai_dev_secret
+      POSTGRES_DB: ffai_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
