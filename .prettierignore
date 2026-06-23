@@ -1,0 +1,11 @@
+# Dependencies & generated output (also git-ignored)
+node_modules/
+**/dist/
+**/build/
+**/.next/
+**/coverage/
+.turbo/
+.husky/_/
+
+# Lockfile is managed by pnpm
+pnpm-lock.yaml

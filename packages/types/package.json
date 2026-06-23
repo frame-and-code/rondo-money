@@ -5,8 +5,15 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "build": "echo \"@ffai/types build placeholder (tsconfig in F0.2)\"",
-    "lint": "echo \"@ffai/types lint placeholder (shared config in F0.2)\"",
+    "build": "echo \"@ffai/types build placeholder (consumed as TS source; no build step yet)\"",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"@ffai/types test placeholder (test harness in F0.8)\""
+  },
+  "devDependencies": {
+    "@ffai/config": "workspace:*",
+    "eslint": "^10.0.1",
+    "prettier": "^3.8.4",
+    "typescript": "^6.0.3"
   }
 }
