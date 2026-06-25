@@ -1,9 +1,15 @@
 packages:
   - 'apps/*'
   - 'packages/*'
-# Native build for the import resolver pulled in by eslint-plugin-import-x.
-# pnpm blocks dependency build scripts by default; approve this one.
+# pnpm blocks dependency build scripts by default; approve the ones we trust.
+# - unrs-resolver: native import resolver for eslint-plugin-import-x (F0.2).
+# - prisma / @prisma/*: Prisma 7 postinstall (schema/migration engine setup) (F0.4).
+# - @swc/core: native compiler bindings used by the Nest build and Jest (F0.4).
 allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@swc/core': true
+  prisma: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - '@typescript-eslint/eslint-plugin@8.62.0'
