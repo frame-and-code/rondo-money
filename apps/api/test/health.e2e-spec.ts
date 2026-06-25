@@ -21,7 +21,11 @@ describe('GET /health (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    // Guard against a beforeAll failure leaving `app` unassigned, so teardown can't throw
+    // a secondary error that masks the real failure.
+    if (app) {
+      await app.close();
+    }
   });
 
   it('returns 200 with the database up', async () => {
