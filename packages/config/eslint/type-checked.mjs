@@ -5,14 +5,18 @@
 //
 // Opt in per workspace because it needs a tsconfig and is slower than the base:
 //
+//   import { dirname } from 'node:path';
+//   import { fileURLToPath } from 'node:url';
 //   import base from '@ffai/config/eslint';
 //   import typeChecked from '@ffai/config/eslint/type-checked';
-//   export default [...base, ...typeChecked(import.meta.dirname)];
+//   const rootDir = dirname(fileURLToPath(import.meta.url));
+//   export default [...base, ...typeChecked(rootDir)];
 import tseslint from 'typescript-eslint';
 
 /**
- * @param {string} tsconfigRootDir - pass `import.meta.dirname` from the consumer's config
- *   so typescript-eslint resolves the workspace tsconfig via its project service.
+ * @param {string} tsconfigRootDir - the consumer config's own directory, so typescript-eslint
+ *   resolves the workspace tsconfig via its project service. Derive it from
+ *   `import.meta.url` (not `import.meta.dirname`, which needs Node >= 20.11).
  */
 export default function typeChecked(tsconfigRootDir) {
   return tseslint.config(
