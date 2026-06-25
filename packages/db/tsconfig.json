@@ -1,6 +1,15 @@
 {
+  // Typecheck config. The generated Prisma 7 client is TypeScript we compile ourselves,
+  // so we resolve like the build (nodenext, matching the generator's `.js` imports) and
+  // relax the strict flags trusted generated code trips. Our own hand-written code is
+  // trivial today; tighten this when the scoping extension / repository land.
   "extends": "@ffai/config/tsconfig/base.json",
   "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "paths": {
       "@/*": ["./src/*"]
     }

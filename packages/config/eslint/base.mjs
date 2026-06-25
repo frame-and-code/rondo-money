@@ -11,7 +11,14 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     // Never lint generated / vendored output anywhere in the repo.
-    ignores: ['**/dist/**', '**/build/**', '**/.next/**', '**/coverage/**', '**/node_modules/**'],
+    ignores: [
+      '**/dist/**',
+      '**/build/**',
+      '**/.next/**',
+      '**/coverage/**',
+      '**/generated/**',
+      '**/node_modules/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

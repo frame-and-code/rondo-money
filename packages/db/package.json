@@ -2,16 +2,33 @@
   "name": "@ffai/db",
   "version": "0.0.0",
   "private": true,
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "echo \"@ffai/db build placeholder (Prisma lands in F0.4)\"",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "echo \"@ffai/db test placeholder (test harness in F0.8)\""
   },
+  "dependencies": {
+    "@prisma/client": "^7.8.0"
+  },
   "devDependencies": {
     "@ffai/config": "workspace:*",
+    "dotenv": "^17.2.3",
     "eslint": "^10.0.1",
     "prettier": "^3.8.4",
+    "prisma": "^7.8.0",
     "typescript": "^6.0.3"
   }
 }

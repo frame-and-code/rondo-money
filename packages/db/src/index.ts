@@ -1,8 +1,9 @@
 /**
- * @ffai/db — Prisma schema, migrations, and the context-aware repository.
+ * @ffai/db — Prisma client, schema, and migrations.
  *
- * The Prisma schema, the userId/budgetId auto-scoping Client Extension, and the
- * raw-aggregate repository land in F0.4 and grow per phase. Placeholder for now so
- * lint/typecheck have a real entry point.
+ * Re-exports the generated Prisma 7 client (Rust-free, generated as TypeScript). The
+ * package is consumed as types from source and at runtime from the compiled `dist`
+ * (see package.json `exports` + the `build` step). When the userId/budgetId auto-scoping
+ * Client Extension and the raw-aggregate repository arrive (Phases 1–2), they live here.
  */
-export {};
+export * from './generated/prisma/client.js';

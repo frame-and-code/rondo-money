@@ -15,7 +15,10 @@
     "dev": "turbo run dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "db:generate": "pnpm --filter @ffai/db run db:generate",
+    "db:migrate": "pnpm --filter @ffai/db run db:migrate",
+    "prepare": "husky",
+    "postinstall": "pnpm --filter @ffai/db run db:generate"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [

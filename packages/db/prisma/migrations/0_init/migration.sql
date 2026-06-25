@@ -1,0 +1,3 @@
+-- Initial skeleton migration (F0.4).
+-- No domain tables yet — each phase adds its own (PRD / ADR-001). This baseline just
+-- establishes the Prisma migration history against the F0.3 PostgreSQL database.
