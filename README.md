@@ -49,7 +49,16 @@ docker compose down    # остановить (данные сохранятся
 Версия образа (`postgres:18`) совпадает с продакшеном на Railway. Данные лежат
 в Docker volume и переживают перезапуски контейнера.
 
-> На этапе F0.1 приложения и пакеты — пустые каркасы: `build` / `lint` / `test`
-> проходят как placeholder'ы и наполняются реальной логикой в фичах F0.2–F0.10.
-> Миграции Prisma и переменные окружения приложений подключаются в F0.4+
-> (PRD, раздел 8.4).
+### Миграции и API (F0.4)
+
+```bash
+pnpm db:generate            # сгенерировать Prisma-клиент (также на postinstall)
+pnpm db:migrate             # применить миграции к локальной БД (Postgres должен быть запущен)
+pnpm --filter @ffai/api dev # запустить API; GET http://localhost:3000/health → 200
+```
+
+`DATABASE_URL` подгружается из корневого `.env` (см. `.env.example`). Подробности —
+в [`apps/api`](apps/api/README.md) и [`packages/db`](packages/db/README.md).
+
+> Пакеты `config` / `ui` / `web` пока остаются каркасами: их `build` / `test`
+> проходят как placeholder'ы и наполняются в своих фичах (F0.5–F0.10).

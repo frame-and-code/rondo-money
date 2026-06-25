@@ -8,6 +8,9 @@ build/
 out/
 .next/
 
+# Generated code (Prisma client, etc.)
+generated/
+
 # Turborepo
 .turbo/
 

@@ -1,9 +1,19 @@
 {
+  // F0.2 carry-over: Nest needs decorators + a Node module target on top of the shared
+  // base, which is ESM/bundler-oriented (module: ESNext, moduleResolution: Bundler) and
+  // doesn't fit Nest. nodenext resolves as CommonJS here (the package has no "type":
+  // "module"). SWC does the actual emit (see .swcrc); tsc is typecheck-only.
   "extends": "@ffai/config/tsconfig/base.json",
   "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "types": ["node", "jest"],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "test"]
 }
