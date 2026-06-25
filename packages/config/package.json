@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     "./eslint": "./eslint/base.mjs",
+    "./eslint/type-checked": "./eslint/type-checked.mjs",
     "./prettier": "./prettier/index.mjs",
     "./tsconfig/base.json": "./tsconfig/base.json"
   },
