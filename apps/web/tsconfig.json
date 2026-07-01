@@ -1,9 +1,26 @@
 {
+  // F0.2 carry-over: Next needs JSX + DOM libs + its TS plugin on top of the shared base.
+  // The base is already ESM/bundler-oriented (module: ESNext, moduleResolution: Bundler),
+  // which is exactly what the App Router wants — so we only layer the Next-specific bits
+  // rather than letting `next init` fork a parallel set of rules.
   "extends": "@ffai/config/tsconfig/base.json",
   "compilerOptions": {
+    "jsx": "preserve",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "allowJs": true,
+    "incremental": true,
+    // The base keeps emit off (typecheck-only); Next/Turbopack does the real build.
+    "plugins": [{ "name": "next" }],
+    // No `types` allowlist: let TS auto-discover @types/* (node, jest, react, …). Jest-dom
+    // matchers come from the `import '@testing-library/jest-dom'` in test/setup.ts, not here.
+    // Alias is set in F0.2; Next resolves it natively at runtime, no extra config needed.
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["next-env.d.ts", "src", "test", ".next/types/**/*.ts"],
+  // Only exclude node_modules (as stock create-next-app does): excluding `.next` here
+  // would void the `.next/types/**/*.ts` include above, silently skipping Next's
+  // generated route/prop typecheck. `.next/**` is already ignored by ESLint/prettier.
+  "exclude": ["node_modules"]
 }

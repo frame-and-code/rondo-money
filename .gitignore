@@ -7,6 +7,7 @@ dist/
 build/
 out/
 .next/
+*.tsbuildinfo
 
 # Generated code (Prisma client, etc.)
 generated/

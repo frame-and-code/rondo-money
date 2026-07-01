@@ -25,6 +25,10 @@ pnpm --filter @ffai/api test    # jest (интеграционный тест he
 `DATABASE_URL` берётся из корневого `.env` (см. `.env.example`); на Railway —
 из реальных переменных окружения. Порт — `PORT` (по умолчанию `3000`).
 
+CORS скоупится на origin браузерного клиента: `WEB_ORIGIN` (по умолчанию
+`http://localhost:3001`, где локально крутится `@ffai/web`). На Railway/prod задайте
+адрес задеплоенного веба — не хардкодьте.
+
 ## Тулинг (закрытые переносы из F0.2)
 
 - **tsconfig:** поверх `@ffai/config/tsconfig/base.json` добавлены `experimentalDecorators`
