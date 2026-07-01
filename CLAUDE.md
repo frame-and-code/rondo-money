@@ -39,7 +39,7 @@ Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — m
 - Dates are plain calendar dates (no time-of-day); "today" and month bucketing (`YYYY-MM`) use one fixed reference timezone (the budget's).
 - Deleting a category must keep its past Activity counted in the aggregates (block while referenced / reassign / soft-delete) — never orphan an expense.
 - Grow the DB schema incrementally: each phase brings its own migration.
-- Frontend styling is **Tailwind + shadcn/ui** (the `packages/ui` base, F0.6) — don't hand-write CSS or use inline `style` props; compose Tailwind utilities and shadcn components. Until F0.6 lands, leave new markup unstyled rather than writing throwaway CSS.
+- Frontend UI is **Tailwind + shadcn/ui** (`packages/ui`, theme Ocean Breeze, F0.6) — build screens by composing shadcn/ui components and Tailwind utilities; don't hand-write CSS, inline `style` props, or bespoke components. Missing primitive? Add it via `pnpm dlx shadcn@latest add <component>` into `packages/ui`, don't roll your own.
 - Write tests together with the feature; don't accrue debt. Green `main` ships to dev (Railway).
 
 ## Process

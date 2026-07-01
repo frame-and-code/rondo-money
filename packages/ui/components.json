@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "radix-nova",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../apps/web/src/app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "rtl": false,
+  "aliases": {
+    "components": "@ffai/ui/components",
+    "utils": "@ffai/ui/lib/utils",
+    "ui": "@ffai/ui/components/ui",
+    "lib": "@ffai/ui/lib",
+    "hooks": "@ffai/ui/hooks"
+  }
+}
