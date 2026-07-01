@@ -10,6 +10,9 @@ import userEvent from '@testing-library/user-event';
 describe('theme toggle', () => {
   beforeEach(() => {
     document.documentElement.classList.remove('dark');
+    // next-themes persists the picked theme under this key by default; without
+    // clearing it, a value written by one test leaks into the next test's initial render.
+    localStorage.removeItem('theme');
   });
 
   it('switches to dark theme', async () => {
