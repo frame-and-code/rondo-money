@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { interpolate, LocaleProvider, useTranslations } from '@/i18n/locale-context';
+import { localeLabels } from '@/i18n/locales';
+import { en } from '@/i18n/messages/en';
+import { pl } from '@/i18n/messages/pl';
 
 function DemoText() {
   const { t } = useTranslations();
@@ -28,7 +31,7 @@ describe('locale detection and switching', () => {
       </LocaleProvider>,
     );
 
-    expect(await screen.findByText('Component demo')).toBeInTheDocument();
+    expect(await screen.findByText(en['home.demoTitle'])).toBeInTheDocument();
   });
 
   it('updates displayed strings when the user switches locale', async () => {
@@ -41,12 +44,12 @@ describe('locale detection and switching', () => {
     );
 
     // Starts in English — detected from the browser via the mocked navigator above.
-    expect(await screen.findByText('Component demo')).toBeInTheDocument();
+    expect(await screen.findByText(en['home.demoTitle'])).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Change language' }));
-    await user.click(await screen.findByText('Polski'));
+    await user.click(screen.getByRole('button', { name: en['common.localeSwitcher.ariaLabel'] }));
+    await user.click(await screen.findByText(localeLabels.pl));
 
-    expect(await screen.findByText('Demo komponentów')).toBeInTheDocument();
+    expect(await screen.findByText(pl['home.demoTitle'])).toBeInTheDocument();
   });
 });
 

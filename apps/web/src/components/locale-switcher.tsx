@@ -4,12 +4,13 @@ import { Button } from '@ffai/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@ffai/ui/components/ui/dropdown-menu';
 
 import { useTranslations } from '@/i18n/locale-context';
-import { localeLabels, locales } from '@/i18n/locales';
+import { localeLabels, locales, type Locale } from '@/i18n/locales';
 
 export function LocaleSwitcher() {
   const { locale, setLocale, t } = useTranslations();
@@ -22,11 +23,16 @@ export function LocaleSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {locales.map((code) => (
-          <DropdownMenuItem key={code} onClick={() => setLocale(code)}>
-            {localeLabels[code]}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuRadioGroup
+          value={locale}
+          onValueChange={(value) => setLocale(value as Locale)}
+        >
+          {locales.map((code) => (
+            <DropdownMenuRadioItem key={code} value={code}>
+              {localeLabels[code]}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

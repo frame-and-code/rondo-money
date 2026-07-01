@@ -14,6 +14,10 @@ describe('detectBrowserLocale', () => {
     expect(detectBrowserLocale(['de-DE', 'fr'])).toBe('ru');
   });
 
+  it('falls back to the default locale when given no preferred languages', () => {
+    expect(detectBrowserLocale([])).toBe('ru');
+  });
+
   it('picks the first supported language in preference order', () => {
     expect(detectBrowserLocale(['de-DE', 'pl-PL', 'en-US'])).toBe('pl');
   });
