@@ -18,7 +18,7 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "src", "test", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "src", "test", "e2e", "playwright.config.ts", ".next/types/**/*.ts"],
   // Only exclude node_modules (as stock create-next-app does): excluding `.next` here
   // would void the `.next/types/**/*.ts` include above, silently skipping Next's
   // generated route/prop typecheck. `.next/**` is already ignored by ESLint/prettier.

@@ -8,7 +8,9 @@
     "start": "next start -p 3001",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "pnpm run test:unit && pnpm run test:e2e",
+    "test:unit": "jest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ffai/ui": "workspace:*",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@ffai/config": "workspace:*",
+    "@playwright/test": "^1.61.1",
     "@swc/core": "^1.12.9",
     "@swc/jest": "^0.2.38",
     "@tailwindcss/postcss": "^4.3.2",

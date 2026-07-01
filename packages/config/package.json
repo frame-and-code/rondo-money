@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "test": "echo \"@ffai/config test placeholder (test harness in F0.8)\""
+    "test": "echo \"@ffai/config: no tests (static configs only)\""
   },
   "dependencies": {
     "@eslint/js": "^10.0.1",

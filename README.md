@@ -2,8 +2,8 @@
 
 Монорепозиторий Fin Flow AI на **Turborepo + pnpm**.
 
-Текущий этап: **Фаза 0 → F0.5 (каркас Web на Next.js)**. Оставшиеся фичи фазы 0
-(UI-база, тесты, CI) подключаются в F0.6–F0.10.
+Текущий этап: **Фаза 0 → F0.8 (тест-харнесс)**. Оставшиеся фичи фазы 0
+(CI, деплой) подключаются в F0.9–F0.10.
 
 ## Требования
 
@@ -69,5 +69,16 @@ pnpm --filter @ffai/web dev                    # стартовая страни
 
 Подробности — в [`apps/web`](apps/web/README.md).
 
-> Пакеты `config` / `ui` пока остаются каркасами: их `build` / `test`
-> проходят как placeholder'ы и наполняются в своих фичах (F0.6–F0.10).
+## Тесты (F0.8)
+
+Три уровня — юнит / интеграция / e2e; тесты пишутся вместе с фичей:
+
+```bash
+pnpm test               # все уровни (turbo run test)
+pnpm test:unit          # юнит (Jest + fast-check)
+pnpm test:integration   # API ↔ Postgres (нужен docker compose up -d)
+pnpm test:e2e           # Playwright: браузер → web → api → Postgres
+```
+
+Один раз перед e2e: `pnpm --filter @ffai/web exec playwright install chromium`.
+Как добавлять тесты к новой фиче — в [`docs/testing.md`](docs/testing.md).

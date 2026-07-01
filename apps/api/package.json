@@ -9,7 +9,9 @@
     "start": "node dist/main.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "jest --runInBand"
+    "test": "pnpm run test:unit && pnpm run test:integration",
+    "test:unit": "jest --passWithNoTests",
+    "test:integration": "jest --config jest.integration.config.mjs --runInBand"
   },
   "dependencies": {
     "@ffai/db": "workspace:*",

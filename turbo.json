@@ -9,7 +9,19 @@
       "dependsOn": ["^typecheck"]
     },
     "test": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test:unit": {
       "dependsOn": ["^build"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false
     },
     "dev": {
       "cache": false,
