@@ -7,9 +7,10 @@ import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { enableWebCors, resolveWebOrigin } from '@/cors';
 
-// Integration test (F0.4 DoD): boots the real app, which connects to the F0.3 Postgres,
-// and asserts GET /health reports the DB as up. Requires the local DB running.
-describe('GET /health (e2e)', () => {
+// Integration level of the F0.8 harness (API ↔ DB): boots the real app, which connects
+// to the F0.3 Postgres, and asserts GET /health reports the DB as up. Requires the
+// local DB running (`docker compose up -d`).
+describe('GET /health (integration)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {

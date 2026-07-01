@@ -12,7 +12,7 @@
     "build": "echo \"@ffai/ui: no build step — consumed as source via Next transpilePackages\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"@ffai/ui test placeholder (test harness in F0.8)\""
+    "test": "echo \"@ffai/ui: no tests yet — components are covered by @ffai/web unit tests (see docs/testing.md)\""
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

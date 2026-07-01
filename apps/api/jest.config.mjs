@@ -1,15 +1,16 @@
 /**
- * Jest for @ffai/api (the repo-wide harness is F0.8; this covers F0.4's own tests).
- * SWC transforms TS — same decorators + metadata config as the build (.swcrc).
+ * Jest for @ffai/api — unit level of the F0.8 harness (no DB, runs anywhere).
+ * Integration tests (API ↔ the F0.3 Postgres) live in `*.integration.spec.ts` and run
+ * via jest.integration.config.mjs. SWC transforms TS — same decorators + metadata
+ * config as the build (.swcrc).
  *
  * @type {import('jest').Config}
  */
-export default {
+export const baseConfig = {
   testEnvironment: 'node',
   rootDir: '.',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   moduleFileExtensions: ['ts', 'js', 'json'],
-  testRegex: '\\.(spec|e2e-spec)\\.ts$',
   transform: {
     '^.+\\.(t|j)s$': ['@swc/jest'],
   },
@@ -20,4 +21,10 @@ export default {
   // @ffai/db client is already JS and stays ignored.
   transformIgnorePatterns: ['/node_modules/(?!@ffai/types)'],
   setupFiles: ['reflect-metadata'],
+};
+
+export default {
+  ...baseConfig,
+  testRegex: '\\.spec\\.ts$',
+  testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.spec\\.ts$'],
 };
