@@ -5,7 +5,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '@/app.module';
-import { DEFAULT_WEB_ORIGIN, enableWebCors } from '@/cors';
+import { enableWebCors, resolveWebOrigin } from '@/cors';
 
 // Integration test (F0.4 DoD): boots the real app, which connects to the F0.3 Postgres,
 // and asserts GET /health reports the DB as up. Requires the local DB running.
@@ -41,12 +41,15 @@ describe('GET /health (e2e)', () => {
 
   it('answers the browser CORS preflight for the web origin', async () => {
     const server = app.getHttpServer() as Server;
+    // Resolve the origin the same way the app does, so the test holds even when
+    // WEB_ORIGIN is overridden in the environment.
+    const webOrigin = resolveWebOrigin(app);
     const response = await request(server)
       .options('/health')
-      .set('Origin', DEFAULT_WEB_ORIGIN)
+      .set('Origin', webOrigin)
       .set('Access-Control-Request-Method', 'GET');
 
     expect(response.status).toBe(204);
-    expect(response.headers['access-control-allow-origin']).toBe(DEFAULT_WEB_ORIGIN);
+    expect(response.headers['access-control-allow-origin']).toBe(webOrigin);
   });
 });
