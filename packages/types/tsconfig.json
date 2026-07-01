@@ -1,9 +1,15 @@
 {
   "extends": "@ffai/config/tsconfig/base.json",
   "compilerOptions": {
+    // Explicit like apps/api: jest globals for the F0.8 unit tests in ./test.
+    "types": ["jest"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // Tests import the package by its public name (as consumers do); without an
+      // `exports` field Node/TS self-reference doesn't apply, so map it by hand
+      // (mirrors moduleNameMapper in jest.config.mjs).
+      "@ffai/types": ["./src/index.ts"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "test"]
 }
