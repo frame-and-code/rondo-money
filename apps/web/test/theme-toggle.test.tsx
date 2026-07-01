@@ -7,6 +7,16 @@ import userEvent from '@testing-library/user-event';
 // `suppressHydrationWarning` + next-themes' inline script, exercised in layout.tsx).
 // Here we cover the actual toggle behaviour: picking a theme flips the `dark` class
 // that Tailwind's `@custom-variant dark` selector relies on.
+//
+// Labels are passed as a prop (F0.7): `@ffai/ui` has no i18n mechanism of its own, so
+// the consuming app supplies translated strings — here, fixed RU labels for the test.
+const labels = {
+  trigger: 'Переключить тему',
+  light: 'Светлая',
+  dark: 'Тёмная',
+  system: 'Системная',
+};
+
 describe('theme toggle', () => {
   beforeEach(() => {
     document.documentElement.classList.remove('dark');
@@ -19,7 +29,7 @@ describe('theme toggle', () => {
     const user = userEvent.setup();
     render(
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-        <ThemeToggle />
+        <ThemeToggle labels={labels} />
       </ThemeProvider>,
     );
 
@@ -33,7 +43,7 @@ describe('theme toggle', () => {
     const user = userEvent.setup();
     render(
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <ThemeToggle />
+        <ThemeToggle labels={labels} />
       </ThemeProvider>,
     );
     document.documentElement.classList.add('dark');

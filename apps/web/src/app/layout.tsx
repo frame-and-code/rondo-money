@@ -2,6 +2,8 @@ import { ThemeProvider } from '@ffai/ui/components/theme-provider';
 
 import './globals.css';
 
+import { LocaleProvider } from '@/i18n/locale-context';
+
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -10,18 +12,22 @@ export const metadata: Metadata = {
   description: 'Zero-based budgeting — application shell (F0.5).',
 };
 
-// Root layout for the whole App Router tree. The product is RU-first (PRD is the RU
-// source of truth); a real i18n setup lands later — `lang` is hard-coded for now.
-// `suppressHydrationWarning` is required by next-themes: it sets the theme class on
-// `<html>` via an inline script that runs before hydration, so the class deliberately
-// won't match between the SSR markup and the client on first paint.
+// Root layout for the whole App Router tree. `lang` starts as the RU default (PRD is
+// the RU source of truth) and `LocaleProvider` corrects both it and the rendered
+// strings client-side once the browser's language is detected (F0.7) — so, like the
+// theme class below, it deliberately won't match between the SSR markup and the first
+// client paint. `suppressHydrationWarning` covers both: next-themes sets the theme
+// class via a pre-hydration inline script, and `LocaleProvider` sets `lang` in an
+// effect right after mount.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru" suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
+        <LocaleProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
