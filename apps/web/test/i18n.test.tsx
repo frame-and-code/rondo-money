@@ -1,0 +1,62 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+import { LocaleSwitcher } from '@/components/locale-switcher';
+import { interpolate, LocaleProvider, useTranslations } from '@/i18n/locale-context';
+
+function DemoText() {
+  const { t } = useTranslations();
+  return <p>{t('home.demoTitle')}</p>;
+}
+
+// F0.7 DoD: "смена локали меняет отображаемые строки" — pin jsdom's navigator (which
+// defaults to "en-US") to English so the browser-detection effect has a known outcome
+// to assert on, distinct from the hard-coded RU default.
+describe('locale detection and switching', () => {
+  beforeEach(() => {
+    Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true });
+    Object.defineProperty(window.navigator, 'languages', {
+      value: ['en-US'],
+      configurable: true,
+    });
+  });
+
+  it('overrides the default locale with the one detected from the browser', async () => {
+    render(
+      <LocaleProvider>
+        <DemoText />
+      </LocaleProvider>,
+    );
+
+    expect(await screen.findByText('Component demo')).toBeInTheDocument();
+  });
+
+  it('updates displayed strings when the user switches locale', async () => {
+    const user = userEvent.setup();
+    render(
+      <LocaleProvider>
+        <LocaleSwitcher />
+        <DemoText />
+      </LocaleProvider>,
+    );
+
+    // Starts in English — detected from the browser via the mocked navigator above.
+    expect(await screen.findByText('Component demo')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Change language' }));
+    await user.click(await screen.findByText('Polski'));
+
+    expect(await screen.findByText('Demo komponentów')).toBeInTheDocument();
+  });
+});
+
+// F0.7 DoD: "подстановки строк" — `t()` substitutes `{{var}}` placeholders.
+describe('interpolate', () => {
+  it('substitutes variables into a template string', () => {
+    expect(interpolate('Hello, {{name}}!', { name: 'Alice' })).toBe('Hello, Alice!');
+  });
+
+  it('leaves unknown placeholders untouched', () => {
+    expect(interpolate('Hello, {{name}}!')).toBe('Hello, {{name}}!');
+  });
+});

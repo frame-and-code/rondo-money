@@ -1,3 +1,5 @@
+'use client';
+
 import { ThemeToggle } from '@ffai/ui/components/theme-toggle';
 import { Button } from '@ffai/ui/components/ui/button';
 import {
@@ -11,41 +13,56 @@ import { Input } from '@ffai/ui/components/ui/input';
 import { Label } from '@ffai/ui/components/ui/label';
 import { Separator } from '@ffai/ui/components/ui/separator';
 
+import { LocaleSwitcher } from '@/components/locale-switcher';
+import { useTranslations } from '@/i18n/locale-context';
 import { API_BASE_URL } from '@/lib/api';
 
-// Start page (F0.5) + shadcn/ui demo screen (F0.6 DoD): shows the base primitives and
-// the theme toggle so light/dark/system can be checked visually in one place.
+// Start page (F0.5) + shadcn/ui demo screen (F0.6 DoD): shows the base primitives, the
+// theme toggle, and the locale switcher (F0.7) so all three can be checked in one place.
+// The app name is a brand, deliberately kept out of the translation dictionaries.
 export default function HomePage() {
+  const { t } = useTranslations();
+
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 p-8">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Fin Flow AI</h1>
-          <p className="text-sm text-muted-foreground">Каркас приложения · Фаза 0 (F0.6).</p>
+          <p className="text-sm text-muted-foreground">{t('home.subtitle')}</p>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <LocaleSwitcher />
+          <ThemeToggle
+            labels={{
+              trigger: t('common.themeToggle.trigger'),
+              light: t('common.themeToggle.light'),
+              dark: t('common.themeToggle.dark'),
+              system: t('common.themeToggle.system'),
+            }}
+          />
+        </div>
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Демо компонентов</CardTitle>
-          <CardDescription>shadcn/ui + тема Ocean Breeze</CardDescription>
+          <CardTitle>{t('home.demoTitle')}</CardTitle>
+          <CardDescription>{t('home.demoDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-2">
-            <Button>По умолчанию</Button>
-            <Button variant="secondary">Вторичная</Button>
-            <Button variant="outline">Контур</Button>
-            <Button variant="ghost">Прозрачная</Button>
-            <Button variant="destructive">Опасная</Button>
+            <Button>{t('home.buttons.default')}</Button>
+            <Button variant="secondary">{t('home.buttons.secondary')}</Button>
+            <Button variant="outline">{t('home.buttons.outline')}</Button>
+            <Button variant="ghost">{t('home.buttons.ghost')}</Button>
+            <Button variant="destructive">{t('home.buttons.destructive')}</Button>
           </div>
           <Separator />
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="budget-name">Название бюджета</Label>
-            <Input id="budget-name" placeholder="Например, «Семейный бюджет»" />
+            <Label htmlFor="budget-name">{t('home.budgetNameLabel')}</Label>
+            <Input id="budget-name" placeholder={t('home.budgetNamePlaceholder')} />
           </div>
           <p className="text-sm text-muted-foreground">
-            API: <code>{API_BASE_URL}</code>
+            {t('home.apiLabel')}: <code>{API_BASE_URL}</code>
           </p>
         </CardContent>
       </Card>
