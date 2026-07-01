@@ -17,6 +17,8 @@ generated/
 
 # Test / coverage
 coverage/
+playwright-report/
+test-results/
 
 # Environment
 .env

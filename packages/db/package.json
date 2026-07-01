@@ -18,7 +18,7 @@
     "db:studio": "prisma studio",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"@ffai/db test placeholder (test harness in F0.8)\""
+    "test": "echo \"@ffai/db: no tests yet — Prisma ↔ Postgres is covered by @ffai/api integration tests (see docs/testing.md)\""
   },
   "dependencies": {
     "@prisma/client": "^7.8.0"

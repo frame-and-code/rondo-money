@@ -54,5 +54,16 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // F0.2 carry-over, closed in F0.8: register the test runner's globals on test files
+    // so specs lint clean even where `no-undef` applies (plain-JS test helpers; TS files
+    // get it disabled by typescript-eslint anyway). Playwright e2e specs are excluded
+    // on purpose — they import `test`/`expect` instead of using globals.
+    files: ['**/*.{spec,test}.{ts,tsx,js,jsx}', '**/test/**/*.{ts,tsx,js,jsx}'],
+    ignores: ['**/e2e/**'],
+    languageOptions: {
+      globals: { ...globals.jest },
+    },
+  },
   prettier,
 );
