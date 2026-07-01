@@ -2,8 +2,8 @@
 
 Монорепозиторий Fin Flow AI на **Turborepo + pnpm**.
 
-Текущий этап: **Фаза 0 → F0.1 (каркас монорепо)**. Фреймворки, общие конфиги,
-БД и CI подключаются в следующих фичах фазы 0 (F0.2–F0.10).
+Текущий этап: **Фаза 0 → F0.5 (каркас Web на Next.js)**. Оставшиеся фичи фазы 0
+(UI-база, тесты, CI) подключаются в F0.6–F0.10.
 
 ## Требования
 
@@ -60,5 +60,14 @@ pnpm --filter @ffai/api dev # запустить API; GET http://localhost:3000/
 `DATABASE_URL` подгружается из корневого `.env` (см. `.env.example`). Подробности —
 в [`apps/api`](apps/api/README.md) и [`packages/db`](packages/db/README.md).
 
-> Пакеты `config` / `ui` / `web` пока остаются каркасами: их `build` / `test`
-> проходят как placeholder'ы и наполняются в своих фичах (F0.5–F0.10).
+### Web (F0.5)
+
+```bash
+cp apps/web/.env.example apps/web/.env.local   # один раз: NEXT_PUBLIC_API_URL
+pnpm --filter @ffai/web dev                    # стартовая страница на http://localhost:3001
+```
+
+Подробности — в [`apps/web`](apps/web/README.md).
+
+> Пакеты `config` / `ui` пока остаются каркасами: их `build` / `test`
+> проходят как placeholder'ы и наполняются в своих фичах (F0.6–F0.10).
