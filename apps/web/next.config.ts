@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   // Linting has its own `lint` step (eslint flat config); never let a type error slip
   // through the build silently.
   typescript: { ignoreBuildErrors: false },
+  // @ffai/ui ships raw TSX source (no build step, F0.6) — Next must transpile it
+  // itself rather than treating it as pre-built node_modules code.
+  transpilePackages: ['@ffai/ui'],
 };
 
 export default nextConfig;

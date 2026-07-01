@@ -24,6 +24,9 @@ export default {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Jest doesn't implement Node's package self-reference resolution (a package
+    // importing its own name via `exports`), unlike Next's bundler — map it by hand.
+    '^@ffai/ui/(.*)$': '<rootDir>/../../packages/ui/src/$1',
   },
   // @testing-library/jest-dom matchers (toBeInTheDocument, …).
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
