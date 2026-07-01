@@ -11,7 +11,8 @@
     "incremental": true,
     // The base keeps emit off (typecheck-only); Next/Turbopack does the real build.
     "plugins": [{ "name": "next" }],
-    "types": ["node", "jest", "@testing-library/jest-dom"],
+    // No `types` allowlist: let TS auto-discover @types/* (node, jest, react, …). Jest-dom
+    // matchers come from the `import '@testing-library/jest-dom'` in test/setup.ts, not here.
     // Alias is set in F0.2; Next resolves it natively at runtime, no extra config needed.
     "paths": {
       "@/*": ["./src/*"]
