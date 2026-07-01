@@ -4,7 +4,12 @@ import { defineConfig, devices } from '@playwright/test';
 // both servers itself — the API (built, then `node dist/main.js`, talking to the F0.3
 // Postgres; `docker compose up -d` first) and the web app (`next dev`). Locally it
 // reuses servers you already have running, so `pnpm dev` + `pnpm test:e2e` is fast.
+// Deliberately not env-driven: 3001 is pinned by this package's dev/start scripts,
+// and the webServer below starts exactly `pnpm dev` — an override here would only
+// point the tests at a URL nothing listens on.
 const WEB_URL = 'http://localhost:3001';
+// Mirrors the app's own env contract (src/lib/api/config.ts): the tests must hit
+// whatever API the web app is wired to.
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export default defineConfig({
