@@ -12,8 +12,10 @@
 
 FROM node:24-slim AS base
 # pnpm через corepack — версия из "packageManager" в package.json.
-ENV COREPACK_HOME=/opt/corepack \
-    npm_config_store_dir=/pnpm/store
+# Cache mount для pnpm store не используем: Railway требует захардкоженный
+# id=s/<service-id>-… (подстановка переменных в id не поддерживается) — не стоит
+# связывания репо с конкретным сервисом; послойное кэширование манифестов остаётся.
+ENV COREPACK_HOME=/opt/corepack
 # openssl уже на этапе сборки: @prisma/engines подбирает вариант движка миграций под
 # найденный openssl — без него скачается фолбэк 1.1.x, а рантайм (openssl 3) его отвергнет.
 # DL3008 (пин версии) намеренно выключен: Debian убирает старые версии с зеркал после
@@ -41,8 +43,7 @@ COPY packages/ui/package.json packages/ui/
 # generate выполнит сам build @ffai/db (см. его package.json). pnpm rebuild после
 # копирования исходников добирает разрешённые нативные скрипты (allowBuilds).
 FROM manifests AS build
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm --filter @ffai/api... rebuild && pnpm exec turbo run build --filter=@ffai/api
 # Прогон prod-установки здесь же не делаем — отдельная стадия ниже кэшируется независимо.
@@ -52,8 +53,7 @@ RUN pnpm --filter @ffai/api... rebuild && pnpm exec turbo run build --filter=@ff
 # rebuild добирает postinstall-скрипты, срезанные --ignore-scripts: @prisma/engines
 # скачивает движок миграций — он должен попасть в образ, рантайм его не пишет.
 FROM manifests AS prod-deps
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --prod --frozen-lockfile --ignore-scripts --filter @ffai/api... \
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts --filter @ffai/api... \
     && pnpm --filter @ffai/api... rebuild
 
 # ---- runner: воркспейс-структура node_modules сохранена (pnpm-симлинки относительные),
