@@ -4,7 +4,8 @@
   "globalPassThroughEnv": ["CI"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "env": ["NEXT_PUBLIC_API_URL"]
     },
     "lint": {},
     "typecheck": {
