@@ -8,6 +8,11 @@ on:
   push:
     branches: [main]
 
+# Гейт только читает репозиторий: токен нужен одному checkout. Артефакты (upload-artifact)
+# и аннотации Playwright-репортера github идут не через GITHUB_TOKEN — скоупы не нужны.
+permissions:
+  contents: read
+
 # Повторный push в PR отменяет устаревший ран; push в main не отменяем никогда —
 # каждый коммит main должен быть провалидирован (зелёный main — предусловие F0.10).
 concurrency:
