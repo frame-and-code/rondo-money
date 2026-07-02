@@ -12,8 +12,10 @@
 - **Postgres** поднимается как service-контейнер (`postgres:18` — тот же образ, что в
   `docker-compose.yml`), перед интеграцией прогоняются миграции:
   `pnpm --filter @ffai/db run db:deploy` (`prisma migrate deploy`).
-- `DATABASE_URL` задаётся через env воркфлоу — `.env`-файлов в CI нет,
-  `ConfigModule` (api) и `prisma.config.ts` (db) читают `process.env`.
+- Креденшалы базы объявлены один раз в env воркфлоу (`POSTGRES_*`): ими конфигурируется
+  service-контейнер, а `DATABASE_URL` собирается из них первым шагом (в `$GITHUB_ENV`).
+  `.env`-файлов в CI нет — `ConfigModule` (api) и `prisma.config.ts` (db) читают
+  `process.env`.
 - **Strict env mode Turborepo:** turbo передаёт задаче только переменные, объявленные
   в `env` этой задачи в `turbo.json` (плюс `globalPassThroughEnv`). Новая переменная
   окружения у теста/сервера → объявить её там же, иначе локально с `.env` всё зелёное,

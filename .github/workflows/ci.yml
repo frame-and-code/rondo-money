@@ -8,14 +8,19 @@ on:
   push:
     branches: [main]
 
+# Повторный push в PR отменяет устаревший ран; push в main не отменяем никогда —
+# каждый коммит main должен быть провалидирован (зелёный main — предусловие F0.10).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  # Интеграция и e2e ходят в service-контейнер Postgres (аналог docker-compose из F0.3).
-  # ConfigModule и prisma.config.ts читают process.env — .env-файлов в CI нет.
-  DATABASE_URL: 'postgresql://ffai:ffai_ci_secret@localhost:5432/ffai_ci?schema=public'
+  # Единственный источник креденшалов CI-Postgres: отсюда конфигурируется service-контейнер
+  # и собирается DATABASE_URL (шаг Compose ниже). Не секрет: база живёт минуты внутри
+  # раннера и снаружи недоступна.
+  POSTGRES_USER: ffai
+  POSTGRES_PASSWORD: ffai_ci_secret
+  POSTGRES_DB: ffai_ci
 
 jobs:
   gate:
@@ -26,24 +31,40 @@ jobs:
       postgres:
         image: postgres:18
         env:
-          POSTGRES_USER: ffai
-          POSTGRES_PASSWORD: ffai_ci_secret
-          POSTGRES_DB: ffai_ci
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
         ports:
           - 5432:5432
+        # $-переменные в health-cmd разворачивает шелл внутри контейнера (docker CMD-SHELL),
+        # где POSTGRES_* заданы через env выше — литералов тут нет.
         options: >-
-          --health-cmd "pg_isready -U ffai -d ffai_ci"
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
+      # Интеграция и e2e ходят в service-контейнер Postgres (аналог docker-compose из F0.3).
+      # ConfigModule и prisma.config.ts читают process.env — .env-файлов в CI нет.
+      # Контекст env недоступен в env воркфлоу и job (см. Context availability в доках),
+      # поэтому URL собирается шагом: шелл видит POSTGRES_* как обычное окружение.
+      - name: Compose DATABASE_URL
+        run: >-
+          echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?schema=public"
+          >> "$GITHUB_ENV"
+
+      # Экшены запинены по commit SHA (mutable-тег могут перенацелить); комментарий —
+      # человекочитаемая версия, при бампе обновлять оба.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # Гейт после клонирования в git не ходит — не оставляем GITHUB_TOKEN в .git/config
+          persist-credentials: false
 
       # Версию pnpm берёт из "packageManager" в package.json
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
@@ -79,7 +100,7 @@ jobs:
       # В CI репортер 'github' (аннотации в PR); артефакты падений — трейсы Playwright
       - name: Upload Playwright traces
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-traces
           path: apps/web/test-results
