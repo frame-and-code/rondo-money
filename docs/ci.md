@@ -14,6 +14,10 @@
   `pnpm --filter @ffai/db run db:deploy` (`prisma migrate deploy`).
 - `DATABASE_URL` задаётся через env воркфлоу — `.env`-файлов в CI нет,
   `ConfigModule` (api) и `prisma.config.ts` (db) читают `process.env`.
+- **Strict env mode Turborepo:** turbo передаёт задаче только переменные, объявленные
+  в `env` этой задачи в `turbo.json` (плюс `globalPassThroughEnv`). Новая переменная
+  окружения у теста/сервера → объявить её там же, иначе локально с `.env` всё зелёное,
+  а в CI переменная до процесса не дойдёт.
 - **E2E**: Playwright сам собирает и стартует api и web (`reuseExistingServer` выключен
   в CI), браузер ставится шагом `playwright install --with-deps chromium`. Репортер в
   CI — `github` (аннотации прямо в PR); при падении трейсы (`apps/web/test-results`)
