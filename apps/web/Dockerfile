@@ -26,7 +26,7 @@ FROM manifests AS build
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN pnpm -r rebuild
+RUN pnpm --filter @ffai/web... rebuild
 # NEXT_PUBLIC_* вшивается в браузерный бандл на этапе next build — Railway передаёт
 # переменную сервиса как build arg (нужен явный ARG). Задача build в turbo.json
 # объявляет NEXT_PUBLIC_API_URL в env (строгий env-режим turbo).
@@ -42,10 +42,17 @@ FROM node:24-slim AS runner
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3001
+# Docker-native healthcheck — для локального запуска и линтеров (Checkov CKV_DOCKER_2).
+# Railway его игнорирует: там свой healthcheckPath из railway.json. curl/wget в slim
+# нет — проверяем нативным fetch Node.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 WORKDIR /app
 
 # В монорепо standalone повторяет структуру репозитория: server.js — в apps/web/.
 # --chown=node: серверу нужен .next/cache (ISR/образы) с правом записи.
+# ⚠️ Когда в apps/web появится public/ — добавить сюда его COPY (standalone его не
+# трейсит, без копии статика молча пропадёт в проде); сейчас папки нет, COPY бы упал.
 COPY --from=build --chown=node:node /app/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /app/apps/web/.next/static apps/web/.next/static
 
