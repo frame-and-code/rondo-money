@@ -32,7 +32,11 @@ RUN pnpm --filter @ffai/web... rebuild
 # объявляет NEXT_PUBLIC_API_URL в env (строгий env-режим turbo).
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-RUN pnpm exec turbo run build --filter=@ffai/web
+# Fast-fail: без переменной сборка «прошла бы», но в бандл молча вшился бы
+# localhost-фолбэк из lib/api/config.ts — прод-клиент ходил бы в никуда.
+RUN [ -n "$NEXT_PUBLIC_API_URL" ] \
+    || { echo "ERROR: build arg NEXT_PUBLIC_API_URL is required (вшивается в браузерный бандл)" >&2; exit 1; } \
+    && pnpm exec turbo run build --filter=@ffai/web
 
 # ---- runner: standalone-бандл, никакого pnpm/воркспейса.
 FROM node:24-slim AS runner
