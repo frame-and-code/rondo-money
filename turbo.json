@@ -1,5 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "//": "Strict env mode: turbo передаёт задачам только объявленные переменные. Локально конфиг добирается из .env-файлов, в CI (F0.9) — только из окружения, поэтому env-контракт задач объявлен здесь. CI — passthrough (не влияет на хеш кеша): на него завязан Playwright (forbidOnly, ретраи, репортер).",
+  "globalPassThroughEnv": ["CI"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"]
@@ -10,18 +12,21 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL", "WEB_ORIGIN", "NEXT_PUBLIC_API_URL"]
     },
     "test:unit": {
       "dependsOn": ["^build"]
     },
     "test:integration": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL", "WEB_ORIGIN"]
     },
     "test:e2e": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL", "WEB_ORIGIN", "NEXT_PUBLIC_API_URL"]
     },
     "dev": {
       "cache": false,
