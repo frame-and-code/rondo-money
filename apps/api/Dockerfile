@@ -5,10 +5,10 @@
 # build (полная установка + turbo build) → prod-deps (только runtime-зависимости) → runner.
 #
 # Миграции НЕ запускаются на старте контейнера: Railway гоняет их отдельной pre-deploy
-# командой `cd packages/db && node_modules/.bin/prisma migrate deploy` (см. railway.json) —
-# поэтому в образе остаются prisma CLI, схема и папка миграций. prisma CLI зовём напрямую,
-# без pnpm: pnpm 11 перед `run` сверяет node_modules с lockfile и пытается доустановить,
-# что в read-only образе падает, — а corepack тянул бы pnpm из сети на каждый деплой.
+# командой (см. railway.json) — поэтому в образе остаются prisma CLI, схема и миграции.
+# Команда шелл-независимая (голый node + --config, без cd/&&/.bin-шимов) и без pnpm:
+# pnpm 11 перед `run` сверяет node_modules с lockfile и пытается доустановить, что в
+# read-only образе падает, — а corepack тянул бы pnpm из сети на каждый деплой.
 
 FROM node:24-slim AS base
 # pnpm через corepack — версия из "packageManager" в package.json.
