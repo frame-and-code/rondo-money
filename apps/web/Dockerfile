@@ -4,7 +4,7 @@
 # next.config.ts включает output: 'standalone' — runner получает самодостаточный
 # server.js с минимальным node_modules (трейсинг Next), без pnpm и воркспейса.
 
-FROM node:22-slim AS base
+FROM node:24-slim AS base
 ENV COREPACK_HOME=/opt/corepack \
     npm_config_store_dir=/pnpm/store
 RUN corepack enable
@@ -35,7 +35,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN pnpm exec turbo run build --filter=@ffai/web
 
 # ---- runner: standalone-бандл, никакого pnpm/воркспейса.
-FROM node:22-slim AS runner
+FROM node:24-slim AS runner
 # HOSTNAME=0.0.0.0 — standalone-сервер должен слушать все интерфейсы контейнера.
 # PORT Railway переопределяет своим значением; 3001 — фолбэк для локального запуска
 # (совпадает с `next start -p 3001` из package.json).

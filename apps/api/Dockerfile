@@ -10,7 +10,7 @@
 # без pnpm: pnpm 11 перед `run` сверяет node_modules с lockfile и пытается доустановить,
 # что в read-only образе падает, — а corepack тянул бы pnpm из сети на каждый деплой.
 
-FROM node:22-slim AS base
+FROM node:24-slim AS base
 # pnpm через corepack — версия из "packageManager" в package.json.
 ENV COREPACK_HOME=/opt/corepack \
     npm_config_store_dir=/pnpm/store
@@ -55,7 +55,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 
 # ---- runner: воркспейс-структура node_modules сохранена (pnpm-симлинки относительные),
 # pre-deploy запускает prisma из packages/db.
-FROM node:22-slim AS runner
+FROM node:24-slim AS runner
 ENV NODE_ENV=production
 # openssl нужен движку миграций Prisma (schema engine) в pre-deploy; slim-образ его не несёт.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
