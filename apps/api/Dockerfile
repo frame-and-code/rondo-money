@@ -16,6 +16,9 @@ ENV COREPACK_HOME=/opt/corepack \
     npm_config_store_dir=/pnpm/store
 # openssl уже на этапе сборки: @prisma/engines подбирает вариант движка миграций под
 # найденный openssl — без него скачается фолбэк 1.1.x, а рантайм (openssl 3) его отвергнет.
+# DL3008 (пин версии) намеренно выключен: Debian убирает старые версии с зеркал после
+# security-бампов — пин ломал бы деплой в случайный момент без изменений в репо.
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable
@@ -41,7 +44,7 @@ FROM manifests AS build
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN pnpm -r rebuild && pnpm exec turbo run build --filter=@ffai/api
+RUN pnpm --filter @ffai/api... rebuild && pnpm exec turbo run build --filter=@ffai/api
 # Прогон prod-установки здесь же не делаем — отдельная стадия ниже кэшируется независимо.
 
 # ---- prod-deps: только runtime-зависимости api и его workspace-графа
@@ -57,7 +60,13 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 # pre-deploy запускает prisma из packages/db.
 FROM node:24-slim AS runner
 ENV NODE_ENV=production
+# Docker-native healthcheck — для локального запуска и линтеров (Checkov CKV_DOCKER_2);
+# бьёт в тот же GET /health, что и Railway (у которого свой healthcheckPath из railway.json).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 # openssl нужен движку миграций Prisma (schema engine) в pre-deploy; slim-образ его не несёт.
+# Без пина версии намеренно (DL3008) — см. комментарий в base-стадии.
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
