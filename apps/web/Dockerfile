@@ -5,8 +5,9 @@
 # server.js с минимальным node_modules (трейсинг Next), без pnpm и воркспейса.
 
 FROM node:24-slim AS base
-ENV COREPACK_HOME=/opt/corepack \
-    npm_config_store_dir=/pnpm/store
+# Без cache mount для pnpm store — см. комментарий в apps/api/Dockerfile (Railway
+# требует захардкоженный service-id в id маунта).
+ENV COREPACK_HOME=/opt/corepack
 RUN corepack enable
 WORKDIR /app
 
@@ -23,8 +24,7 @@ COPY packages/ui/package.json packages/ui/
 
 # ---- build
 FROM manifests AS build
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm --filter @ffai/web... rebuild
 # NEXT_PUBLIC_* вшивается в браузерный бандл на этапе next build — Railway передаёт
