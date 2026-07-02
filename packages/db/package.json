@@ -21,14 +21,14 @@
     "test": "echo \"@ffai/db: no tests yet — Prisma ↔ Postgres is covered by @ffai/api integration tests (see docs/testing.md)\""
   },
   "dependencies": {
-    "@prisma/client": "^7.8.0"
+    "@prisma/client": "^7.8.0",
+    "dotenv": "^17.2.3",
+    "prisma": "^7.8.0"
   },
   "devDependencies": {
     "@ffai/config": "workspace:*",
-    "dotenv": "^17.2.3",
     "eslint": "^10.0.1",
     "prettier": "^3.8.4",
-    "prisma": "^7.8.0",
     "typescript": "^6.0.3"
   }
 }

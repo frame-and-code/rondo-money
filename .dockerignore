@@ -1,0 +1,14 @@
+# F0.10 — контекст сборки Docker-образов (apps/api/Dockerfile, apps/web/Dockerfile).
+# Исключаем локальные артефакты: всё, что нужно образу, собирается внутри multi-stage
+# сборки — стейл с хоста не должен туда протекать.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/test-results
+**/tsconfig.tsbuildinfo
+packages/db/src/generated
+.git
+.env
+.env.*
