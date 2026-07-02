@@ -14,8 +14,9 @@
 - **api** — multi-stage: prod-зависимости ставятся отдельным слоем
   (`pnpm install --prod --filter @ffai/api...`), в runner попадают только `dist` и
   runtime-`node_modules`. В образе остаются prisma CLI, схема и миграции — их гоняет
-  pre-deploy команда (`cd packages/db && node_modules/.bin/prisma migrate deploy`),
-  поэтому `prisma` и `dotenv` в `dependencies` пакета `@ffai/db`, не в dev.
+  pre-deploy команда из railway.json (шелл-независимая: `node .../prisma/build/index.js
+migrate deploy --config packages/db/prisma.config.ts`), поэтому `prisma` и `dotenv` —
+  в `dependencies` пакета `@ffai/db`, не в dev.
 - **web** — Next.js `output: 'standalone'` (см. next.config.ts): runner получает
   самодостаточный `server.js` без pnpm и воркспейса. ⚠️ `NEXT_PUBLIC_API_URL`
   вшивается в браузерный бандл на этапе `next build` — переменная передаётся как
@@ -67,7 +68,8 @@ docker build -f apps/api/Dockerfile -t ffai-api .
 docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:3100 -t ffai-web .
 docker compose up -d postgres
 docker run --rm -e DATABASE_URL=postgresql://ffai:ffai_dev_secret@host.docker.internal:5432/ffai_dev \
-  ffai-api sh -c 'cd packages/db && node_modules/.bin/prisma migrate deploy'   # pre-deploy
+  ffai-api node packages/db/node_modules/prisma/build/index.js migrate deploy \
+  --config packages/db/prisma.config.ts   # pre-deploy — та же команда, что в railway.json
 docker run -d -p 3100:3000 -e DATABASE_URL=postgresql://ffai:ffai_dev_secret@host.docker.internal:5432/ffai_dev \
   -e WEB_ORIGIN=http://localhost:3101 ffai-api
 docker run -d -p 3101:3001 ffai-web
