@@ -11,9 +11,12 @@ allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
   '@swc/core': true
+  bufferutil: true
+  core-js: true
   prisma: true
   sharp: true
   unrs-resolver: true
+  utf-8-validate: true
 minimumReleaseAgeExclude:
   - '@typescript-eslint/eslint-plugin@8.62.0'
   - '@typescript-eslint/parser@8.62.0'

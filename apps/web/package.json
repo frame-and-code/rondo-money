@@ -13,6 +13,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.6.1",
+    "@clerk/ui": "^1.26.0",
     "@ffai/ui": "workspace:*",
     "next": "^16.2.9",
     "react": "^19.2.7",
