@@ -1,5 +1,5 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "https://v2-10-7.turborepo.dev/schema.json",
   "//": "Strict env mode: turbo передаёт задачам только объявленные переменные. Локально конфиг добирается из .env-файлов, в CI (F0.9) — только из окружения, поэтому env-контракт задач объявлен здесь. CI — passthrough (не влияет на хеш кеша): на него завязан Playwright (forbidOnly, ретраи, репортер).",
   "globalPassThroughEnv": ["CI"],
   "tasks": {
