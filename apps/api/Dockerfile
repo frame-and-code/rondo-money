@@ -10,8 +10,11 @@
 # before `run`, pnpm 11 checks node_modules against the lockfile and tries to install the
 # difference, which fails in a read-only image — and corepack would pull pnpm from the network on every deploy.
 
-FROM node:24-slim AS base
+FROM node:26-slim AS base
 # pnpm via corepack — version comes from "packageManager" in package.json.
+# Node 26 no longer ships corepack, so it is installed from npm first; keeping corepack
+# (instead of `npm i -g pnpm@<version>`) keeps package.json the single source of the pnpm
+# version, integrity hash included.
 # No cache mount for the pnpm store: Railway requires a hardcoded
 # id=s/<service-id>-… (variable substitution in id is not supported) — not worth
 # tying the repo to a specific service; layered caching of manifests remains.
@@ -23,6 +26,7 @@ ENV COREPACK_HOME=/opt/corepack
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/* \
+    && npm install -g corepack@latest \
     && corepack enable
 WORKDIR /app
 
@@ -58,7 +62,7 @@ RUN pnpm install --prod --frozen-lockfile --ignore-scripts --filter @ffai/api...
 
 # ---- runner: the workspace node_modules layout is preserved (pnpm symlinks are relative),
 # pre-deploy runs prisma from packages/db.
-FROM node:24-slim AS runner
+FROM node:26-slim AS runner
 ENV NODE_ENV=production
 # Docker-native healthcheck — for local runs and linters (Checkov CKV_DOCKER_2);
 # hits the same GET /health as Railway (which has its own healthcheckPath from railway.json).
