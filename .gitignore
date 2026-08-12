@@ -24,6 +24,8 @@ test-results/
 .env
 .env.*
 !.env.example
+# op:// template for setup-env.sh (contains no secrets)
+!.env.local.tpl
 
 # Logs
 *.log

@@ -7,13 +7,20 @@ packages:
 # - @swc/core: native compiler bindings used by the Nest build and Jest (F0.4).
 # - sharp: image codec used by Next.js; ships prebuilt @img/* binaries, the install
 #   script only compiles a fallback when none match the platform (surfaced in CI, F0.9).
+# - @clerk/shared: false — its postinstall only prints a telemetry notice (F1.1);
+#   the package works without it, so don't run third-party code on install.
+# - bufferutil / utf-8-validate: false — optional native speedups for ws (via
+#   jsdom → jest); pure-JS fallbacks are fine for tests, skip the node-gyp builds.
 allowBuilds:
+  '@clerk/shared': false
   '@prisma/client': true
   '@prisma/engines': true
   '@swc/core': true
+  bufferutil: false
   prisma: true
   sharp: true
   unrs-resolver: true
+  'utf-8-validate': false
 minimumReleaseAgeExclude:
   - '@typescript-eslint/eslint-plugin@8.62.0'
   - '@typescript-eslint/parser@8.62.0'

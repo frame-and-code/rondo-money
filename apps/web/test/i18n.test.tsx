@@ -12,7 +12,7 @@ function DemoText() {
   return <p>{t('home.demoTitle')}</p>;
 }
 
-// F0.7 DoD: "смена локали меняет отображаемые строки" — pin jsdom's navigator (which
+// F0.7 DoD: "switching the locale changes the displayed strings" — pin jsdom's navigator (which
 // defaults to "en-US") to English so the browser-detection effect has a known outcome
 // to assert on, distinct from the hard-coded RU default.
 describe('locale detection and switching', () => {
@@ -53,7 +53,7 @@ describe('locale detection and switching', () => {
   });
 });
 
-// F0.7 DoD: "подстановки строк" — `t()` substitutes `{{var}}` placeholders.
+// F0.7 DoD: "string substitutions" — `t()` substitutes `{{var}}` placeholders.
 describe('interpolate', () => {
   it('substitutes variables into a template string', () => {
     expect(interpolate('Hello, {{name}}!', { name: 'Alice' })).toBe('Hello, Alice!');

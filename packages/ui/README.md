@@ -1,4 +1,4 @@
 # @ffai/ui
 
-Общие UI-компоненты. Сейчас — пустой каркас (F0.1).
-База на shadcn/ui + тема Ocean Breeze подключается в F0.6.
+Shared UI components. Currently an empty skeleton (F0.1).
+The shadcn/ui base + Ocean Breeze theme is wired up in F0.6.

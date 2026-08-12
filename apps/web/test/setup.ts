@@ -1,5 +1,18 @@
 import '@testing-library/jest-dom';
 
+import type { ReactNode } from 'react';
+
+// Clerk's widgets subscribe to ClerkProvider context and talk to clerk-js at runtime;
+// unit tests cover our markup, not Clerk's. Keep the real module surface (hooks etc.)
+// so unmocked exports don't silently become `undefined`, and make every widget the app
+// renders inert.
+jest.mock('@clerk/nextjs', () => ({
+  ...jest.requireActual('@clerk/nextjs'),
+  ClerkProvider: ({ children }: { children: ReactNode }) => children,
+  SignIn: () => null,
+  UserButton: () => null,
+}));
+
 // next-themes reads the OS preference via matchMedia; jsdom doesn't implement it.
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
