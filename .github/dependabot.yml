@@ -35,8 +35,11 @@ updates:
     commit-message:
       prefix: 'chore(ci)'
     groups:
+      # Only minor and patch are grouped; majors arrive as their own PR on a differently
+      # named branch, which is what keeps them out of auto-merge (see dependabot-auto-merge.yml).
       actions:
         patterns: ['*']
+        update-types: ['minor', 'patch']
 
   # Base images (node:*-slim) in both Dockerfiles. Bumping them is a major runtime change:
   # keep it in sync with `node-version` in ci.yml and .nvmrc.

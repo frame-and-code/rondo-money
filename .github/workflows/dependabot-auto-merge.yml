@@ -1,0 +1,68 @@
+# Auto-merge for low-risk Dependabot updates: grouped patch and minor bumps only.
+#
+# Deliberately not GitHub's own auto-merge: that one merges as soon as the PR is
+# mergeable unless the branch carries required status checks, and branch protection is
+# unavailable on a private repository on the free plan — so "auto-merge" there would
+# mean "merge without waiting for CI". Instead this workflow is triggered by a finished
+# CI run, so a PR can only be merged after the gate went green for exactly that commit.
+#
+# What is NOT merged automatically, by construction: majors of any kind, Docker base
+# images (ungrouped — a base image bump is a runtime change), and anything a human
+# pushed. Those keep arriving as ordinary PRs.
+name: Dependabot auto-merge
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+
+# workflow_run runs in the context of the default branch, so the token is a normal
+# GITHUB_TOKEN — not the read-only one Dependabot-triggered workflows get.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Merge the pull request if it is a grouped patch/minor update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "No pull request attached to this run — nothing to merge."
+            exit 0
+          fi
+
+          # The branch name carries the group name from dependabot.yml, and those groups
+          # contain minor and patch updates only. Majors get their own branch and never
+          # match here.
+          case "${HEAD_BRANCH}" in
+            dependabot/*prod-dependencies-*|dependabot/*dev-dependencies-*|dependabot/*actions-*) ;;
+            *)
+              echo "Branch ${HEAD_BRANCH} is not a grouped patch/minor update — leaving it for review."
+              exit 0
+              ;;
+          esac
+
+          # Trust the branch name only after confirming the author: anyone can push a
+          # branch called dependabot/…
+          author=$(gh pr view "${PR_NUMBER}" --repo "${REPO}" --json author --jq '.author.login')
+          if [ "${author}" != "app/dependabot" ]; then
+            echo "PR #${PR_NUMBER} was opened by ${author}, not Dependabot — leaving it for review."
+            exit 0
+          fi
+
+          echo "Merging PR #${PR_NUMBER} (${HEAD_BRANCH}) — CI is green."
+          gh pr merge "${PR_NUMBER}" --repo "${REPO}" --squash --delete-branch
