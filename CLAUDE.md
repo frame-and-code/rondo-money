@@ -1,4 +1,5 @@
-> ⛔ NEVER commit on your own. Only `git add`. `git commit` and `git push` are done by the user only.
+> ⛔ On your own, only `git add`. `git commit`, `git push` and any other git action happen
+> only when the user asks for them.
 > If you are on the main branch, before starting a new feature, create a new branch from the main
 > (naming — see Git workflow).
 
@@ -8,7 +9,9 @@ Rules and context for Claude in the **Fin Flow AI** repository.
 
 ## Top rule
 
-Do not create commits. As you work, only `git add` the relevant files. The user commits and pushes themselves.
+As you work, only `git add` the relevant files. Committing, pushing, branching, rebasing,
+opening PRs — any git action beyond `git add` — happens on the user's explicit instruction,
+never on your own initiative.
 
 ## Language
 
@@ -19,7 +22,7 @@ Everything that goes into git — code, code comments, docs, scripts, commit mes
 Branch names, commit messages and PR text describe **what changes for the app and why** —
 not which files were touched or how the code was rewritten. A reader who never opens the
 diff should still understand what this work does. Everything is in English (see Language).
-Claude drafts these; the user runs `commit` / `push` / opens the PR.
+Claude drafts them; the actual `commit` / `push` / PR happens when the user asks (Top rule).
 
 - **Branch:** `F<phase>.<feature>-<what-it-does>` — the Notion ticket number plus a short
   kebab-case description of what is being added or fixed.
