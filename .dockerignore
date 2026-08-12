@@ -1,6 +1,6 @@
-# F0.10 — контекст сборки Docker-образов (apps/api/Dockerfile, apps/web/Dockerfile).
-# Исключаем локальные артефакты: всё, что нужно образу, собирается внутри multi-stage
-# сборки — стейл с хоста не должен туда протекать.
+# F0.10 — build context for the Docker images (apps/api/Dockerfile, apps/web/Dockerfile).
+# Exclude local artifacts: everything the image needs is built inside the multi-stage
+# build — stale host state must not leak into it.
 **/node_modules
 **/dist
 **/.next
@@ -10,5 +10,6 @@
 **/tsconfig.tsbuildinfo
 packages/db/src/generated
 .git
-.env
-.env.*
+# Unlike gitignore, bare dockerignore patterns are anchored to the context root — without
+# `**/` a nested apps/web/.env.local (real Clerk secrets) would leak into build layers.
+**/.env*

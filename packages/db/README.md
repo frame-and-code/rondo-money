@@ -1,34 +1,35 @@
 # @ffai/db
 
-Слой данных: Prisma-схема, миграции и сгенерированный клиент — каркас F0.4 (Prisma 7).
+Data layer: Prisma schema, migrations and the generated client — skeleton F0.4 (Prisma 7).
 
-Схема растёт инкрементально: каждая фаза приносит свою миграцию. F0.4 — это базовый
-каркас (datasource + generator + пустая стартовая миграция `0_init`); доменные таблицы
-(пользователи, бюджеты, журнал `ChangeLog`) появляются в Фазах 1–2.
+The schema grows incrementally: each phase brings its own migration. F0.4 is the base
+skeleton (datasource + generator + an empty initial `0_init` migration); domain tables
+(users, budgets, the `ChangeLog` journal) arrive in Phases 1–2.
 
-## Что экспортирует
+## What it exports
 
-`PrismaClient` и типы из сгенерированного клиента. Prisma 7 — Rust-free: новый генератор
-`prisma-client` отдаёт **TypeScript** в `src/generated/prisma` (git-ignored), поэтому
-пакет компилируется в `dist` своим build-шагом (`tsc`). Типы консьюмеры берут из исходников
-(`exports.types → src/index.ts`), рантайм — из `dist` (`exports.default → dist/index.js`).
-Когда появится написанный руками TypeScript (Client Extension со скоупингом и репозиторий
-сырых агрегатов), он живёт здесь же.
+`PrismaClient` and types from the generated client. Prisma 7 is Rust-free: the new
+`prisma-client` generator emits **TypeScript** into `src/generated/prisma` (git-ignored),
+so the package compiles into `dist` with its own build step (`tsc`). Consumers take types
+from the sources (`exports.types → src/index.ts`), runtime — from `dist`
+(`exports.default → dist/index.js`).
+Once hand-written TypeScript appears (the scoping Client Extension and the raw-aggregates
+repository), it lives here too.
 
-Подключение к БД в рантайме — через **driver adapter** (`@prisma/adapter-pg`), его
-создаёт `PrismaService` в `apps/api`. URL в схеме больше не указывается (Prisma 7); он
-живёт в `prisma.config.ts` и нужен только для Migrate.
+Runtime DB connection goes through a **driver adapter** (`@prisma/adapter-pg`), created
+by `PrismaService` in `apps/api`. The URL is no longer specified in the schema (Prisma 7);
+it lives in `prisma.config.ts` and is only needed for Migrate.
 
-## Скрипты
+## Scripts
 
 ```bash
 pnpm --filter @ffai/db build         # prisma generate + tsc → dist
 pnpm --filter @ffai/db db:generate   # prisma generate
-pnpm --filter @ffai/db db:migrate    # prisma migrate dev (нужен запущенный Postgres)
-pnpm --filter @ffai/db db:deploy     # prisma migrate deploy (прод)
+pnpm --filter @ffai/db db:migrate    # prisma migrate dev (requires a running Postgres)
+pnpm --filter @ffai/db db:deploy     # prisma migrate deploy (prod)
 pnpm --filter @ffai/db db:studio     # prisma studio
 ```
 
-`DATABASE_URL` подгружается из корневого `.env` прямо в `prisma.config.ts` (см.
-`.env.example` и `docker-compose.yml`); на Railway — из реальных переменных окружения.
-Из корня репозитория доступны короткие алиасы: `pnpm db:generate` и `pnpm db:migrate`.
+`DATABASE_URL` is loaded from the root `.env` directly in `prisma.config.ts` (see
+`.env.example` and `docker-compose.yml`); on Railway — from real environment variables.
+Short aliases are available from the repo root: `pnpm db:generate` and `pnpm db:migrate`.

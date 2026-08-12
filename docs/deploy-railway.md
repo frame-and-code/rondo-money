@@ -1,77 +1,85 @@
-# Дев-сервер Railway + continuous delivery (F0.10)
+# Railway dev server + continuous delivery (F0.10)
 
-Дев-окружение на Railway: сервисы **web**, **api**, **postgres**. Зелёный `main`
-автоматически деплоится на дев; миграции Prisma применяются pre-deploy командой.
-Прод — отдельно (Фаза 10).
+Dev environment on Railway: services **web**, **api**, **postgres**. A green `main`
+deploys to dev automatically; Prisma migrations are applied by a pre-deploy command.
+Production is separate (Phase 10).
 
-## Как это устроено
+## How it works
 
-- **Образы — Docker** (не Nixpacks): [apps/api/Dockerfile](../apps/api/Dockerfile) и
-  [apps/web/Dockerfile](../apps/web/Dockerfile), контекст сборки — корень репозитория
-  (pnpm-workspace). Настройки build/deploy — config-as-code:
+- **Images — Docker** (not Nixpacks): [apps/api/Dockerfile](../apps/api/Dockerfile) and
+  [apps/web/Dockerfile](../apps/web/Dockerfile), build context — the repository root
+  (pnpm-workspace). Build/deploy settings — config-as-code:
   [apps/api/railway.json](../apps/api/railway.json), [apps/web/railway.json](../apps/web/railway.json).
-  В UI Railway остаются только переменные окружения и привязка к репозиторию.
-- **api** — multi-stage: prod-зависимости ставятся отдельным слоем
-  (`pnpm install --prod --filter @ffai/api...`), в runner попадают только `dist` и
-  runtime-`node_modules`. В образе остаются prisma CLI, схема и миграции — их гоняет
-  pre-deploy команда из railway.json (шелл-независимая: `node .../prisma/build/index.js
-migrate deploy --config packages/db/prisma.config.ts`), поэтому `prisma` и `dotenv` —
-  в `dependencies` пакета `@ffai/db`, не в dev.
-- **web** — Next.js `output: 'standalone'` (см. next.config.ts): runner получает
-  самодостаточный `server.js` без pnpm и воркспейса. ⚠️ `NEXT_PUBLIC_API_URL`
-  вшивается в браузерный бандл на этапе `next build` — переменная передаётся как
-  build arg; смена URL требует **пересборки** web, не рестарта.
-- **Локальная разработка не меняется**: `docker-compose.yml` по-прежнему поднимает
-  только Postgres, web/api запускаются `pnpm dev` (бинд-маунты в Docker на macOS
-  медленные — образы только для Railway).
+  Only environment variables and the repository binding remain in the Railway UI.
+- **api** — multi-stage: prod dependencies are installed as a separate layer
+  (`pnpm install --prod --filter @ffai/api...`); only `dist` and the runtime
+  `node_modules` end up in the runner. The image keeps the prisma CLI, schema, and
+  migrations — the pre-deploy command from railway.json runs them (shell-independent:
+  `node .../prisma/build/index.js
+migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` and `dotenv` are
+  in `dependencies` of the `@ffai/db` package, not in dev.
+- **web** — Next.js `output: 'standalone'` (see next.config.ts): the runner gets a
+  self-contained `server.js` with no pnpm and no workspace. ⚠️ `NEXT_PUBLIC_API_URL`
+  is baked into the browser bundle at `next build` time — the variable is passed as a
+  build arg; changing the URL requires a **rebuild** of web, not a restart.
+- **Local development is unchanged**: `docker-compose.yml` still starts only
+  Postgres; web/api run via `pnpm dev` (bind mounts in Docker on macOS are
+  slow — the images are for Railway only).
 
-## Разовая настройка проекта в Railway
+## One-time project setup in Railway
 
-1. **New Project** → `ffai-dev`; внутри — **New → Database → PostgreSQL**.
-2. **New → GitHub Repo** → этот репозиторий, сервис `api`:
+1. **New Project** → `ffai-dev`; inside — **New → Database → PostgreSQL**.
+2. **New → GitHub Repo** → this repository, service `api`:
    - Root Directory `/`, Branch `main`;
    - Settings → **Config file path**: `apps/api/railway.json`;
-   - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = URL web
-     (шаг 4). `PORT` не задавать — Railway инжектит свой;
-   - Settings → Networking → **Generate Domain** (целевой порт 3000 — из `EXPOSE`).
-3. Тот же репозиторий, сервис `web`:
+   - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = the web URL
+     (step 4). Don't set `PORT` — Railway injects its own;
+   - Settings → Networking → **Generate Domain** (target port 3000 — from `EXPOSE`).
+3. The same repository, service `web`:
    - Root Directory `/`, Branch `main`;
    - Settings → **Config file path**: `apps/web/railway.json`;
-   - Variables: `NEXT_PUBLIC_API_URL` = URL api (https, без завершающего слэша);
-   - Settings → Networking → **Generate Domain** (целевой порт 3001).
-4. Домены генерируются после создания сервисов, поэтому перекрёстные переменные
-   (`WEB_ORIGIN` ↔ `NEXT_PUBLIC_API_URL`) заполняются после шага 2–3; затем **Redeploy
-   обоих** сервисов (web именно пересобрать — см. выше).
-5. **Continuous delivery**: у обоих сервисов включить **Wait for CI** (Settings →
-   Deploy) — Railway дождётся зелёного гейта (см. [ci.md](ci.md)) и только тогда
-   задеплоит; красный `main` на дев не уезжает.
+   - Variables: `NEXT_PUBLIC_API_URL` = the api URL (https, no trailing slash),
+     `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` = the Clerk keys
+     (dashboard.clerk.com → API Keys; F1.1). Without the secret key every request
+     500s at runtime; without the publishable key the build fast-fails;
+   - Settings → Networking → **Generate Domain** (target port 3001).
+4. Domains are generated after the services are created, so the cross-referencing
+   variables (`WEB_ORIGIN` ↔ `NEXT_PUBLIC_API_URL`) are filled in after steps 2–3; then
+   **Redeploy both** services (web must actually be rebuilt — see above).
+5. **Continuous delivery**: enable **Wait for CI** on both services (Settings →
+   Deploy) — Railway waits for a green gate (see [ci.md](ci.md)) and only then
+   deploys; a red `main` never reaches dev.
 
-## Переменные окружения (дев)
+## Environment variables (dev)
 
-| Сервис | Переменная            | Значение                                     | Когда применяется             |
-| ------ | --------------------- | -------------------------------------------- | ----------------------------- |
-| api    | `DATABASE_URL`        | `${{Postgres.DATABASE_URL}}`                 | runtime + pre-deploy          |
-| api    | `WEB_ORIGIN`          | публичный URL web (точное совпадение — CORS) | runtime                       |
-| web    | `NEXT_PUBLIC_API_URL` | публичный URL api                            | **build** (вшивается в бандл) |
+| Service | Variable                            | Value                                   | When it applies               |
+| ------- | ----------------------------------- | --------------------------------------- | ----------------------------- |
+| api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`            | runtime + pre-deploy          |
+| api     | `WEB_ORIGIN`                        | the public web URL (exact match — CORS) | runtime                       |
+| web     | `NEXT_PUBLIC_API_URL`               | the public api URL                      | **build** (baked into bundle) |
+| web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)        | **build** (baked into bundle) |
+| web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)             | runtime (never in the image)  |
 
-## Проверка (DoD)
+## Verification (DoD)
 
 - `curl https://<api-url>/health` → `{"status":"ok","info":{"database":"up"}}` (200);
-- web открывается по дев-URL, запросы к api проходят preflight (CORS);
-- в логах деплоя api виден pre-deploy шаг `prisma migrate deploy`;
-- мерж зелёного PR в `main` → оба сервиса передеплоились сами.
+- web opens at the dev URL, requests to api pass preflight (CORS);
+- the api deploy logs show the `prisma migrate deploy` pre-deploy step;
+- merging a green PR into `main` → both services redeployed on their own.
 
-Локальная репетиция (та же последовательность, что на Railway):
+Local dry run (the same sequence as on Railway):
 
 ```bash
 docker build -f apps/api/Dockerfile -t ffai-api .
-docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:3100 -t ffai-web .
+docker build -f apps/web/Dockerfile -t ffai-web \
+  --build-arg NEXT_PUBLIC_API_URL=http://localhost:3100 \
+  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...   # from apps/web/.env.local
 docker compose up -d postgres
 docker run --rm -e DATABASE_URL=postgresql://ffai:ffai_dev_secret@host.docker.internal:5432/ffai_dev \
   ffai-api node packages/db/node_modules/prisma/build/index.js migrate deploy \
-  --config packages/db/prisma.config.ts   # pre-deploy — та же команда, что в railway.json
+  --config packages/db/prisma.config.ts   # pre-deploy — the same command as in railway.json
 docker run -d -p 3100:3000 -e DATABASE_URL=postgresql://ffai:ffai_dev_secret@host.docker.internal:5432/ffai_dev \
   -e WEB_ORIGIN=http://localhost:3101 ffai-api
-docker run -d -p 3101:3001 ffai-web
+docker run -d -p 3101:3001 -e CLERK_SECRET_KEY=sk_test_... ffai-web   # from apps/web/.env.local
 curl http://localhost:3100/health   # {"status":"ok","info":{"database":"up"}}
 ```

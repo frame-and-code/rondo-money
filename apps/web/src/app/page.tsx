@@ -1,5 +1,6 @@
 'use client';
 
+import { UserButton } from '@clerk/nextjs';
 import { ThemeToggle } from '@ffai/ui/components/theme-toggle';
 import { Button } from '@ffai/ui/components/ui/button';
 import {
@@ -30,7 +31,7 @@ export default function HomePage() {
           <h1 className="text-2xl font-semibold">Fin Flow AI</h1>
           <p className="text-sm text-muted-foreground">{t('home.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <LocaleSwitcher />
           <ThemeToggle
             labels={{
@@ -40,6 +41,7 @@ export default function HomePage() {
               system: t('common.themeToggle.system'),
             }}
           />
+          <UserButton />
         </div>
       </header>
 

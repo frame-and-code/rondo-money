@@ -14,6 +14,8 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000
 
 export default defineConfig({
   testDir: './e2e',
+  // Clerk Testing Token for the whole run (auth.spec.ts drives real sign-in flows).
+  globalSetup: './e2e/global-setup.ts',
   // E2E state lives outside the process (servers, DB) — never let a worker's failure
   // artifacts interleave; keep the example harness single-worker until suites grow.
   fullyParallel: false,

@@ -1,40 +1,40 @@
 # @ffai/api
 
-Бэкенд Fin Flow AI на **NestJS (REST)** — каркас F0.4.
+Fin Flow AI backend on **NestJS (REST)** — skeleton F0.4.
 
-Сейчас здесь только healthcheck; доменные модули, единая точка мутаций и единая точка
-чтения (со скоупингом по `userId`/`budgetId`) добавляются в Фазах 1–2.
+For now there is only a healthcheck; domain modules, the single mutation point and the
+single read point (scoped by `userId`/`budgetId`) are added in Phases 1–2.
 
-## Эндпоинты
+## Endpoints
 
-- `GET /health` — проверяет соединение с БД (`SELECT 1` через Prisma). `200` если БД
-  доступна, `503` если нет.
+- `GET /health` — checks the DB connection (`SELECT 1` via Prisma). `200` if the DB
+  is reachable, `503` if not.
 
-`PrismaService` подключается к Postgres через driver adapter `@prisma/adapter-pg`
-(Prisma 7, Rust-free клиент); `DATABASE_URL` берётся из `ConfigService`.
+`PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
+(Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
 
-## Запуск
+## Running
 
 ```bash
-pnpm --filter @ffai/api dev     # nest start --watch (cвоё перекомпиляция через SWC)
+pnpm --filter @ffai/api dev     # nest start --watch (recompilation via SWC)
 pnpm --filter @ffai/api build   # nest build → dist/
 pnpm --filter @ffai/api start   # node dist/main.js
-pnpm --filter @ffai/api test    # jest (интеграционный тест healthcheck)
+pnpm --filter @ffai/api test    # jest (healthcheck integration test)
 ```
 
-`DATABASE_URL` берётся из корневого `.env` (см. `.env.example`); на Railway —
-из реальных переменных окружения. Порт — `PORT` (по умолчанию `3000`).
+`DATABASE_URL` comes from the root `.env` (see `.env.example`); on Railway —
+from real environment variables. Port — `PORT` (defaults to `3000`).
 
-CORS скоупится на origin браузерного клиента: `WEB_ORIGIN` (по умолчанию
-`http://localhost:3001`, где локально крутится `@ffai/web`). На Railway/prod задайте
-адрес задеплоенного веба — не хардкодьте.
+CORS is scoped to the browser client's origin: `WEB_ORIGIN` (defaults to
+`http://localhost:3001`, where `@ffai/web` runs locally). On Railway/prod set
+the deployed web address — don't hardcode it.
 
-## Тулинг (закрытые переносы из F0.2)
+## Tooling (carry-overs closed from F0.2)
 
-- **tsconfig:** поверх `@ffai/config/tsconfig/base.json` добавлены `experimentalDecorators`
-  / `emitDecoratorMetadata` и `module: nodenext` (резолвится как CommonJS — у пакета нет
-  `"type": "module"`). Реальную сборку делает SWC (`.swcrc`); `tsc` — только typecheck.
-- **Алиас `@/` в рантайме:** SWC переписывает `@/*` в относительные пути при сборке
-  (`jsc.baseUrl` + `jsc.paths`); в тестах — через `moduleNameMapper` Jest.
-- **Type-aware ESLint:** включён `@ffai/config/eslint/type-checked` с
-  `no-floating-promises` / `no-misused-promises` — критично для атомарных мутаций.
+- **tsconfig:** on top of `@ffai/config/tsconfig/base.json` we add `experimentalDecorators`
+  / `emitDecoratorMetadata` and `module: nodenext` (resolves as CommonJS — the package has no
+  `"type": "module"`). The actual build is done by SWC (`.swcrc`); `tsc` is typecheck only.
+- **`@/` alias at runtime:** SWC rewrites `@/*` into relative paths at build time
+  (`jsc.baseUrl` + `jsc.paths`); in tests — via Jest's `moduleNameMapper`.
+- **Type-aware ESLint:** `@ffai/config/eslint/type-checked` is enabled with
+  `no-floating-promises` / `no-misused-promises` — critical for atomic mutations.
