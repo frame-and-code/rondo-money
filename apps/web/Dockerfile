@@ -4,11 +4,13 @@
 # next.config.ts enables output: 'standalone' — the runner gets a self-contained
 # server.js with a minimal node_modules (Next tracing), no pnpm and no workspace.
 
-FROM node:24-slim AS base
+FROM node:26-slim AS base
 # No cache mount for the pnpm store — see the comment in apps/api/Dockerfile (Railway
 # requires a hardcoded service-id in the mount id).
 ENV COREPACK_HOME=/opt/corepack
-RUN corepack enable
+# Node 26 no longer ships corepack — install it from npm before enabling it (see the
+# comment in apps/api/Dockerfile).
+RUN npm install -g corepack@latest && corepack enable
 WORKDIR /app
 
 # ---- manifests: see the comment in apps/api/Dockerfile — the dependency layer
@@ -48,7 +50,7 @@ RUN [ -n "$NEXT_PUBLIC_API_URL" ] \
     && pnpm exec turbo run build --filter=@ffai/web
 
 # ---- runner: the standalone bundle, no pnpm/workspace at all.
-FROM node:24-slim AS runner
+FROM node:26-slim AS runner
 # HOSTNAME=0.0.0.0 — the standalone server must listen on all container interfaces.
 # Railway overrides PORT with its own value; 3001 is the fallback for local runs
 # (matches `next start -p 3001` from package.json).

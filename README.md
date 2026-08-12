@@ -7,7 +7,7 @@ Current stage: **Phase 0 → F0.8 (test harness)**. The remaining Phase 0 featur
 
 ## Requirements
 
-- Node.js >= 20 (22 recommended — see `.nvmrc`)
+- Node.js 26 (see `.nvmrc`; the same version runs in CI and in the Docker images)
 - pnpm 11 (`corepack enable` picks up the version from the `packageManager` field)
 - Docker (Desktop / Engine) — for the local DB
 
