@@ -16,10 +16,12 @@
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
     "dev": "turbo run dev",
+    "env:setup": "./setup-env.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @ffai/db run db:generate",
     "db:migrate": "pnpm --filter @ffai/db run db:migrate",
+    "db:deploy": "pnpm --filter @ffai/db run db:deploy",
     "prepare": "husky",
     "postinstall": "pnpm --filter @ffai/db run db:generate"
   },

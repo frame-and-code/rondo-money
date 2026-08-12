@@ -7,8 +7,6 @@ export const pl: Record<MessageKey, string> = {
   'common.themeToggle.system': 'Systemowy',
   'common.localeSwitcher.ariaLabel': 'Zmień język',
 
-  'auth.signIn': 'Zaloguj się',
-
   'home.subtitle': 'Szkielet aplikacji · Faza 0 (F0.6).',
   'home.demoTitle': 'Demo komponentów',
   'home.demoDescription': 'shadcn/ui + motyw Ocean Breeze',

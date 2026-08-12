@@ -13,8 +13,6 @@ export const ru = {
   'common.themeToggle.system': 'Системная',
   'common.localeSwitcher.ariaLabel': 'Сменить язык',
 
-  'auth.signIn': 'Войти',
-
   'home.subtitle': 'Каркас приложения · Фаза 0 (F0.6).',
   'home.demoTitle': 'Демо компонентов',
   'home.demoDescription': 'shadcn/ui + тема Ocean Breeze',

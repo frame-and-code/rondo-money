@@ -1,4 +1,4 @@
 # @ffai/types
 
-Общие DTO и доменные типы. Деньги — целые минорные единицы в BigInt
-(число минорных разрядов берётся из валюты по ISO 4217, не зашивается «2»).
+Shared DTOs and domain types. Money is integer minor units in BigInt
+(the number of minor digits comes from the currency per ISO 4217, not a hardcoded "2").

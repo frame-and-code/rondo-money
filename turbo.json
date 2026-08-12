@@ -1,11 +1,11 @@
 {
   "$schema": "https://v2-10-7.turborepo.dev/schema.json",
-  "//": "Strict env mode: turbo передаёт задачам только объявленные переменные. Локально конфиг добирается из .env-файлов, в CI (F0.9) — только из окружения, поэтому env-контракт задач объявлен здесь. CI — passthrough (не влияет на хеш кеша): на него завязан Playwright (forbidOnly, ретраи, репортер).",
+  "//": "Strict env mode: turbo passes only declared variables to tasks. Locally the config is filled in from .env files, in CI (F0.9) — from the environment only, so the tasks' env contract is declared here. CI is passthrough (doesn't affect the cache hash): Playwright depends on it (forbidOnly, retries, reporter).",
   "globalPassThroughEnv": ["CI"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": ["NEXT_PUBLIC_API_URL"]
+      "env": ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]
     },
     "lint": {},
     "typecheck": {
@@ -14,7 +14,13 @@
     "test": {
       "dependsOn": ["^build"],
       "cache": false,
-      "env": ["DATABASE_URL", "WEB_ORIGIN", "NEXT_PUBLIC_API_URL"]
+      "env": [
+        "DATABASE_URL",
+        "WEB_ORIGIN",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "CLERK_SECRET_KEY"
+      ]
     },
     "test:unit": {
       "dependsOn": ["^build"]
@@ -27,7 +33,13 @@
     "test:e2e": {
       "dependsOn": ["^build"],
       "cache": false,
-      "env": ["DATABASE_URL", "WEB_ORIGIN", "NEXT_PUBLIC_API_URL"]
+      "env": [
+        "DATABASE_URL",
+        "WEB_ORIGIN",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "CLERK_SECRET_KEY"
+      ]
     },
     "dev": {
       "cache": false,

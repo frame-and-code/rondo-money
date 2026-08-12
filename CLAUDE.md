@@ -1,5 +1,6 @@
 > ⛔ NEVER commit on your own. Only `git add`. `git commit` and `git push` are done by the user only.
-> If you are on the main branch, before starting a new feature, create a new branch from the main.
+> If you are on the main branch, before starting a new feature, create a new branch from the main
+> (naming — see Git workflow).
 
 # CLAUDE.md
 
@@ -8,6 +9,38 @@ Rules and context for Claude in the **Fin Flow AI** repository.
 ## Top rule
 
 Do not create commits. As you work, only `git add` the relevant files. The user commits and pushes themselves.
+
+## Language
+
+Everything that goes into git — code, code comments, docs, scripts, commit messages — is written in **English** (the project will be open-sourced). Some older files still carry Russian comments; do not imitate them — new and edited text is English. Chat with the user in their language (Russian).
+
+## Git workflow
+
+Branch names, commit messages and PR text describe **what changes for the app and why** —
+not which files were touched or how the code was rewritten. A reader who never opens the
+diff should still understand what this work does. Everything is in English (see Language).
+Claude drafts these; the user runs `commit` / `push` / opens the PR.
+
+- **Branch:** `F<phase>.<feature>-<what-it-does>` — the Notion ticket number plus a short
+  kebab-case description of what is being added or fixed.
+  ✅ `F1.1-add-clerk-to-frontend`, `F0.10-fix-railway-cache-mounts`
+  ❌ `feature/updates`, `F1.1`, `fix-layout-and-proxy`
+- **Commit:** Conventional Commits with the ticket as the scope —
+  `<type>(F<x.x>): <what changed, in behaviour terms>`. Types: `feat`, `fix`, `chore`,
+  `docs`, `refactor`, `test`, `build`, `ci`, `perf`. Describe the effect, not the edit.
+  ✅ `feat(F1.1): protect all routes and add a sign-in page`
+  ❌ `feat(F1.1): edit layout.tsx, proxy.ts and turbo.json`
+- **PR title:** the problem the PR solves, readable on its own in the PR list.
+  ✅ `F1.1: close the app to anonymous visitors and add Clerk sign-in`
+  ❌ `F1.1: Clerk changes`, `Update middleware and env files`
+- **PR description:** English, plain language, split into sections with bullet points,
+  detailed enough to review without reconstructing the reasoning from the diff:
+  - **What & why** — the problem and what the app does differently now.
+  - **Changes** — bullets, user-visible behaviour first, then supporting work
+    (config, CI, dependencies); say why each non-obvious one was needed.
+  - **Testing** — what was run and what it proves (including manual checks).
+  - **Notes / follow-ups** — anything the reviewer must do by hand (secrets, env
+    variables, dashboard settings) and deliberate gaps left for later.
 
 ## Project
 

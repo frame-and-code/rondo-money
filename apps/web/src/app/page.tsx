@@ -1,6 +1,6 @@
 'use client';
 
-import { Show, UserButton } from '@clerk/nextjs';
+import { UserButton } from '@clerk/nextjs';
 import { ThemeToggle } from '@ffai/ui/components/theme-toggle';
 import { Button } from '@ffai/ui/components/ui/button';
 import {
@@ -41,9 +41,7 @@ export default function HomePage() {
               system: t('common.themeToggle.system'),
             }}
           />
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
+          <UserButton />
         </div>
       </header>
 

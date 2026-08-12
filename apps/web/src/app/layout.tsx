@@ -1,11 +1,7 @@
-import { ClerkProvider, Show } from '@clerk/nextjs';
-import { shadcn } from '@clerk/ui/themes';
 import { ThemeProvider } from '@ffai/ui/components/theme-provider';
 import './globals.css';
-import { Card, CardContent, CardHeader } from '@ffai/ui/components/ui/card';
 
-import { LocaleSwitcher } from '@/components/locale-switcher';
-import { SignInButtonLocalized } from '@/components/sign-in-button';
+import { ClerkProviderLocalized } from '@/components/clerk-provider-localized';
 import { LocaleProvider } from '@/i18n/locale-context';
 
 import type { Metadata } from 'next';
@@ -23,34 +19,19 @@ export const metadata: Metadata = {
 // client paint. `suppressHydrationWarning` covers both: next-themes sets the theme
 // class via a pre-hydration inline script, and `LocaleProvider` sets `lang` in an
 // effect right after mount.
+// Route protection is NOT here: proxy.ts (clerkMiddleware + auth.protect) redirects
+// anonymous requests to /sign-in before any page renders (F1.1).
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru" suppressHydrationWarning>
       <body>
-        <ClerkProvider appearance={{ theme: shadcn }}>
-          <LocaleProvider>
+        <LocaleProvider>
+          <ClerkProviderLocalized>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <Show when="signed-in">{children}</Show>
-              <Show when="signed-out">
-                <div className="mx-auto flex max-w-xl flex-col gap-6 p-8">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex flex-row justify-between">
-                        <h1 className="text-2xl font-semibold">Fin Flow AI</h1>
-                        <LocaleSwitcher withLabel />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="w-full">
-                      <div className="flex flex-col">
-                        <SignInButtonLocalized />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </Show>
+              {children}
             </ThemeProvider>
-          </LocaleProvider>
-        </ClerkProvider>
+          </ClerkProviderLocalized>
+        </LocaleProvider>
       </body>
     </html>
   );
