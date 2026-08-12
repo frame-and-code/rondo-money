@@ -1,47 +1,51 @@
 version: 2
 
 updates:
-  # pnpm workspace: одной записи хватает на корневой манифест и все пакеты воркспейса —
-  # Dependabot читает pnpm-workspace.yaml сам.
-  - package-ecosystem: "npm"
-    directory: "/"
+  # pnpm workspace: one entry covers the root manifest and every workspace package —
+  # Dependabot reads pnpm-workspace.yaml itself. "npm" is the ecosystem value for the
+  # whole JS ecosystem (npm/pnpm/yarn); there is no "pnpm" value.
+  # cooldown mirrors the pnpm minimum-release-age policy: without it Dependabot would
+  # propose versions too fresh for `pnpm install --frozen-lockfile` to accept.
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     open-pull-requests-limit: 5
     commit-message:
-      prefix: "chore(deps)"
-      prefix-development: "chore(deps-dev)"
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
     cooldown:
       default-days: 7
     groups:
       prod-dependencies:
-        dependency-type: "production"
-        update-types: ["minor", "patch"]
+        dependency-type: 'production'
+        update-types: ['minor', 'patch']
       dev-dependencies:
-        dependency-type: "development"
-        update-types: ["minor", "patch"]
+        dependency-type: 'development'
+        update-types: ['minor', 'patch']
 
-  # Экшены в ci.yml запинены по SHA с комментарием-версией — Dependabot обновляет и то, и другое.
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  # Actions in ci.yml are pinned by SHA with a version comment — Dependabot updates both.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     open-pull-requests-limit: 3
     commit-message:
-      prefix: "chore(ci)"
+      prefix: 'chore(ci)'
     groups:
       actions:
-        patterns: ["*"]
+        patterns: ['*']
 
-  # Базовые образы node:24-slim в обоих Dockerfile.
-  - package-ecosystem: "docker"
+  # Base images (node:*-slim) in both Dockerfiles. Bumping them is a major runtime change:
+  # keep it in sync with `node-version` in ci.yml and .nvmrc.
+  - package-ecosystem: 'docker'
     directories:
-      - "/apps/api"
-      - "/apps/web"
+      - '/apps/api'
+      - '/apps/web'
     schedule:
-      interval: "monthly"
+      interval: 'monthly'
     open-pull-requests-limit: 2
     commit-message:
-      prefix: "chore(docker)"
+      prefix: 'chore(docker)'
