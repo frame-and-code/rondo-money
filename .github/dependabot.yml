@@ -1,0 +1,47 @@
+version: 2
+
+updates:
+  # pnpm workspace: одной записи хватает на корневой манифест и все пакеты воркспейса —
+  # Dependabot читает pnpm-workspace.yaml сам.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    cooldown:
+      default-days: 7
+    groups:
+      prod-dependencies:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+
+  # Экшены в ci.yml запинены по SHA с комментарием-версией — Dependabot обновляет и то, и другое.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Базовые образы node:24-slim в обоих Dockerfile.
+  - package-ecosystem: "docker"
+    directories:
+      - "/apps/api"
+      - "/apps/web"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "chore(docker)"
