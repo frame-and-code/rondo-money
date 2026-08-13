@@ -85,7 +85,17 @@ COPY --from=build /app/packages/db/dist packages/db/dist
 COPY --from=build /app/apps/api/dist apps/api/dist
 
 USER node
-# PORT is injected by Railway (main.ts reads process.env.PORT, fallback 3000);
-# EXPOSE hints the target port to Railway.
+# Railway injects PORT and the process must listen on whatever it says — main.ts reads
+# process.env.PORT and only falls back to 3000 for a local run.
+#
+# EXPOSE documents that local port. It does NOT configure Railway, despite what the comment
+# here used to claim: the platform routes to the target port recorded on the service domain,
+# which is taken from EXPOSE once, when the domain is first created, and drifts on its own
+# from then on. The two disagreed for a long time — the domain pointed at 3000 while the
+# container listened on the 8080 Railway had injected — and every external request to the
+# API answered 502 after a 30s proxy timeout, while the container's own healthcheck (which
+# uses the same injected PORT) stayed green and the logs showed a perfectly healthy Nest.
+# If this ever recurs, compare `railway logs` against the domain's targetPort; changing
+# EXPOSE alone will not move it.
 EXPOSE 3000
 CMD ["node", "apps/api/dist/main.js"]
