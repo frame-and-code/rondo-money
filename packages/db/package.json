@@ -27,8 +27,8 @@
   },
   "devDependencies": {
     "@ffai/config": "workspace:*",
-    "eslint": "^10.0.1",
-    "prettier": "^3.8.4",
+    "eslint": "^10.8.0",
+    "prettier": "^3.9.6",
     "typescript": "^6.0.3"
   }
 }
