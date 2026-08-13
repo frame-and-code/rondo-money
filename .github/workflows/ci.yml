@@ -1,6 +1,21 @@
-# F0.9 — CI gate: lint → typecheck → tests (unit → integration → e2e) on every PR.
-# One job = one required status check ("gate") for branch protection on main.
-# The step order is deliberately sequential — this is a gate, not a matrix.
+# F0.9 — CI gate. Every check that does not depend on another one runs as its own job, so
+# they all start at the same time; `gate` is the single status check that aggregates them
+# and is the one to require for branch protection on main.
+#
+# The jobs are independent by construction — none of them consumes another's output, so
+# there is nothing to order. What used to be one sequential job is now:
+#
+#   static       ─┐
+#   build        ─┤
+#   unit         ─┼─→ gate
+#   integration  ─┤
+#   preflight → e2e
+#
+# `preflight` is the one exception: it exists only to tell e2e whether the Clerk secrets are
+# readable from this run, because that cannot be asked from a job `if` directly.
+#
+# Each job reinstalls dependencies (a warm pnpm store cache makes that cheap) — that is the
+# price of running them in parallel, and it is far below the time saved.
 name: CI
 
 on:
@@ -20,53 +35,24 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  # Single source of the CI Postgres credentials: it configures the service container
-  # and DATABASE_URL is assembled from it (the Compose step below). Not a secret: the DB
-  # lives for minutes inside the runner and is unreachable from outside.
+  # Single source of the CI Postgres credentials: it configures the service containers
+  # and DATABASE_URL is assembled from it (the Compose step in each DB-backed job). Not a
+  # secret: the DB lives for minutes inside the runner and is unreachable from outside.
   POSTGRES_USER: ffai
   POSTGRES_PASSWORD: ffai_ci_secret
   POSTGRES_DB: ffai_ci
 
+# The setup steps below (checkout → pnpm → node → install) are repeated verbatim in every
+# job rather than extracted into a local composite action, deliberately: Dependabot's
+# github-actions ecosystem scans .github/workflows, so an action referenced from
+# .github/actions/ would keep its pinned SHA forever without anyone noticing.
 jobs:
-  gate:
+  static:
+    name: Static checks (lint · format · types)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    env:
-      # Are the Clerk dev-instance secrets available? GitHub hides secrets from fork PRs,
-      # and the `secrets` context is forbidden in a step `if` (allowed only in env/with —
-      # using it in `if` makes GitHub reject the whole workflow at parse time), so the
-      # answer is materialized here as a job-level boolean the E2E step can gate on.
-      # Job level, not workflow level: `secrets` is not allowed in workflow-level env either.
-      HAS_CLERK_KEYS: ${{ secrets.CLERK_SECRET_KEY != '' && secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY != '' }}
-
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: ${{ env.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ env.POSTGRES_DB }}
-        ports:
-          - 5432:5432
-        # The $-variables in health-cmd are expanded by the shell inside the container (docker CMD-SHELL),
-        # where POSTGRES_* are set via env above — no literals here.
-        options: >-
-          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    timeout-minutes: 15
 
     steps:
-      # Integration and e2e tests hit the Postgres service container (the docker-compose analog from F0.3).
-      # ConfigModule and prisma.config.ts read process.env — there are no .env files in CI.
-      # The env context is unavailable in workflow- and job-level env (see Context availability in the docs),
-      # so the URL is assembled in a step: the shell sees POSTGRES_* as regular environment.
-      - name: Compose DATABASE_URL
-        run: >-
-          echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?schema=public"
-          >> "$GITHUB_ENV"
-
       # Actions are pinned by commit SHA (a mutable tag can be retargeted); the comment is
       # the human-readable version — update both on a bump.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -94,8 +80,106 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+  build:
+    # Typecheck is not a substitute for this: `tsc --noEmit` only reads the sources, while
+    # `nest build` and `next build` also exercise the toolchain around them. A TypeScript 7
+    # bump passed the whole gate while leaving `apps/api` unbuildable (the Nest CLI needs the
+    # programmatic compiler API, which 7.0 does not ship) — nothing here noticed, because the
+    # only place that built the API was Playwright, and Playwright is skipped whenever the
+    # Clerk secrets are absent, which is exactly the case on every Dependabot pull request.
+    name: Build (all packages)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # No Clerk keys are passed on purpose: the production build must not depend on them, and
+      # this is the job that keeps it that way. `next build` prerenders the static routes
+      # without them; only serving a request needs a key (see the E2E job).
+      - name: Build
+        run: pnpm build
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Unit tests
         run: pnpm test:unit
+
+  integration:
+    name: Integration tests (Postgres)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        # The $-variables in health-cmd are expanded by the shell inside the container (docker CMD-SHELL),
+        # where POSTGRES_* are set via env above — no literals here.
+        options: >-
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      # The integration tests hit the Postgres service container (the docker-compose analog from F0.3).
+      # ConfigModule and prisma.config.ts read process.env — there are no .env files in CI.
+      # The env context is unavailable in workflow- and job-level env (see Context availability in the docs),
+      # so the URL is assembled in a step: the shell sees POSTGRES_* as regular environment.
+      - name: Compose DATABASE_URL
+        run: >-
+          echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?schema=public"
+          >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Apply migrations
         run: pnpm --filter @ffai/db run db:deploy
@@ -103,19 +187,90 @@ jobs:
       - name: Integration tests
         run: pnpm test:integration
 
+  preflight:
+    # Answers one question for the e2e job: are the Clerk dev-instance secrets readable from
+    # this run? GitHub hides Actions secrets from fork pull requests and from Dependabot-triggered
+    # runs, and the `secrets` context is available in neither a job `if` nor a step `if` — only
+    # in `env`/`with`. So the answer is materialized here, as a job output e2e can branch on.
+    # The alternative (repeating `if: env.HAS_CLERK_KEYS == 'true'` on every step of e2e) makes
+    # the job report success while silently doing nothing, which is what hid a broken build
+    # from us in the first place.
+    name: Preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      has_clerk_keys: ${{ steps.probe.outputs.has_clerk_keys }}
+
+    steps:
+      - id: probe
+        env:
+          HAS_CLERK_KEYS: ${{ secrets.CLERK_SECRET_KEY != '' && secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY != '' }}
+        run: |
+          echo "has_clerk_keys=${HAS_CLERK_KEYS}" >> "$GITHUB_OUTPUT"
+          if [ "${HAS_CLERK_KEYS}" != 'true' ]; then
+            {
+              echo "### E2E will be skipped"
+              echo
+              echo "The Clerk dev-instance keys are not exposed to this run (a fork pull request,"
+              echo "or a Dependabot-triggered one), and the web app cannot serve a single request"
+              echo "without them. Every other job in the gate still runs."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  e2e:
+    name: E2E tests (Playwright)
+    needs: preflight
+    if: needs.preflight.outputs.has_clerk_keys == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      # Playwright starts the api and web servers itself (see apps/web/playwright.config.ts),
+      # and the api talks to this Postgres — so this job needs the URL and the schema too.
+      - name: Compose DATABASE_URL
+        run: >-
+          echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?schema=public"
+          >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm --filter @ffai/db run db:deploy
+
       - name: Install Playwright Chromium
         run: pnpm --filter @ffai/web exec playwright install --with-deps chromium
 
-      # Playwright starts the servers (api + web) itself — see apps/web/playwright.config.ts
-      # Clerk (F1.1): dev-instance keys come from GitHub secrets (Settings → Secrets →
-      # Actions); without them the web server can't serve at all (clerkMiddleware throws on
-      # every request, Clerk's keyless mode is disabled in CI). GitHub does not expose
-      # secrets to pull requests from forks, so the step is skipped there instead of
-      # failing the whole gate deep inside Playwright global setup. The variables are
-      # declared in the test:e2e task env in turbo.json — otherwise turbo strict env mode
-      # strips them.
+      # The Clerk variables are declared in the test:e2e task env in turbo.json — otherwise
+      # turbo strict env mode strips them.
       - name: E2E tests
-        if: env.HAS_CLERK_KEYS == 'true'
         run: pnpm test:e2e
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
@@ -128,5 +283,40 @@ jobs:
         with:
           name: playwright-traces
           path: apps/web/test-results
-          retention-days: 7
-          if-no-files-found: ignore
+
+  gate:
+    # The one check to require on main. `always()` so it still reports when something above
+    # went red — without it a failed dependency would leave the gate skipped, which reads as
+    # "not run" rather than "failed".
+    # Deliberately left without a display name: the status check keeps the exact id "gate"
+    # it has today, so anything already pointing at that name keeps working.
+    if: always()
+    needs: [preflight, static, build, unit, integration, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Summarise the run and fail on any red job
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "| Job | Result |"
+            echo "| --- | ------ |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          failed=0
+          while IFS=$'\t' read -r job result; do
+            echo "| \`${job}\` | ${result} |" >> "$GITHUB_STEP_SUMMARY"
+            case "${result}" in
+              success | skipped) ;;
+              *)
+                echo "::error::${job} finished with: ${result}"
+                failed=1
+                ;;
+            esac
+          done < <(echo "${RESULTS}" | jq -r 'to_entries[] | "\(.key)\t\(.value.result)"')
+
+          exit "${failed}"
