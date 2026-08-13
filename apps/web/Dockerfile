@@ -53,7 +53,9 @@ RUN [ -n "$NEXT_PUBLIC_API_URL" ] \
 FROM node:26-slim AS runner
 # HOSTNAME=0.0.0.0 — the standalone server must listen on all container interfaces.
 # Railway overrides PORT with its own value; 3001 is the fallback for local runs
-# (matches `next start -p 3001` from package.json).
+# (matches `next start -p 3001` from package.json). The EXPOSE below documents that local
+# port only — it does not decide where Railway routes; see the comment in
+# apps/api/Dockerfile for what that cost us.
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3001
