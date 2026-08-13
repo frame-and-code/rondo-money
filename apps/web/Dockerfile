@@ -60,8 +60,12 @@ ENV NODE_ENV=production \
 # Docker-native healthcheck — for local runs and linters (Checkov CKV_DOCKER_2).
 # Railway ignores it: it has its own healthcheckPath from railway.json. No curl/wget
 # in slim — we probe with Node's native fetch.
+# Same path as railway.json, and `redirect: 'manual'` on purpose: this probe used to hit
+# `/` and treat the result as healthy, because fetch follows redirects and Clerk's 307 to
+# the sign-in page ends at a 200. The container called itself healthy while Railway, which
+# does not follow redirects, failed every deploy.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/api/health',{redirect:'manual'}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 WORKDIR /app
 
 # In a monorepo, standalone mirrors the repo structure: server.js lives in apps/web/.

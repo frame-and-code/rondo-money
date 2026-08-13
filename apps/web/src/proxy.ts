@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-import { SIGN_IN_URL } from '@/lib/auth';
+import { HEALTH_URL, SIGN_IN_URL } from '@/lib/auth';
 
 // clerkMiddleware() alone only attaches auth context — it protects nothing (F1.1 step 5).
 // auth.protect() below is the actual gate: unauthenticated requests to any non-public
@@ -9,7 +9,11 @@ import { SIGN_IN_URL } from '@/lib/auth';
 // the redirect target derive from it, so they cannot drift apart.
 // Sign-up is deliberately not a route: users sign in with Google/email, and OAuth
 // auto-creates the account.
-const isPublicRoute = createRouteMatcher([`${SIGN_IN_URL}(.*)`, '/__clerk(.*)']);
+// The health route is public for the platform's benefit: Railway's healthcheck is
+// anonymous, does not follow redirects and accepts only 2xx, so protecting it would make
+// every deploy fail its healthcheck (which is exactly what happened between F1.1 and this
+// change — the probe still pointed at `/`).
+const isPublicRoute = createRouteMatcher([`${SIGN_IN_URL}(.*)`, HEALTH_URL, '/__clerk(.*)']);
 
 export default clerkMiddleware(
   async (auth, req) => {
