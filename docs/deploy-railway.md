@@ -50,6 +50,34 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
    Deploy) — Railway waits for a green gate (see [ci.md](ci.md)) and only then
    deploys; a red `main` never reaches dev.
 
+## Custom domains
+
+A generated `*.up.railway.app` address works, but it changes whenever a service or
+environment is renamed, and it leaks the environment name into the URL. Custom domains are
+added per service (Settings → Networking → Custom Domain, or `railway domain <name>`);
+Railway then prints a `CNAME` target plus a `TXT` record used to verify ownership, both of
+which go into the DNS zone of the domain. Certificates are issued automatically once those
+records resolve — expect a few minutes between "domain is ACTIVE" and a certificate that
+actually matches the name.
+
+The naming scheme keeps the production names free while dev is the only live environment:
+
+| Environment     | web                           | api                |
+| --------------- | ----------------------------- | ------------------ |
+| dev             | `dev.<domain>`                | `api.dev.<domain>` |
+| prod (Phase 10) | `<domain>` and `app.<domain>` | `api.<domain>`     |
+
+Giving dev its own subtree matters because dev redeploys on every green commit to `main`:
+a production name pointing at that environment would promise stability the environment does
+not have.
+
+Two gotchas, both of which look like "the frontend cannot reach the API":
+
+- `WEB_ORIGIN` must be the **exact** origin, scheme included (`https://dev.<domain>`), since
+  CORS compares it verbatim;
+- `NEXT_PUBLIC_API_URL` is a build arg, so pointing it at a new domain needs a **rebuild** —
+  redeploying the existing image keeps the old value baked in.
+
 ## Environment variables (dev)
 
 | Service | Variable                            | Value                                   | When it applies               |
