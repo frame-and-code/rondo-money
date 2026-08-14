@@ -4,12 +4,14 @@
 
 Use GitHub's **private vulnerability reporting**: open the repository's **Security** tab →
 **Advisories** → **Report a vulnerability**, or go straight to
-<https://github.com/yauhen-brouka/fin-flow/security/advisories/new>. It reaches the
+<https://github.com/frame-and-code/rondo-money/security/advisories/new>. It reaches the
 maintainer privately, and the discussion stays out of public view until a fix exists.
 
 (The link is spelled out in full on purpose: GitHub renders this file both as a file and as
 the repository's security policy page, and a repository-relative link does not survive
-both.)
+both. It points at the address the repository has once it is public — until the move to
+that organisation happens, the link leads nowhere, and nobody outside can read this file
+anyway.)
 
 Please do not open a public issue for a security problem. Issues are disabled on this
 repository anyway — private reports are the only channel that is watched.
