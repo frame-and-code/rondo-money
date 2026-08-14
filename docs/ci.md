@@ -11,7 +11,7 @@ a single `gate` job, steps run strictly in sequence — a red step fails the who
   of running things — if the gate is red, the same failure reproduces locally.
 - **Postgres** runs as a service container (`postgres:18` — the same image as in
   `docker-compose.yml`); migrations run before integration:
-  `pnpm --filter @ffai/db run db:deploy` (`prisma migrate deploy`).
+  `pnpm --filter @rondo/db run db:deploy` (`prisma migrate deploy`).
 - DB credentials are declared once in the workflow env (`POSTGRES_*`): they configure
   the service container, and `DATABASE_URL` is assembled from them in the first step
   (into `$GITHUB_ENV`). There are no `.env` files in CI — `ConfigModule` (api) and

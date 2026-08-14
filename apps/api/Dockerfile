@@ -1,4 +1,4 @@
-# F0.10 — production image for @ffai/api (NestJS) on Railway. Build context is the repo
+# F0.10 — production image for @rondo/api (NestJS) on Railway. Build context is the repo
 # root (pnpm-workspace); the Dockerfile path is set in apps/api/railway.json.
 #
 # Stages: manifests (package.json files only — the dependency layer survives code edits) →
@@ -44,21 +44,21 @@ COPY packages/ui/package.json packages/ui/
 
 # ---- build: all dependencies + build of api and its workspace dependencies.
 # --ignore-scripts: postinstall (prisma generate) would fail on this layer — no schema yet;
-# generate is run by the @ffai/db build itself (see its package.json). pnpm rebuild after
+# generate is run by the @rondo/db build itself (see its package.json). pnpm rebuild after
 # copying the sources picks up the allowed native scripts (allowBuilds).
 FROM manifests AS build
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN pnpm --filter @ffai/api... rebuild && pnpm exec turbo run build --filter=@ffai/api
+RUN pnpm --filter @rondo/api... rebuild && pnpm exec turbo run build --filter=@rondo/api
 # The prod install is not run here — the separate stage below is cached independently.
 
 # ---- prod-deps: runtime dependencies only, for api and its workspace graph
-# (incl. prisma CLI and dotenv — they live in @ffai/db dependencies for pre-deploy migrations).
+# (incl. prisma CLI and dotenv — they live in @rondo/db dependencies for pre-deploy migrations).
 # rebuild picks up the postinstall scripts cut off by --ignore-scripts: @prisma/engines
 # downloads the migration engine — it must land in the image, the runtime doesn't write it.
 FROM manifests AS prod-deps
-RUN pnpm install --prod --frozen-lockfile --ignore-scripts --filter @ffai/api... \
-    && pnpm --filter @ffai/api... rebuild
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts --filter @rondo/api... \
+    && pnpm --filter @rondo/api... rebuild
 
 # ---- runner: the workspace node_modules layout is preserved (pnpm symlinks are relative),
 # pre-deploy runs prisma from packages/db.

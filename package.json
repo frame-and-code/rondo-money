@@ -1,9 +1,10 @@
 {
-  "name": "ffai",
+  "name": "rondo-money",
   "version": "0.0.0",
+  "license": "AGPL-3.0-only",
   "private": true,
-  "description": "Fin Flow AI — zero-based budgeting app. Monorepo on Turborepo + pnpm.",
-  "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72",
+  "description": "Rondo Money — zero-based budgeting app. Monorepo on Turborepo + pnpm.",
+  "packageManager": "pnpm@11.21.0",
   "engines": {
     "node": ">=26"
   },
@@ -19,11 +20,11 @@
     "env:setup": "./setup-env.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:generate": "pnpm --filter @ffai/db run db:generate",
-    "db:migrate": "pnpm --filter @ffai/db run db:migrate",
-    "db:deploy": "pnpm --filter @ffai/db run db:deploy",
+    "db:generate": "pnpm --filter @rondo/db run db:generate",
+    "db:migrate": "pnpm --filter @rondo/db run db:migrate",
+    "db:deploy": "pnpm --filter @rondo/db run db:deploy",
     "prepare": "husky",
-    "postinstall": "pnpm --filter @ffai/db run db:generate"
+    "postinstall": "pnpm --filter @rondo/db run db:generate"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
@@ -33,7 +34,7 @@
     "*.{json,jsonc,md,mdx,yml,yaml,css}": "prettier --write"
   },
   "devDependencies": {
-    "@ffai/config": "workspace:*",
+    "@rondo/config": "workspace:*",
     "eslint": "^10.8.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.3.0",

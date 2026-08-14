@@ -20,13 +20,13 @@ pnpm test:integration   # integration only (needs Postgres)
 pnpm test:e2e           # e2e only (needs Postgres; Playwright starts the servers itself)
 ```
 
-The same, targeted: `pnpm --filter @ffai/api test:integration` etc.
+The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
 
 ### Prerequisites
 
 - **Integration and e2e** hit the local Postgres from F0.3: `docker compose up -d`
   (+ `pnpm db:migrate` if new migrations appeared).
-- **E2E, once**: download the browser — `pnpm --filter @ffai/web exec playwright install chromium`.
+- **E2E, once**: download the browser — `pnpm --filter @rondo/web exec playwright install chromium`.
 - E2E builds and starts api (`node dist/main.js`) and web (`next dev`) itself; servers
   already running locally are reused (`reuseExistingServer`).
 - **E2E needs the Clerk keys** (F1.1) in `apps/web/.env.local` — `pnpm env:setup`;
@@ -74,5 +74,5 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
 - Test files must be in the `include` of the corresponding `tsconfig.json` — otherwise
   `typecheck` and type-aware lint (`no-floating-promises` in api) won't see them.
 - Jest globals (`describe` / `it` / `expect`) are registered for test files in the shared
-  ESLint config (`@ffai/config/eslint`); in Playwright specs, `test`/`expect` are imported.
+  ESLint config (`@rondo/config/eslint`); in Playwright specs, `test`/`expect` are imported.
 - Turbo doesn't cache integration and e2e (external state — the DB); the unit level is cached.

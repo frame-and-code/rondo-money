@@ -1,5 +1,5 @@
 /**
- * @ffai/db — Prisma client, schema, and migrations.
+ * @rondo/db — Prisma client, schema, and migrations.
  *
  * Re-exports the generated Prisma 7 client (Rust-free, generated as TypeScript). The
  * package is consumed as types from source and at runtime from the compiled `dist`

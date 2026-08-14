@@ -1,5 +1,5 @@
 /**
- * Jest for @ffai/types — the unit level of the F0.8 harness.
+ * Jest for @rondo/types — the unit level of the F0.8 harness.
  * Pure domain logic, so plain node environment; SWC transforms TS.
  *
  * @type {import('jest').Config}
@@ -16,6 +16,6 @@ export default {
   moduleNameMapper: {
     // Jest doesn't implement Node's package self-reference resolution, so tests can
     // import the package by its public name (as consumers do) — map it by hand.
-    '^@ffai/types$': '<rootDir>/src/index.ts',
+    '^@rondo/types$': '<rootDir>/src/index.ts',
   },
 };

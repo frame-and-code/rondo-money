@@ -1,4 +1,4 @@
-import { parseMoney, serializeMoney } from '@ffai/types';
+import { parseMoney, serializeMoney } from '@rondo/types';
 import fc from 'fast-check';
 
 // Covers the money convention (money is bigint minor units, string on the wire).

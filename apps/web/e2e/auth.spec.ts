@@ -30,7 +30,7 @@ test('signing in shows the app shell; signing out returns to sign-in', async ({ 
   });
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Fin Flow AI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Rondo Money' })).toBeVisible();
   // The demo card is rendered by the protected home page — proof the shell is real,
   // not a lookalike heading on a public screen.
   await expect(page.getByText(API_URL)).toBeVisible();

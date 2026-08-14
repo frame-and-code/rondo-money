@@ -29,9 +29,9 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      // Build the API and its workspace deps (@ffai/db needs its tsc emit), then run
+      // Build the API and its workspace deps (@rondo/db needs its tsc emit), then run
       // the compiled server — steadier under test than `nest start --watch`.
-      command: 'pnpm --filter @ffai/api... build && pnpm --filter @ffai/api start',
+      command: 'pnpm --filter @rondo/api... build && pnpm --filter @rondo/api start',
       url: `${API_URL}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

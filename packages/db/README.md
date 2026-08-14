@@ -1,4 +1,4 @@
-# @ffai/db
+# @rondo/db
 
 Data layer: Prisma schema, migrations and the generated client — skeleton F0.4 (Prisma 7).
 
@@ -23,11 +23,11 @@ it lives in `prisma.config.ts` and is only needed for Migrate.
 ## Scripts
 
 ```bash
-pnpm --filter @ffai/db build         # prisma generate + tsc → dist
-pnpm --filter @ffai/db db:generate   # prisma generate
-pnpm --filter @ffai/db db:migrate    # prisma migrate dev (requires a running Postgres)
-pnpm --filter @ffai/db db:deploy     # prisma migrate deploy (prod)
-pnpm --filter @ffai/db db:studio     # prisma studio
+pnpm --filter @rondo/db build         # prisma generate + tsc → dist
+pnpm --filter @rondo/db db:generate   # prisma generate
+pnpm --filter @rondo/db db:migrate    # prisma migrate dev (requires a running Postgres)
+pnpm --filter @rondo/db db:deploy     # prisma migrate deploy (prod)
+pnpm --filter @rondo/db db:studio     # prisma studio
 ```
 
 `DATABASE_URL` is loaded from the root `.env` directly in `prisma.config.ts` (see

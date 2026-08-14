@@ -1,6 +1,7 @@
 {
-  "name": "@ffai/ui",
+  "name": "@rondo/ui",
   "version": "0.0.0",
+  "license": "AGPL-3.0-only",
   "private": true,
   "sideEffects": false,
   "exports": {
@@ -9,10 +10,10 @@
     "./hooks/*": "./src/hooks/*.ts"
   },
   "scripts": {
-    "build": "echo \"@ffai/ui: no build step — consumed as source via Next transpilePackages\"",
+    "build": "echo \"@rondo/ui: no build step — consumed as source via Next transpilePackages\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"@ffai/ui: no tests yet — components are covered by @ffai/web unit tests (see docs/testing.md)\""
+    "test": "echo \"@rondo/ui: no tests yet — components are covered by @rondo/web unit tests (see docs/testing.md)\""
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -27,7 +28,7 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@ffai/config": "workspace:*",
+    "@rondo/config": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "eslint": "^10.8.0",

@@ -1,4 +1,4 @@
-// @ffai/config/prettier — single source of truth for formatting (F0.2).
+// @rondo/config/prettier — single source of truth for formatting (F0.2).
 // The repo root re-exports this; Prettier then applies it to every workspace.
 /** @type {import("prettier").Config} */
 export default {

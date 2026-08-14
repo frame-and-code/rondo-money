@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "@ffai/config base",
+  "display": "@rondo/config base",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],

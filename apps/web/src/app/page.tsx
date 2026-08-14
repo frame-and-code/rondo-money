@@ -1,18 +1,18 @@
 'use client';
 
 import { UserButton } from '@clerk/nextjs';
-import { ThemeToggle } from '@ffai/ui/components/theme-toggle';
-import { Button } from '@ffai/ui/components/ui/button';
+import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
+import { Button } from '@rondo/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@ffai/ui/components/ui/card';
-import { Input } from '@ffai/ui/components/ui/input';
-import { Label } from '@ffai/ui/components/ui/label';
-import { Separator } from '@ffai/ui/components/ui/separator';
+} from '@rondo/ui/components/ui/card';
+import { Input } from '@rondo/ui/components/ui/input';
+import { Label } from '@rondo/ui/components/ui/label';
+import { Separator } from '@rondo/ui/components/ui/separator';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { useTranslations } from '@/i18n/locale-context';
@@ -28,7 +28,7 @@ export default function HomePage() {
     <main className="mx-auto flex max-w-xl flex-col gap-6 p-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Fin Flow AI</h1>
+          <h1 className="text-2xl font-semibold">Rondo Money</h1>
           <p className="text-sm text-muted-foreground">{t('home.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">

@@ -14,10 +14,10 @@
   "rtl": false,
   "aliases": {
     "components": "@/components",
-    "utils": "@ffai/ui/lib/utils",
-    "ui": "@ffai/ui/components/ui",
-    "lib": "@ffai/ui/lib",
-    "hooks": "@ffai/ui/hooks"
+    "utils": "@rondo/ui/lib/utils",
+    "ui": "@rondo/ui/components/ui",
+    "lib": "@rondo/ui/lib",
+    "hooks": "@rondo/ui/hooks"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

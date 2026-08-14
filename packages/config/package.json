@@ -1,8 +1,9 @@
 {
-  "name": "@ffai/config",
+  "name": "@rondo/config",
   "version": "0.0.0",
+  "license": "AGPL-3.0-only",
   "private": true,
-  "description": "Shared eslint / tsconfig / prettier for Fin Flow AI (F0.2).",
+  "description": "Shared eslint / tsconfig / prettier for Rondo Money (F0.2).",
   "type": "module",
   "exports": {
     "./eslint": "./eslint/base.mjs",
@@ -17,7 +18,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "test": "echo \"@ffai/config: no tests (static configs only)\""
+    "test": "echo \"@rondo/config: no tests (static configs only)\""
   },
   "dependencies": {
     "@eslint/js": "^10.0.1",

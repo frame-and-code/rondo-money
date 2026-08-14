@@ -1,6 +1,7 @@
 {
-  "name": "@ffai/db",
+  "name": "@rondo/db",
   "version": "0.0.0",
+  "license": "AGPL-3.0-only",
   "private": true,
   "main": "./dist/index.js",
   "types": "./src/index.ts",
@@ -18,7 +19,7 @@
     "db:studio": "prisma studio",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"@ffai/db: no tests yet — Prisma ↔ Postgres is covered by @ffai/api integration tests (see docs/testing.md)\""
+    "test": "echo \"@rondo/db: no tests yet — Prisma ↔ Postgres is covered by @rondo/api integration tests (see docs/testing.md)\""
   },
   "dependencies": {
     "@prisma/client": "^7.9.1",
@@ -26,7 +27,7 @@
     "prisma": "^7.9.1"
   },
   "devDependencies": {
-    "@ffai/config": "workspace:*",
+    "@rondo/config": "workspace:*",
     "eslint": "^10.8.0",
     "prettier": "^3.9.6",
     "typescript": "^6.0.3"

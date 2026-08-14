@@ -1,0 +1,37 @@
+# F1.10 — the project does not accept contributions yet (see CONTRIBUTING.md), so every
+# pull request is answered politely and closed instead of being left to rot unreviewed.
+#
+# `pull_request_target` rather than `pull_request`: a pull request opened from a fork gets
+# a read-only token under `pull_request`, which cannot comment or close. The usual danger
+# of `pull_request_target` is that it runs with repository write access *and* can be made
+# to execute code from the fork — this job never checks the pull request out and never
+# runs anything from it, so there is nothing for a contributor's branch to hijack.
+name: Close pull requests
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      # gh is preinstalled on GitHub-hosted runners, so this needs no third-party action.
+      - name: Explain and close
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR" --repo "$REPO" --body \
+          "Thank you for taking the time to write this — and sorry for the automated reply.
+
+          **Rondo Money is not accepting contributions yet**, so this pull request is being closed unreviewed. It is not a judgement about the change itself; the project has no agreed contribution terms yet, and accepting a patch before those exist would close options that cannot be reopened later. The reasoning is in [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md).
+
+          Your work is not wasted: the AGPL lets you keep it in a fork, and you are welcome to run it.
+
+          One exception — if this fixes a **security** problem, please report it privately through the [Security tab](../security/advisories/new) instead of a pull request. That channel is watched. See [SECURITY.md](../blob/main/SECURITY.md)."
+          gh pr close "$PR" --repo "$REPO"

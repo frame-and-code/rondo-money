@@ -1,7 +1,7 @@
 {
   // F0.2 carry-over (closed in F0.6): components are TSX, so layer jsx + DOM libs on
   // top of the shared base (which targets plain TS/node and keeps jsx unset).
-  "extends": "@ffai/config/tsconfig/base.json",
+  "extends": "@rondo/config/tsconfig/base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ES2022"],

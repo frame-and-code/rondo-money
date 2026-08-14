@@ -1,5 +1,5 @@
-import { ThemeProvider } from '@ffai/ui/components/theme-provider';
-import { ThemeToggle } from '@ffai/ui/components/theme-toggle';
+import { ThemeProvider } from '@rondo/ui/components/theme-provider';
+import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 // Here we cover the actual toggle behaviour: picking a theme flips the `dark` class
 // that Tailwind's `@custom-variant dark` selector relies on.
 //
-// Labels are passed as a prop (F0.7): `@ffai/ui` has no i18n mechanism of its own, so
+// Labels are passed as a prop (F0.7): `@rondo/ui` has no i18n mechanism of its own, so
 // the consuming app supplies translated strings — here, fixed RU labels for the test.
 const labels = {
   trigger: 'Переключить тему',

@@ -1,5 +1,5 @@
 /**
- * Jest for @ffai/api — unit level of the F0.8 harness (no DB, runs anywhere).
+ * Jest for @rondo/api — unit level of the F0.8 harness (no DB, runs anywhere).
  * Integration tests (API ↔ the F0.3 Postgres) live in `*.integration.spec.ts` and run
  * via jest.integration.config.mjs. SWC transforms TS — same decorators + metadata
  * config as the build (.swcrc).
@@ -17,9 +17,9 @@ export const baseConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  // @ffai/types ships as TS source, so let it through the transform; the generated
-  // @ffai/db client is already JS and stays ignored.
-  transformIgnorePatterns: ['/node_modules/(?!@ffai/types)'],
+  // @rondo/types ships as TS source, so let it through the transform; the generated
+  // @rondo/db client is already JS and stays ignored.
+  transformIgnorePatterns: ['/node_modules/(?!@rondo/types)'],
   setupFiles: ['reflect-metadata'],
 };
 

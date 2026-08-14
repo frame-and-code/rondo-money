@@ -3,7 +3,7 @@
 @import 'shadcn/tailwind.css';
 @import '@clerk/themes/shadcn.css';
 
-/* @ffai/ui lives outside this app's own tree — Tailwind only auto-scans apps/web,
+/* @rondo/ui lives outside this app's own tree — Tailwind only auto-scans apps/web,
    so its class names need to be pointed out explicitly. */
 @source "../../../../packages/ui/src/**/*.{ts,tsx}";
 

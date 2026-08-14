@@ -3,9 +3,9 @@ services:
     image: postgres:18
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ffai
-      POSTGRES_PASSWORD: ffai_dev_secret
-      POSTGRES_DB: ffai_dev
+      POSTGRES_USER: rondo
+      POSTGRES_PASSWORD: rondo_dev_secret
+      POSTGRES_DB: rondo_dev
     ports:
       - '127.0.0.1:5432:5432'
     volumes:

@@ -13,7 +13,7 @@ describe('start page', () => {
         <HomePage />
       </LocaleProvider>,
     );
-    expect(screen.getByRole('heading', { name: 'Fin Flow AI' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Rondo Money' })).toBeInTheDocument();
   });
 
   it('shows the configured API base URL', () => {

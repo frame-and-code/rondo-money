@@ -5,7 +5,7 @@
 
 # CLAUDE.md
 
-Rules and context for Claude in the **Fin Flow AI** repository.
+Rules and context for Claude in the **Rondo Money** repository.
 
 ## Top rule
 
@@ -47,7 +47,7 @@ Claude drafts them; the actual `commit` / `push` / PR happens when the user asks
 
 ## Project
 
-Fin Flow AI — a zero-based budgeting app (YNAB-style). Monorepo on **Turborepo + pnpm**.
+Rondo Money — a zero-based budgeting app (YNAB-style). Monorepo on **Turborepo + pnpm**.
 Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — mirror, ADR-001
 (a change log instead of event sourcing), and the "Development Plan v1 (High-Level)".
 

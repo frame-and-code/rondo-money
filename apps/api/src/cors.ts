@@ -2,7 +2,7 @@ import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 /**
- * Fallback web origin for local dev, where `@ffai/web` runs on :3001 (the API is on :3000).
+ * Fallback web origin for local dev, where `@rondo/web` runs on :3001 (the API is on :3000).
  * On Railway/prod `WEB_ORIGIN` must be set to the deployed web URL — never hardcode it here.
  */
 export const DEFAULT_WEB_ORIGIN = 'http://localhost:3001';
