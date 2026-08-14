@@ -29,6 +29,12 @@ The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
 - **E2E, once**: download the browser — `pnpm --filter @rondo/web exec playwright install chromium`.
 - E2E builds and starts api (`node dist/main.js`) and web (`next dev`) itself; servers
   already running locally are reused (`reuseExistingServer`).
+- ⚠️ Because e2e runs `next dev`, Next rewrites `apps/web/next-env.d.ts` to its dev variant
+  (`./.next/dev/types/…`). The committed file must stay on the build variant
+  (`./.next/types/…`) — that is what CI and `next build` produce, and the dev paths do not
+  exist there, which silently disables typed-route checking. After a local e2e run the file
+  shows up as modified: discard it (`git checkout -- apps/web/next-env.d.ts`) instead of
+  sweeping it into a commit with `git add -A`.
 - **E2E needs the Clerk keys** (F1.1) in `apps/web/.env.local` — `pnpm env:setup`;
   Playwright loads that file itself (`@next/env` in `e2e/global-setup.ts`). Without the
   keys the auth scenarios are skipped locally, while **in CI their absence fails the

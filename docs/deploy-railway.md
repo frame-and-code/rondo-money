@@ -28,7 +28,9 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
 
 ## One-time project setup in Railway
 
-1. **New Project** → `rondo-dev`; inside — **New → Database → PostgreSQL**.
+1. **New Project** → `rondo-money` (the live one is named after the product; its
+   environment is `development`, and production gets its own in Phase 10); inside —
+   **New → Database → PostgreSQL**.
 2. **New → GitHub Repo** → this repository, service `api`:
    - Root Directory `/`, Branch `main`;
    - Settings → **Config file path**: `apps/api/railway.json`;

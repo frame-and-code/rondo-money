@@ -15,7 +15,7 @@ never on your own initiative.
 
 ## Language
 
-Everything that goes into git — code, code comments, docs, scripts, commit messages — is written in **English** (the project will be open-sourced). Some older files still carry Russian comments; do not imitate them — new and edited text is English. Chat with the user in their language (Russian).
+Everything that goes into git — code, code comments, docs, scripts, commit messages — is written in **English** (the project is open source, so anyone may read it). Some older files still carry Russian comments; do not imitate them — new and edited text is English. Chat with the user in their language (Russian).
 
 ## Git workflow
 
@@ -80,6 +80,6 @@ Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — m
 
 ## Process
 
-We work feature by feature from "Plan v1". Current phase — 0 (F0.1–F0.10). Don't go beyond the scope
-of the current feature — don't pull in work from future F0.x. When in doubt, check against the
-PRD (RU, source of truth) and ADR-001.
+We work feature by feature from "Plan v1". Current phase — 1 (F1.1–F1.10); phase 0 is done.
+Don't go beyond the scope of the current feature — don't pull in work from later features.
+When in doubt, check against the PRD (RU, source of truth) and ADR-001.

@@ -112,6 +112,15 @@ docker compose down    # stop (data persists in the volume)
 The image version (`postgres:18`) matches the deployment. Data lives in a Docker volume
 and survives container restarts.
 
+The credentials in `.env.example` are applied by Postgres **only when it initialises an
+empty data directory**. If you ran an earlier version of this project, the volume still
+holds the old role and you will get `password authentication failed` with no further hint.
+Recreate it once — the local database holds nothing but test data:
+
+```bash
+docker compose down -v && docker compose up -d && pnpm db:migrate
+```
+
 ```bash
 pnpm db:generate             # generate the Prisma client (also on postinstall)
 pnpm db:migrate              # apply migrations to the local DB (Postgres must be running)
