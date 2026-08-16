@@ -36,7 +36,13 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
    - Settings → **Config file path**: `apps/api/railway.json`;
    - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = the web URL
      (step 4). Don't set `PORT` — Railway injects its own;
-   - Settings → Networking → **Generate Domain** (target port 3000 — from `EXPOSE`).
+   - Settings → Networking → **Generate Domain**, then check the **target port** it
+     recorded (3000 for api). Railway seeds that value from `EXPOSE` once, when the domain
+     is first created, and it drifts independently afterwards — `EXPOSE` documents the local
+     port, it does not configure the platform, and editing the Dockerfile will not move it.
+     What the mismatch looks like from the outside (502s against healthy logs) is written
+     out once, in the comment above `EXPOSE` in
+     [apps/api/Dockerfile](../apps/api/Dockerfile).
 3. The same repository, service `web`:
    - Root Directory `/`, Branch `main`;
    - Settings → **Config file path**: `apps/web/railway.json`;
@@ -44,7 +50,8 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
      `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` = the Clerk keys
      (dashboard.clerk.com → API Keys; F1.1). Without the secret key every request
      500s at runtime; without the publishable key the build fast-fails;
-   - Settings → Networking → **Generate Domain** (target port 3001).
+   - Settings → Networking → **Generate Domain**, and check the target port (3001 for
+     web) exactly as in step 2 — the same drift applies here.
 4. Domains are generated after the services are created, so the cross-referencing
    variables (`WEB_ORIGIN` ↔ `NEXT_PUBLIC_API_URL`) are filled in after steps 2–3; then
    **Redeploy both** services (web must actually be rebuilt — see above).

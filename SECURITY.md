@@ -9,9 +9,7 @@ maintainer privately, and the discussion stays out of public view until a fix ex
 
 (The link is spelled out in full on purpose: GitHub renders this file both as a file and as
 the repository's security policy page, and a repository-relative link does not survive
-both. It points at the address the repository has once it is public — until the move to
-that organisation happens, the link leads nowhere, and nobody outside can read this file
-anyway.)
+both.)
 
 Please do not open a public issue for a security problem. Issues are disabled on this
 repository anyway — private reports are the only channel that is watched.

@@ -2,21 +2,32 @@
 
 Rondo Money frontend on **Next.js (App Router)** — skeleton F0.5.
 
-For now this is the app shell: root layout, home page, and a placeholder route
-structure for future screens. Full navigation skeleton — Phase 3, UI base
-(shadcn/ui) — F0.6, typed API client (`@rondo/api-client`) — F1 (ADR-002).
+The app shell is in place: sign-in and route protection (F1.1), the shadcn/ui base from
+`@rondo/ui` (F0.6) and the locale switcher (F0.7). Still ahead: the full navigation
+skeleton (Phase 3) and the typed API client `@rondo/api-client` (F1.4, ADR-002) — until
+then `src/lib/api` holds a hand-written client.
 
 ## Structure
 
 ```text
 src/
   app/
-    layout.tsx          # root layout (html/body, metadata)
-    page.tsx            # home page (shows the API address)
-    (app)/              # route group for the future app shell (Phase 3)
+    layout.tsx                # root layout (html/body, providers, metadata)
+    page.tsx                  # home page — also the F0.6/F0.7 demo screen: primitives,
+                              # theme toggle, locale switcher, the API address
+    globals.css               # Tailwind entry point + the theme's CSS variables
+    sign-in/[[...sign-in]]/   # the only public screen (Clerk catch-all route)
+    api/health/route.ts       # liveness probe for Railway — public, answers 200 flat
+    (app)/                    # route group for the future app shell (Phase 3)
       layout.tsx
-      budget/page.tsx   # budget screen placeholder (/budget)
-  lib/api/              # base API client (address comes from env)
+      budget/page.tsx         # budget screen placeholder (/budget)
+  components/                 # app-level components (Clerk provider wrapper, locale switcher)
+  i18n/                       # ru (default) / en / pl — dictionaries, detection, context
+  lib/api/                    # base API client (address comes from env)
+  lib/auth.ts                 # SIGN_IN_URL and HEALTH_URL — the paths proxy.ts,
+                              # railway.json and the routes must agree on
+  proxy.ts                    # clerkMiddleware: everything is protected except the
+                              # public matcher (sign-in, the health route)
 ```
 
 ## Running

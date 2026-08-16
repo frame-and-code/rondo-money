@@ -1,6 +1,7 @@
 # Contributing
 
-**This project is not accepting contributions right now.** Pull requests are closed
+**This project is not accepting contributions right now.** Opening a pull request is
+restricted to collaborators, anything that does reach the repository is closed
 automatically, and issues are disabled. That is deliberate, not neglect, and it is not a
 judgement about your patch.
 

@@ -45,11 +45,35 @@ Claude drafts them; the actual `commit` / `push` / PR happens when the user asks
   - **Notes / follow-ups** — anything the reviewer must do by hand (secrets, env
     variables, dashboard settings) and deliberate gaps left for later.
 
+## Documentation
+
+A feature, a fix or a config change isn't finished until the prose describing it is true
+again. Every change ends with a sweep over the docs it touches, and the corrections go into
+the **same** PR — a follow-up "docs" task is how drift starts. Where to look:
+
+- `README.md` — how the project is run and what state it is in;
+- `docs/` — `ci.md` (job graph, required checks), `deploy-railway.md` (services, variables,
+  domains, ports), `testing.md` (levels, commands, prerequisites);
+- the workspace `README.md` next to the code you touched (`apps/*`, `packages/*`) — the
+  structure trees and the "skeleton, arrives in F0.x" lines rot fastest;
+- `CLAUDE.md` itself when a decision moves: a new or amended ADR, a changed phase scope, a
+  new cross-cutting rule;
+- `SECURITY.md` / `CONTRIBUTING.md` / `NOTICE` when repository settings, the licence or the
+  contribution stance change.
+
+A sentence that has quietly become false is worse than no sentence at all — it is trusted
+and acted on. So: delete rather than leave half-true, and when a document describes
+something that is planned but not yet configured, say that in the text instead of writing
+the intent in the present tense.
+
 ## Project
 
 Rondo Money — a zero-based budgeting app (YNAB-style). Monorepo on **Turborepo + pnpm**.
-Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — mirror, ADR-001
-(a change log instead of event sourcing), and the "Development Plan v1 (High-Level)".
+Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — mirror, the
+"Development Plan v1 (High-Level)", and the ADRs: ADR-001 (a change log instead of event
+sourcing), ADR-002 (a separate NestJS backend owns all DB access), ADR-003 (public
+repository under AGPL-3.0-only), ADR-004 (locale detection — proposed, deferred), ADR-005
+(no RLS — see the scoping principle below).
 
 ## Structure
 
@@ -64,12 +88,13 @@ Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — m
 ## Commands
 
 `pnpm install`; then `pnpm dev | build | lint | test` (run via Turborepo across all workspaces).
+`pnpm scan:secrets` — full-history gitleaks scan (`secret-scan.sh`, shared with the pre-commit hook and the CI `secrets` job).
 
 ## Cross-cutting principles
 
 - Do not store derived state (balance, RTA, "Available", net worth) — compute it on the fly.
 - Money is integer minor units in `BigInt`; the digit count comes from the currency (ISO 4217), not a hardcoded "2". Over the wire, serialize money as a **string** (JSON has no native BigInt) — convention lives in `packages/types`.
-- Every record carries `userId` (and `budgetId`) — groundwork for RLS. Reads are auto-scoped by a Prisma Client Extension, but it does **not** cover `$queryRaw`/`$executeRaw` — scope raw aggregates (balance/RTA/Available) explicitly through a context-aware repository, and prefer enabling Postgres RLS once raw aggregates exist (RLS covers raw SQL; expect a per-request `SET LOCAL` with pooling).
+- Every record carries `userId` (and `budgetId`), but **Postgres RLS is deliberately not used** (ADR-005) — isolation lives entirely in the backend: a guard puts `userId` in the request context, a Prisma Client Extension auto-scopes scoped models, and a query without context is an error rather than an unfiltered read. The extension does **not** cover `$queryRaw`/`$executeRaw`, so raw aggregates (balance/RTA/Available) go through a context-aware repository, a lint rule keeps raw SQL out of everywhere else, and cross-tenant tests ("B cannot see A's data") belong to the DoD of every phase that adds domain tables. Treat the lint rule and those tests as part of the decision, not as polish: they are what replaces the database-level guarantee, and a forgotten `where userId` fails silently. The columns stay, so RLS remains cheap to add if the triggers in ADR-005 fire (shared budgets, a second DB client, a regulator).
 - Mutations go only through a single write point (atomic: state + the `ChangeLog` journal). A transfer's two legs share a `transferId` and are created/edited/deleted/undone together in one transaction. undo/redo are themselves logged mutations (redo tracked by a cursor, not by rewriting history).
 - Invariant 5.5: `RTA + Σ Available = Σ Balance` — keep it green, checked over **all-time** aggregates (a future-month assignment lowers RTA before it shows in any month's Available, so a per-month reconciliation won't balance — that's expected). Cover with property-based tests (fast-check).
 - Dates are plain calendar dates (no time-of-day); "today" and month bucketing (`YYYY-MM`) use one fixed reference timezone (the budget's).
@@ -80,6 +105,6 @@ Canonical documents live in Notion: PRD (RU) — source of truth, PRD (EN) — m
 
 ## Process
 
-We work feature by feature from "Plan v1". Current phase — 1 (F1.1–F1.10); phase 0 is done.
+We work feature by feature from "Plan v1". Current phase — 1 (F1.1–F1.11); phase 0 is done.
 Don't go beyond the scope of the current feature — don't pull in work from later features.
 When in doubt, check against the PRD (RU, source of truth) and ADR-001.
