@@ -41,7 +41,8 @@ code freely; give your fork its own name.
 
 ## Contributions and support
 
-Pull requests are **not accepted** and are closed automatically; issues are disabled. This
+Pull requests are **not accepted**: creating one is restricted to collaborators, and
+anything that does reach the repository is closed automatically. Issues are disabled. This
 is deliberate — the reasoning is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Security problems are the one open channel: report them privately through the
@@ -56,6 +57,10 @@ no support obligation, and no promise that an upgrade will preserve your data.
 - pnpm 11 (`corepack enable` picks up the version from the `packageManager` field)
 - Docker (Desktop / Engine / OrbStack) — for the local database
 - A [Clerk](https://clerk.com) account — the web app does not start without its keys
+- [gitleaks](https://github.com/gitleaks/gitleaks) — only if you intend to commit: the
+  pre-commit hook scans the staged changes for secrets and refuses to run without it
+  (`brew install gitleaks`). It is a binary rather than a pinned dependency, so its rule
+  set travels with whatever version you install; developed against 8.30.1
 
 ## Structure
 
@@ -78,6 +83,7 @@ pnpm dev          # run apps in dev mode
 pnpm build        # build all packages
 pnpm lint         # linting
 pnpm test         # tests
+pnpm scan:secrets # scan the whole git history for secrets (gitleaks)
 ```
 
 Commands run through Turborepo and are parallelized across workspaces.
