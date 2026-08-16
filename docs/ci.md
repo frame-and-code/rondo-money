@@ -76,15 +76,12 @@ status check keeps the exact id `gate` that branch rules point at.
 - Runs on PRs and on pushes to `main`; a repeated push to the same branch cancels
   the previous run (`concurrency`).
 
-## Branch protection on `main` — not switched on yet
+## Branch protection on `main`
 
-**Status, 16 August 2026: nothing stops a direct push to `main`.** Branch rules are a paid
-feature on a private repository and the API answers 403 to every attempt to configure them,
-so this is one of the settings that only becomes available once the repository is public
-(F1.10). Once it is, trust the ruleset itself over this paragraph.
-
-The intended setup, as a branch ruleset targeting `main` (GitHub → Settings → Rules →
-Rulesets):
+A branch ruleset targets the default branch (GitHub → Settings → Rules → Rulesets). It only
+became configurable when the repository went public in F1.10 — branch rules are a paid
+feature on a private repository, and the API answered 403 to every attempt before that. What
+it enforces:
 
 - **Require a pull request before merging** — zero required approvals, there is one
   maintainer;
@@ -94,10 +91,14 @@ Rulesets):
   proves the branch passed against the base it was built on, not against today's `main`.
   Two independently green PRs can still merge into a red `main`, and a green `main` ships
   to dev on its own (see [deploy-railway.md](deploy-railway.md));
-- **Block force pushes**.
+- **Block force pushes**, and block deletion of the branch.
 
-Admin bypass stays allowed at first. With a single maintainer, being locked out of your own
-repository on a Sunday evening is a worse failure mode than an unreviewed merge.
+**The repository admin role is on the bypass list, so none of this constrains the
+maintainer.** With one person holding the keys, being locked out of your own repository on a
+Sunday evening is the worse failure mode. Read the rules accordingly: they are a guardrail
+against slips and against everyone who is not an admin, not a wall — a direct push to `main`
+from an admin account still goes through. The trade-off is worth revisiting the moment a
+second person gets write access.
 
 Like every other repository setting, this is not in code: it has to be recreated by hand if
 the repository moves.
