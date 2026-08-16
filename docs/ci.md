@@ -12,6 +12,7 @@ build        ─┤
 unit         ─┼─→ gate
 integration  ─┤
 preflight → e2e
+preflight → sonar   (reports its own status; not aggregated by gate yet)
 ```
 
 `gate` runs with `if: always()` and fails unless every job it needs ended in `success` or
@@ -73,6 +74,31 @@ status check keeps the exact id `gate` that branch rules point at.
   than each of its steps is the point: a job that reports success while silently doing
   nothing is exactly what once hid a broken build. When the keys _are_ present but broken,
   e2e fails loudly — a green gate must never mean "auth was never tested".
+- **`sonar` — SonarQube Cloud analysis** (F1.12): cognitive complexity, cross-workspace
+  duplication, security hotspots, test coverage and a quality gate on **new** code — the
+  signals ESLint, Prettier and `strict` TypeScript don't carry. Scanner configuration
+  (project key, sources, exclusions, lcov paths) lives in
+  [sonar-project.properties](../sonar-project.properties); the analysis is CI-based because
+  Sonar's automatic analysis does not support monorepos. The job checks out the full
+  history (`fetch-depth: 0` — Sonar attributes issues to new code via blame) and provisions
+  its own JRE, so it does not depend on the runner's Java. `SONAR_TOKEN` lives in **both**
+  secret stores — Actions and Dependabot — so unlike e2e (whose Clerk keys are Actions-only)
+  the analysis also runs on Dependabot PRs; fork PRs see neither store, so `sonar` branches
+  on the same `preflight` mechanism as e2e
+  (`if: needs.preflight.outputs.has_sonar_token == 'true'`). **The job is deliberately not
+  in the gate's `needs` yet**: the switch-on order is to watch it stay green and quiet
+  across several PRs, and only then promote it into `gate` — the reverse order means a red
+  gate on the first PR because of tuning, not code.
+- **Coverage for Sonar**: the jest configs keep coverage always on, so the plain test
+  commands (`pnpm test:unit`, `pnpm test:integration`) emit `coverage/lcov.info` in each
+  tested workspace — the same command produces the same artefacts locally and in CI, and
+  the lcov reporter
+  rewrites paths to be repo-root-relative (the scanner runs at the repo root and could not
+  resolve workspace-relative `src/…` otherwise). The `sonar` job re-runs the unit and
+  integration tests itself (with its own Postgres service) to produce those files, rather
+  than receiving them from the `unit`/`integration` jobs as artifacts — the same trade as
+  reinstalling dependencies everywhere: a re-run keeps every job self-contained, while
+  artifact hand-off couples jobs and silently flattens single-file artifact paths.
 - Runs on PRs and on pushes to `main`; a repeated push to the same branch cancels
   the previous run (`concurrency`).
 

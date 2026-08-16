@@ -11,9 +11,10 @@
 #   unit         ─┼─→ gate
 #   integration  ─┤
 #   preflight → e2e
+#   preflight → sonar   (reports its own status; not aggregated by `gate` yet — see the job)
 #
-# `preflight` is the one exception: it exists only to tell e2e whether the Clerk secrets are
-# readable from this run, because that cannot be asked from a job `if` directly.
+# `preflight` is the one exception: it exists only to tell e2e and sonar whether the secrets
+# they need are readable from this run, because that cannot be asked from a job `if` directly.
 #
 # Each job reinstalls dependencies (a warm pnpm store cache makes that cheap) — that is the
 # price of running them in parallel, and it is far below the time saved.
@@ -238,10 +239,10 @@ jobs:
         run: pnpm test:integration
 
   preflight:
-    # Answers one question for the e2e job: are the Clerk dev-instance secrets readable from
+    # Answers one question for the e2e and sonar jobs: are the secrets they need readable from
     # this run? GitHub hides Actions secrets from fork pull requests and from Dependabot-triggered
     # runs, and the `secrets` context is available in neither a job `if` nor a step `if` — only
-    # in `env`/`with`. So the answer is materialized here, as a job output e2e can branch on.
+    # in `env`/`with`. So the answer is materialized here, as job outputs those jobs branch on.
     # The alternative (repeating `if: env.HAS_CLERK_KEYS == 'true'` on every step of e2e) makes
     # the job report success while silently doing nothing, which is what hid a broken build
     # from us in the first place.
@@ -251,13 +252,16 @@ jobs:
 
     outputs:
       has_clerk_keys: ${{ steps.probe.outputs.has_clerk_keys }}
+      has_sonar_token: ${{ steps.probe.outputs.has_sonar_token }}
 
     steps:
       - id: probe
         env:
           HAS_CLERK_KEYS: ${{ secrets.CLERK_SECRET_KEY != '' && secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY != '' }}
+          HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
         run: |
           echo "has_clerk_keys=${HAS_CLERK_KEYS}" >> "$GITHUB_OUTPUT"
+          echo "has_sonar_token=${HAS_SONAR_TOKEN}" >> "$GITHUB_OUTPUT"
           if [ "${HAS_CLERK_KEYS}" != 'true' ]; then
             {
               echo "### E2E will be skipped"
@@ -265,6 +269,15 @@ jobs:
               echo "The Clerk dev-instance keys are not exposed to this run (a fork pull request,"
               echo "or a Dependabot-triggered one), and the web app cannot serve a single request"
               echo "without them. Every other job in the gate still runs."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "${HAS_SONAR_TOKEN}" != 'true' ]; then
+            {
+              echo "### Sonar analysis will be skipped"
+              echo
+              echo "SONAR_TOKEN is not exposed to this run — a fork pull request (Dependabot"
+              echo "runs have their own copy in the Dependabot secrets store). Every other"
+              echo "job still runs."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -333,6 +346,84 @@ jobs:
         with:
           name: playwright-traces
           path: apps/web/test-results
+
+  sonar:
+    # SonarQube Cloud analysis (F1.12): cognitive complexity, duplication, security
+    # hotspots and test coverage — the signals the linters don't carry. Configuration
+    # lives in sonar-project.properties; the scanner provisions its own JRE, so the job
+    # does not depend on the runner's Java.
+    #
+    # The job re-runs the unit and integration tests to produce the lcov the scanner
+    # imports. That duplicates work the `unit` and `integration` jobs already do, on
+    # purpose — the same trade as reinstalling dependencies everywhere: shipping coverage
+    # between jobs as artifacts couples them and silently flattens single-file artifact
+    # paths, while a re-run keeps every job self-contained.
+    #
+    # Deliberately NOT in the gate's `needs` yet: the switch-on order (F1.12) is to watch
+    # the job stay green and quiet across several PRs first, and only then promote it into
+    # the gate — the reverse order means a red gate on the first PR because of tuning, not
+    # code. Like e2e, it branches on preflight: SONAR_TOKEN is hidden from fork runs
+    # (unlike the Clerk keys it IS configured as a Dependabot secret too, so Dependabot
+    # PRs are analysed), and skipping the job openly beats succeeding while doing nothing.
+    name: Sonar analysis
+    needs: preflight
+    if: needs.preflight.outputs.has_sonar_token == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Compose DATABASE_URL
+        run: >-
+          echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?schema=public"
+          >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Sonar attributes issues to new code via blame — a shallow clone breaks that.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm --filter @rondo/db run db:deploy
+
+      # Coverage is always on in the jest configs, so the plain test commands produce the
+      # lcov files sonar-project.properties points at. Order matters for apps/api: its
+      # unit run writes an empty lcov (no unit tests yet), the integration run overwrites
+      # it with the real one.
+      - name: Unit tests with coverage
+        run: pnpm test:unit
+
+      - name: Integration tests with coverage
+        run: pnpm test:integration
+
+      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   gate:
     # The one check to require on main. `always()` so it still reports when something above
