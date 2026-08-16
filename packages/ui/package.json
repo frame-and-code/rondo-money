@@ -18,7 +18,7 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.28.0",
+    "lucide-react": "^1.30.0",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.6.7",
     "tailwind-merge": "^3.6.0"
@@ -31,7 +31,7 @@
     "@rondo/config": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "eslint": "^10.8.0",
+    "eslint": "^10.8.1",
     "globals": "^17.9.0",
     "prettier": "^3.9.6",
     "typescript": "^6.0.3"
