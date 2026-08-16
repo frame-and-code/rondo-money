@@ -1,6 +1,15 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+# js-yaml 3.x reaches us only through Jest's tooling (jest-resolve-dependencies and
+# friends), never through anything we ship: it parses our own configs, not untrusted
+# input. Jest pins the major, so the advisories against 3.14.2 cannot be cleared by
+# upgrading a direct dependency — the patched 3.15.1 has to be forced here. Scoped to the
+# 3.x line so the separate js-yaml 4.x in the tree is left alone.
+overrides:
+  'js-yaml@3': ^3.15.1
+
 # pnpm blocks dependency build scripts by default; approve the ones we trust.
 # - unrs-resolver: native import resolver for eslint-plugin-import-x (F0.2).
 # - prisma / @prisma/*: Prisma 7 postinstall (schema/migration engine setup) (F0.4).
