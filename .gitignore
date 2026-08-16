@@ -40,3 +40,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Claude Code — personal permission grants; the shared setup in .claude/ is committed
+.claude/settings.local.json

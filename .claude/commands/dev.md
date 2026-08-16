@@ -1,0 +1,27 @@
+---
+description: Bring the local environment up — Postgres, migrations, api and web — and report what is actually running.
+---
+
+# Dev
+
+Start everything needed to work on the app locally, in dependency order, and stop at the
+first step that fails rather than reporting a green stack that isn't.
+
+## Steps
+
+1. **Database** — `docker compose up -d`, then confirm the container is actually up
+   (`docker compose ps`). Postgres 18, published on `127.0.0.1:5432` only.
+2. **Migrations** — `pnpm db:migrate` if `packages/db/prisma/migrations/` has anything the
+   local database has not seen. `DATABASE_URL` comes from the root `.env`; if that file is
+   missing, tell the user to run `pnpm env:setup` (or copy `.env.example`) and stop.
+3. **API** — `pnpm --filter @rondo/api dev`, then verify `GET http://localhost:3000/health`
+   answers 200.
+4. **Web** — start it through `preview_start` with the `web` configuration from
+   `.claude/launch.json` (port 3001), never with a raw `pnpm dev` in Bash. Without Clerk
+   keys in `apps/web/.env.local` every request fails — say so and point at
+   `pnpm env:setup` rather than working around it.
+
+## Report
+
+State what is running and on which port, and anything that failed with the actual error.
+If the web app needs keys the user has not set, that is the headline, not a footnote.
