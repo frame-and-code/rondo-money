@@ -82,3 +82,8 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
 - Jest globals (`describe` / `it` / `expect`) are registered for test files in the shared
   ESLint config (`@rondo/config/eslint`); in Playwright specs, `test`/`expect` are imported.
 - Turbo doesn't cache integration and e2e (external state — the DB); the unit level is cached.
+- Jest always collects coverage — every unit/integration run writes `coverage/lcov.info`
+  into the workspace (git-ignored). The `sonar` CI job imports those files into SonarQube
+  Cloud (see [ci.md](ci.md)); the lcov reporter's `projectRoot` option keeps the paths
+  repo-root-relative, which the Sonar scanner requires — copy it along when adding a jest
+  config to a new package, and list the new lcov in `sonar-project.properties`.

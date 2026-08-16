@@ -23,7 +23,8 @@
       ]
     },
     "test:unit": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
     },
     "test:integration": {
       "dependsOn": ["^build"],

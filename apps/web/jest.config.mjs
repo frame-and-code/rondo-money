@@ -9,6 +9,12 @@ export default {
   testEnvironment: 'jsdom',
   rootDir: '.',
   roots: ['<rootDir>/src', '<rootDir>/test'],
+  // Coverage is always on: CI (the sonar job, F1.12) reads the lcov, and locally the same
+  // command produces the same artefacts. `projectRoot` rewrites lcov paths to be relative
+  // to the repo root — the Sonar scanner runs there and cannot resolve `src/…` otherwise.
+  collectCoverage: true,
+  collectCoverageFrom: ['src/**/*.{ts,tsx}'],
+  coverageReporters: [['lcov', { projectRoot: '../..' }], 'text-summary'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testRegex: '\\.(spec|test)\\.tsx?$',
   transform: {
