@@ -1,7 +1,7 @@
 'use client';
 
 import { SignIn } from '@clerk/nextjs';
-import { ThemeToggle } from '@ffai/ui/components/theme-toggle';
+import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { useTranslations } from '@/i18n/locale-context';

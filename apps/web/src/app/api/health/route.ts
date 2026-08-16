@@ -7,7 +7,7 @@
 // what keeps it answering 200 to an anonymous probe.
 //
 // Deliberately shallow: it says "this server process is up and serving", nothing more.
-// The web app owns no database connection — @ffai/api has its own /health for that — so
+// The web app owns no database connection — @rondo/api has its own /health for that — so
 // there is nothing further to check here, and a probe that reached out to dependencies
 // would take the whole deployment down whenever one of them blinked.
 

@@ -3,7 +3,7 @@
   // base, which is ESM/bundler-oriented (module: ESNext, moduleResolution: Bundler) and
   // doesn't fit Nest. nodenext resolves as CommonJS here (the package has no "type":
   // "module"). SWC does the actual emit (see .swcrc); tsc is typecheck-only.
-  "extends": "@ffai/config/tsconfig/base.json",
+  "extends": "@rondo/config/tsconfig/base.json",
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",

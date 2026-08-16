@@ -38,9 +38,9 @@ env:
   # Single source of the CI Postgres credentials: it configures the service containers
   # and DATABASE_URL is assembled from it (the Compose step in each DB-backed job). Not a
   # secret: the DB lives for minutes inside the runner and is unreachable from outside.
-  POSTGRES_USER: ffai
-  POSTGRES_PASSWORD: ffai_ci_secret
-  POSTGRES_DB: ffai_ci
+  POSTGRES_USER: rondo
+  POSTGRES_PASSWORD: rondo_ci_secret
+  POSTGRES_DB: rondo_ci
 
 # The setup steps below (checkout → pnpm → node → install) are repeated verbatim in every
 # job rather than extracted into a local composite action, deliberately: Dependabot's
@@ -182,7 +182,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply migrations
-        run: pnpm --filter @ffai/db run db:deploy
+        run: pnpm --filter @rondo/db run db:deploy
 
       - name: Integration tests
         run: pnpm test:integration
@@ -263,10 +263,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply migrations
-        run: pnpm --filter @ffai/db run db:deploy
+        run: pnpm --filter @rondo/db run db:deploy
 
       - name: Install Playwright Chromium
-        run: pnpm --filter @ffai/web exec playwright install --with-deps chromium
+        run: pnpm --filter @rondo/web exec playwright install --with-deps chromium
 
       # The Clerk variables are declared in the test:e2e task env in turbo.json — otherwise
       # turbo strict env mode strips them.

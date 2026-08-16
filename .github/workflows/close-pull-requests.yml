@@ -1,0 +1,47 @@
+# F1.10 — the project does not accept outside contributions yet (see CONTRIBUTING.md), so a
+# pull request opened from a fork is answered politely and closed instead of being left to
+# rot unreviewed.
+#
+# The guard matters as much as the closing: the project's own work is PR-based, and without
+# it this job would close the maintainer's branches and Dependabot's updates too. Only pull
+# requests whose head lives in another repository are touched.
+#
+# `pull_request_target` rather than `pull_request`: a pull request opened from a fork gets a
+# read-only token under `pull_request`, which cannot comment or close. The usual danger of
+# `pull_request_target` is that it runs with repository write access *and* can be made to
+# execute code from the fork — this job never checks the pull request out and never runs
+# anything from it, so there is nothing for a contributor's branch to hijack.
+name: Close pull requests
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      # gh is preinstalled on GitHub-hosted runners, so this needs no third-party action.
+      # Closing with --comment posts and closes in one call: a failure between two separate
+      # calls would leave the pull request commented but open, and the retry would comment
+      # twice. Links are absolute because this text is also delivered by email, where
+      # GitHub does not resolve repository-relative links.
+      - name: Explain and close
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.number }}
+          REPO: ${{ github.repository }}
+          BASE: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          gh pr close "$PR" --repo "$REPO" --comment \
+          "Thank you for taking the time to write this — and sorry for the automated reply.
+
+          **Rondo Money is not accepting contributions yet**, so this pull request is being closed unreviewed. It is not a judgement about the change itself. The reasoning is in [CONTRIBUTING.md]($BASE/blob/main/CONTRIBUTING.md).
+
+          Your work is not wasted: the AGPL lets you keep it in a fork, and you are welcome to run it.
+
+          One exception — if this fixes a **security** problem, please report it privately through [the Security tab]($BASE/security/advisories/new) instead of a pull request. That channel is watched."

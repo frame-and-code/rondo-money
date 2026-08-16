@@ -1,6 +1,7 @@
 {
-  "name": "@ffai/api",
+  "name": "@rondo/api",
   "version": "0.0.0",
+  "license": "AGPL-3.0-only",
   "private": true,
   "main": "dist/main.js",
   "scripts": {
@@ -14,7 +15,7 @@
     "test:integration": "jest --config jest.integration.config.mjs --runInBand"
   },
   "dependencies": {
-    "@ffai/db": "workspace:*",
+    "@rondo/db": "workspace:*",
     "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.28",
@@ -25,8 +26,8 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "@ffai/config": "workspace:*",
-    "@ffai/types": "workspace:*",
+    "@rondo/config": "workspace:*",
+    "@rondo/types": "workspace:*",
     "@nestjs/cli": "^11.0.24",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.1.28",

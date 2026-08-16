@@ -1,10 +1,10 @@
-# @ffai/web
+# @rondo/web
 
-Fin Flow AI frontend on **Next.js (App Router)** — skeleton F0.5.
+Rondo Money frontend on **Next.js (App Router)** — skeleton F0.5.
 
 For now this is the app shell: root layout, home page, and a placeholder route
 structure for future screens. Full navigation skeleton — Phase 3, UI base
-(shadcn/ui) — F0.6, typed API client (`@ffai/api-client`) — F1 (ADR-002).
+(shadcn/ui) — F0.6, typed API client (`@rondo/api-client`) — F1 (ADR-002).
 
 ## Structure
 
@@ -22,10 +22,10 @@ src/
 ## Running
 
 ```bash
-pnpm --filter @ffai/web dev     # next dev on :3001 (API takes :3000)
-pnpm --filter @ffai/web build   # next build (standalone build for Railway)
-pnpm --filter @ffai/web start   # next start on :3001
-pnpm --filter @ffai/web test    # jest — smoke test of the home page render
+pnpm --filter @rondo/web dev     # next dev on :3001 (API takes :3000)
+pnpm --filter @rondo/web build   # next build (standalone build for Railway)
+pnpm --filter @rondo/web start   # next start on :3001
+pnpm --filter @rondo/web test    # jest — smoke test of the home page render
 pnpm test:e2e                   # Playwright — incl. the F1.1 sign-in/out scenarios
 ```
 
@@ -44,7 +44,7 @@ pnpm env:setup   # at the repo root; needs the 1Password CLI (see setup-env.sh)
 Without 1Password, copy the template to `.env.local` and fill the `{{ op://... }}`
 references by hand.
 
-- `NEXT_PUBLIC_API_URL` — base address of `@ffai/api`. The value is inlined into the
+- `NEXT_PUBLIC_API_URL` — base address of `@rondo/api`. The value is inlined into the
   browser bundle (`NEXT_PUBLIC_*`), defaults to `http://localhost:3000`. On Railway it
   points to the deployed API.
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — Clerk authentication
@@ -56,7 +56,7 @@ references by hand.
 
 ## Tooling (carry-overs closed from F0.2)
 
-- **tsconfig:** on top of `@ffai/config/tsconfig/base.json` we add `jsx: preserve`,
+- **tsconfig:** on top of `@rondo/config/tsconfig/base.json` we add `jsx: preserve`,
   DOM libraries and the `next` plugin. The base is already ESM/bundler-oriented — exactly
   what App Router needs, so we only duplicate the Next-specific bits.
 - **Browser globals in ESLint:** the shared base registers only `globals.node`;

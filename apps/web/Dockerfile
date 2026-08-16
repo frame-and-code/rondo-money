@@ -1,4 +1,4 @@
-# F0.10 — production image for @ffai/web (Next.js standalone) on Railway. Build context
+# F0.10 — production image for @rondo/web (Next.js standalone) on Railway. Build context
 # is the repo root (pnpm-workspace); the Dockerfile path is set in apps/web/railway.json.
 #
 # next.config.ts enables output: 'standalone' — the runner gets a self-contained
@@ -28,7 +28,7 @@ COPY packages/ui/package.json packages/ui/
 FROM manifests AS build
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN pnpm --filter @ffai/web... rebuild
+RUN pnpm --filter @rondo/web... rebuild
 # NEXT_PUBLIC_* is inlined into the browser bundle during next build — Railway passes
 # service variables as build args (an explicit ARG is required). The build task in
 # turbo.json declares NEXT_PUBLIC_API_URL and the Clerk variables in env (turbo strict
@@ -47,7 +47,7 @@ RUN [ -n "$NEXT_PUBLIC_API_URL" ] \
     || { echo "ERROR: build arg NEXT_PUBLIC_API_URL is required (inlined into the browser bundle)" >&2; exit 1; } \
     && [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] \
     || { echo "ERROR: build arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required (inlined into the browser bundle)" >&2; exit 1; } \
-    && pnpm exec turbo run build --filter=@ffai/web
+    && pnpm exec turbo run build --filter=@rondo/web
 
 # ---- runner: the standalone bundle, no pnpm/workspace at all.
 FROM node:26-slim AS runner

@@ -1,5 +1,5 @@
 /**
- * Money convention for Fin Flow AI.
+ * Money convention for Rondo Money.
  *
  * Money is always integer minor units (e.g. cents) held in `bigint` — never a float.
  * The number of minor digits is derived from the budget currency (ISO 4217), never

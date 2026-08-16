@@ -1,4 +1,4 @@
-import { ThemeProvider } from '@ffai/ui/components/theme-provider';
+import { ThemeProvider } from '@rondo/ui/components/theme-provider';
 import './globals.css';
 
 import { ClerkProviderLocalized } from '@/components/clerk-provider-localized';
@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Fin Flow AI',
+  title: 'Rondo Money',
   description: 'Zero-based budgeting — application shell (F0.5).',
 };
 

@@ -1,5 +1,5 @@
 /**
- * Jest for @ffai/web (the repo-wide harness is F0.8; this covers F0.5's smoke test).
+ * Jest for @rondo/web (the repo-wide harness is F0.8; this covers F0.5's smoke test).
  * jsdom so React components render; SWC transforms TS/TSX with the automatic JSX runtime,
  * mirroring how Next compiles (no `import React` needed).
  *
@@ -26,7 +26,7 @@ export default {
     '^@/(.*)$': '<rootDir>/src/$1',
     // Jest doesn't implement Node's package self-reference resolution (a package
     // importing its own name via `exports`), unlike Next's bundler — map it by hand.
-    '^@ffai/ui/(.*)$': '<rootDir>/../../packages/ui/src/$1',
+    '^@rondo/ui/(.*)$': '<rootDir>/../../packages/ui/src/$1',
   },
   // @testing-library/jest-dom matchers (toBeInTheDocument, …).
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],

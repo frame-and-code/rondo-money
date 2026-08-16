@@ -2,7 +2,7 @@ set -e
 
 # Pre-commit gate — fail fast (set -e) in order:
 #   1. (future) regenerate the typed API client and stage it, e.g.
-#        pnpm --filter @ffai/api-client codegen && git add packages/api-client/src/generated
+#        pnpm --filter @rondo/api-client codegen && git add packages/api-client/src/generated
 #      lint-staged below then formats + lints whatever was just staged.
 #   2. format + lint — staged files only: `prettier --write` then `eslint`.
 #      lint-staged re-stages the formatted result, so it lands in the commit.

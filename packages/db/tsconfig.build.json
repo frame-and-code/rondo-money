@@ -1,6 +1,6 @@
 {
   // Build config: emit the compiled client + declarations to dist (the package's runtime
-  // entry). Overrides the base `noEmit` — this is the F0.2 carry-over "@ffai/db emits".
+  // entry). Overrides the base `noEmit` — this is the F0.2 carry-over "@rondo/db emits".
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,

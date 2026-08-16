@@ -1,4 +1,4 @@
-// @ffai/config/eslint/type-checked — opt-in type-aware layer.
+// @rondo/config/eslint/type-checked — opt-in type-aware layer.
 // Deferred from F0.2 (the base is deliberately syntactic-only), enabled in F0.4 now
 // that real async code exists. Adds typescript-eslint's type-checked rules plus the
 // floating/misused-promise rules the single-write-point + ChangeLog principle relies on.
@@ -7,8 +7,8 @@
 //
 //   import { dirname } from 'node:path';
 //   import { fileURLToPath } from 'node:url';
-//   import base from '@ffai/config/eslint';
-//   import typeChecked from '@ffai/config/eslint/type-checked';
+//   import base from '@rondo/config/eslint';
+//   import typeChecked from '@rondo/config/eslint/type-checked';
 //   const rootDir = dirname(fileURLToPath(import.meta.url));
 //   export default [...base, ...typeChecked(rootDir)];
 import tseslint from 'typescript-eslint';

@@ -1,3 +1,3 @@
-import base from '@ffai/config/eslint';
+import base from '@rondo/config/eslint';
 
 export default base;

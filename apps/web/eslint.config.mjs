@@ -2,7 +2,7 @@
 // registers `globals.node`; App Router client components touch `window`/`document`/etc.,
 // which would otherwise trip `no-undef`. Server components keep the node globals too,
 // so we union both rather than split per-file.
-import base from '@ffai/config/eslint';
+import base from '@rondo/config/eslint';
 import globals from 'globals';
 
 export default [

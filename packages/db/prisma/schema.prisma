@@ -1,10 +1,10 @@
-// Prisma schema for Fin Flow AI — grows incrementally, one migration per phase.
+// Prisma schema for Rondo Money — grows incrementally, one migration per phase.
 // F0.4 is the skeleton: datasource + generator + an empty baseline migration.
 // Domain tables (users, budgets, the ChangeLog journal) land in Phases 1–2.
 
 generator client {
   // Prisma 7's Rust-free client: generates TypeScript into the package, compiled to JS
-  // by @ffai/db's build step. CommonJS to match the Nest runtime.
+  // by @rondo/db's build step. CommonJS to match the Nest runtime.
   provider               = "prisma-client"
   output                 = "../src/generated/prisma"
   runtime                = "nodejs"

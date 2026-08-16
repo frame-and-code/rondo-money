@@ -3,7 +3,7 @@
   // The base is already ESM/bundler-oriented (module: ESNext, moduleResolution: Bundler),
   // which is exactly what the App Router wants — so we only layer the Next-specific bits
   // rather than letting `next init` fork a parallel set of rules.
-  "extends": "@ffai/config/tsconfig/base.json",
+  "extends": "@rondo/config/tsconfig/base.json",
   "compilerOptions": {
     "jsx": "preserve",
     "lib": ["DOM", "DOM.Iterable", "ES2022"],

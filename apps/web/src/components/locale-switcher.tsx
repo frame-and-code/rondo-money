@@ -1,13 +1,13 @@
 'use client';
 
-import { Button } from '@ffai/ui/components/ui/button';
+import { Button } from '@rondo/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@ffai/ui/components/ui/dropdown-menu';
+} from '@rondo/ui/components/ui/dropdown-menu';
 
 import { useTranslations } from '@/i18n/locale-context';
 import { localeLabels, locales, type Locale } from '@/i18n/locales';

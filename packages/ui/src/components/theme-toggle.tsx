@@ -3,13 +3,13 @@
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
-import { Button } from '@ffai/ui/components/ui/button';
+import { Button } from '@rondo/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@ffai/ui/components/ui/dropdown-menu';
+} from '@rondo/ui/components/ui/dropdown-menu';
 
 export interface ThemeToggleLabels {
   trigger: string;

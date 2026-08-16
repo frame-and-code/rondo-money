@@ -1,4 +1,4 @@
-// @ffai/config/eslint — shared flat config (F0.2).
+// @rondo/config/eslint — shared flat config (F0.2).
 // Inherited verbatim by every workspace via a 2-line `eslint.config.mjs`.
 // Order matters: js → typescript-eslint → import rules → prettier (must be last,
 // so it can switch off everything that would fight the formatter).

@@ -1,7 +1,7 @@
-import { PrismaClient } from '@ffai/db';
 import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@rondo/db';
 
 /**
  * The single Prisma client for the app, managed by Nest's lifecycle.
