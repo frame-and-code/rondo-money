@@ -72,7 +72,13 @@ fi
 while IFS= read -r TARGET; do
   [ -z "$TARGET" ] && continue
   # Host only — strip the scheme, then any user:password, then port/path/query.
-  HOST=$(printf '%s' "$TARGET" | sed -E 's#^[a-zA-Z0-9+.-]+://##; s#^[^@/]*@##; s#[:/?].*$##')
+  AUTHORITY=$(printf '%s' "$TARGET" | sed -E 's#^[a-zA-Z0-9+.-]+://##; s#^[^@/]*@##')
+  case "$AUTHORITY" in
+    # An IPv6 literal is bracketed and full of colons, so cutting at the first one would
+    # reduce postgresql://[::1]:5432/db to "[" and refuse a perfectly local database.
+    \[*) HOST="${AUTHORITY%%]*}]" ;;
+    *) HOST=$(printf '%s' "$AUTHORITY" | sed -E 's#[:/?].*$##') ;;
+  esac
   if [ -z "$HOST" ] || ! is_local_host "$HOST"; then
     echo "BLOCKED: this destructive database command targets '${HOST:-an unparseable host}', not the local database. Dev and prod migrations go through the deployment pipeline." >&2
     exit 2

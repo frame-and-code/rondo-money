@@ -8,7 +8,10 @@ set -uo pipefail
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 cd "$PROJECT_DIR" 2>/dev/null || exit 0
 
-BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+# The branch name is repository-controlled too, and it is rendered inside backticks below —
+# one backtick in it would close the span and let the rest read as prose.
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '`' | cut -c1-100)
+[ -z "$BRANCH" ] && BRANCH="unknown"
 DIRTY=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
 
 # A commit subject is text written by whoever made the commit — on a public repository that

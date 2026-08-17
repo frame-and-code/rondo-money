@@ -69,11 +69,30 @@ if printf '%s' "$COMMAND" | grep -qE 'core\.hooksPath[[:space:]]*='; then
   exit 2
 fi
 
-# main is protected by a branch ruleset; fail here rather than at the remote.
-if printf '%s' "$NAKED" | grep -qE 'git\s+push' &&
-  printf '%s' "$NAKED" | grep -qE '(^|\s)main(\s|$)|:main(\s|$)'; then
-  echo "BLOCKED: main takes changes through a PR only. Push the feature branch instead." >&2
-  exit 2
+# main is protected by a branch ruleset; fail here rather than at the remote. Matching the
+# word "main" anywhere is not enough — `git push origin main:refs/heads/main` and
+# `git push origin refs/heads/main` both name it in forms a plain word match misses, and
+# global options (`git -C repo push`, `git --no-pager push`) push the verb away from `git`.
+# So: find the verb, then read the destination of each refspec that follows it.
+# Collapse git's global options first, so the verb sits next to `git` and the word "push"
+# inside a commit message is not mistaken for one.
+COLLAPSED="$NAKED"
+for _ in 1 2 3; do
+  COLLAPSED=$(printf '%s' "$COLLAPSED" | sed -E 's/(^|[;&|([:space:]])git[[:space:]]+(-[cC][[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|exec-path)[[:space:]]*=[^[:space:]]+|-[a-zA-Z-]+)[[:space:]]+/\1git /g')
+done
+
+if printf '%s' "$COLLAPSED" | grep -qE '(^|[;&|([:space:]])git[[:space:]]+push([[:space:]]|$)'; then
+  for TOKEN in $(printf '%s' "$COLLAPSED" | sed -E 's/.*[[:space:]]git[[:space:]]+push[[:space:]]*//'); do
+    # In `src:dst` the destination is what gets written; a bare `main` is its own destination.
+    DEST=${TOKEN##*:}
+    DEST=${DEST#refs/heads/}
+    case "$DEST" in
+      main | master)
+        echo "BLOCKED: main takes changes through a PR only. Push the feature branch instead." >&2
+        exit 2
+        ;;
+    esac
+  done
 fi
 
 # --no-preserve-root exists only to make `rm -rf /` work. There is no benign use here.
