@@ -16,10 +16,10 @@
   },
   "dependencies": {
     "@rondo/db": "workspace:*",
-    "@nestjs/common": "^11.1.28",
+    "@nestjs/common": "^11.1.29",
     "@nestjs/config": "^4.0.2",
-    "@nestjs/core": "^11.1.28",
-    "@nestjs/platform-express": "^11.1.28",
+    "@nestjs/core": "^11.1.29",
+    "@nestjs/platform-express": "^11.1.29",
     "@prisma/adapter-pg": "^7.9.1",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
