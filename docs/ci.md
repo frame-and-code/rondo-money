@@ -126,5 +126,43 @@ against slips and against everyone who is not an admin, not a wall — a direct 
 from an admin account still goes through. The trade-off is worth revisiting the moment a
 second person gets write access.
 
-Like every other repository setting, this is not in code: it has to be recreated by hand if
-the repository moves.
+Like every other repository setting, this is not in code: the ruleset and **Allow auto-merge**
+(Settings → General, needed by the workflow below) both have to be recreated by hand if the
+repository moves.
+
+## Dependabot: patch and minor merge themselves
+
+[.github/workflows/dependabot-auto-merge.yml](../.github/workflows/dependabot-auto-merge.yml)
+turns on GitHub's auto-merge for Dependabot pull requests whose highest bump is
+`version-update:semver-patch` or `semver-minor`. Majors are left for a human to read.
+
+The distinction worth keeping straight: **the workflow merges nothing**. Auto-merge means
+"merge this once the branch rules are satisfied", so `gate` still decides — a red one leaves
+the PR open exactly as before, and this changes who presses the button, not what is allowed
+through. It exists because with zero required approvals a green Dependabot PR is merge-able
+and then just sits there, which is how five of them pile up.
+
+Details that are not obvious from the file:
+
+- **The semver step comes from `dependabot/fetch-metadata`**, which reads the metadata
+  Dependabot writes into the commit — the PR title is prose and is not parsed. The action
+  also validates the author and the commit signature, so a pull request that merely looks
+  like Dependabot's fails the step instead of being merged.
+- **`update-type` is the highest bump in the PR.** That is what makes this safe for the
+  grouped updates in [dependabot.yml](../.github/dependabot.yml): a group of patches and
+  minors reports `semver-minor` and merges; one major anywhere in a group reports
+  `semver-major` and holds the entire group. The `actions` group has no `update-types`
+  filter, so it is the one that will occasionally stop on a major and need a look.
+- **A Dependabot run gets a read-only `GITHUB_TOKEN`** unless the workflow declares
+  otherwise; `contents: write` + `pull-requests: write` is the minimum `gh pr merge --auto`
+  needs, and the most that file is granted.
+- **They merge one at a time.** The ruleset is `strict`, so after one PR lands the rest are
+  out of date and their green `gate` no longer counts. Dependabot rebases its own pull
+  requests by default, which re-runs the gate and lets auto-merge fire again — the queue
+  drains by itself, just not instantly. (It stops rebasing a PR left unmerged for 30 days;
+  `@dependabot rebase` in a comment restarts it.)
+- **`e2e` is skipped on these runs** — the Clerk secrets are hidden from Dependabot, and
+  `gate` counts `skipped` as passing. So an auto-merged dependency bump was proven by
+  everything except the browser scenarios. That is the deliberate trade behind the
+  `preflight` mechanism above, and the reason `build` exists as its own job: it is what
+  catches a dependency that breaks the toolchain when Playwright is not there to.
