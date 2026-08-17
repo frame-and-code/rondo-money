@@ -39,8 +39,8 @@
     },
     "railway-config-as-code": {
       "url": "https://docs.railway.com/config-as-code/reference",
-      "version": "n/a — platform, not a dependency (schema: https://backboard.railway.app/railway.schema.json)",
-      "why": "apps/*/railway.json is the only description of how dev is built and deployed, watch paths included (F1.13). A key that does not exist is ignored in silence: a typo in watchPatterns stops real deploys, or lets a migration-only commit through unnoticed. Confirm the key name and its section against the reference or the schema before editing either file — never from memory.",
+      "version": "n/a — platform, not a dependency",
+      "why": "apps/*/railway.json owns every build and deploy setting Railway lets config-as-code own, watch paths included (F1.13); variables, domains and the repository binding stay in the UI. A key that does not exist is ignored in silence: a typo in watchPatterns stops real deploys, or lets a migration-only commit through unnoticed. Confirm the key name and its section against this reference or the schema (https://backboard.railway.app/railway.schema.json) before editing either file — never from memory.",
       "checked": "2026-08-17"
     },
     "railway-watch-paths": {

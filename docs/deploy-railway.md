@@ -88,6 +88,13 @@ prose — deliberately does **not** redeploy: those files do land in a build lay
 but never in the runner image, so rebuilding both images for a documentation commit buys
 nothing.
 
+Both services watch **all** of `/packages/**`, which over-triggers on purpose: web does not
+depend on `@rondo/db`, so a migration-only commit rebuilds it for nothing. Narrowing that
+(`/packages/**` plus a `!/packages/db/**` negation) would buy a couple of minutes of build
+time and cost a rule that has to be re-checked every time the dependency graph moves — and
+the failure it invites is the silent one this whole section exists to remove. A spare rebuild
+is visible in the deploy list; a missing deploy is not.
+
 Config-as-code overrides the dashboard, so the **Watch Paths field in the Railway UI is left
 empty** — one source of truth, and it moves with the repository. Should a service ever stop
 reading the file (Railway's newer builder did not pull service config from `railway.json`), the
@@ -138,8 +145,9 @@ Two gotchas, both of which look like "the frontend cannot reach the API":
 - web opens at the dev URL, requests to api pass preflight (CORS);
 - the api deploy logs show the `prisma migrate deploy` pre-deploy step;
 - merging a green PR into `main` → both services redeployed on their own;
-- a commit touching only `packages/db` redeploys **api**, and its logs show the pre-deploy
-  migration; a commit touching only `docs/` or `.claude/` redeploys nothing (watch paths).
+- a commit touching only `packages/db` redeploys **both** services — `/packages/**` is watched
+  by each — and the api logs show the pre-deploy migration; a commit touching only `docs/` or
+  `.claude/` redeploys nothing (watch paths).
 
 Local dry run (the same sequence as on Railway):
 
