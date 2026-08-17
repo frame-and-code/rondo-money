@@ -1,0 +1,53 @@
+# Dependabot's patch and minor updates merge themselves; majors wait for a human.
+#
+# This workflow does not merge anything. It only turns on GitHub's **auto-merge** for the
+# pull request, which means "merge this once the branch rules are satisfied" — so `gate`
+# stays the gate (see ci.md), and a red one leaves the PR sitting there exactly as before.
+# Nothing here can merge a PR that the gate rejected.
+#
+# Why it is needed at all: with zero required approvals, a green Dependabot PR is merge-able
+# and simply waits for someone to press the button — which is how five of them pile up.
+#
+# Majors are deliberately excluded: a major is a runtime change to read, not a rubber stamp.
+# The `node:*-slim` bumps in the Dockerfiles are the case that matters — they have to move
+# together with `node-version` in ci.yml and `.nvmrc`.
+name: Dependabot auto-merge
+
+on: pull_request
+
+# A workflow run triggered by a Dependabot pull request gets a read-only GITHUB_TOKEN
+# unless it asks for more. These two are the minimum `gh pr merge --auto` needs, and the
+# most this workflow may ever have.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # The PR's author, not `github.actor`: the actor changes when a human re-runs the
+    # workflow or pushes to the branch, and this must key off who opened the pull request.
+    # fetch-metadata below double-checks it — it validates the author and the commit
+    # signature and fails on anything that only looks like Dependabot.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    name: Enable auto-merge for patch and minor updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # Reads the update's semver step out of the PR — the commit metadata Dependabot
+      # writes is the only trustworthy source; the title is prose.
+      - name: Read the update metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      # `update-type` is the **highest** bump in the PR, which is what makes this safe for
+      # the grouped updates in dependabot.yml: a group of patches and minors reports
+      # semver-minor, and one major anywhere in a group reports semver-major and stops the
+      # whole group here. That is why the grouped `actions` PR sometimes does not merge
+      # itself — one action went up a major.
+      - name: Queue the merge
+        if: contains(fromJSON('["version-update:semver-patch", "version-update:semver-minor"]'), steps.metadata.outputs.update-type)
+        run: gh pr merge --auto --squash "${PR_URL}"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
