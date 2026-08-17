@@ -334,17 +334,20 @@ jobs:
       # The Clerk variables are declared in the test:e2e task env in turbo.json — otherwise
       # turbo strict env mode strips them.
       #
-      # CLERK_JWT_KEY is a repository *variable*, not a secret: it is the instance's public
-      # key, and masking it in the logs would only make a paste error harder to read. It is
-      # what the api (started by Playwright) verifies with — the same PEM path production
-      # runs. Leaving it unset is safe: an empty value falls through to CLERK_SECRET_KEY,
-      # which web needs anyway.
+      # CLERK_JWT_KEY is what the api (started by Playwright) verifies with — the same PEM
+      # path production runs, rather than the JWKS one. It is a public key, so the secrets
+      # store is not strictly where it belongs; it lives there because that is where it was
+      # put, and the only cost is that a bad paste shows as *** in the logs.
+      #
+      # CLERK_SECRET_KEY stays: it is **web's** key (clerkMiddleware), and e2e/global-setup
+      # needs it to mint the Clerk Testing Token and create the test user. Removing it does
+      # not move e2e onto the PEM — it makes `preflight` skip e2e entirely.
       - name: E2E tests
         run: pnpm test:e2e
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          CLERK_JWT_KEY: ${{ vars.CLERK_JWT_KEY }}
+          CLERK_JWT_KEY: ${{ secrets.CLERK_JWT_KEY }}
 
       # CI uses the 'github' reporter (PR annotations); failure artifacts are Playwright traces
       - name: Upload Playwright traces

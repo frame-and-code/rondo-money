@@ -33,21 +33,24 @@ by someone else is `401`, with no hint in the body about which of those it was.
 
 ### Configuration
 
-| Variable           | Meaning                                                                                                |
-| ------------------ | ------------------------------------------------------------------------------------------------------ |
-| `CLERK_JWT_KEY`    | the instance's PEM public key — signatures are checked locally, no call to Clerk. Wins over the other. |
-| `CLERK_SECRET_KEY` | resolves the instance's JWKS from Clerk (cached five minutes). Fine locally; see the warning below.    |
+| Variable           | Meaning                                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| `CLERK_JWT_KEY`    | the instance's PEM public key — signatures are checked locally, no call to Clerk. Wins over the other.   |
+| `CLERK_SECRET_KEY` | accepted fallback: resolves the JWKS from Clerk (cached five minutes). Nothing here uses it — see below. |
 
 One of the two is **required**: with neither, the process exits at startup (`main.ts`)
-instead of answering 401 to every caller. Locally the key comes from `apps/api/.env.local`,
-generated from [`.env.local.tpl`](.env.local.tpl) by `pnpm env:setup`; on Railway — from
-the service's variables.
+instead of answering 401 to every caller. **Every environment uses `CLERK_JWT_KEY`** —
+locally from `apps/api/.env.local` ([`.env.local.tpl`](.env.local.tpl) via `pnpm
+env:setup`), in CI from a repository secret, on Railway from the service's variables. The
+api holds no Clerk secret at all: it only ever verifies signatures, and the public key is
+enough for that.
 
-⚠️ **Anywhere the API faces the internet, set `CLERK_JWT_KEY`.** On the secret-key path a
-token whose `kid` is not already cached costs one outbound request to Clerk, and a miss is
-never cached — so forged tokens carrying random `kid`s amplify one-for-one into JWKS
-fetches until the Clerk instance is rate-limited and genuine users get 401s. The API logs a
-warning at startup whenever it is running that way.
+⚠️ **Do not switch a deployed api to `CLERK_SECRET_KEY`.** On that path a token whose `kid`
+is not already cached costs one outbound request to Clerk, and a miss is never cached — so
+forged tokens carrying random `kid`s amplify one-for-one into JWKS fetches until the Clerk
+instance is rate-limited and genuine users get 401s. The api logs a warning at startup
+whenever it is running that way; keeping every environment on the PEM key is what keeps
+that warning worth reading.
 
 ## Running
 

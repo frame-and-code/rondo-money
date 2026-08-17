@@ -1,22 +1,23 @@
-# The secrets @rondo/api needs locally. Everything non-secret it reads (DATABASE_URL,
-# WEB_ORIGIN) lives in the workspace-root .env — see .env.example; the api loads
-# .env.local first, then that file (src/app.module.ts).
+# What @rondo/api reads locally beyond the workspace-root .env (DATABASE_URL, WEB_ORIGIN —
+# see .env.example). The api loads .env.local first, then that file (src/app.module.ts).
 #
 # Generate apps/api/.env.local from this template with `pnpm env:setup` (setup-env.sh at
 # the repo root, needs the 1Password CLI); without 1Password, copy this file to .env.local
-# and replace the 1Password secret references by hand. (`op inject` parses references
-# anywhere in the file, comments included — that's why this line avoids spelling one.)
+# and fill the value in by hand. (`op inject` parses references anywhere in the file,
+# comments included — that's why this line avoids spelling one.)
 #
-# Secrets live in a single 1Password item: vault "rondo-money", item "local", field name =
-# variable name. CLERK_SECRET_KEY is the same field @rondo/web reads — one Clerk dev
-# instance, one key — so apps/web/.env.local.tpl already created it.
+# Values live in a single 1Password item: vault "rondo-money", item "local", field name =
+# variable name. Create this one once, from the Clerk Dashboard → API Keys → JWKS Public
+# Key, pasted exactly as copied:
+#   op item edit local --vault rondo-money 'CLERK_JWT_KEY[text]=<paste the PEM>'
 
-# Clerk (F1.2). The guard verifies every session token itself; the secret key is what it
-# resolves the instance's JWKS with. Server-only — this file is git-ignored and must never
-# grow a NEXT_PUBLIC_ variable.
-CLERK_SECRET_KEY="{{ op://rondo-money/local/CLERK_SECRET_KEY }}"
-
-# Optional alternative to the above: the instance's PEM public key (Clerk Dashboard → API
-# keys → JWKS Public Key). When set it wins, and tokens are verified without any call
-# to Clerk. Left unset locally — the secret key is one variable instead of a pasted PEM.
-# CLERK_JWT_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+# Clerk (F1.2). The instance's **public** key: the guard checks every session token's
+# signature against it, locally, with no call to Clerk. Not a secret — Clerk publishes the
+# same key at its JWKS URL — but it stays out of git because it would pin this repository
+# to one Clerk instance.
+#
+# The alternative the code accepts, CLERK_SECRET_KEY, is deliberately not used here: it is
+# an admin credential for Clerk's Backend API, and it would make verification fetch the
+# JWKS over the network. Running the same key everywhere also keeps the startup warning
+# about that path meaningful — a warning seen every day is a warning nobody reads.
+CLERK_JWT_KEY="{{ op://rondo-money/local/CLERK_JWT_KEY }}"
