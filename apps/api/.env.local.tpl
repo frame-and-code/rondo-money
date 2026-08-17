@@ -17,6 +17,6 @@
 CLERK_SECRET_KEY="{{ op://rondo-money/local/CLERK_SECRET_KEY }}"
 
 # Optional alternative to the above: the instance's PEM public key (Clerk Dashboard → API
-# keys → Show JWT public key). When set it wins, and tokens are verified without any call
+# keys → JWKS Public Key). When set it wins, and tokens are verified without any call
 # to Clerk. Left unset locally — the secret key is one variable instead of a pasted PEM.
 # CLERK_JWT_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"

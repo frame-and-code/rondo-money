@@ -59,7 +59,7 @@ export function assertClerkVerificationConfigured(app: INestApplication): void {
       'Session tokens are verified against Clerk\'s JWKS endpoint. A token whose "kid" is ' +
         'not already cached costs one outbound request to Clerk, and an unknown "kid" is ' +
         'never cached as a miss — so forged tokens amplify into JWKS traffic. Set ' +
-        'CLERK_JWT_KEY (Dashboard → API keys → Show JWT public key) to verify without it.',
+        'CLERK_JWT_KEY (Dashboard → API Keys → JWKS Public Key) to verify without it.',
     );
   }
 }

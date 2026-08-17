@@ -38,7 +38,7 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
    - Settings → **Config file path**: `apps/api/railway.json`;
    - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = the web URL
      (step 4), and **`CLERK_JWT_KEY`** = the instance's PEM public key (dashboard.clerk.com
-     → API Keys → **Show JWT public key** → PEM Public Key; F1.2). The api verifies every
+     → API Keys → **JWKS Public Key** in the right-hand column; F1.2). The api verifies every
      token itself and **refuses to start** with no key at all, so a forgotten one fails the
      deploy's healthcheck instead of answering 401 to every authenticated request.
 
@@ -48,7 +48,14 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
      never cached, so forged tokens with random `kid`s amplify one-for-one into requests to
      Clerk until the instance is rate-limited and real users start seeing 401s. The PEM key
      verifies signatures locally and has no such path. `CLERK_JWT_KEY` wins when both are
-     set. Don't set `PORT` — Railway injects its own;
+     set.
+
+     Paste the PEM into the Railway field **as it is copied** — real line breaks — or with
+     the line breaks removed entirely; `@clerk/backend` strips newlines before decoding, so
+     both parse. What does not work is the `\n` escape form: nothing expands it outside a
+     `.env` file, the two characters land in the middle of the key, and every request 401s
+     with a signature error. (In `apps/api/.env.local` the escape form _is_ correct —
+     dotenv expands it inside double quotes.) Don't set `PORT` — Railway injects its own;
 
    - Settings → Networking → **Generate Domain**, then check the **target port** it
      recorded (3000 for api). Railway seeds that value from `EXPOSE` once, when the domain
