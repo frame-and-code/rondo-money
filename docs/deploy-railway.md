@@ -9,8 +9,10 @@ Production is separate (Phase 10).
 - **Images — Docker** (not Nixpacks): [apps/api/Dockerfile](../apps/api/Dockerfile) and
   [apps/web/Dockerfile](../apps/web/Dockerfile), build context — the repository root
   (pnpm-workspace). Build/deploy settings — config-as-code:
-  [apps/api/railway.json](../apps/api/railway.json), [apps/web/railway.json](../apps/web/railway.json).
-  Only environment variables and the repository binding remain in the Railway UI.
+  [apps/api/railway.json](../apps/api/railway.json), [apps/web/railway.json](../apps/web/railway.json),
+  watch paths included (see below). The Railway UI keeps what config-as-code cannot express:
+  environment variables, the repository binding (repo, branch, root directory, config file
+  path), the generated domain with its target port, and **Wait for CI**.
 - **api** — multi-stage: prod dependencies are installed as a separate layer
   (`pnpm install --prod --filter @rondo/api...`); only `dist` and the runtime
   `node_modules` end up in the runner. The image keeps the prisma CLI, schema, and
@@ -59,6 +61,46 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
    Deploy) — Railway waits for a green gate (see [ci.md](ci.md)) and only then
    deploys; a red `main` never reaches dev.
 
+## Watch Paths — which commits redeploy dev
+
+Both images build from the **repository root**: after the manifest layer each Dockerfile does
+`COPY . .`, so a change in any workspace, in the lockfile or in `turbo.json` changes what ends
+up in the image. Watch paths narrowed to `/apps/<service>/**` therefore hid a whole class of
+commits from dev — F1.9 merged and nothing deployed. The expensive case is migrations: F2.1,
+F3.1 and F4.1 are almost entirely `packages/db`, and without `/packages/**` dev would keep
+running the old schema under fresh code, with nothing in the application logs to explain it.
+
+The patterns live in `build.watchPatterns` of each `railway.json`:
+
+| Pattern                                     | Why it changes the image                                                                 |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `/apps/api/**` (api) · `/apps/web/**` (web) | the service's own source, its Dockerfile and its `railway.json`                          |
+| `/packages/**`                              | every workspace the build pulls in — `db` (schema + migrations), `types`, `ui`, `config` |
+| `/package.json`                             | the pnpm version (`packageManager`) and the root scripts                                 |
+| `/pnpm-lock.yaml`                           | any dependency change, in any workspace                                                  |
+| `/pnpm-workspace.yaml`                      | the workspace globs, the `js-yaml` override, the approved build scripts                  |
+| `/turbo.json`                               | the `build` task and the env it declares (turbo strict env mode)                         |
+| `/.dockerignore`                            | what enters the build context in the first place                                         |
+
+Patterns are gitignore-style and always anchored at the repository root, even when a Root
+Directory is set. Everything not listed — `.claude/**`, `docs/**`, `.github/**`, the top-level
+prose — deliberately does **not** redeploy: those files do land in a build layer (`COPY . .`),
+but never in the runner image, so rebuilding both images for a documentation commit buys
+nothing.
+
+Both services watch **all** of `/packages/**`, which over-triggers on purpose: web does not
+depend on `@rondo/db`, so a migration-only commit rebuilds it for nothing. Narrowing that
+(`/packages/**` plus a `!/packages/db/**` negation) would buy a couple of minutes of build
+time and cost a rule that has to be re-checked every time the dependency graph moves — and
+the failure it invites is the silent one this whole section exists to remove. A spare rebuild
+is visible in the deploy list; a missing deploy is not.
+
+Config-as-code overrides the dashboard, so the **Watch Paths field in the Railway UI is left
+empty** — one source of truth, and it moves with the repository. Should a service ever stop
+reading the file (Railway's newer builder did not pull service config from `railway.json`), the
+failure is the harmless direction: an empty UI field plus an ignored file means every commit
+deploys, not that deploys silently stop.
+
 ## Custom domains
 
 A generated `*.up.railway.app` address works, but it changes whenever a service or
@@ -102,7 +144,10 @@ Two gotchas, both of which look like "the frontend cannot reach the API":
 - `curl https://<api-url>/health` → `{"status":"ok","info":{"database":"up"}}` (200);
 - web opens at the dev URL, requests to api pass preflight (CORS);
 - the api deploy logs show the `prisma migrate deploy` pre-deploy step;
-- merging a green PR into `main` → both services redeployed on their own.
+- merging a green PR into `main` → both services redeployed on their own;
+- a commit touching only `packages/db` redeploys **both** services — `/packages/**` is watched
+  by each — and the api logs show the pre-deploy migration; a commit touching only `docs/` or
+  `.claude/` redeploys nothing (watch paths).
 
 Local dry run (the same sequence as on Railway):
 

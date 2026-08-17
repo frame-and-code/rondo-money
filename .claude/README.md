@@ -71,8 +71,9 @@ rule fails loudly.
 
 [`external-docs.json`](config/external-docs.json) — the external documentation this
 project's decisions actually depend on (Prisma extension boundaries, the ESLint rules that
-enforce ADR-005, Clerk JWT and revoked sessions, ISO 4217 exponents). Each entry says why
-we go there, because a link list nobody can justify becomes a link list nobody opens.
+enforce ADR-005, Clerk JWT and revoked sessions, ISO 4217 exponents, the Railway
+config-as-code keys behind `apps/*/railway.json`). Each entry says why we go there, because
+a link list nobody can justify becomes a link list nobody opens.
 
 ## Not here yet
 

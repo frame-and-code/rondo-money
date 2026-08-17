@@ -2,7 +2,16 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "apps/api/Dockerfile"
+    "dockerfilePath": "apps/api/Dockerfile",
+    "watchPatterns": [
+      "/apps/api/**",
+      "/packages/**",
+      "/package.json",
+      "/pnpm-lock.yaml",
+      "/pnpm-workspace.yaml",
+      "/turbo.json",
+      "/.dockerignore"
+    ]
   },
   "deploy": {
     "preDeployCommand": "node packages/db/node_modules/prisma/build/index.js migrate deploy --config packages/db/prisma.config.ts",
