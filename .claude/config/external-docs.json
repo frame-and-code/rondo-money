@@ -1,0 +1,47 @@
+{
+  "note": "External documentation this project's decisions depend on. Read the source before answering anything version-dependent — see .claude/rules/model-integrity.md. Every entry says why we come here; an entry nobody can justify should be deleted rather than kept 'for reference'. 'version' is the range installed here (pnpm-lock.yaml has the resolved one); 'checked' is when the link was last confirmed to resolve.",
+  "docs": {
+    "prisma-client-extensions": {
+      "url": "https://www.prisma.io/docs/orm/prisma-client/client-extensions/query",
+      "version": "prisma / @prisma/client ^7.9.1",
+      "why": "The auto-scoping extension (ADR-005) is our replacement for RLS, so its exact boundary matters more than its features: query extensions intercept the model API and do NOT intercept $queryRaw / $executeRaw. Confirm the boundary here before claiming anything is scoped automatically.",
+      "checked": "2026-08-16"
+    },
+    "prisma-raw-queries": {
+      "url": "https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries",
+      "version": "prisma / @prisma/client ^7.9.1",
+      "why": "Raw aggregates (balance, RTA, Available) are the one place the extension cannot protect. Come here for parameterisation and the difference between $queryRaw and $queryRawUnsafe before writing SQL that carries userId / budgetId by hand.",
+      "checked": "2026-08-16"
+    },
+    "eslint-no-restricted-syntax": {
+      "url": "https://eslint.org/docs/latest/rules/no-restricted-syntax",
+      "version": "eslint ^10.8.1",
+      "why": "The lint rule that keeps $queryRaw / $executeRaw out of everything except the context-aware repository is what makes ADR-005 enforceable in CI. Selector syntax and message wiring live here.",
+      "checked": "2026-08-16"
+    },
+    "eslint-no-restricted-imports": {
+      "url": "https://eslint.org/docs/latest/rules/no-restricted-imports",
+      "version": "eslint ^10.8.1",
+      "why": "Layer boundaries from ADR-002 (web never imports Prisma; DTOs come from packages/types) are enforced as import restrictions rather than left to review.",
+      "checked": "2026-08-16"
+    },
+    "clerk-manual-jwt-verification": {
+      "url": "https://clerk.com/docs/guides/sessions/manual-jwt-verification",
+      "version": "@clerk/nextjs ^7.7.1, @clerk/backend ^3.16.4",
+      "why": "The NestJS guard verifies the Clerk JWT itself and puts userId into the request context — the first link in the isolation chain. Networkless verification, the JWKS cache and which claim actually holds the user id are all version-dependent.",
+      "checked": "2026-08-16"
+    },
+    "clerk-session-tokens": {
+      "url": "https://clerk.com/docs/guides/sessions/session-tokens",
+      "version": "@clerk/nextjs ^7.7.1, @clerk/backend ^3.16.4",
+      "why": "Token lifetime and what happens to a revoked session: a signed-out or banned user keeps a technically valid token until it expires. Know the size of that window before writing anything about sign-out being immediate.",
+      "checked": "2026-08-16"
+    },
+    "iso-4217-currency-codes": {
+      "url": "https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html",
+      "version": "n/a — standard, not a dependency",
+      "why": "SIX is the ISO 4217 maintenance agency and publishes the authoritative code list with each currency's minor-unit exponent. Money is minor units in bigint and the digit count comes from the currency, never a hardcoded 2 — so this list, not intuition, decides how a budget's amounts are parsed and rendered. Readable summary: https://en.wikipedia.org/wiki/ISO_4217",
+      "checked": "2026-08-16"
+    }
+  }
+}

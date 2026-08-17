@@ -73,7 +73,18 @@ packages/
   types/      # shared DTOs; money as BigInt (minor units) — from day one
   config/     # shared configs (eslint / tsconfig / prettier) — F0.2
   ui/         # shared UI components (shadcn/ui) — F0.6
+.claude/      # agent setup: rules, commands, hooks, permissions — F1.9
 ```
+
+## Written with an agent
+
+Most of this code is written by Claude Code, so the project's conventions are checked in
+rather than remembered: [`CLAUDE.md`](CLAUDE.md) and [`.claude/`](.claude/README.md) hold
+the rules that load into every session, the workflow commands, and the hooks that block
+what must never happen — a push to `main`, a commit that skips the secret scan, a
+destructive migration against a non-local database. If you fork this repository and work
+in it by hand, none of it gets in your way; if you work in it with an agent, it is the
+part that keeps the result consistent.
 
 ## Running locally
 
