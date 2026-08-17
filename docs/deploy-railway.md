@@ -50,12 +50,21 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
      verifies signatures locally and has no such path. `CLERK_JWT_KEY` wins when both are
      set.
 
-     Paste the PEM into the Railway field **as it is copied** — real line breaks — or with
-     the line breaks removed entirely; `@clerk/backend` strips newlines before decoding, so
-     both parse. What does not work is the `\n` escape form: nothing expands it outside a
-     `.env` file, the two characters land in the middle of the key, and every request 401s
-     with a signature error. (In `apps/api/.env.local` the escape form _is_ correct —
-     dotenv expands it inside double quotes.) Don't set `PORT` — Railway injects its own;
+     Paste the PEM into the Railway field **exactly as copied**, real line breaks and all.
+     The `\n` escape form does not work: nothing expands it outside a `.env` file, the two
+     characters stay inside the key, and the request is then rejected as an invalid
+     signature — a config typo wearing the costume of a forged token. Stripping the line
+     breaks instead happens to pass `@clerk/backend` (it removes newlines before decoding)
+     but produces something no other tool accepts as a PEM — don't.
+     (In `apps/api/.env.local` the `\n` form _is_ the correct one: dotenv expands it inside
+     double quotes, and the api sees real newlines.) Don't set `PORT` — Railway injects its
+     own;
+
+     ⚠️ **Rotating the Clerk signing key means updating this variable**, and nothing will
+     tell you: the api starts, `/health` stays 200 because it is public, the deploy goes
+     green — and every authenticated request answers 401. Until the api checks its key
+     against the published JWKS at boot (tracked in Улучшения), this note is the only
+     safeguard;
 
    - Settings → Networking → **Generate Domain**, then check the **target port** it
      recorded (3000 for api). Railway seeds that value from `EXPOSE` once, when the domain
