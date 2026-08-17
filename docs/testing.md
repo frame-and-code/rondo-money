@@ -78,10 +78,14 @@ none of them may reach Clerk over the network:
 ## How to add tests to a new feature
 
 1. **Domain logic** (money, budget calculations, DTOs) → a unit test next to the package
-   where it lives (usually `packages/types/test/*.spec.ts`). For invariants and conventions,
-   write property-based tests with **fast-check** — example:
-   [`packages/types/test/money.spec.ts`](../packages/types/test/money.spec.ts).
+   where it lives (usually `packages/types/test/*.spec.ts`). Reach for **fast-check** when
+   the claim holds over a whole space of inputs — an invariant or a round-trip law —
+   example: [`packages/types/test/money.spec.ts`](../packages/types/test/money.spec.ts).
    Invariant 5.5 (`RTA + Σ Available = Σ Balance`) is checked exactly this way from Phase 4.
+   It is **not** the default for every spec: a named set of cases (an endpoint's rejection
+   reasons, a two-branch config lookup, the casings of a header) is covered by enumerating
+   them. Generating over that space proves the standard library works, and buys it with a
+   dependency and a slower suite.
 2. **Endpoint / DB work** → `apps/api/test/<feature>.integration.spec.ts`: bring up
    the real `AppModule` via `@nestjs/testing` + supertest — example:
    [`apps/api/test/health.integration.spec.ts`](../apps/api/test/health.integration.spec.ts).

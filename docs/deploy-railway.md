@@ -42,8 +42,9 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
      token itself and **refuses to start** with no key at all, so a forgotten one fails the
      deploy's healthcheck instead of answering 401 to every authenticated request.
 
-     `CLERK_SECRET_KEY` satisfies the same requirement and is what runs locally, but do not
-     use it on a service exposed to the internet: it makes verification fetch Clerk's JWKS,
+     `CLERK_SECRET_KEY` satisfies the same requirement, but no environment uses it any
+     more — local, CI and Railway all run the PEM key. Do not put it on a service exposed
+     to the internet: it makes verification fetch Clerk's JWKS,
      and a token whose `kid` is not already cached costs one outbound request — a miss is
      never cached, so forged tokens with random `kid`s amplify one-for-one into requests to
      Clerk until the instance is rate-limited and real users start seeing 401s. The PEM key
@@ -190,8 +191,11 @@ docker compose up -d postgres
 docker run --rm -e DATABASE_URL=postgresql://rondo:rondo_dev_secret@host.docker.internal:5432/rondo_dev \
   rondo-api node packages/db/node_modules/prisma/build/index.js migrate deploy \
   --config packages/db/prisma.config.ts   # pre-deploy — the same command as in railway.json
+# A PEM cannot be written inline as -e KEY=value — it has line breaks. Export it in the
+# shell and pass the name alone; docker then takes the value from the environment.
+export CLERK_JWT_KEY="$(pbpaste)"   # the PEM, copied from the Clerk Dashboard
 docker run -d -p 3100:3000 -e DATABASE_URL=postgresql://rondo:rondo_dev_secret@host.docker.internal:5432/rondo_dev \
-  -e WEB_ORIGIN=http://localhost:3101 -e CLERK_SECRET_KEY=sk_test_... rondo-api  # from apps/api/.env.local
+  -e WEB_ORIGIN=http://localhost:3101 -e CLERK_JWT_KEY rondo-api
 docker run -d -p 3101:3001 -e CLERK_SECRET_KEY=sk_test_... rondo-web   # from apps/web/.env.local
 curl http://localhost:3100/health   # {"status":"ok","info":{"database":"up"}}
 ```
