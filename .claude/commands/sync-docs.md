@@ -10,7 +10,10 @@ The project rule: prose is corrected in the **same** PR as the change (see
 
 ## Steps
 
-1. **Establish what changed.** `git status --porcelain` and `git diff main...HEAD --stat`.
+1. **Establish what changed** — and read the changes, not just the file names:
+   `git diff main...HEAD` for what is committed, `git diff` and `git diff --cached` for work
+   still in the tree, and `git status --porcelain` to catch untracked files, which no diff
+   shows. A sweep driven by paths alone misses the sentence a change quietly falsified.
    With `$ARGUMENTS`, narrow the sweep to that area instead.
 2. **Map changes to documents.** For each area touched:
    - anything about running, requirements or project state → `README.md`

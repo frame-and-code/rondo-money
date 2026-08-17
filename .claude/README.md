@@ -38,7 +38,7 @@ turn. They stay short deliberately: detail belongs in `docs/`, and the rule link
 | Command              | Does                                                                                           |
 | -------------------- | ---------------------------------------------------------------------------------------------- |
 | `/dev`               | brings up Postgres, migrations, api and web, and reports what is actually running              |
-| `/check`             | the CI gate locally: lint, typecheck, format, tests                                            |
+| `/check`             | the CI gate locally: lint, typecheck, format, build, tests, secret scan                        |
 | `/plan <F1.x>`       | reads the ticket and returns an ordered, file-scoped plan; writes no code                      |
 | `/grill-me <task>`   | interviews until the scope is shared, then hands off to `/plan`                                |
 | `/sync-docs`         | sweeps the documentation the change touched and corrects what went stale                       |
@@ -51,16 +51,21 @@ Wired in [`settings.json`](settings.json). Blocking hooks exit 2 and the reason 
 the agent; advisory hooks exit 0 and their output becomes context. They parse their JSON
 input with `node`, which this repository already requires — no extra prerequisite.
 
-| Hook                                                         | Event                  | Behaviour                                                                                                        |
-| ------------------------------------------------------------ | ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| [`guard-bash.sh`](hooks/guard-bash.sh)                       | `PreToolUse` :: `Bash` | **blocks** npm/yarn, `--no-verify` / `HUSKY=0` (they skip the secret scan), pushes to `main`, reckless `rm -rf`  |
-| [`guard-db.sh`](hooks/guard-db.sh)                           | `PreToolUse` :: `Bash` | **blocks** `prisma migrate` / `db push` / `DROP` / `TRUNCATE` unless `DATABASE_URL` points at the local database |
-| [`session-start-context.sh`](hooks/session-start-context.sh) | `SessionStart`         | prints branch, uncommitted count, last five commits; warns when the branch is `main`                             |
-| [`stop-docs-drift.sh`](hooks/stop-docs-drift.sh)             | `Stop`                 | when the session changed code but no `.md`, names the documents worth checking                                   |
+| Hook                                                         | Event                  | Behaviour                                                                                                                                                                                         |
+| ------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`guard-bash.sh`](hooks/guard-bash.sh)                       | `PreToolUse` :: `Bash` | **blocks** npm/yarn, every way round the secret scan (`--no-verify`, `HUSKY=0`, `core.hooksPath`), pushes to `main`, reckless `rm -rf` — seeing through wrappers like `command`, `env` and `sudo` |
+| [`guard-db.sh`](hooks/guard-db.sh)                           | `PreToolUse` :: `Bash` | **blocks** `prisma migrate` / `db push` / `DROP` / `TRUNCATE` unless `DATABASE_URL` points at the local database                                                                                  |
+| [`session-start-context.sh`](hooks/session-start-context.sh) | `SessionStart`         | prints branch, uncommitted count, last five commits; warns when the branch is `main`                                                                                                              |
+| [`stop-docs-drift.sh`](hooks/stop-docs-drift.sh)             | `Stop`                 | when the session changed code but no `.md`, names the documents worth checking                                                                                                                    |
 
-The third guarantee is not a hook: `git commit` and `git push` are deliberately **absent**
-from the allow list in `settings.json`, so every one of them prompts. That is the
-mechanical twin of the top rule in `CLAUDE.md`.
+The third guarantee is not a hook: `git commit`, `git push` and branch creation are
+deliberately **absent** from the allow list in `settings.json`, so every one of them
+prompts. That is the mechanical twin of the top rule in `CLAUDE.md` — and the reason a
+guard hook for them would be redundant.
+
+Neither layer is a sandbox, and `guard-bash.sh` says so in its own header: they refuse an
+agent's shortcuts, not a determined bypass. What they buy is that the obvious way round a
+rule fails loudly.
 
 ## Config (`config/`)
 

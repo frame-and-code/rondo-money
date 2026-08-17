@@ -10,15 +10,24 @@ it is parallelised across workspaces and cached where caching is safe.
 
 ## Steps
 
-Run all four, and run them all even if an earlier one fails — a single report beats four
+Run all six, and run them all even if an earlier one fails — a single report beats six
 round trips:
 
 ```bash
 pnpm lint
 pnpm typecheck
 pnpm format:check
+pnpm build
 pnpm test
+pnpm scan:secrets
 ```
+
+`build` and `scan:secrets` are in the list because the gate CI enforces is
+`secrets · static · build · unit · integration · e2e`: without them this command can pass
+while CI fails. `build` is not covered by `typecheck` — [`docs/ci.md`](../../docs/ci.md)
+records the case where a TypeScript bump left `apps/api` unbuildable while `tsc --noEmit`
+stayed green. `scan:secrets` needs gitleaks on `PATH`; if it is missing, say so rather than
+reporting a gate that did not run.
 
 `pnpm test` covers unit, integration and e2e. Integration and e2e need Postgres
 (`docker compose up -d`) and e2e needs Clerk keys in `apps/web/.env.local`; if either is
@@ -37,5 +46,7 @@ With `$ARGUMENTS`, target one workspace: `pnpm --filter <name> lint` and so on.
 ## Local e2e trap
 
 After a local e2e run `apps/web/next-env.d.ts` shows up modified, because `next dev`
-rewrites it to its dev variant. Discard it (`git checkout -- apps/web/next-env.d.ts`);
-never sweep it into a commit. Details in [`docs/testing.md`](../../docs/testing.md).
+rewrites it to its dev variant. It must never be swept into a commit; the fix is to discard
+it with `git checkout -- apps/web/next-env.d.ts`. That command throws local changes away,
+so propose it and let the user run it — like every git action beyond `git add`. Details in
+[`docs/testing.md`](../../docs/testing.md).

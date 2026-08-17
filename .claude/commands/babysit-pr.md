@@ -46,26 +46,28 @@ Run every part on every tick — new feedback can land at any moment.
 
 `gh pr view <PR#> --json mergeable,mergeStateStatus`. The ruleset requires the branch to be
 up to date with `main` before merging, so a behind branch is not merge-ready even when
-every check is green. Merge `main` in (`git fetch origin main && git merge origin/main`) —
-never rebase a pushed branch without asking. Resolve conflicts by reading both sides; a
+every check is green. The fix is to merge `main` in
+(`git fetch origin main && git merge origin/main`) — **proposed to the user, never done on
+the loop's own authority** (see step (d)); a rebase of a pushed branch is not proposed at
+all unless they ask for one. Resolve conflicts by reading both sides; a
 blanket `--ours` / `--theirs` on budget maths or a migration is how data bugs get merged.
 If they cannot be resolved honestly, `git merge --abort`, tell the user why, and stop.
 
 ### (b) Reviewer feedback
 
-**Where feedback has arrived so far.** PRs #31, #36, #37 and #39 carry no review thread and
-no formal review at all — but those were small, largely config-and-docs changes with little
-to flag, so read that as a fact about those four PRs, not as a property of the setup. Both
-bots can post inline threads on a change that gives them something to say. Check every
-channel; treat none of them as the only one:
+**Where feedback arrives.** Each bot uses more than one channel, and how much they say
+depends on how much there is to say: PRs #31, #36, #37 and #39 — small config-and-docs
+changes — produced no review thread at all, while #40 produced two. Check every channel and
+treat none of them as the only one:
 
 - **CodeRabbit** posts a walkthrough as one issue comment on the conversation tab (~4–5 KB,
   collapsed `<details>` blocks, opening with the count of actionable comments). Read it
   with `gh api repos/frame-and-code/rondo-money/issues/<PR#>/comments`.
-- **Greptile** has so far appeared only as the `Greptile Review` check, with its findings
-  behind the check's details URL on greptile.com rather than in the GitHub API.
-- **Review threads** — none yet. Query them every tick regardless: an empty list means
-  "nothing this time", never "this channel is dead".
+- **Greptile** posts a summary issue comment (confidence score, files needing attention, a
+  security section) **and** an inline review thread per finding, each badged with a
+  severity. Its `Greptile Review` check links to the same review on greptile.com.
+- **Review threads** are therefore a live channel: query them every tick, and read an empty
+  list as "nothing this time", never as "this channel is dead".
 
 Fetch every thread in one pass and act only on those that are neither resolved nor
 outdated:
@@ -113,11 +115,16 @@ user. Report it either way: saying nothing about Sonar reads as "green".
 
 ### (d) Push once per tick
 
-Batch the tick's commits and push once, so the reviewers see the final state instead of
-reviewing every intermediate commit. `git commit` and `git push` are deliberately not in
-the allow list, so each one asks the user — that is the design, not a bug: the loop pauses
-at a real decision point roughly once per tick. If the user wants it unattended, they can
-allow `Bash(git push origin F*)` in their own `settings.local.json`, which is git-ignored.
+Batch the tick's fixes and push once, so the reviewers see the final state rather than
+every intermediate commit.
+
+**Git remains the user's call throughout** ([`communication.md`](../rules/communication.md)):
+on its own the loop only ever `git add`s. Merging `main` in, committing and pushing are
+_proposed_, and each reaches the user as a permission prompt, because none of them sits in
+the allow list. That pause, roughly once per tick, is the design and not friction to route
+around: invoking `/babysit-pr` asks for a PR to be watched, it does not hand over standing
+authority to move the branch. A user who wants it unattended widens their own git-ignored
+`settings.local.json` — an explicit choice, made once, in writing.
 
 ## Step 3 — Stop condition
 
