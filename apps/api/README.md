@@ -1,7 +1,9 @@
 # @rondo/api
 
 Rondo Money backend on **NestJS (REST)** — skeleton F0.4, closed to anonymous callers since
-F1.2, scoping every database query to the caller since F1.3.
+F1.2, scoping every query for domain data to the caller since F1.3. The one deliberate
+exception is the healthcheck's `SELECT 1`, which touches no tenant data and is named as such
+below.
 
 Beyond the healthcheck there are still no domain endpoints: the first one arrives in F1.6 and
 the single mutation point in F2.2. What exists already is the machinery they are built on —
@@ -80,7 +82,8 @@ is ordinary code here — and code fails silently. Four mechanisms carry it, in 
    the gate if a domain module imports it anyway.
    - Note on types: Prisma still requires `userId` in a write payload, so a caller names an
      owner — the extension overwrites it with the verified caller, which is what makes naming
-     the wrong one harmless. Reads need no filter at all.
+     the wrong one harmless. On a read a caller passes no `userId` at all; `SCOPED_PRISMA`
+     adds the filter. That is a property of _this_ client, not permission to use another one.
    - It sees **top-level operations only.** A write that nests a relation (a `create` inside
      another model's `data`) keeps whatever `userId` the caller put on the nested rows.
      Unreachable today (one model, no relations), but that is the shape a transfer's two legs

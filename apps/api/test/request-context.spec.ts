@@ -29,6 +29,20 @@ describe('RequestContextService', () => {
     });
   });
 
+  it('refuses to change the caller once the scope carries one', () => {
+    const context = new RequestContextService();
+
+    context.run(() => {
+      context.setUserId('user_a');
+
+      // Recording the same id twice is harmless; a *different* one would silently move the
+      // rest of the request to another user's data, which is the whole thing being prevented.
+      expect(() => context.setUserId('user_a')).not.toThrow();
+      expect(() => context.setUserId('user_b')).toThrow(/already carries a different userId/);
+      expect(context.requireUserId()).toBe('user_a');
+    });
+  });
+
   it('keeps two requests in flight apart', async () => {
     const context = new RequestContextService();
 

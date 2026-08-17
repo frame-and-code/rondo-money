@@ -51,6 +51,16 @@ export class RequestContextService {
       );
     }
 
+    if (scope.userId !== undefined && scope.userId !== userId) {
+      // The store is the only source of tenant identity for the scoped client and for
+      // `ScopedRawRepository`. A second writer with a different id would silently move the
+      // rest of the request to another user's data, so refuse instead of overwriting.
+      throw new Error(
+        'The request context already carries a different userId: the caller is recorded ' +
+          'once per request, by the auth guard',
+      );
+    }
+
     scope.userId = userId;
   }
 

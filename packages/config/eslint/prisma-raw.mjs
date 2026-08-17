@@ -23,20 +23,16 @@ const MESSAGE =
  * @returns {import('eslint').Linter.Config[]}
  */
 export default function prismaRaw({ allow = [] } = {}) {
-  const configs = [
+  return [
     {
       files: ['**/*.ts'],
+      // The exception is expressed as `ignores` rather than a later layer switching the rule
+      // off: flat config cannot subtract one selector from `no-restricted-syntax`, so turning
+      // it off would also drop whatever else the base — or a future layer — restricts there.
+      ignores: allow,
       rules: {
         'no-restricted-syntax': ['error', { selector: RAW_SQL_MEMBER, message: MESSAGE }],
       },
     },
   ];
-
-  if (allow.length > 0) {
-    // Switches the whole rule off rather than subtracting this one selector — flat config has
-    // no way to remove a single entry, and `no-restricted-syntax` is used for nothing else.
-    configs.push({ files: allow, rules: { 'no-restricted-syntax': 'off' } });
-  }
-
-  return configs;
 }

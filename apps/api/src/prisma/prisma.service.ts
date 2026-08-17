@@ -9,9 +9,11 @@ import { PrismaClient } from '@rondo/db';
  *
  * ⚠️ **This client is not scoped.** It is the raw connection the auto-scoping extension is
  * built on (`SCOPED_PRISMA`), and a query issued through it carries no `userId` filter at
- * all. Two callers may legitimately use it — `ScopedRawRepository`, which scopes raw SQL
- * itself, and test fixtures cleaning up rows across users. Domain modules inject
- * `SCOPED_PRISMA` instead; reaching for this one there is how ADR-005 gets bypassed.
+ * all. Three callers may legitimately use it, none of them touching tenant data unscoped:
+ * `ScopedRawRepository`, which scopes raw SQL itself; `DatabaseProbe`, whose single statement
+ * is the healthcheck's `SELECT 1`; and test fixtures cleaning up rows across users. Domain
+ * modules inject `SCOPED_PRISMA` instead — reaching for this one there is how ADR-005 gets
+ * bypassed, which is why the lint rule refuses the import outside those places.
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {

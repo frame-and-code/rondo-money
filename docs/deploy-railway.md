@@ -156,24 +156,27 @@ Two gotchas. The second looks like "the frontend cannot reach the API"; the firs
 
 - `WEB_ORIGIN` must be the **exact** origin, scheme included (`https://dev.<domain>`), with no
   trailing slash. Since F1.3 it is compared verbatim twice: by CORS, and against the `azp`
-  claim of every session token. A wrong value therefore shows up as **401 on every
-  authenticated request**, with no CORS error anywhere — while `/health` stays green, because
-  the platform's probe is anonymous. Missing entirely, the api now refuses to start
-  (`assertWebOriginConfigured`), so that case fails the deploy instead of serving 401s;
+  claim of every session token. A wrong value therefore breaks callers in two different ways —
+  a browser fails the CORS check before it ever sees a response, a direct API client gets
+  **401** from token verification — while `/health` stays green either way, because the
+  platform's probe is anonymous and same-origin. The api now refuses to start when the
+  variable is missing, or when it is not an exact origin (a trailing slash or a path is
+  rejected: `assertWebOriginConfigured`), so those cases fail the deploy instead of serving
+  broken requests;
 - `NEXT_PUBLIC_API_URL` is a build arg, so pointing it at a new domain needs a **rebuild** —
   redeploying the existing image keeps the old value baked in.
 
 ## Environment variables (dev)
 
-| Service | Variable                            | Value                                     | When it applies               |
-| ------- | ----------------------------------- | ----------------------------------------- | ----------------------------- |
-| api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`              | runtime + pre-deploy          |
-| api     | `WEB_ORIGIN`                        | the public web URL (exact — CORS + `azp`) | runtime (start fails without) |
-| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key — **use this one**   | runtime (start fails without) |
-| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2          | runtime (only if no JWT key)  |
-| web     | `NEXT_PUBLIC_API_URL`               | the public api URL                        | **build** (baked into bundle) |
-| web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)          | **build** (baked into bundle) |
-| web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)               | runtime (never in the image)  |
+| Service | Variable                            | Value                                     | When it applies                             |
+| ------- | ----------------------------------- | ----------------------------------------- | ------------------------------------------- |
+| api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`              | runtime + pre-deploy                        |
+| api     | `WEB_ORIGIN`                        | the public web URL (exact — CORS + `azp`) | runtime (start fails without)               |
+| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key — **use this one**   | runtime (start fails if neither key is set) |
+| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2          | runtime (only if no JWT key)                |
+| web     | `NEXT_PUBLIC_API_URL`               | the public api URL                        | **build** (baked into bundle)               |
+| web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)          | **build** (baked into bundle)               |
+| web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)               | runtime (never in the image)                |
 
 ## Verification (DoD)
 

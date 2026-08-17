@@ -24,9 +24,13 @@ export default function unscopedPrisma({
   allow = [],
   patterns = ['@/prisma/prisma.service', '**/prisma/prisma.service'],
 } = {}) {
-  const configs = [
+  return [
     {
       files: ['**/*.ts'],
+      // Expressed as `ignores`, not as a later layer switching the rule off: flat config
+      // cannot subtract one entry from `no-restricted-imports`, so `off` would also drop
+      // anything else the base — or a future layer — restricts in those paths.
+      ignores: allow,
       rules: {
         'no-restricted-imports': [
           'error',
@@ -46,12 +50,4 @@ export default function unscopedPrisma({
       },
     },
   ];
-
-  if (allow.length > 0) {
-    // Switches the whole rule off for those paths: flat config cannot subtract one entry, and
-    // `no-restricted-imports` is used for nothing else here.
-    configs.push({ files: allow, rules: { 'no-restricted-imports': 'off' } });
-  }
-
-  return configs;
 }

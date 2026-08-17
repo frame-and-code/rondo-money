@@ -110,4 +110,18 @@ describe('assertWebOriginConfigured', () => {
 
     expect(() => assertWebOriginConfigured(config)).not.toThrow();
   });
+
+  // Both consumers compare the value verbatim — the browser's `Origin` header carries no
+  // trailing slash and no path, and Clerk matches `azp` by equality. So the shapes below do
+  // not degrade gracefully: they reject every authenticated request, which is worth catching
+  // at boot rather than in production.
+  it.each([
+    ['a trailing slash', 'https://app.rondo.example/'],
+    ['a path', 'https://app.rondo.example/app'],
+    ['not a URL at all', 'app.rondo.example'],
+  ])('rejects %s', (_case, value) => {
+    process.env.WEB_ORIGIN = value;
+
+    expect(() => assertWebOriginConfigured(config)).toThrow(/WEB_ORIGIN/);
+  });
 });

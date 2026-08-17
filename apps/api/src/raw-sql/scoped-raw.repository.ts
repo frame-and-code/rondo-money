@@ -26,6 +26,12 @@ export interface RawQueryScope {
  * `requireUserId()` throws before any SQL is sent. What it cannot enforce is that the SQL
  * actually *uses* the scope; that is what the cross-tenant tests are for, on every phase
  * that adds a raw aggregate (Phases 4–5).
+ *
+ * Both methods run on the top-level client, **not** on an enclosing `$transaction`. Reads are
+ * unaffected, and there is no writer today: `execute` has no callers, and from F2.2 every
+ * domain mutation goes through the single mutation point with its journal entry. When that
+ * phase needs raw SQL inside its transaction, it passes the transactional client in — adding
+ * the parameter now would be an unused API whose only test would be its own scaffolding.
  */
 @Injectable()
 export class ScopedRawRepository {

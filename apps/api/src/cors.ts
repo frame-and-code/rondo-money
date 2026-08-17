@@ -36,16 +36,38 @@ export function resolveWebOrigin(config: ConfigService): string {
  * specs build the app through `Test.createTestingModule` and never come through here.
  */
 export function assertWebOriginConfigured(config: ConfigService): void {
-  if (config.get<string>('WEB_ORIGIN')) {
-    return;
+  const configured = config.get<string>('WEB_ORIGIN');
+
+  if (!configured) {
+    throw new Error(
+      'WEB_ORIGIN is not set. It is both the CORS allowance and the "azp" claim every ' +
+        'session token must carry, so starting without it would answer 401 to every ' +
+        `authenticated request. Set it to the web app's origin (locally ${DEFAULT_WEB_ORIGIN}, ` +
+        'see .env.example; on Railway the deployed web URL).',
+    );
   }
 
-  throw new Error(
-    'WEB_ORIGIN is not set. It is both the CORS allowance and the "azp" claim every ' +
-      'session token must carry, so starting without it would answer 401 to every ' +
-      `authenticated request. Set it to the web app's origin (locally ${DEFAULT_WEB_ORIGIN}, ` +
-      'see .env.example; on Railway the deployed web URL).',
-  );
+  // Both consumers compare the value verbatim: the browser sends `https://app.example` as its
+  // Origin, and Clerk matches `azp` by equality. So a trailing slash or a path — the shapes
+  // someone naturally pastes from a browser's address bar — do not "mostly work": they fail
+  // every request, in a way no error message points at. Cheap to reject here, expensive to
+  // diagnose on a deployment.
+  let origin: string;
+  try {
+    origin = new URL(configured).origin;
+  } catch {
+    throw new Error(
+      `WEB_ORIGIN is not a URL: ${configured}. Expected an origin like ${DEFAULT_WEB_ORIGIN}.`,
+    );
+  }
+
+  if (origin !== configured || !/^https?:$/.test(new URL(configured).protocol)) {
+    throw new Error(
+      `WEB_ORIGIN must be an exact http(s) origin, with no trailing slash and no path: ` +
+        `got ${configured}, expected ${origin}. It is compared verbatim by CORS and by the ` +
+        'token\'s "azp" claim, so anything else rejects every authenticated request.',
+    );
+  }
 }
 
 /**

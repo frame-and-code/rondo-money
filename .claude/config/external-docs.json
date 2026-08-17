@@ -9,8 +9,8 @@
     },
     "node-async-local-storage": {
       "url": "https://nodejs.org/api/async_context.html#class-asynclocalstorage",
-      "version": "node 26 (engines >=26, .nvmrc 26, CI node-version 26)",
-      "why": "The request context (F1.3) is hand-written on AsyncLocalStorage rather than nestjs-cls, so its semantics are ours to know: a store is shared by everything in one async chain, propagates across await, and is absent in anything that escapes the request (timers, event listeners, background work). Come here before assuming a value survives into code the request did not await.",
+      "version": "node >=26",
+      "why": "The request context (F1.3) is hand-written on AsyncLocalStorage rather than nestjs-cls (the workspace pins node >=26 in engines, .nvmrc and every CI job), so its semantics are ours to know: a store is shared by everything in one async chain, propagates across await, and is absent in anything that escapes the request (timers, event listeners, background work). Come here before assuming a value survives into code the request did not await.",
       "checked": "2026-08-17"
     },
     "clerk-authorized-parties": {
