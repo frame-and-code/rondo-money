@@ -74,6 +74,37 @@ none of them may reach Clerk over the network:
   [`apps/api/test/auth.integration.spec.ts`](../apps/api/test/auth.integration.spec.ts).
 - Mocking `verifyToken()` instead would leave the one thing worth proving untested; the
   key pair costs milliseconds.
+- Since F1.3 a token also needs an **`azp` claim equal to the app's `WEB_ORIGIN`**, or the
+  guard rejects it. Read the origin from the booted app (`resolveWebOrigin(app.get(ConfigService))`)
+  rather than hardcoding it — `WEB_ORIGIN` may be set in the environment.
+
+### Scoped queries in api tests (F1.3)
+
+The auto-scoping extension takes the caller from the request context, so a spec that talks to
+the database has to say who is calling:
+
+```ts
+const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
+  context.run(async () => {
+    context.setUserId(userId);
+    return await query(); // the await belongs inside the scope — see below
+  });
+```
+
+- ⚠️ **Await inside the scope.** Prisma's promises are lazy: the hooks run when the promise is
+  awaited, not when `findMany()` is called. Returning an un-awaited promise out of `run()`
+  executes the query with no context, so a test expecting a rejection passes for the wrong
+  reason. In the running app this cannot happen — the middleware wraps the whole request.
+- **Fixtures and cleanup go through the unscoped client** (`PrismaService`): setting up user
+  A's rows while acting as user B, or deleting both users' rows afterwards, is exactly what the
+  scoped client is built to refuse.
+- **Cross-tenant tests** are mandatory for every phase that adds domain tables — copy
+  [`apps/api/test/user-scoping.integration.spec.ts`](../apps/api/test/user-scoping.integration.spec.ts),
+  which covers reads, bulk writes, ownership reassignment and behaviour inside `$transaction`.
+- To exercise the **whole chain** (HTTP → guard → context → query) declare a probe controller
+  on the testing module, the way
+  [`scoped-raw.integration.spec.ts`](../apps/api/test/scoped-raw.integration.spec.ts) does; the
+  app has no domain endpoint of its own until F1.6.
 
 ## How to add tests to a new feature
 

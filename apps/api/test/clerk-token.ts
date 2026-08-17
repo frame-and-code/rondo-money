@@ -15,6 +15,12 @@ export interface SessionTokenClaims {
   sub: string;
   iat: number;
   exp: number;
+  /**
+   * The authorized party — the origin the token was minted for. Optional here precisely so a
+   * spec can leave it out: `verifyToken()` is configured with `authorizedParties` (F1.3), and
+   * a token without this claim is rejected the same way one from a foreign origin is.
+   */
+  azp?: string;
 }
 
 export interface TestSigningKey {

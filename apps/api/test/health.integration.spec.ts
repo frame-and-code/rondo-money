@@ -1,6 +1,7 @@
 import { type Server } from 'node:http';
 
 import { type INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
@@ -48,7 +49,7 @@ describe('GET /health (integration)', () => {
     const server = app.getHttpServer() as Server;
     // Resolve the origin the same way the app does, so the test holds even when
     // WEB_ORIGIN is overridden in the environment.
-    const webOrigin = resolveWebOrigin(app);
+    const webOrigin = resolveWebOrigin(app.get(ConfigService));
     const response = await request(server)
       .options('/health')
       .set('Origin', webOrigin)

@@ -18,6 +18,14 @@ each kind of file may cost and what it may contain:
 A rule is a sentence you must not break. A hook is a rule that cannot be broken. Anything
 that must hold every time belongs in a hook or in `settings.json` — not only in prose.
 
+One layer lives outside this directory: [`apps/web/AGENTS.md`](../apps/web/AGENTS.md), loaded
+through the one-line `apps/web/CLAUDE.md` when work happens in that workspace. It exists
+because **Next 16 writes it itself**: `next dev` detects a coding agent and inserts a managed
+block (`writeAgentFiles` in `node_modules/next/dist/server/lib/generate-agent-files.js`). Rather
+than fight a dependency that writes into the agent's context, the file was made ours — Next
+maintains only what is between its markers, the rest is the workspace's own guidance, and any
+change Next makes shows up in a diff.
+
 ## Rules (`rules/`)
 
 All seven are imported by [`CLAUDE.md`](../CLAUDE.md) and are therefore in context on every
@@ -57,6 +65,13 @@ input with `node`, which this repository already requires — no extra prerequis
 | [`guard-db.sh`](hooks/guard-db.sh)                           | `PreToolUse` :: `Bash` | **blocks** `prisma migrate` / `db push` / `DROP` / `TRUNCATE` unless `DATABASE_URL` points at the local database                                                                                  |
 | [`session-start-context.sh`](hooks/session-start-context.sh) | `SessionStart`         | prints branch, uncommitted count, last five commits; warns when the branch is `main`                                                                                                              |
 | [`stop-docs-drift.sh`](hooks/stop-docs-drift.sh)             | `Stop`                 | when the session changed code but no `.md`, names the documents worth checking                                                                                                                    |
+| [`stop-scoping-drift.sh`](hooks/stop-scoping-drift.sh)       | `Stop`                 | when `schema.prisma` changed but the scoped-model registry did not, lists what a new user-owned table needs (registry, migration, cross-tenant test, `@map`)                                      |
+
+`stop-scoping-drift.sh` deliberately does not parse the schema: the guarantee that a
+user-owned model is registered is a unit test (`apps/api/test/scoped-models.spec.ts`), which
+runs for everyone in CI. Re-implementing its logic in bash would drift from it silently, and a
+check that quietly stops matching is worse than none — the same reasoning by which ADR-005
+rejected "extension only, no rules for raw SQL".
 
 The third guarantee is not a hook: `git commit`, `git push` and branch creation are
 deliberately **absent** from the allow list in `settings.json`, so every one of them

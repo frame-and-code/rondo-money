@@ -2,6 +2,8 @@ import { type VerifyTokenOptions } from '@clerk/backend';
 import { Logger, type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { resolveWebOrigin } from '@/cors';
+
 const logger = new Logger('ClerkVerification');
 
 /**
@@ -24,19 +26,27 @@ const logger = new Logger('ClerkVerification');
  * `verifyToken()` fail and the guard answer 401 to every caller — a login loop nobody can
  * diagnose from the outside.
  *
- * `authorizedParties` (the `azp` check against the frontend origin) is deliberately not
- * configured yet: nothing sends the API a token before F1.3, so there is no way to prove
- * the claim's value here — see the ticket note in the PR.
+ * Both shapes also carry `authorizedParties`: the token's `azp` claim names the origin the
+ * session token was minted for, and Clerk rejects the token unless it matches ours. That is
+ * the standard defence against a token issued to another subdomain being replayed here — and
+ * it costs no new configuration, since `WEB_ORIGIN` already names our web client for CORS.
+ *
+ * The one failure mode to recognise: if a real browser token starts answering 401 once the
+ * web app calls the API (F1.6), the cause is this check, and the reason — Clerk naming the
+ * `azp` claim and the value it expected — is in the guard's debug log. Fix `WEB_ORIGIN`
+ * rather than dropping the check.
  */
 export function resolveClerkVerifyOptions(config: ConfigService): VerifyTokenOptions {
+  const authorizedParties = [resolveWebOrigin(config)];
+
   const jwtKey = config.get<string>('CLERK_JWT_KEY');
   if (jwtKey) {
-    return { jwtKey };
+    return { jwtKey, authorizedParties };
   }
 
   const secretKey = config.get<string>('CLERK_SECRET_KEY');
   if (secretKey) {
-    return { secretKey };
+    return { secretKey, authorizedParties };
   }
 
   throw new Error(

@@ -8,6 +8,8 @@
   "exports": {
     "./eslint": "./eslint/base.mjs",
     "./eslint/type-checked": "./eslint/type-checked.mjs",
+    "./eslint/prisma-raw": "./eslint/prisma-raw.mjs",
+    "./eslint/unscoped-prisma": "./eslint/unscoped-prisma.mjs",
     "./prettier": "./prettier/index.mjs",
     "./tsconfig/base.json": "./tsconfig/base.json"
   },

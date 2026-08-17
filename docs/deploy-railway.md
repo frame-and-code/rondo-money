@@ -151,24 +151,29 @@ Giving dev its own subtree matters because dev redeploys on every green commit t
 a production name pointing at that environment would promise stability the environment does
 not have.
 
-Two gotchas, both of which look like "the frontend cannot reach the API":
+Two gotchas. The second looks like "the frontend cannot reach the API"; the first usually does
+**not**, which is what makes it expensive:
 
-- `WEB_ORIGIN` must be the **exact** origin, scheme included (`https://dev.<domain>`), since
-  CORS compares it verbatim;
+- `WEB_ORIGIN` must be the **exact** origin, scheme included (`https://dev.<domain>`), with no
+  trailing slash. Since F1.3 it is compared verbatim twice: by CORS, and against the `azp`
+  claim of every session token. A wrong value therefore shows up as **401 on every
+  authenticated request**, with no CORS error anywhere — while `/health` stays green, because
+  the platform's probe is anonymous. Missing entirely, the api now refuses to start
+  (`assertWebOriginConfigured`), so that case fails the deploy instead of serving 401s;
 - `NEXT_PUBLIC_API_URL` is a build arg, so pointing it at a new domain needs a **rebuild** —
   redeploying the existing image keeps the old value baked in.
 
 ## Environment variables (dev)
 
-| Service | Variable                            | Value                                   | When it applies               |
-| ------- | ----------------------------------- | --------------------------------------- | ----------------------------- |
-| api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`            | runtime + pre-deploy          |
-| api     | `WEB_ORIGIN`                        | the public web URL (exact match — CORS) | runtime                       |
-| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key — **use this one** | runtime (start fails without) |
-| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2        | runtime (only if no JWT key)  |
-| web     | `NEXT_PUBLIC_API_URL`               | the public api URL                      | **build** (baked into bundle) |
-| web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)        | **build** (baked into bundle) |
-| web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)             | runtime (never in the image)  |
+| Service | Variable                            | Value                                     | When it applies               |
+| ------- | ----------------------------------- | ----------------------------------------- | ----------------------------- |
+| api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`              | runtime + pre-deploy          |
+| api     | `WEB_ORIGIN`                        | the public web URL (exact — CORS + `azp`) | runtime (start fails without) |
+| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key — **use this one**   | runtime (start fails without) |
+| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2          | runtime (only if no JWT key)  |
+| web     | `NEXT_PUBLIC_API_URL`               | the public api URL                        | **build** (baked into bundle) |
+| web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)          | **build** (baked into bundle) |
+| web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)               | runtime (never in the image)  |
 
 ## Verification (DoD)
 

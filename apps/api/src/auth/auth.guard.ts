@@ -12,6 +12,7 @@ import { Reflector } from '@nestjs/core';
 import { type AuthenticatedRequest } from '@/auth/authenticated-request';
 import { resolveClerkVerifyOptions } from '@/auth/clerk-verification';
 import { IS_PUBLIC_KEY } from '@/auth/public.decorator';
+import { RequestContextService } from '@/request-context/request-context.service';
 
 const BEARER_SCHEME = 'bearer ';
 
@@ -32,9 +33,11 @@ function extractBearerToken(header: string | undefined): string | undefined {
 }
 
 /**
- * Verifies the Clerk session token on every request and puts the caller's `userId` on the
- * request. Registered globally (`AuthModule` → `APP_GUARD`), so an endpoint is protected
- * unless it says otherwise with `@Public()`.
+ * Verifies the Clerk session token on every request and publishes the caller's `userId` —
+ * on the request, for handlers reading `@CurrentUserId()`, and into the request context,
+ * where the Prisma extension and the raw-SQL repository pick it up. Registered globally
+ * (`AuthModule` → `APP_GUARD`), so an endpoint is protected unless it says otherwise with
+ * `@Public()`.
  *
  * This is the first link of the isolation chain from ADR-005: with no row-level security
  * in Postgres, everything below trusts the `userId` this guard produced from a signature
@@ -47,6 +50,7 @@ export class ClerkAuthGuard implements CanActivate {
   constructor(
     private readonly config: ConfigService,
     private readonly reflector: Reflector,
+    private readonly context: RequestContextService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -84,6 +88,10 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid session token');
     }
 
+    // Two consumers, one source. `request.auth` serves `@CurrentUserId()` in handlers; the
+    // context serves everything that builds a query without being handed the caller —
+    // the Prisma scoping extension and the raw-SQL repository (ADR-005).
+    this.context.setUserId(userId);
     request.auth = { userId };
     return true;
   }
