@@ -27,8 +27,8 @@
     },
     "clerk-manual-jwt-verification": {
       "url": "https://clerk.com/docs/guides/sessions/manual-jwt-verification",
-      "version": "@clerk/nextjs ^7.7.1, @clerk/backend ^3.16.4",
-      "why": "The NestJS guard verifies the Clerk JWT itself and puts userId into the request context — the first link in the isolation chain. Networkless verification, the JWKS cache and which claim actually holds the user id are all version-dependent.",
+      "version": "@clerk/nextjs ^7.7.1, @clerk/backend ^3.16.6 (a direct dependency of apps/api since F1.2)",
+      "why": "The NestJS guard verifies the Clerk JWT itself and puts userId into the request context — the first link in the isolation chain. Networkless verification, the JWKS cache and which claim actually holds the user id are all version-dependent. One trap the page does not spell out: jwtKey takes the PEM public key and @clerk/backend derives the JWK from it by string surgery on the 2048-bit RSA SPKI prefix, so a key of any other size silently fails to load.",
       "checked": "2026-08-16"
     },
     "clerk-session-tokens": {

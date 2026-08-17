@@ -37,7 +37,10 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
    - Root Directory `/`, Branch `main`;
    - Settings → **Config file path**: `apps/api/railway.json`;
    - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = the web URL
-     (step 4). Don't set `PORT` — Railway injects its own;
+     (step 4), `CLERK_SECRET_KEY` = the Clerk secret key — the same one web gets
+     (dashboard.clerk.com → API Keys; F1.2). Without it the api **refuses to start**, so
+     the deploy fails its healthcheck instead of answering 401 to every authenticated
+     request. Don't set `PORT` — Railway injects its own;
    - Settings → Networking → **Generate Domain**, then check the **target port** it
      recorded (3000 for api). Railway seeds that value from `EXPOSE` once, when the domain
      is first created, and it drifts independently afterwards — `EXPOSE` documents the local
@@ -135,6 +138,7 @@ Two gotchas, both of which look like "the frontend cannot reach the API":
 | ------- | ----------------------------------- | --------------------------------------- | ----------------------------- |
 | api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`            | runtime + pre-deploy          |
 | api     | `WEB_ORIGIN`                        | the public web URL (exact match — CORS) | runtime                       |
+| api     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)             | runtime (start fails without) |
 | web     | `NEXT_PUBLIC_API_URL`               | the public api URL                      | **build** (baked into bundle) |
 | web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)        | **build** (baked into bundle) |
 | web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)             | runtime (never in the image)  |
@@ -161,7 +165,7 @@ docker run --rm -e DATABASE_URL=postgresql://rondo:rondo_dev_secret@host.docker.
   rondo-api node packages/db/node_modules/prisma/build/index.js migrate deploy \
   --config packages/db/prisma.config.ts   # pre-deploy — the same command as in railway.json
 docker run -d -p 3100:3000 -e DATABASE_URL=postgresql://rondo:rondo_dev_secret@host.docker.internal:5432/rondo_dev \
-  -e WEB_ORIGIN=http://localhost:3101 rondo-api
+  -e WEB_ORIGIN=http://localhost:3101 -e CLERK_SECRET_KEY=sk_test_... rondo-api  # from apps/api/.env.local
 docker run -d -p 3101:3001 -e CLERK_SECRET_KEY=sk_test_... rondo-web   # from apps/web/.env.local
 curl http://localhost:3100/health   # {"status":"ok","info":{"database":"up"}}
 ```

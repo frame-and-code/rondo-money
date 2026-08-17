@@ -39,6 +39,11 @@ The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
   Playwright loads that file itself (`@next/env` in `e2e/global-setup.ts`). Without the
   keys the auth scenarios are skipped locally, while **in CI their absence fails the
   run** — a green gate must never mean "auth was never tested".
+- **And the api's own key** (F1.2) in `apps/api/.env.local` — the same `pnpm env:setup`
+  writes it. Playwright starts the api before `globalSetup` loads any `.env`, so the api
+  reads the key from that file rather than from the environment; without it the server
+  exits at startup and every scenario fails on an unreachable web server. A machine set up
+  before F1.2 needs `pnpm env:setup` re-run.
 
 ### Auth in e2e (F1.1)
 
@@ -55,6 +60,20 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
   `clerk.signIn(...)` (strategy `email_code`) on a page where clerk-js is loaded —
   the public `/sign-in`. Example:
   [`apps/web/e2e/auth.spec.ts`](../apps/web/e2e/auth.spec.ts).
+
+### Auth in api tests (F1.2)
+
+The guard is global, so every api test that hits a protected route needs a token — and
+none of them may reach Clerk over the network:
+
+- [`apps/api/test/clerk-token.ts`](../apps/api/test/clerk-token.ts) generates an RSA key
+  pair in the test process and signs Clerk-shaped JWTs with it.
+- The spec puts the matching PEM public key in `CLERK_JWT_KEY` before booting the module.
+  The guard prefers that variable, so the **real** `verifyToken()` runs — real signature
+  and expiry checks — with no JWKS fetch and no dependency on a Clerk instance. Example:
+  [`apps/api/test/auth.integration.spec.ts`](../apps/api/test/auth.integration.spec.ts).
+- Mocking `verifyToken()` instead would leave the one thing worth proving untested; the
+  key pair costs milliseconds.
 
 ## How to add tests to a new feature
 

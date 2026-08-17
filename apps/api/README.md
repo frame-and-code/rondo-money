@@ -1,17 +1,48 @@
 # @rondo/api
 
-Rondo Money backend on **NestJS (REST)** — skeleton F0.4.
+Rondo Money backend on **NestJS (REST)** — skeleton F0.4, closed to anonymous callers
+since F1.2.
 
-For now there is only a healthcheck; domain modules, the single mutation point and the
-single read point (scoped by `userId`/`budgetId`) are added in Phases 1–2.
+Beyond the healthcheck there are no endpoints yet; domain modules, the single mutation
+point and the single read point (scoped by `userId`/`budgetId`) are added in Phases 1–2.
 
 ## Endpoints
 
 - `GET /health` — checks the DB connection (`SELECT 1` via Prisma). `200` if the DB
-  is reachable, `503` if not.
+  is reachable, `503` if not. Public (see below).
 
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
+
+## Authentication (F1.2)
+
+Every request carries a Clerk session token as `Authorization: Bearer <jwt>`.
+[`ClerkAuthGuard`](src/auth/auth.guard.ts) verifies its signature with
+[`verifyToken()`](https://clerk.com/docs/guides/sessions/manual-jwt-verification) and puts
+the `sub` claim on the request as `userId`; anything missing, malformed, expired or signed
+by someone else is `401`, with no hint in the body about which of those it was.
+
+- The guard is registered **globally** ([`AuthModule`](src/auth/auth.module.ts) →
+  `APP_GUARD`), so a new endpoint is protected without anyone remembering to protect it.
+  Opening one is an explicit [`@Public()`](src/auth/public.decorator.ts) on the handler or
+  the controller — that is how `GET /health` stays reachable for Railway's anonymous probe.
+- Handlers read the caller with [`@CurrentUserId()`](src/auth/current-user.decorator.ts).
+  **This is the only source of identity**: a `userId` taken from the body, the query or a
+  header is a request to read someone else's money, and with no RLS behind us (ADR-005)
+  nothing further down would catch it.
+
+### Configuration
+
+| Variable           | Meaning                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `CLERK_SECRET_KEY` | resolves the instance's JWKS from Clerk (cached). The normal setting.                                              |
+| `CLERK_JWT_KEY`    | the instance's PEM public key — verification without any network call. Wins over the secret key when both are set. |
+
+One of the two is **required**: with neither, the process exits at startup
+(`main.ts`) instead of answering 401 to every caller. Locally the key comes from
+`apps/api/.env.local`, generated from
+[`.env.local.tpl`](.env.local.tpl) by `pnpm env:setup`; on Railway — from the service's
+variables.
 
 ## Running
 
@@ -19,11 +50,12 @@ single read point (scoped by `userId`/`budgetId`) are added in Phases 1–2.
 pnpm --filter @rondo/api dev     # nest start --watch (recompilation via SWC)
 pnpm --filter @rondo/api build   # nest build → dist/
 pnpm --filter @rondo/api start   # node dist/main.js
-pnpm --filter @rondo/api test    # jest (healthcheck integration test)
+pnpm --filter @rondo/api test    # jest: unit, then integration (needs the local Postgres)
 ```
 
-`DATABASE_URL` comes from the root `.env` (see `.env.example`); on Railway —
-from real environment variables. Port — `PORT` (defaults to `3000`).
+`DATABASE_URL` comes from the root `.env` (see `.env.example`) and the Clerk key from
+`apps/api/.env.local`; on Railway both come from real environment variables, which take
+precedence over any file. Port — `PORT` (defaults to `3000`).
 
 CORS is scoped to the browser client's origin: `WEB_ORIGIN` (defaults to
 `http://localhost:3001`, where `@rondo/web` runs locally). On Railway/prod set
