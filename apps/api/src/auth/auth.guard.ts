@@ -13,15 +13,22 @@ import { type AuthenticatedRequest } from '@/auth/authenticated-request';
 import { resolveClerkVerifyOptions } from '@/auth/clerk-verification';
 import { IS_PUBLIC_KEY } from '@/auth/public.decorator';
 
-const BEARER_PREFIX = 'Bearer ';
+const BEARER_SCHEME = 'bearer ';
 
-/** The `Authorization: Bearer <token>` value, or `undefined` for anything else. */
+/**
+ * The `Authorization: Bearer <token>` value, or `undefined` for anything else.
+ *
+ * The scheme is matched case-insensitively, as RFC 7235 §2.1 requires. Matching it
+ * verbatim would answer a client sending `bearer` with a 401 indistinguishable from
+ * sending no credentials at all — an afternoon of debugging for a header that is spelled
+ * correctly.
+ */
 function extractBearerToken(header: string | undefined): string | undefined {
-  if (!header?.startsWith(BEARER_PREFIX)) {
+  if (header?.slice(0, BEARER_SCHEME.length).toLowerCase() !== BEARER_SCHEME) {
     return undefined;
   }
 
-  return header.slice(BEARER_PREFIX.length).trim() || undefined;
+  return header.slice(BEARER_SCHEME.length).trim() || undefined;
 }
 
 /**

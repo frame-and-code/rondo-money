@@ -33,16 +33,21 @@ by someone else is `401`, with no hint in the body about which of those it was.
 
 ### Configuration
 
-| Variable           | Meaning                                                                                                            |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `CLERK_SECRET_KEY` | resolves the instance's JWKS from Clerk (cached). The normal setting.                                              |
-| `CLERK_JWT_KEY`    | the instance's PEM public key — verification without any network call. Wins over the secret key when both are set. |
+| Variable           | Meaning                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `CLERK_JWT_KEY`    | the instance's PEM public key — signatures are checked locally, no call to Clerk. Wins over the other. |
+| `CLERK_SECRET_KEY` | resolves the instance's JWKS from Clerk (cached five minutes). Fine locally; see the warning below.    |
 
-One of the two is **required**: with neither, the process exits at startup
-(`main.ts`) instead of answering 401 to every caller. Locally the key comes from
-`apps/api/.env.local`, generated from
-[`.env.local.tpl`](.env.local.tpl) by `pnpm env:setup`; on Railway — from the service's
-variables.
+One of the two is **required**: with neither, the process exits at startup (`main.ts`)
+instead of answering 401 to every caller. Locally the key comes from `apps/api/.env.local`,
+generated from [`.env.local.tpl`](.env.local.tpl) by `pnpm env:setup`; on Railway — from
+the service's variables.
+
+⚠️ **Anywhere the API faces the internet, set `CLERK_JWT_KEY`.** On the secret-key path a
+token whose `kid` is not already cached costs one outbound request to Clerk, and a miss is
+never cached — so forged tokens carrying random `kid`s amplify one-for-one into JWKS
+fetches until the Clerk instance is rate-limited and genuine users get 401s. The API logs a
+warning at startup whenever it is running that way.
 
 ## Running
 

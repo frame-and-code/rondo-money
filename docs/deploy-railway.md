@@ -37,14 +37,19 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
    - Root Directory `/`, Branch `main`;
    - Settings → **Config file path**: `apps/api/railway.json`;
    - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = the web URL
-     (step 4), `CLERK_SECRET_KEY` = the Clerk secret key — the same one web gets
-     (dashboard.clerk.com → API Keys; F1.2). The api verifies every token itself and
-     **refuses to start** with no key at all, so a forgotten one fails the deploy's
-     healthcheck instead of answering 401 to every authenticated request. `CLERK_JWT_KEY`
-     (the instance's PEM public key) satisfies the same requirement and takes precedence
-     when both are set — use it only if you want verification to make no call to Clerk;
-     one secret shared with web is the simpler setup. Don't set `PORT` — Railway injects
-     its own;
+     (step 4), and **`CLERK_JWT_KEY`** = the instance's PEM public key (dashboard.clerk.com
+     → API Keys → **Show JWT public key** → PEM Public Key; F1.2). The api verifies every
+     token itself and **refuses to start** with no key at all, so a forgotten one fails the
+     deploy's healthcheck instead of answering 401 to every authenticated request.
+
+     `CLERK_SECRET_KEY` satisfies the same requirement and is what runs locally, but do not
+     use it on a service exposed to the internet: it makes verification fetch Clerk's JWKS,
+     and a token whose `kid` is not already cached costs one outbound request — a miss is
+     never cached, so forged tokens with random `kid`s amplify one-for-one into requests to
+     Clerk until the instance is rate-limited and real users start seeing 401s. The PEM key
+     verifies signatures locally and has no such path. `CLERK_JWT_KEY` wins when both are
+     set. Don't set `PORT` — Railway injects its own;
+
    - Settings → Networking → **Generate Domain**, then check the **target port** it
      recorded (3000 for api). Railway seeds that value from `EXPOSE` once, when the domain
      is first created, and it drifts independently afterwards — `EXPOSE` documents the local
@@ -142,8 +147,8 @@ Two gotchas, both of which look like "the frontend cannot reach the API":
 | ------- | ----------------------------------- | --------------------------------------- | ----------------------------- |
 | api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`            | runtime + pre-deploy          |
 | api     | `WEB_ORIGIN`                        | the public web URL (exact match — CORS) | runtime                       |
-| api     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)             | runtime — one of these two    |
-| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key (no call to Clerk) | runtime — wins over the above |
+| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key — **use this one** | runtime (start fails without) |
+| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2        | runtime (only if no JWT key)  |
 | web     | `NEXT_PUBLIC_API_URL`               | the public api URL                      | **build** (baked into bundle) |
 | web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)        | **build** (baked into bundle) |
 | web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)             | runtime (never in the image)  |

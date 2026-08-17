@@ -1,6 +1,8 @@
 import { type VerifyTokenOptions } from '@clerk/backend';
-import { type INestApplication } from '@nestjs/common';
+import { Logger, type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
+const logger = new Logger('ClerkVerification');
 
 /**
  * How `verifyToken()` is told to check a session token's signature. Two supported shapes,
@@ -10,7 +12,13 @@ import { ConfigService } from '@nestjs/config';
  *   JWT public key). Verification is then **networkless**: no JWKS round-trip on a cold
  *   start, and nothing to fail when Clerk's API blinks. This is also what the tests use,
  *   with their own key pair, so they exercise the real verification path offline.
- * - `CLERK_SECRET_KEY` — the fallback: the JWKS is fetched from Clerk and cached.
+ *   **Prefer this anywhere the API is reachable from the internet** — see the warning below.
+ * - `CLERK_SECRET_KEY` — the fallback: the JWKS is fetched from Clerk and cached for five
+ *   minutes. The cache holds only the key ids Clerk returned, so a token carrying an
+ *   unknown `kid` misses it, fetches the JWKS again (with retries) and is never cached as
+ *   a miss. A stream of forged tokens with random `kid`s therefore turns into a stream of
+ *   outbound requests to Clerk, and the instance's rate limit lands on real users as 401s.
+ *   That amplification is the whole reason the PEM key is preferred where it matters.
  *
  * Neither set is a misconfiguration, not a bad request: it throws here instead of letting
  * `verifyToken()` fail and the guard answer 401 to every caller — a login loop nobody can
@@ -43,5 +51,15 @@ export function resolveClerkVerifyOptions(config: ConfigService): VerifyTokenOpt
  * crash the platform's healthcheck reports (mirrors how `cors.ts` is wired from `main.ts`).
  */
 export function assertClerkVerificationConfigured(app: INestApplication): void {
-  resolveClerkVerifyOptions(app.get(ConfigService));
+  const options = resolveClerkVerifyOptions(app.get(ConfigService));
+  if (!options.jwtKey) {
+    // Once, at boot, where an operator will see it — not per request, which would be the
+    // flood warning about the flood.
+    logger.warn(
+      'Session tokens are verified against Clerk\'s JWKS endpoint. A token whose "kid" is ' +
+        'not already cached costs one outbound request to Clerk, and an unknown "kid" is ' +
+        'never cached as a miss — so forged tokens amplify into JWKS traffic. Set ' +
+        'CLERK_JWT_KEY (Dashboard → API keys → Show JWT public key) to verify without it.',
+    );
+  }
 }

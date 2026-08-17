@@ -19,6 +19,10 @@ first step that fails rather than reporting a green stack that isn't.
    below is never reached. Then poll `GET http://localhost:3000/health` until it answers
    200, with a bounded wait — if it has not come up in about 30 seconds, read the server
    output and report the actual error rather than waiting longer.
+   Since F1.2 the api also needs a Clerk key in `apps/api/.env.local` and **exits at
+   startup** without one (`assertClerkVerificationConfigured`). That death is instant, so
+   don't spend the 30 seconds on it: if the health check fails, read the output first —
+   on that error the answer is `pnpm env:setup`, exactly as for web below.
 4. **Web** — start it through `preview_start` with the `web` configuration from
    `.claude/launch.json` (port 3001), never with a raw `pnpm dev` in Bash. Without Clerk
    keys in `apps/web/.env.local` every request fails — say so and point at

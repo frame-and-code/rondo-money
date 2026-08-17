@@ -148,6 +148,14 @@ describe('Clerk auth guard (integration)', () => {
       expect(response.body).toEqual({ userId: USER_ID });
     });
 
+    it('accepts the scheme in any case, as RFC 7235 requires', async () => {
+      const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      const response = await get('/test/protected').set('Authorization', `bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ userId: USER_ID });
+    });
+
     it('takes the userId from the token even when the request claims another one', async () => {
       const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
       const response = await get('/test/protected?userId=user_attacker')
