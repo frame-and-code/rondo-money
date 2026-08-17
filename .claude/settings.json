@@ -20,7 +20,6 @@
       "Bash(git branch*)",
       "Bash(git rev-parse*)",
       "Bash(git add *)",
-      "Bash(git checkout -b *)",
       "Bash(docker compose up*)",
       "Bash(docker compose ps*)",
       "Bash(docker compose logs*)",
