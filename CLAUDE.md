@@ -46,7 +46,7 @@ ticket, `/grill-me` clarifies a fuzzy one, `/sync-docs` sweeps the documentation
 
 ## Process
 
-We work feature by feature from "Plan v1". Current phase — 1 (F1.1–F1.11); phase 0 is done.
+We work feature by feature from "Plan v1". Current phase — 1 (F1.1–F1.13); phase 0 is done.
 Don't go beyond the scope of the current feature — don't pull in work from later features.
 When in doubt, check against the PRD (RU, source of truth) and the ADRs. A green `main`
 ships to the dev environment on Railway — see [`docs/deploy-railway.md`](docs/deploy-railway.md).

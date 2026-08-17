@@ -37,6 +37,18 @@
       "why": "Token lifetime and what happens to a revoked session: a signed-out or banned user keeps a technically valid token until it expires. Know the size of that window before writing anything about sign-out being immediate.",
       "checked": "2026-08-16"
     },
+    "railway-config-as-code": {
+      "url": "https://docs.railway.com/config-as-code/reference",
+      "version": "n/a — platform, not a dependency (schema: https://backboard.railway.app/railway.schema.json)",
+      "why": "apps/*/railway.json is the only description of how dev is built and deployed, watch paths included (F1.13). A key that does not exist is ignored in silence: a typo in watchPatterns stops real deploys, or lets a migration-only commit through unnoticed. Confirm the key name and its section against the reference or the schema before editing either file — never from memory.",
+      "checked": "2026-08-17"
+    },
+    "railway-watch-paths": {
+      "url": "https://docs.railway.com/builds/build-configuration",
+      "version": "n/a — platform, not a dependency",
+      "why": "The pattern syntax behind build.watchPatterns: gitignore-style, always anchored at the repository root even when a Root Directory is set, and negation only after an including rule. Both images build from the repo root, so these patterns decide whether a packages/db migration ever reaches dev — see docs/deploy-railway.md.",
+      "checked": "2026-08-17"
+    },
     "iso-4217-currency-codes": {
       "url": "https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html",
       "version": "n/a — standard, not a dependency",
