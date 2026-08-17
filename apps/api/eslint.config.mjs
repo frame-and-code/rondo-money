@@ -5,22 +5,15 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import base from '@rondo/config/eslint';
-import prismaRaw from '@rondo/config/eslint/prisma-raw';
+import tenantIsolation from '@rondo/config/eslint/tenant-isolation';
 import typeChecked from '@rondo/config/eslint/type-checked';
-import unscopedPrisma from '@rondo/config/eslint/unscoped-prisma';
 
 // `import.meta.dirname` needs Node >= 20.11; resolved manually so the config does not depend
 // on the runtime's version (the workspace floor is Node 26 — see the root package.json).
 const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
-// Two of the three ways round ADR-005 are closed here (the third, an unregistered model, is
-// closed by test/scoped-models.spec.ts):
-//   - raw SQL only in src/raw-sql, the one directory that scopes it by hand;
-//   - the unscoped PrismaService only where it is legitimate — the module that provides it,
-//     that same raw-SQL directory, and test fixtures that set up rows across users.
-export default [
-  ...base,
-  ...typeChecked(tsconfigRootDir),
-  ...prismaRaw({ allow: ['src/raw-sql/**/*.ts'] }),
-  ...unscopedPrisma({ allow: ['src/prisma/**/*.ts', 'src/raw-sql/**/*.ts', 'test/**/*.ts'] }),
-];
+// Two of the three ways round ADR-005 are closed by `tenantIsolation` (raw SQL outside
+// src/raw-sql, and the unscoped PrismaService outside the places that may hold it); the third,
+// an unregistered model, is closed by test/scoped-models.spec.ts. The same rules are installed
+// in the root config, so the pre-commit hook catches them too.
+export default [...base, ...typeChecked(tsconfigRootDir), ...tenantIsolation()];

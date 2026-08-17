@@ -10,6 +10,7 @@
     "./eslint/type-checked": "./eslint/type-checked.mjs",
     "./eslint/prisma-raw": "./eslint/prisma-raw.mjs",
     "./eslint/unscoped-prisma": "./eslint/unscoped-prisma.mjs",
+    "./eslint/tenant-isolation": "./eslint/tenant-isolation.mjs",
     "./prettier": "./prettier/index.mjs",
     "./tsconfig/base.json": "./tsconfig/base.json"
   },
