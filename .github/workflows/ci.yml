@@ -342,12 +342,18 @@ jobs:
       # CLERK_SECRET_KEY stays: it is **web's** key (clerkMiddleware), and e2e/global-setup
       # needs it to mint the Clerk Testing Token and create the test user. Removing it does
       # not move e2e onto the PEM — it makes `preflight` skip e2e entirely.
+      #
+      # WEB_ORIGIN is required since F1.3: the api refuses to boot without it, because it is
+      # also the `azp` a session token must carry, and defaulting it on a deployment would 401
+      # every caller. Locally it comes from .env; here it has to be spelled out. The value is
+      # web's own origin, so it matches the port Playwright serves web on.
       - name: E2E tests
         run: pnpm test:e2e
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_JWT_KEY: ${{ secrets.CLERK_JWT_KEY }}
+          WEB_ORIGIN: http://localhost:3001
 
       # CI uses the 'github' reporter (PR annotations); failure artifacts are Playwright traces
       - name: Upload Playwright traces

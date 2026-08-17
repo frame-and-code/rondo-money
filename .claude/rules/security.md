@@ -8,21 +8,44 @@ returns someone else's money with no error anywhere. So all of this is load-bear
 polish:
 
 - Every record carries `userId` (and `budgetId` where it applies).
-- A guard puts `userId` in the request context; a Prisma Client Extension auto-scopes the
-  registered models. A query without request context is an **error**, never an unfiltered
-  read.
-- That guard is [`ClerkAuthGuard`](../../apps/api/src/auth/auth.guard.ts), registered
+- The guard is [`ClerkAuthGuard`](../../apps/api/src/auth/auth.guard.ts), registered
   globally: an endpoint is closed unless it carries `@Public()`, and the identity comes
   from the verified token's `sub` via `@CurrentUserId()` — **never** from the body, the
   query or a header, however convenient. Adding an endpoint adds no auth wiring; opening
-  one is a decision written at the handler.
-- **The extension does not cover `$queryRaw` / `$executeRaw`.** Raw aggregates go through
-  the context-aware repository, which scopes `userId`/`budgetId` explicitly, and a lint
-  rule keeps raw SQL out of everywhere else. Breaking that rule fails CI.
-- A model that carries user data joins the scoped registry in the same change that creates
-  it — never "in a follow-up".
+  one is a decision written at the handler. The token must also carry an `azp` claim equal to
+  `WEB_ORIGIN`, so one minted for another origin cannot be replayed here.
+- The guard also puts `userId` into the request context
+  ([`RequestContextService`](../../apps/api/src/request-context/request-context.service.ts), an
+  `AsyncLocalStorage` — deliberately hand-written rather than `nestjs-cls`, which supersedes
+  the plan's wording). Everything downstream reads the caller from there, so no call site can
+  forget to pass it. Asking for a `userId` that is not there **throws**; it never returns
+  `undefined`.
+- Domain code injects the auto-scoped client
+  ([`SCOPED_PRISMA`](../../apps/api/src/prisma/scoped-prisma.ts)), never `PrismaService`,
+  which is the unscoped client underneath. Reads of a registered model are filtered, writes
+  are stamped, and an operation with no scoping rule (`groupBy`, `aggregate`) is **refused**
+  rather than run unfiltered. Prisma's types still ask for `userId` on writes — the extension
+  overwrites whatever is passed, which is what makes passing the wrong one harmless. Also not
+  left to memory: the lint rule `@rondo/config/eslint/unscoped-prisma` fails the gate on
+  importing `PrismaService` outside `src/prisma`, `src/raw-sql` and the tests.
+- The extension covers **top-level operations only**. A nested write keeps whatever `userId`
+  the caller put on the nested rows, so a relation written that way (a transfer's two legs,
+  F2.2) is scoped explicitly or split into separate top-level writes inside the transaction.
+- A model that carries user data joins the registry
+  ([`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts)) in the same change that
+  creates it — never "in a follow-up". Not left to memory: `apps/api/test/scoped-models.spec.ts`
+  walks the schema and fails the gate when a model with a `userId` column is missing, and
+  [`stop-scoping-drift.sh`](../hooks/stop-scoping-drift.sh) reminds before the commit. The test
+  is the guarantee; the hook only fires inside a Claude Code session.
+- **The extension does not cover `$queryRaw` / `$executeRaw`.** Raw SQL lives in
+  [`apps/api/src/raw-sql`](../../apps/api/src/raw-sql) — `ScopedRawRepository` takes the scope
+  from the request context and refuses without one; `DatabaseProbe` holds the single
+  deliberately unscoped statement (the healthcheck's `SELECT 1`). Everywhere else the lint rule
+  `@rondo/config/eslint/prisma-raw` fails CI. There are **no** inline exemptions: an
+  `eslint-disable` here is the thing the rule exists to prevent.
 - Cross-tenant tests ("user B sees nothing of user A's") are part of the DoD of every phase
-  that adds domain tables, raw aggregates included.
+  that adds domain tables, raw aggregates included. Pattern to copy:
+  [`user-scoping.integration.spec.ts`](../../apps/api/test/user-scoping.integration.spec.ts).
 
 ## Secrets
 

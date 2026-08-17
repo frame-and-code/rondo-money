@@ -4,8 +4,20 @@
     "prisma-client-extensions": {
       "url": "https://www.prisma.io/docs/orm/prisma-client/client-extensions/query",
       "version": "prisma / @prisma/client ^7.9.1",
-      "why": "The auto-scoping extension (ADR-005) is our replacement for RLS, so its exact boundary matters more than its features: query extensions intercept the model API and do NOT intercept $queryRaw / $executeRaw. Confirm the boundary here before claiming anything is scoped automatically.",
-      "checked": "2026-08-16"
+      "why": "The auto-scoping extension (ADR-005) is our replacement for RLS, so its exact boundary matters more than its features: query extensions intercept the model API and do NOT intercept $queryRaw / $executeRaw, and they see top-level operations only — a nested write keeps whatever userId the caller put on the nested rows. Confirm the boundary here before claiming anything is scoped automatically. Three things measured in F1.3 that the page does not spell out: a free-standing Prisma.defineExtension loses the schema's type map (every args degrades to never — write it as client.$extends instead); a named per-operation hook and $allOperations both run, the named one outermost, so a catch-all cannot simply throw; and the extension holds inside $transaction, on the transactional client too. Unrelated but measured on the same CLI: `migrate dev --help` claims it triggers generators, and it does not — always run `pnpm --filter @rondo/db build` after a migration.",
+      "checked": "2026-08-17"
+    },
+    "node-async-local-storage": {
+      "url": "https://nodejs.org/api/async_context.html#class-asynclocalstorage",
+      "version": "node >=26",
+      "why": "The request context (F1.3) is hand-written on AsyncLocalStorage rather than nestjs-cls (the workspace pins node >=26 in engines, .nvmrc and every CI job), so its semantics are ours to know: a store is shared by everything in one async chain, propagates across await, and is absent in anything that escapes the request (timers, event listeners, background work). Come here before assuming a value survives into code the request did not await.",
+      "checked": "2026-08-17"
+    },
+    "clerk-authorized-parties": {
+      "url": "https://clerk.com/docs/guides/sessions/manual-jwt-verification",
+      "version": "@clerk/backend ^3.16.6",
+      "why": "verifyToken() is configured with authorizedParties, so a session token is accepted only when its azp claim equals WEB_ORIGIN (F1.3). The installed SDK rejects a token whose azp is missing entirely, not just mismatched — which is why every api test that mints a token has to set the claim.",
+      "checked": "2026-08-17"
     },
     "prisma-raw-queries": {
       "url": "https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries",

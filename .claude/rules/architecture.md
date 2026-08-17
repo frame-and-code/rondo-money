@@ -14,7 +14,25 @@ up.
   it into a hand-written API layer, and do not add a second `fetch` path beside it.
 - DTOs have one home: `packages/types`. A type restated in `apps/web` or `apps/api` is two
   sources of truth waiting to drift.
-- The Prisma schema and its migrations live only in `packages/db`.
+- The Prisma schema and its migrations live only in `packages/db`. The code that scopes
+  queries to a caller lives only in `apps/api` (`src/prisma`, `src/raw-sql`), because it reads
+  the request context.
+
+## How a module reaches the database
+
+The full controller → service → mutation-point pattern is established where it will first
+exist: the read path in F1.6 (with the `user-settings` module) and the write path in F2.2. Only
+what is already true is written here, and it is not optional:
+
+- a handler takes the caller from `@CurrentUserId()`, never from the body, a query parameter
+  or a header;
+- everything that reads or writes a domain model injects `SCOPED_PRISMA`, never
+  `PrismaService` — the latter is the unscoped client and belongs to `src/raw-sql` and test
+  fixtures alone;
+- raw SQL only through `ScopedRawRepository`, which supplies `userId` itself; a lint rule
+  fails the gate anywhere else;
+- a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts) and gets a
+  cross-tenant test in the same change (see [security](security.md)).
 
 ## Never store derived state
 
@@ -42,6 +60,15 @@ rewrites history.
   `new Date()` scattered across call sites.
 - The schema grows one migration per phase. Deleting a category must keep its past
   Activity counted in the aggregates — an expense is never orphaned.
+- Naming, set by the first table in F1.3: PascalCase models and camelCase fields in Prisma,
+  snake_case tables and columns in Postgres via `@@map` / `@map`; ids are
+  `String @id @default(uuid(7)) @db.Uuid`. The mapping exists for the hand-written aggregates
+  of Phases 4–5 — `where user_id = $1` needs no quoting, `where "userId" = $1` does.
+- After a migration, run `pnpm --filter @rondo/db build` — it is the only command that does
+  both `prisma generate` (the types) and `tsc` (`dist`, the runtime entry consumers load).
+  Skip it and you get one of two unrelated-looking failures: models typed as `never`, or a
+  missing delegate at runtime. Details in
+  [`packages/db/README.md`](../../packages/db/README.md).
 
 ## Invariant 5.5
 

@@ -1,10 +1,13 @@
 # @rondo/api
 
-Rondo Money backend on **NestJS (REST)** — skeleton F0.4, closed to anonymous callers
-since F1.2.
+Rondo Money backend on **NestJS (REST)** — skeleton F0.4, closed to anonymous callers since
+F1.2, scoping every query for domain data to the caller since F1.3. The one deliberate
+exception is the healthcheck's `SELECT 1`, which touches no tenant data and is named as such
+below.
 
-Beyond the healthcheck there are no endpoints yet; domain modules, the single mutation
-point and the single read point (scoped by `userId`/`budgetId`) are added in Phases 1–2.
+Beyond the healthcheck there are still no domain endpoints: the first one arrives in F1.6 and
+the single mutation point in F2.2. What exists already is the machinery they are built on —
+the request context, the auto-scoped Prisma client and the raw-SQL repository below.
 
 ## Endpoints
 
@@ -30,6 +33,12 @@ by someone else is `401`, with no hint in the body about which of those it was.
   **This is the only source of identity**: a `userId` taken from the body, the query or a
   header is a request to read someone else's money, and with no RLS behind us (ADR-005)
   nothing further down would catch it.
+- The token must also have been minted **for this app**: `verifyToken()` is configured with
+  `authorizedParties`, so the `azp` claim has to equal `WEB_ORIGIN` (F1.3, closing a
+  carry-over from F1.2). This is Clerk's standard defence against a token leaked to another
+  subdomain being replayed here. If a real browser token ever answers 401, that is the check
+  talking — the guard's debug log names the claim and the value it expected; fix `WEB_ORIGIN`
+  rather than dropping the check.
 
 ### Configuration
 
@@ -52,6 +61,50 @@ instance is rate-limited and genuine users get 401s. The api logs a warning at s
 whenever it is running that way; keeping every environment on the PEM key is what keeps
 that warning worth reading.
 
+## Tenant isolation (F1.3)
+
+There is no row-level security in Postgres (ADR-005), so everything RLS would have guaranteed
+is ordinary code here — and code fails silently. Four mechanisms carry it, in order:
+
+1. **The request context** — [`RequestContextService`](src/request-context/request-context.service.ts)
+   holds the caller's `userId` in an `AsyncLocalStorage` for the life of one request. A
+   middleware opens the scope before any guard runs; the guard fills it from the verified
+   token. Nothing reads the identity from a parameter, so no call site can forget to pass it.
+   Later phases add fields to the same store: the active `budgetId` (F3.1) and the
+   inside-the-mutator marker (F2.2).
+2. **The auto-scoped client** — inject `SCOPED_PRISMA`
+   ([`scoped-prisma.ts`](src/prisma/scoped-prisma.ts)), not `PrismaService`. Reads of a
+   registered model are filtered by the caller, writes are stamped with them, and an operation
+   the extension has no rule for (`groupBy`, `aggregate`) is **refused** rather than run
+   unfiltered — see [`user-scoping.extension.ts`](src/prisma/user-scoping.extension.ts).
+   `PrismaService` itself is the unscoped client underneath: legitimate only for the raw-SQL
+   repository and test fixtures, and the lint rule `@rondo/config/eslint/unscoped-prisma` fails
+   the gate if a domain module imports it anyway.
+   - Note on types: Prisma still requires `userId` in a write payload, so a caller names an
+     owner — the extension overwrites it with the verified caller, which is what makes naming
+     the wrong one harmless. On a read a caller passes no `userId` at all; `SCOPED_PRISMA`
+     adds the filter. That is a property of _this_ client, not permission to use another one.
+   - It sees **top-level operations only.** A write that nests a relation (a `create` inside
+     another model's `data`) keeps whatever `userId` the caller put on the nested rows.
+     Unreachable today (one model, no relations), but that is the shape a transfer's two legs
+     are written in, so F2.2 either scopes them explicitly or creates them as separate
+     top-level writes inside its transaction.
+3. **The registry** — [`scoped-models.ts`](src/prisma/scoped-models.ts) lists the models this
+   applies to, and a new table joins it in the same change that creates it. Forgetting is
+   caught by [`test/scoped-models.spec.ts`](test/scoped-models.spec.ts), which walks the schema
+   and fails when a model with a `userId` column is missing (the CI gate), and flagged earlier
+   by `.claude/hooks/stop-scoping-drift.sh` (a reminder, in Claude Code sessions only).
+4. **Raw SQL in one place** — the extension covers the model API only; `$queryRaw` /
+   `$executeRaw` bypass it entirely. They live in [`src/raw-sql`](src/raw-sql):
+   [`ScopedRawRepository`](src/raw-sql/scoped-raw.repository.ts) hands the statement builder a
+   scope taken from the request context (no context → it throws before any SQL is sent), and
+   [`DatabaseProbe`](src/raw-sql/database-probe.ts) holds the one deliberately unscoped query,
+   the healthcheck's `SELECT 1`. Everywhere else the lint rule
+   (`@rondo/config/eslint/prisma-raw`) fails the gate — there are no inline exemptions.
+
+What none of this can prove is that a raw statement actually _uses_ the scope it was given;
+that is what the cross-tenant tests are for, on every phase that adds an aggregate.
+
 ## Running
 
 ```bash
@@ -65,9 +118,17 @@ pnpm --filter @rondo/api test    # jest: unit, then integration (needs the local
 `apps/api/.env.local`; on Railway both come from real environment variables, which take
 precedence over any file. Port — `PORT` (defaults to `3000`).
 
-CORS is scoped to the browser client's origin: `WEB_ORIGIN` (defaults to
-`http://localhost:3001`, where `@rondo/web` runs locally). On Railway/prod set
-the deployed web address — don't hardcode it.
+`WEB_ORIGIN` names the browser client and now carries two exact-match jobs: CORS is scoped to
+it, and a session token is accepted only if its `azp` claim equals it. Consequences worth
+knowing before a deploy:
+
+- **the api refuses to start without it** (`assertWebOriginConfigured`, called from `main.ts`),
+  because the alternative is a service that passes its anonymous healthcheck and 401s every
+  real caller;
+- a _wrong_ value — a trailing slash, `http` for `https` — cannot be caught that way, and shows
+  up as 401 everywhere with no CORS error to point at it;
+- the `http://localhost:3001` fallback exists for specs, which build the app through
+  `Test.createTestingModule` and never pass through `main.ts`.
 
 ## Tooling (carry-overs closed from F0.2)
 

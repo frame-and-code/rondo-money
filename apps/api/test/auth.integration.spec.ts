@@ -1,14 +1,16 @@
 import { type Server } from 'node:http';
 
 import { Controller, Get, type INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '@/app.module';
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { Public } from '@/auth/public.decorator';
+import { resolveWebOrigin } from '@/cors';
 
-import { createTestSigningKey, type TestSigningKey } from './clerk-token';
+import { createTestSigningKey, type SessionTokenClaims, type TestSigningKey } from './clerk-token';
 
 const USER_ID = 'user_2rondoTestSubjectClaim000';
 
@@ -50,9 +52,18 @@ describe('Clerk auth guard (integration)', () => {
   let app: INestApplication;
   let key: TestSigningKey;
   let now: number;
+  let webOrigin: string;
 
   const originalJwtKey = process.env.CLERK_JWT_KEY;
   const get = (path: string): request.Test => request(app.getHttpServer() as Server).get(path);
+
+  /**
+   * A token this app should accept. `azp` defaults to the origin the app itself trusts —
+   * resolved from the app rather than hardcoded, because `WEB_ORIGIN` may be set in the
+   * environment — since the guard now checks that claim (F1.3).
+   */
+  const signToken = (claims: Partial<SessionTokenClaims> = {}): string =>
+    key.signToken({ sub: USER_ID, iat: now, exp: now + 60, azp: webOrigin, ...claims });
 
   beforeAll(async () => {
     key = createTestSigningKey();
@@ -69,6 +80,7 @@ describe('Clerk auth guard (integration)', () => {
 
     app = moduleRef.createNestApplication();
     await app.init();
+    webOrigin = resolveWebOrigin(app.get(ConfigService));
   });
 
   afterAll(async () => {
@@ -96,7 +108,7 @@ describe('Clerk auth guard (integration)', () => {
       const withoutToken = await get('/test/protected-without-identity');
       expect(withoutToken.status).toBe(401);
 
-      const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      const token = signToken();
       const withToken = await get('/test/protected-without-identity').set(
         'Authorization',
         `Bearer ${token}`,
@@ -105,7 +117,7 @@ describe('Clerk auth guard (integration)', () => {
     });
 
     it('answers 401 when the scheme is not Bearer', async () => {
-      const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      const token = signToken();
       const response = await get('/test/protected').set('Authorization', `Basic ${token}`);
 
       expect(response.status).toBe(401);
@@ -118,14 +130,21 @@ describe('Clerk auth guard (integration)', () => {
     });
 
     it('answers 401 to a token signed by someone else', async () => {
-      const forged = createTestSigningKey().signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      // Correct in every claim, including `azp` — the signature is the only thing wrong,
+      // so a 401 here can only come from the verification we care about.
+      const forged = createTestSigningKey().signToken({
+        sub: USER_ID,
+        iat: now,
+        exp: now + 60,
+        azp: webOrigin,
+      });
       const response = await get('/test/protected').set('Authorization', `Bearer ${forged}`);
 
       expect(response.status).toBe(401);
     });
 
     it('answers 401 to an expired token, without saying why', async () => {
-      const expired = key.signToken({ sub: USER_ID, iat: now - 600, exp: now - 300 });
+      const expired = signToken({ iat: now - 600, exp: now - 300 });
       const response = await get('/test/protected').set('Authorization', `Bearer ${expired}`);
 
       expect(response.status).toBe(401);
@@ -139,9 +158,29 @@ describe('Clerk auth guard (integration)', () => {
     });
   });
 
+  // F1.3 closed this carry-over from F1.2: `verifyToken()` is configured with
+  // `authorizedParties`, so a token minted for a different origin cannot be replayed here.
+  // These cases are what proves the check is actually on — every other test in this file
+  // would pass with it silently disabled.
+  describe('rejects a token that was not minted for this app', () => {
+    it('answers 401 when azp names another origin', async () => {
+      const token = signToken({ azp: 'https://evil.example.com' });
+      const response = await get('/test/protected').set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('answers 401 when the token carries no azp claim at all', async () => {
+      const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      const response = await get('/test/protected').set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(401);
+    });
+  });
+
   describe('accepts a valid token', () => {
     it('lets the request through and hands the handler the userId from `sub`', async () => {
-      const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      const token = signToken();
       const response = await get('/test/protected').set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
@@ -149,7 +188,7 @@ describe('Clerk auth guard (integration)', () => {
     });
 
     it('accepts the scheme in any case, as RFC 7235 requires', async () => {
-      const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      const token = signToken();
       const response = await get('/test/protected').set('Authorization', `bearer ${token}`);
 
       expect(response.status).toBe(200);
@@ -157,7 +196,7 @@ describe('Clerk auth guard (integration)', () => {
     });
 
     it('takes the userId from the token even when the request claims another one', async () => {
-      const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60 });
+      const token = signToken();
       const response = await get('/test/protected?userId=user_attacker')
         .set('Authorization', `Bearer ${token}`)
         .set('X-User-Id', 'user_attacker');
