@@ -10,6 +10,10 @@ import { enableWebCors, resolveWebOrigin } from '@/cors';
 // Integration level of the F0.8 harness (API ↔ DB): boots the real app, which connects
 // to the F0.3 Postgres, and asserts GET /health reports the DB as up. Requires the
 // local DB running (`docker compose up -d`).
+//
+// It sends no token and sets no Clerk variables, which makes it the check that /health
+// stays anonymous behind the global guard (F1.2) — and that a public endpoint answers on
+// an instance with no Clerk configuration at all.
 describe('GET /health (integration)', () => {
   let app: INestApplication;
 

@@ -11,6 +11,11 @@ polish:
 - A guard puts `userId` in the request context; a Prisma Client Extension auto-scopes the
   registered models. A query without request context is an **error**, never an unfiltered
   read.
+- That guard is [`ClerkAuthGuard`](../../apps/api/src/auth/auth.guard.ts), registered
+  globally: an endpoint is closed unless it carries `@Public()`, and the identity comes
+  from the verified token's `sub` via `@CurrentUserId()` — **never** from the body, the
+  query or a header, however convenient. Adding an endpoint adds no auth wiring; opening
+  one is a decision written at the handler.
 - **The extension does not cover `$queryRaw` / `$executeRaw`.** Raw aggregates go through
   the context-aware repository, which scopes `userId`/`budgetId` explicitly, and a lint
   rule keeps raw SQL out of everywhere else. Breaking that rule fails CI.

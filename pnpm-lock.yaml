@@ -32,6 +32,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@clerk/backend':
+        specifier: ^3.16.6
+        version: 3.16.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1)
@@ -6983,7 +6986,7 @@ snapshots:
 
   '@clerk/testing@2.2.21(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
-      '@clerk/backend': 3.16.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@clerk/backend': 3.16.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@clerk/shared': 4.28.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       dotenv: 17.2.2
     optionalDependencies:

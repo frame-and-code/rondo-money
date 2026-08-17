@@ -37,7 +37,36 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
    - Root Directory `/`, Branch `main`;
    - Settings → **Config file path**: `apps/api/railway.json`;
    - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = the web URL
-     (step 4). Don't set `PORT` — Railway injects its own;
+     (step 4), and **`CLERK_JWT_KEY`** = the instance's PEM public key (dashboard.clerk.com
+     → API Keys → **JWKS Public Key** in the right-hand column; F1.2). The api verifies every
+     token itself and **refuses to start** with no key at all, so a forgotten one fails the
+     deploy's healthcheck instead of answering 401 to every authenticated request.
+
+     `CLERK_SECRET_KEY` satisfies the same requirement, but no environment uses it any
+     more — local, CI and Railway all run the PEM key. Do not put it on a service exposed
+     to the internet: it makes verification fetch Clerk's JWKS,
+     and a token whose `kid` is not already cached costs one outbound request — a miss is
+     never cached, so forged tokens with random `kid`s amplify one-for-one into requests to
+     Clerk until the instance is rate-limited and real users start seeing 401s. The PEM key
+     verifies signatures locally and has no such path. `CLERK_JWT_KEY` wins when both are
+     set.
+
+     Paste the PEM into the Railway field **exactly as copied**, real line breaks and all.
+     The `\n` escape form does not work: nothing expands it outside a `.env` file, the two
+     characters stay inside the key, and the request is then rejected as an invalid
+     signature — a config typo wearing the costume of a forged token. Stripping the line
+     breaks instead happens to pass `@clerk/backend` (it removes newlines before decoding)
+     but produces something no other tool accepts as a PEM — don't.
+     (In `apps/api/.env.local` the `\n` form _is_ the correct one: dotenv expands it inside
+     double quotes, and the api sees real newlines.) Don't set `PORT` — Railway injects its
+     own;
+
+     ⚠️ **Rotating the Clerk signing key means updating this variable**, and nothing will
+     tell you: the api starts, `/health` stays 200 because it is public, the deploy goes
+     green — and every authenticated request answers 401. Until the api checks its key
+     against the published JWKS at boot (tracked in Улучшения), this note is the only
+     safeguard;
+
    - Settings → Networking → **Generate Domain**, then check the **target port** it
      recorded (3000 for api). Railway seeds that value from `EXPOSE` once, when the domain
      is first created, and it drifts independently afterwards — `EXPOSE` documents the local
@@ -135,6 +164,8 @@ Two gotchas, both of which look like "the frontend cannot reach the API":
 | ------- | ----------------------------------- | --------------------------------------- | ----------------------------- |
 | api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`            | runtime + pre-deploy          |
 | api     | `WEB_ORIGIN`                        | the public web URL (exact match — CORS) | runtime                       |
+| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key — **use this one** | runtime (start fails without) |
+| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2        | runtime (only if no JWT key)  |
 | web     | `NEXT_PUBLIC_API_URL`               | the public api URL                      | **build** (baked into bundle) |
 | web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)        | **build** (baked into bundle) |
 | web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)             | runtime (never in the image)  |
@@ -160,8 +191,11 @@ docker compose up -d postgres
 docker run --rm -e DATABASE_URL=postgresql://rondo:rondo_dev_secret@host.docker.internal:5432/rondo_dev \
   rondo-api node packages/db/node_modules/prisma/build/index.js migrate deploy \
   --config packages/db/prisma.config.ts   # pre-deploy — the same command as in railway.json
+# A PEM cannot be written inline as -e KEY=value — it has line breaks. Export it in the
+# shell and pass the name alone; docker then takes the value from the environment.
+export CLERK_JWT_KEY="$(pbpaste)"   # the PEM, copied from the Clerk Dashboard
 docker run -d -p 3100:3000 -e DATABASE_URL=postgresql://rondo:rondo_dev_secret@host.docker.internal:5432/rondo_dev \
-  -e WEB_ORIGIN=http://localhost:3101 rondo-api
+  -e WEB_ORIGIN=http://localhost:3101 -e CLERK_JWT_KEY rondo-api
 docker run -d -p 3101:3001 -e CLERK_SECRET_KEY=sk_test_... rondo-web   # from apps/web/.env.local
 curl http://localhost:3100/health   # {"status":"ok","info":{"database":"up"}}
 ```

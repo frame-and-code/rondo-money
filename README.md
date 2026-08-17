@@ -101,17 +101,18 @@ Commands run through Turborepo and are parallelized across workspaces.
 
 ### Configuration — with your own keys
 
-Two files are needed, and neither is in git:
+Three files are needed, and none of them is in git:
 
 ```bash
 cp .env.example .env    # DATABASE_URL and WEB_ORIGIN; defaults match docker-compose.yml
 ```
 
-Then create `apps/web/.env.local` from
-[apps/web/.env.local.tpl](apps/web/.env.local.tpl) and fill in **your own** Clerk keys,
-taken from `dashboard.clerk.com` → API Keys of a development instance. That template is
-the full env contract of the web app; nothing in this repository is tied to a particular
-Clerk or Railway instance.
+Then create `apps/web/.env.local` and `apps/api/.env.local` from the `.env.local.tpl` next
+to each ([web](apps/web/.env.local.tpl), [api](apps/api/.env.local.tpl)) and fill in **your
+own** Clerk keys, taken from `dashboard.clerk.com` → API Keys of a development instance.
+Those templates are the full env contract of each app; nothing in this repository is tied
+to a particular Clerk or Railway instance. Without its key the API refuses to start — it
+verifies every request's token (see [`apps/api`](apps/api/README.md)).
 
 The `{{ op://... }}` placeholders in the template are 1Password references used by the
 author's own `pnpm env:setup`. Without the 1Password CLI, replace them with your keys by
@@ -143,6 +144,9 @@ pnpm db:generate             # generate the Prisma client (also on postinstall)
 pnpm db:migrate              # apply migrations to the local DB (Postgres must be running)
 pnpm --filter @rondo/api dev # start the API; GET http://localhost:3000/health → 200
 ```
+
+`/health` is the only endpoint open to an anonymous caller; everything else needs a Clerk
+session token, and the API will not start without a Clerk key in `apps/api/.env.local`.
 
 `DATABASE_URL` is read from the root `.env` (see `.env.example`). Details —
 in [`apps/api`](apps/api/README.md) and [`packages/db`](packages/db/README.md).
