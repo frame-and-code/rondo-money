@@ -15,7 +15,11 @@ up.
   Screens read through the generated query options (`useQuery(xxxOptions())`); do not
   hand-write a request beside them, and do not add a second `fetch` path.
 - DTOs have one home: `packages/types`. A type restated in `apps/web` or `apps/api` is two
-  sources of truth waiting to drift.
+  sources of truth waiting to drift. The response classes under `apps/api` (F1.4) are not an
+  exception: they _are_ the OpenAPI schema, declared once, and what `apps/web` uses is
+  generated from the document they produce rather than hand-copied. A shape that outlives one
+  endpoint's response — money, domain models — still belongs in `packages/types`, with the
+  response class referencing it.
 - The Prisma schema and its migrations live only in `packages/db`. The code that scopes
   queries to a caller lives only in `apps/api` (`src/prisma`, `src/raw-sql`), because it reads
   the request context.
