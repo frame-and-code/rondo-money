@@ -1,0 +1,43 @@
+{
+  "name": "@rondo/api-client",
+  "version": "0.0.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react-query": "./src/react-query.ts"
+  },
+  "scripts": {
+    "codegen": "openapi-ts",
+    "build": "echo \"@rondo/api-client build placeholder (consumed as TS source; codegen produces src/generated)\"",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm run test:unit",
+    "test:unit": "jest"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.99.0",
+    "@rondo/config": "workspace:*",
+    "@swc/core": "^1.15.47",
+    "@swc/jest": "^0.2.39",
+    "@tanstack/react-query": "^5.101.4",
+    "@types/jest": "^30.0.0",
+    "eslint": "^10.8.1",
+    "jest": "^30.4.2",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.80.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    }
+  }
+}

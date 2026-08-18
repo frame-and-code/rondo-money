@@ -1,0 +1,18 @@
+{
+  "extends": "@rondo/config/tsconfig/base.json",
+  "compilerOptions": {
+    // `DOM` for `fetch`, `Request` and `Headers`: this package runs in the browser and in
+    // Next's server runtime, never under plain Node typings alone.
+    "lib": ["ES2022", "DOM"],
+    // Explicit like the other packages: jest globals for the unit tests in ./test.
+    "types": ["jest"],
+    // No mapping for this package's own name, unlike @rondo/types: the `exports` field added
+    // in F1.4 makes Node's self-reference apply, and TypeScript honours it (measured — the
+    // tests import `@rondo/api-client` and typecheck with nothing here). Jest is the one that
+    // does not implement self-reference, so its mapping lives in jest.config.mjs.
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "test", "openapi-ts.config.ts"]
+}

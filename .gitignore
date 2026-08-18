@@ -9,8 +9,13 @@ out/
 .next/
 *.tsbuildinfo
 
-# Generated code (Prisma client, etc.)
-generated/
+# Generated code. Not a blanket rule: what is regenerated on every install stays out, what
+# is a reviewable contract stays in.
+# - the Prisma client is rewritten by `db:generate` on every postinstall — never committed;
+# - packages/api-client/src/generated IS committed (F1.4): it is generated from
+#   apps/api/openapi.json, and committing both is what turns an API change into a diff a
+#   reviewer can see, and what the drift check compares against.
+packages/db/src/generated/
 
 # Turborepo
 .turbo/

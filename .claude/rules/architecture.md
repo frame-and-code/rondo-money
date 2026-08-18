@@ -9,9 +9,11 @@ up.
 - **The backend owns every database access** (ADR-002). `apps/web` never imports Prisma
   and never reaches Postgres.
 - `apps/web` talks to the API through the typed client generated from the OpenAPI spec
-  (`packages/api-client`, F1.5). Until it exists, the placeholder is
-  [`apps/web/src/lib/api/client.ts`](../../apps/web/src/lib/api/client.ts) — do not grow
-  it into a hand-written API layer, and do not add a second `fetch` path beside it.
+  (`packages/api-client`, F1.4). Its single entry point is
+  [`apps/web/src/lib/api/client.tsx`](../../apps/web/src/lib/api/client.tsx) — an `ApiProvider`
+  that supplies the base URL, the Clerk token and the TanStack Query cache, and nothing else.
+  Screens read through the generated query options (`useQuery(xxxOptions())`); do not
+  hand-write a request beside them, and do not add a second `fetch` path.
 - DTOs have one home: `packages/types`. A type restated in `apps/web` or `apps/api` is two
   sources of truth waiting to drift.
 - The Prisma schema and its migrations live only in `packages/db`. The code that scopes
@@ -33,6 +35,29 @@ what is already true is written here, and it is not optional:
   fails the gate anywhere else;
 - a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts) and gets a
   cross-tenant test in the same change (see [security](security.md)).
+
+## How an endpoint reaches the contract
+
+The OpenAPI document is built from the code (F1.4), so an endpoint that says nothing about
+itself is published with no response shape at all — and the generated client types it
+`unknown` without failing anything.
+
+- The response is a **class** carrying `@ApiProperty` on every field, named by the handler's
+  `@ApiOkResponse`. A TypeScript interface leaves no metadata after compilation, which is
+  exactly the silent version of this mistake.
+- `@Public()` carries one decision to both readers: it opens the handler to the guard _and_
+  stamps `x-public`, which is what clears the global bearer requirement in the spec. Never add
+  a second decorator saying the same thing — the two would eventually disagree.
+- Money crosses the wire as a string of minor units
+  ([`money.ts`](../../packages/types/src/money.ts)); no endpoint carries an amount yet, and the
+  convention is stated in the spec's own description until one does.
+- `pnpm openapi` rewrites [`apps/api/openapi.json`](../../apps/api/openapi.json) and
+  `pnpm --filter @rondo/api-client codegen` the client. Both artefacts are committed, so a
+  contract change is a reviewable diff; turbo runs them in order, so neither is a step anyone
+  has to remember.
+- What the client gets from that spec is not only types: request functions, TanStack Query
+  options and zod schemas all come out of it. So an endpoint documented sloppily produces a
+  sloppy client — the spec is the product, not paperwork about it.
 
 ## Never store derived state
 
@@ -83,3 +108,30 @@ Screens are composed from Tailwind utilities and shadcn/ui components in `packag
 (theme Ocean Breeze). No hand-written CSS files, no inline `style` props, no bespoke
 re-implementation of a primitive shadcn/ui ships. Missing one? Add it with
 `pnpm dlx shadcn@latest add <component>` into `packages/ui`.
+
+### How a screen gets data
+
+The client is configured once, in `ApiProvider`
+([`apps/web/src/lib/api/client.tsx`](../../apps/web/src/lib/api/client.tsx)). A page or a
+component therefore never touches a token, a header or a base URL, and never writes `fetch`.
+
+- **Client components** read through the generated query options, imported from
+  `@rondo/api-client/react-query`: `useQuery(meControllerIdentifyOptions())`. **The token attaches itself** — each generated
+  request carries the `security` its operation declares in the spec, so what decides is
+  `@Public()` in `apps/api`, not the call site. Setting an `Authorization` header by hand in a
+  component means either the endpoint is mis-declared in the spec or someone is working around
+  it; fix the declaration.
+- **Server components and route handlers must never use the module-level client.**
+  `@rondo/api-client` holds one client per _process_, so configuring it on the server would put
+  one visitor's token into an object every concurrent request shares — a cross-tenant leak of
+  exactly the kind ADR-005 has no database-side net for. `ApiProvider` therefore configures it
+  only in the browser (`typeof window !== 'undefined'`), which leaves it deliberately
+  unconfigured on the server. Nothing needs it there yet; when something does, it builds its own
+  client **per request** from `await auth()` and passes it explicitly (`{ client }` on the
+  generated call), in that same `src/lib/api` module. And not a bare `fetch` "just this once" —
+  that is how the second API path starts, which is the thing ADR-002 exists to prevent.
+- **A missing endpoint is added to `apps/api` and regenerated**, never assembled in web out of
+  a URL string.
+- **Mutations** (from Phase 3) invalidate through the generated query keys. Expect the
+  invalidation to be wide: no derived value is stored, so one assignment moves RTA and every
+  later month's Available at once.

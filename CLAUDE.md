@@ -29,7 +29,7 @@ backend).
 - `packages/db` — Prisma schema and migrations (F0.4); grows incrementally per phase.
 - `packages/types` — shared DTOs; money as `bigint` in minor units.
 - `packages/api-client` — typed API client generated from the NestJS OpenAPI spec
-  (F1.5, ADR-002); web will consume it instead of hand-written fetch. Not created yet.
+  (F1.4, ADR-002); `apps/web` consumes it instead of hand-written fetch.
 - `packages/config` — shared configs: eslint / tsconfig / prettier (F0.2).
 - `packages/ui` — UI components, shadcn/ui (F0.6).
 - `.claude/` — the agent setup: rules, commands, hooks, permissions.

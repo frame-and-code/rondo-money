@@ -1,11 +1,19 @@
 {
   "$schema": "https://v2-10-7.turborepo.dev/schema.json",
-  "//": "Strict env mode: turbo passes only declared variables to tasks. Locally the config is filled in from .env files, in CI (F0.9) — from the environment only, so the tasks' env contract is declared here. CI is passthrough (doesn't affect the cache hash): Playwright depends on it (forbidOnly, retries, reporter).",
+  "//": "Strict env mode: turbo passes only declared variables to tasks. Locally the config is filled in from .env files, in CI (F0.9) — from the environment only, so the tasks' env contract is declared here. CI is passthrough (doesn't affect the cache hash): Playwright depends on it (forbidOnly, retries, reporter). The contract chain (F1.4) is declared here too: @rondo/api#openapi boots the compiled Nest app in preview mode and writes apps/api/openapi.json (no server, no database), then @rondo/api-client#codegen turns that file into typed sources — both cacheable, with package-relative outputs. Note that a \"//\" key inside \"tasks\" is parsed as a task, not a comment.",
   "globalPassThroughEnv": ["CI"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "env": ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]
+    },
+    "openapi": {
+      "dependsOn": ["build"],
+      "outputs": ["openapi.json"]
+    },
+    "codegen": {
+      "dependsOn": ["@rondo/api#openapi"],
+      "outputs": ["src/generated/**"]
     },
     "lint": {},
     "typecheck": {
@@ -46,7 +54,8 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["NODE_ENV"]
     }
   }
 }

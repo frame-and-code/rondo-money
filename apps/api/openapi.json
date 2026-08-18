@@ -1,0 +1,168 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "description": "Open to anonymous callers: the deployment platform probes it without a token.",
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The database answered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database did not answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Liveness and database reachability",
+        "tags": [
+          "Health"
+        ],
+        "x-public": true,
+        "security": []
+      }
+    },
+    "/me": {
+      "get": {
+        "description": "Requires a valid Clerk session token; reads no data and touches no table.",
+        "operationId": "MeController_identify",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The token was valid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The authenticated caller",
+        "tags": [
+          "Me"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Rondo Money API",
+    "description": "The REST contract of Rondo Money — a zero-based budgeting app. The backend owns every\ndatabase access (ADR-002); this spec is what the typed client in `packages/api-client` is\ngenerated from, so it is the contract itself rather than a description of one.\n\n**Authentication.** Every endpoint requires a Clerk session token as\n`Authorization: Bearer <jwt>`, except the ones marked `x-public: true` — today only the\nplatform healthcheck, which the deployment probes anonymously. The token must also carry an\n`azp` claim equal to this API's configured web origin, so a token minted for another origin\ncannot be replayed here.\n\n**Money.** Amounts are an integer number of **minor units** (cents, kopeks, grosze), and the\nnumber of minor digits comes from the budget's currency (ISO 4217) rather than a fixed 2.\nJSON has no bigint, so every money field crosses the wire as a base-10 **string** — an\noptional leading `-` followed by digits, never a float and never a decimal string. The\nsingle definition of that convention, with its serializer and parser, is\n`packages/types/src/money.ts`. No endpoint carries money yet; the convention is stated here\nbecause the contract is published before the first amount travels over it.",
+    "version": "0.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "clerkSessionToken": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "A Clerk session token. In the web app: `await getToken()`."
+      }
+    },
+    "schemas": {
+      "HealthInfo": {
+        "type": "object",
+        "properties": {
+          "database": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "description": "Whether the round-trip to Postgres succeeded."
+          }
+        },
+        "required": [
+          "database"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "error"
+            ]
+          },
+          "info": {
+            "$ref": "#/components/schemas/HealthInfo"
+          }
+        },
+        "required": [
+          "status",
+          "info"
+        ]
+      },
+      "CurrentUserResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The caller's Clerk user id, taken from the verified token's `sub` claim. Every record this user owns is scoped by exactly this value (ADR-005).",
+            "example": "user_2abcDEFghiJKLmnoPQRstuVWxyz"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "UnauthorizedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 401
+          },
+          "error": {
+            "type": "string",
+            "example": "Unauthorized"
+          },
+          "message": {
+            "type": "string",
+            "example": "Invalid session token"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "clerkSessionToken": []
+    }
+  ]
+}

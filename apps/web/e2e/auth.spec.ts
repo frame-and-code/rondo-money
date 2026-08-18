@@ -34,6 +34,10 @@ test('signing in shows the app shell; signing out returns to sign-in', async ({ 
   // The demo card is rendered by the protected home page — proof the shell is real,
   // not a lookalike heading on a public screen.
   await expect(page.getByText(API_URL)).toBeVisible();
+  // F1.4: the page asks the API who is calling, through the generated client. A Clerk user
+  // id on screen means the whole chain worked for real — browser token, CORS, the guard's
+  // `azp` check, and the typed client — which no unit test with a mocked fetch can show.
+  await expect(page.getByText(/^user_/)).toBeVisible();
 
   await clerk.signOut({ page });
   await page.goto('/');

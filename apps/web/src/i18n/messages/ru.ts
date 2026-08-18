@@ -24,6 +24,10 @@ export const ru = {
   'home.budgetNameLabel': 'Название бюджета',
   'home.budgetNamePlaceholder': 'Например, «Семейный бюджет»',
   'home.apiLabel': 'API',
+  'home.callerLabel': 'Вы вошли как',
+  'home.callerLoading': 'проверяем…',
+  'home.callerSignedOut': 'вы не вошли',
+  'home.callerUnavailable': 'API не ответил',
 
   'budget.title': 'Бюджет',
   'budget.comingSoon': 'Экран бюджета появится в Фазе 3.',

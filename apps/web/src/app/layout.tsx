@@ -3,6 +3,7 @@ import './globals.css';
 
 import { ClerkProviderLocalized } from '@/components/clerk-provider-localized';
 import { LocaleProvider } from '@/i18n/locale-context';
+import { ApiProvider } from '@/lib/api';
 
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -27,9 +28,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <LocaleProvider>
           <ClerkProviderLocalized>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              {children}
-            </ThemeProvider>
+            <ApiProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                {children}
+              </ThemeProvider>
+            </ApiProvider>
           </ClerkProviderLocalized>
         </LocaleProvider>
       </body>

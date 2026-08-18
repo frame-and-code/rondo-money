@@ -71,6 +71,7 @@ apps/
 packages/
   db/         # Prisma schema and migrations — F0.4
   types/      # shared DTOs; money as BigInt (minor units) — from day one
+  api-client/ # typed API client, generated from the API's OpenAPI spec — F1.4
   config/     # shared configs (eslint / tsconfig / prettier) — F0.2
   ui/         # shared UI components (shadcn/ui) — F0.6
 .claude/      # agent setup: rules, commands, hooks, permissions — F1.9
@@ -147,6 +148,9 @@ pnpm --filter @rondo/api dev # start the API; GET http://localhost:3000/health �
 
 `/health` is the only endpoint open to an anonymous caller; everything else needs a Clerk
 session token, and the API will not start without a Clerk key in `apps/api/.env.local`.
+Outside production the API also serves its own documentation at
+[`/docs`](http://localhost:3000/docs), generated from the same OpenAPI spec the typed client
+is built from.
 
 `DATABASE_URL` is read from the root `.env` (see `.env.example`). Details —
 in [`apps/api`](apps/api/README.md) and [`packages/db`](packages/db/README.md).
