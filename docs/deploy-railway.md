@@ -67,6 +67,16 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
      against the published JWKS at boot (tracked in Улучшения), this note is the only
      safeguard;
 
+     **`NODE_ENV`** (F1.4) decides whether the API serves its own documentation at `/docs`:
+     everywhere except production. The image sets `NODE_ENV=production` itself
+     ([apps/api/Dockerfile](../apps/api/Dockerfile)), which is the safe default — a new
+     environment hides the docs until someone says otherwise — so **the dev environment sets
+     `NODE_ENV=development` explicitly** to get them, and production leaves the variable
+     alone. Only `development`, `test` and `production` are accepted; anything else refuses to
+     boot rather than guess which side of that line it is on. The docs route is mounted by the
+     HTTP adapter and is therefore not behind the auth guard: wherever it is on, it is on for
+     everyone;
+
    - Settings → Networking → **Generate Domain**, then check the **target port** it
      recorded (3000 for api). Railway seeds that value from `EXPOSE` once, when the domain
      is first created, and it drifts independently afterwards — `EXPOSE` documents the local

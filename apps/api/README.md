@@ -5,17 +5,56 @@ F1.2, scoping every query for domain data to the caller since F1.3. The one deli
 exception is the healthcheck's `SELECT 1`, which touches no tenant data and is named as such
 below.
 
-Beyond the healthcheck there are still no domain endpoints: the first one arrives in F1.6 and
-the single mutation point in F2.2. What exists already is the machinery they are built on —
-the request context, the auto-scoped Prisma client and the raw-SQL repository below.
+There are still no endpoints that touch a table: the first one arrives in F1.6 and the single
+mutation point in F2.2. What exists already is the machinery they are built on — the request
+context, the auto-scoped Prisma client and the raw-SQL repository below — plus the contract
+those endpoints will be published through (F1.4).
 
 ## Endpoints
 
 - `GET /health` — checks the DB connection (`SELECT 1` via Prisma). `200` if the DB
   is reachable, `503` if not. Public (see below).
+- `GET /me` — echoes back the `userId` the guard verified. Protected, and touches no table:
+  it exists so the whole auth chain (token → guard → `@CurrentUserId()`) can be exercised
+  over HTTP, by tests and by the web client, before any domain data exists (F1.4).
 
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
+
+## The contract (F1.4)
+
+The API describes itself, and everything downstream is generated from that description
+(ADR-002) — nothing is hand-written twice.
+
+```bash
+pnpm openapi                              # → apps/api/openapi.json (builds the api first)
+pnpm --filter @rondo/api-client codegen   # → packages/api-client/src/generated
+```
+
+- **Generation needs neither a server nor a database.** The script boots the compiled app in
+  Nest's _preview_ mode ([`src/openapi/generate.ts`](src/openapi/generate.ts)), which wires the
+  module graph and the controller prototypes — all the Swagger scanner reads — without
+  constructing a single provider. So `PrismaService` never runs, `DATABASE_URL` is never
+  demanded, and the CI step that regenerates the contract needs no connection string. Dropping
+  preview mode quietly reintroduces all three; `test/openapi.spec.ts` lives in the **unit**
+  suite for that reason.
+- **How a handler gets into the spec** — a response class with `@ApiProperty`, named in
+  `@ApiOkResponse`; see [`.claude/rules/architecture.md`](../../.claude/rules/architecture.md).
+  An interface produces an endpoint with no documented shape at all.
+- **`@Public()` also opens the endpoint in the spec.** It stamps the `x-public` extension, and
+  [`buildOpenApiDocument`](src/openapi/document.ts) clears the document-wide bearer requirement
+  wherever it finds one. There is no decorator that can express "no security" directly:
+  `@ApiSecurity` only appends, and an empty requirement is dropped by the scanner before it
+  reaches the document.
+- **Swagger UI is served everywhere except production**, at `/docs`. Swagger mounts it through
+  the HTTP adapter rather than as a controller, so the global guard never sees those routes —
+  wherever it is on, it is on for everyone. The spec itself is not a secret (the repository is
+  public, ADR-003); what production withholds is an anonymous "Try it out" console pointed at
+  real data.
+
+| Variable   | Meaning                                                                                                                                                                                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NODE_ENV` | `development` (the default when unset), `test` or `production`. Only these three; anything else refuses to boot rather than guess. It decides whether `/docs` is served — and **the Docker image sets `production` itself**, so a deployment that wants the docs sets the variable explicitly (see [deploy-railway.md](../../docs/deploy-railway.md)). |
 
 ## Authentication (F1.2)
 
@@ -112,6 +151,7 @@ pnpm --filter @rondo/api dev     # nest start --watch (recompilation via SWC)
 pnpm --filter @rondo/api build   # nest build → dist/
 pnpm --filter @rondo/api start   # node dist/main.js
 pnpm --filter @rondo/api test    # jest: unit, then integration (needs the local Postgres)
+pnpm openapi                     # regenerate openapi.json via turbo (builds first; no DB)
 ```
 
 `DATABASE_URL` comes from the root `.env` (see `.env.example`) and the Clerk key from

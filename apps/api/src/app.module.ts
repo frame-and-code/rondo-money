@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from '@/auth/auth.module';
 import { HealthModule } from '@/health/health.module';
+import { MeModule } from '@/me/me.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { RawSqlModule } from '@/raw-sql/raw-sql.module';
 import { RequestContextModule } from '@/request-context/request-context.module';
@@ -22,6 +23,7 @@ import { RequestContextModule } from '@/request-context/request-context.module';
     PrismaModule,
     RawSqlModule,
     HealthModule,
+    MeModule,
   ],
 })
 export class AppModule {}

@@ -3,9 +3,10 @@
 Rondo Money frontend on **Next.js (App Router)** — skeleton F0.5.
 
 The app shell is in place: sign-in and route protection (F1.1), the shadcn/ui base from
-`@rondo/ui` (F0.6) and the locale switcher (F0.7). Still ahead: the full navigation
-skeleton (Phase 3) and the typed API client `@rondo/api-client` (F1.4, ADR-002) — until
-then `src/lib/api` holds a hand-written client.
+`@rondo/ui` (F0.6), the locale switcher (F0.7) and the typed API client `@rondo/api-client`
+(F1.4, ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack Query — server
+state lives in that cache, not in component state. Still ahead: the full navigation skeleton
+and the real screens (Phase 3).
 
 ## Structure
 
@@ -14,7 +15,8 @@ src/
   app/
     layout.tsx                # root layout (html/body, providers, metadata)
     page.tsx                  # home page — also the F0.6/F0.7 demo screen: primitives,
-                              # theme toggle, locale switcher, the API address
+                              # theme toggle, locale switcher, the API address, and the
+                              # first authenticated API call (GET /me, F1.4)
     globals.css               # Tailwind entry point + the theme's CSS variables
     sign-in/[[...sign-in]]/   # the only public screen (Clerk catch-all route)
     api/health/route.ts       # liveness probe for Railway — public, answers 200 flat
@@ -23,7 +25,9 @@ src/
       budget/page.tsx         # budget screen placeholder (/budget)
   components/                 # app-level components (Clerk provider wrapper, locale switcher)
   i18n/                       # ru (default) / en / pl — dictionaries, detection, context
-  lib/api/                    # base API client (address comes from env)
+  lib/api/                    # the only way to reach @rondo/api: ApiProvider wires the
+                              # generated client (@rondo/api-client) to the address, the
+                              # Clerk token and the TanStack Query cache
   lib/auth.ts                 # SIGN_IN_URL and HEALTH_URL — the paths proxy.ts,
                               # railway.json and the routes must agree on
   proxy.ts                    # clerkMiddleware: everything is protected except the
@@ -42,6 +46,34 @@ pnpm test:e2e                   # Playwright — incl. the F1.1 sign-in/out scen
 
 All pages are Clerk-protected (F1.1): anonymous visitors are redirected to `/sign-in`
 by `src/proxy.ts` (`clerkMiddleware` + `auth.protect()`).
+
+## Data from the API
+
+`ApiProvider` (in [src/lib/api](src/lib/api/client.tsx), mounted in the root layout) configures
+the generated client once — base URL, Clerk token, TanStack Query cache. Screens then only ask
+for data:
+
+```tsx
+import { meControllerIdentifyOptions } from '@rondo/api-client/react-query';
+
+const { data, isError } = useQuery(meControllerIdentifyOptions());
+```
+
+There is no token handling at the call site, and there should never be: each generated request
+carries the security its operation declares in the OpenAPI spec, so `GET /me` is sent with a
+bearer token and the public healthcheck without one. Which endpoints are open is decided by
+`@Public()` in `apps/api` — web holds no list of them.
+
+The provider configures that client **in the browser only**. It is a single instance per
+process, so configuring it while Next renders on the server would hand one visitor's token to
+every concurrent request — server code therefore gets a deliberately unconfigured client.
+Nothing needs one yet; when something does, it builds its own per request from `await auth()`
+and passes it explicitly, in this same `src/lib/api` module rather than in a hand-written
+`fetch`.
+
+The query cache is scoped to the signed-in user by construction: `ApiProvider` keys it on the
+Clerk user id, so signing in as someone else on the same tab starts from an empty cache instead
+of serving the previous user's data until a refetch lands.
 
 ## Environment
 

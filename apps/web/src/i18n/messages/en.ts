@@ -18,6 +18,10 @@ export const en: Record<MessageKey, string> = {
   'home.budgetNameLabel': 'Budget name',
   'home.budgetNamePlaceholder': 'e.g. "Family budget"',
   'home.apiLabel': 'API',
+  'home.callerLabel': 'Signed in as',
+  'home.callerLoading': 'checking…',
+  'home.callerSignedOut': 'you are not signed in',
+  'home.callerUnavailable': 'the API did not answer',
 
   'budget.title': 'Budget',
   'budget.comingSoon': 'The budget screen arrives in Phase 3.',

@@ -7,9 +7,10 @@ const nextConfig: NextConfig = {
   // Linting has its own `lint` step (eslint flat config); never let a type error slip
   // through the build silently.
   typescript: { ignoreBuildErrors: false },
-  // @rondo/ui ships raw TSX source (no build step, F0.6) — Next must transpile it
-  // itself rather than treating it as pre-built node_modules code.
-  transpilePackages: ['@rondo/ui'],
+  // @rondo/ui ships raw TSX source (no build step, F0.6) and @rondo/api-client ships raw TS
+  // (generated from the OpenAPI spec, F1.4) — Next must transpile both itself rather than
+  // treating them as pre-built node_modules code.
+  transpilePackages: ['@rondo/ui', '@rondo/api-client'],
 };
 
 export default nextConfig;

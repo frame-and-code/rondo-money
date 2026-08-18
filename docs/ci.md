@@ -55,6 +55,14 @@ status check keeps the exact id `gate` that branch rules point at.
   once passed the whole gate while leaving `apps/api` unbuildable, because the only thing
   building the API was Playwright — which is skipped whenever the Clerk secrets are absent,
   i.e. on every Dependabot pull request.
+- **The contract chain runs inside the graph (F1.4):** `@rondo/api-client` is generated from
+  `apps/api/openapi.json`, which is generated from the built api, so `typecheck` and the
+  client's own tests pull `@rondo/api#build` → `@rondo/api#openapi` → `codegen` behind them.
+  Nothing in CI invokes those steps by name, and generation needs no database — the generator
+  boots the app in Nest's preview mode, which constructs no providers. **`build` deliberately
+  does not pull that chain:** the generated files are committed, so the web image builds from
+  them instead of compiling the whole API to produce them again. A stale commit of those files
+  is what the drift check is for, not a rebuild.
 - **Turborepo strict env mode:** turbo passes a task only the variables declared
   in that task's `env` in `turbo.json` (plus `globalPassThroughEnv`). A new environment
   variable for a test/server → declare it there too, otherwise everything is green

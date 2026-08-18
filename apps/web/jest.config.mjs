@@ -33,6 +33,8 @@ export default {
     // Jest doesn't implement Node's package self-reference resolution (a package
     // importing its own name via `exports`), unlike Next's bundler — map it by hand.
     '^@rondo/ui/(.*)$': '<rootDir>/../../packages/ui/src/$1',
+    '^@rondo/api-client$': '<rootDir>/../../packages/api-client/src/index.ts',
+    '^@rondo/api-client/react-query$': '<rootDir>/../../packages/api-client/src/react-query.ts',
   },
   // @testing-library/jest-dom matchers (toBeInTheDocument, …).
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],

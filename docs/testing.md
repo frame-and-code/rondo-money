@@ -5,11 +5,11 @@ the feature** — a feature without tests doesn't count as done (no test debt ac
 
 ## Levels
 
-| Level       | What it checks                              | Runner              | Where it lives                                     | Naming                     |
-| ----------- | ------------------------------------------- | ------------------- | -------------------------------------------------- | -------------------------- |
-| Unit        | Domain logic, components — no DB or network | Jest (+ fast-check) | `packages/types/test`, `apps/web/test`, `apps/api` | `*.spec.ts` / `*.test.tsx` |
-| Integration | API ↔ Postgres (from F0.3)                  | Jest + supertest    | `apps/api/test`                                    | `*.integration.spec.ts`    |
-| E2E         | Browser → web → api → Postgres              | Playwright          | `apps/web/e2e`                                     | `*.spec.ts`                |
+| Level       | What it checks                              | Runner              | Where it lives                                                                 | Naming                     |
+| ----------- | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------ | -------------------------- |
+| Unit        | Domain logic, components — no DB or network | Jest (+ fast-check) | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api` | `*.spec.ts` / `*.test.tsx` |
+| Integration | API ↔ Postgres (from F0.3)                  | Jest + supertest    | `apps/api/test`                                                                | `*.integration.spec.ts`    |
+| E2E         | Browser → web → api → Postgres              | Playwright          | `apps/web/e2e`                                                                 | `*.spec.ts`                |
 
 ## Commands
 

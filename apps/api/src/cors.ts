@@ -71,8 +71,8 @@ export function assertWebOriginConfigured(config: ConfigService): void {
 }
 
 /**
- * Scope CORS to the web origin so the browser client (`apps/web`, `apiFetch`) can call the
- * API cross-origin without failing the preflight.
+ * Scope CORS to the web origin so the browser client (`apps/web`, through the generated
+ * `@rondo/api-client`) can call the API cross-origin without failing the preflight.
  *
  * Shared by `main.ts` and the e2e test so both exercise the exact same configuration.
  */

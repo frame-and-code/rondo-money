@@ -18,6 +18,10 @@ export const pl: Record<MessageKey, string> = {
   'home.budgetNameLabel': 'Nazwa budżetu',
   'home.budgetNamePlaceholder': 'Np. „Budżet rodzinny”',
   'home.apiLabel': 'API',
+  'home.callerLabel': 'Zalogowano jako',
+  'home.callerLoading': 'sprawdzanie…',
+  'home.callerSignedOut': 'nie zalogowano',
+  'home.callerUnavailable': 'API nie odpowiedziało',
 
   'budget.title': 'Budżet',
   'budget.comingSoon': 'Ekran budżetu pojawi się w Fazie 3.',

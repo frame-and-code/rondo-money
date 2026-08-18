@@ -22,9 +22,17 @@ really do ship inside the package (`node_modules/next/dist/docs/`).
 
 - **No database.** `apps/web` never imports Prisma and never reaches Postgres (ADR-002); it
   only talks to `@rondo/api` over HTTP.
-- **One API path.** [`src/lib/api/client.ts`](src/lib/api/client.ts) is a deliberate
-  placeholder until the generated `@rondo/api-client` lands (F1.4/F1.5). Do not grow it into a
-  hand-written API layer and do not add a second `fetch` path beside it.
+- **One API path.** [`src/lib/api/client.tsx`](src/lib/api/client.tsx) configures the generated
+  `@rondo/api-client` (F1.4) with the base URL and the Clerk token, and provides the TanStack
+  Query cache — that is all it is allowed to do. Screens fetch through the generated query
+  options (`useQuery(meControllerIdentifyOptions())`) — **the token attaches itself**, so never
+  set `Authorization` or call `getToken()` in a component. Do not hand-write a request beside
+  them and do not add a second `fetch` path; a missing endpoint is added to `apps/api` and
+  regenerated, never worked around here. **Server code must not use the module-level client**:
+  it is one instance per process, so configuring it during SSR would share one visitor's token
+  with every concurrent request. `ApiProvider` configures it in the browser only; server code
+  that needs the API builds its own client per request from `await auth()` and passes it
+  explicitly — never a bare `fetch`.
 - **No hand-written CSS files and no inline `style`.** Screens are Tailwind utilities plus
   shadcn/ui components from `@rondo/ui` (theme Ocean Breeze). Missing a primitive? Add it with
   `pnpm dlx shadcn@latest add <component>` into `packages/ui`, not here.

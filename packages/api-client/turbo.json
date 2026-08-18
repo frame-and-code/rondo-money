@@ -1,0 +1,16 @@
+{
+  "$schema": "https://v2-10-7.turborepo.dev/schema.json",
+  "//": "Everything here reads src/generated, which `codegen` regenerates from apps/api/openapi.json — declaring it makes the order turbo's problem rather than a step in a README. `build` deliberately does NOT depend on it: it is an echo (the package ships TS source), and the generated files are committed, so hanging codegen off it would drag a full NestJS build into the web image to produce nothing. A stale commit of those files is caught by the drift check, not by rebuilding here.",
+  "extends": ["//"],
+  "tasks": {
+    "typecheck": {
+      "dependsOn": ["codegen", "^typecheck"]
+    },
+    "test": {
+      "dependsOn": ["codegen"]
+    },
+    "test:unit": {
+      "dependsOn": ["codegen"]
+    }
+  }
+}
