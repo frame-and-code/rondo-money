@@ -71,12 +71,13 @@ describe('GET /me (integration)', () => {
 
     expect(response.status).toBe(401);
     // `UnauthorizedResponse` is what the contract promises clients, and a generated client
-    // types the error by it — so the promise is checked against the real response here rather
-    // than trusted. The message stays deliberately vague; the reason is in the log.
+    // types the error by it — so the promise is checked against the real response rather than
+    // trusted. Asserted verbatim, like the guard's own cases in auth.integration.spec.ts: a
+    // matcher would smuggle an `any` into the expectation and hide a drifting shape.
     expect(response.body).toEqual({
       statusCode: 401,
       error: 'Unauthorized',
-      message: expect.any(String) as unknown,
+      message: 'Missing bearer token',
     });
   });
 
