@@ -1,4 +1,4 @@
-import { useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 
@@ -72,37 +72,64 @@ describe('ApiProvider', () => {
     expect(mockGetToken).toHaveBeenCalledTimes(1);
   });
 
-  it('gives a second user a cache of their own, so they cannot read the first one’s data', () => {
-    const seen = new Set<QueryClient>();
+  // The claim the cache-per-identity exists to make, asserted on data rather than on the
+  // client instance: a screen that is already on the page must not go on showing what the
+  // previous user's session fetched. Every screen is in that position — the provider lives in
+  // the root layout, and signing out and back in is a soft navigation, so nothing unmounts.
+  it("does not serve a mounted screen the previous user's cached response", async () => {
+    function Screen() {
+      // A generated query key, which carries no identity — exactly what the app's screens use.
+      const { data } = useQuery({ queryKey: ['me'], queryFn: () => Promise.resolve(mockUserId) });
+      return <p>{`caller:${data ?? 'loading'}`}</p>;
+    }
+
+    const { rerender } = render(
+      <ApiProvider>
+        <Screen />
+      </ApiProvider>,
+    );
+    expect(await screen.findByText('caller:user_a')).toBeInTheDocument();
+
+    mockUserId = 'user_b';
+    rerender(
+      <ApiProvider>
+        <Screen />
+      </ApiProvider>,
+    );
+
+    expect(await screen.findByText('caller:user_b')).toBeInTheDocument();
+  });
+
+  it('keeps the subtree mounted while doing so, rather than rebuilding every screen', async () => {
     let mounts = 0;
 
-    function Probe() {
-      seen.add(useQueryClient());
+    function Screen() {
+      const { data } = useQuery({ queryKey: ['me'], queryFn: () => Promise.resolve(mockUserId) });
       useEffect(() => {
         mounts += 1;
       }, []);
 
-      return null;
+      return <p>{`caller:${data ?? 'loading'}`}</p>;
     }
 
-    // Signing out and back in as someone else is a soft navigation: this provider is in the
-    // root layout and never unmounts, and the generated query keys carry no user id. Without a
-    // cache scoped to the identity, user B would read A's data straight out of it.
     const { rerender } = render(
       <ApiProvider>
-        <Probe />
+        <Screen />
       </ApiProvider>,
     );
+    await screen.findByText('caller:user_a');
+
     mockUserId = 'user_b';
     rerender(
       <ApiProvider>
-        <Probe />
+        <Screen />
       </ApiProvider>,
     );
+    await screen.findByText('caller:user_b');
 
-    expect(seen.size).toBe(2);
-    // Swapped, not remounted: the subtree here is the whole app — the theme provider and every
-    // screen — and rebuilding it on each change of identity would throw away their state.
+    // The subtree here is the whole app — the theme provider and every screen — and `userId`
+    // goes from `undefined` to the signed-in user on every page load, so remounting on a change
+    // of identity would rebuild all of it once per load rather than once per user.
     expect(mounts).toBe(1);
   });
 });

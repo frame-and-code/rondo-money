@@ -7,9 +7,6 @@ import { useEffect } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
 
-/** The React key standing in for "nobody is signed in", since a key cannot be null. */
-const ANONYMOUS = 'anonymous';
-
 /**
  * Brings the interface language from the user's settings (F1.6), and renders nothing.
  *
@@ -24,6 +21,7 @@ const ANONYMOUS = 'anonymous';
  */
 export function SettingsLocaleSync() {
   const { isLoaded, isSignedIn, userId } = useAuth();
+  const { applySettingsLocale } = useTranslations();
 
   // `undefined` until Clerk answers, `null` when nobody is signed in. Two different questions:
   // reporting "not yet known" as "nobody" files a pick made in that first beat under the
@@ -33,38 +31,24 @@ export function SettingsLocaleSync() {
     caller = isSignedIn ? (userId ?? null) : null;
   }
 
-  // Remounted whenever the caller changes, deliberately. `ApiProvider` gives each identity its
-  // own `QueryClient`, but that only reaches components mounted *after* the swap: `useBaseQuery`
-  // builds its observer once — `const [observer] = useState(() => new Observer(client, …))` in
-  // @tanstack/react-query@5.101.4 — so a hook that stays mounted keeps reading the cache it
-  // started with. This one lives in the root layout and never unmounts on its own, and signing
-  // in as someone else on the same tab is a soft navigation; without the key, the second user
-  // would be handed the first one's language. Remounting costs nothing here — it renders null.
-  //
-  // The key and the prop come from one expression on purpose: two of them could disagree, and
-  // the disagreement would be a query for one user reported as another's.
-  return <CallerSettingsLocale key={caller ?? ANONYMOUS} userId={caller} />;
-}
-
-function CallerSettingsLocale({ userId }: { userId: string | null | undefined }) {
-  const { applySettingsLocale } = useTranslations();
-
   // Held back until Clerk has a session, so a signed-out visitor on the sign-in screen does
   // not fire a call that could only come back 401.
   const { data } = useQuery({
     ...userSettingsControllerReadOptions(),
-    enabled: typeof userId === 'string',
+    enabled: typeof caller === 'string',
   });
 
-  // Keyed on the value rather than on `data`, which is a new reference after every refetch —
-  // re-applying the settings on each one would quietly undo a choice made in between. The
-  // caller travels with it: reported separately, a change of identity and the arrival of the
-  // new user's language are two effects with no ordering between them.
   const language = data?.language;
 
+  // One effect carrying both halves, keyed on the values rather than on `data` — which is a new
+  // reference after every refetch, and re-applying the settings on each one would quietly undo
+  // a choice the user made in between. The caller travels with the language on purpose:
+  // reported separately, a change of identity and the arrival of the new user's settings are
+  // two effects with no ordering between them, and the losing order applies one user's language
+  // under another's name.
   useEffect(() => {
-    applySettingsLocale(userId, language ?? null);
-  }, [userId, language, applySettingsLocale]);
+    applySettingsLocale(caller, language ?? null);
+  }, [caller, language, applySettingsLocale]);
 
   return null;
 }

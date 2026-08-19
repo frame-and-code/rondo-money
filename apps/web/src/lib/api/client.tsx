@@ -7,12 +7,6 @@ import { useState, type ReactNode } from 'react';
 
 import { API_BASE_URL } from './config';
 
-/** What the current cache was built for. `undefined` means "not bound to an identity yet". */
-interface IdentityScopedCache {
-  identity: string | null | undefined;
-  client: QueryClient;
-}
-
 /**
  * Everything this app needs to talk to `@rondo/api` (ADR-002): the generated client pointed
  * at the configured API and taught how to get a Clerk token, plus the TanStack Query cache
@@ -43,34 +37,37 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     configureApiClient({ baseUrl: API_BASE_URL, getToken });
   }
 
-  const [cache, setCache] = useState<IdentityScopedCache>(() => ({
-    identity: undefined,
-    client: new QueryClient(),
-  }));
+  const [client] = useState(() => new QueryClient());
+  const [identity, setIdentity] = useState<string | null | undefined>(undefined);
 
-  // A cache per identity. Query keys carry no user in them and this provider never unmounts on
-  // soft navigation, so without this, signing out and back in as someone else on the same tab
-  // would serve the previous user's cached data until a refetch landed.
+  // One cache per identity, done by emptying the cache rather than by handing out a new
+  // client. Query keys carry no user in them and this provider never unmounts on soft
+  // navigation, so without this, signing out and back in as someone else on the same tab would
+  // serve the previous user's cached data until a refetch landed.
   //
-  // ⚠️ **This does not do that for a screen that is already on the page** — verified in F1.6,
-  // against the installed `@tanstack/react-query@5.101.4`. `useBaseQuery` builds its observer
-  // once (`const [observer] = React.useState(() => new Observer(client, defaultedOptions))`)
-  // and afterwards only calls `observer.setOptions`, which does not rebind the client. So a
-  // mounted `useQuery` keeps reading the cache it started with, and swapping the value here
-  // reaches only what mounts afterwards — which is the opposite of the case this was written
-  // for, since signing out and back in is a soft navigation and nothing unmounts. Until that
-  // is fixed, a component that must not be handed the previous user's data remounts itself per
-  // identity; `src/i18n/settings-locale.tsx` does exactly that and says why.
+  // It used to build a new `QueryClient` instead, and that did not work: `useBaseQuery` binds
+  // its observer to the client once — `const [observer] = React.useState(() => new
+  // Observer(client, defaultedOptions))` in @tanstack/react-query@5.101.4 — and afterwards only
+  // calls `observer.setOptions`, which does not rebind it. A screen already on the page
+  // therefore kept reading the cache it started with, which is exactly the case this guard
+  // exists for: signing out and back in is a soft navigation, and nothing unmounts.
+  //
+  // Remounting the subtree per identity would fix that and cost too much: `userId` also goes
+  // from `undefined` to the signed-in user on every page load, so the theme provider and every
+  // screen would be torn down and rebuilt once per load, not once per change of user.
+  //
+  // Cleared during render, next to the state update, for the same reason the configuration
+  // above is: a parent renders before its children, so the first render they do after the
+  // identity changes already sees an empty cache. From an effect, one render — and any effect
+  // keyed on what it returned — would observe the previous user's response first. Emptying an
+  // already-empty cache is a no-op, which is all the first `undefined` → user transition is.
   //
   // It waits for `isLoaded`, because Clerk reports `userId: undefined` until it has a session —
-  // reacting to that would rebuild the cache once on every page load for nothing. And it *swaps
-  // the client* rather than remounting the subtree: the children here include the theme
-  // provider and every screen, which would lose their state on each change of identity.
-  // Adjusting state during render is React's documented alternative to an effect for deriving
-  // state from props, so the swap itself lands before the children render.
-  if (isLoaded && cache.identity !== userId) {
-    setCache({ identity: userId, client: new QueryClient() });
+  // reacting to that would clear the cache once on every page load for nothing.
+  if (isLoaded && identity !== userId) {
+    setIdentity(userId);
+    client.clear();
   }
 
-  return <QueryClientProvider client={cache.client}>{children}</QueryClientProvider>;
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

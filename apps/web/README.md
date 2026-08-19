@@ -73,16 +73,18 @@ Nothing needs one yet; when something does, it builds its own per request from `
 and passes it explicitly, in this same `src/lib/api` module rather than in a hand-written
 `fetch`.
 
-`ApiProvider` builds a fresh query cache per Clerk user id, so anything mounted after a change
-of identity starts from an empty cache rather than the previous user's data.
+`ApiProvider` empties the query cache when the Clerk user id changes, so signing out and back
+in as someone else on the same tab starts from nothing rather than serving the previous user's
+data — including to screens that were already on the page.
 
-⚠️ **It does not reach a screen that is already on the page**, which is the case it was written
-for: signing out and back in is a soft navigation, and nothing unmounts. `useBaseQuery` builds
-its observer once and never rebinds it to a new client (verified against the installed
-`@tanstack/react-query@5.101.4` in F1.6), so a mounted `useQuery` keeps reading the cache it
-started with. Fixing the provider is tracked separately; until then, a component that must not
-be handed the previous user's data remounts itself per identity — see
-[settings-locale.tsx](src/i18n/settings-locale.tsx).
+That last part is the whole point, and it is why the provider _clears_ one cache instead of
+handing out a new one, which is what it did until F1.6. `useBaseQuery` binds its observer to a
+client once and never rebinds it (verified against the installed
+`@tanstack/react-query@5.101.4`), so replacing the client reached only what mounted afterwards —
+and signing out and back in is a soft navigation, so nothing unmounts. Remounting the subtree
+per identity would also work and costs far too much: `userId` goes from `undefined` to the
+signed-in user on every page load, so the theme provider and every screen would be rebuilt once
+per load rather than once per user.
 
 The first thing the app asks for is the user's own settings.
 [`SettingsLocaleSync`](src/i18n/settings-locale.tsx) sits in the root layout, renders nothing,
@@ -95,14 +97,12 @@ settings**, which beat **the browser**. Reversing the last two would hand the ch
 the server on every reload, which is the defect the storage exists to remove.
 
 Both of the first two are scoped to the signed-in account, because browsers get shared. The
-stored pick lives under `rondo.locale:<userId>` (a signed-out visitor gets the bare
-`rondo.locale` — that is the sign-in screen, which belongs to no account), and the settings
-reader is remounted per caller. The remount is not decoration: `ApiProvider` gives each
-identity its own `QueryClient`, but a `useQuery` that stays mounted keeps the client it was
-created with, so a component living in the root layout would go on reading the previous user's
-cache after a sign-out and back in. Storage access is also wrapped — Safari with "Block All
-Cookies" and a sandboxed iframe throw on reading `window.localStorage` at all, and this
-provider sits above every screen with no error boundary under it.
+stored pick lives under `rondo.locale:<userId>` — a signed-out visitor gets the bare
+`rondo.locale`, which is the sign-in screen, belonging to no account — and the settings
+language is reported together with the user it belongs to, so a language arriving for the
+previous account cannot be applied to the next one. Storage access is wrapped as well: Safari
+with "Block All Cookies" and a sandboxed iframe throw on reading `window.localStorage` at all,
+and this provider sits above every screen with no error boundary under it.
 
 ## Environment
 
