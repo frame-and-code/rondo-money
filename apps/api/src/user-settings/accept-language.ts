@@ -22,8 +22,16 @@ function parsePreference(entry: string): LanguagePreference | null {
   // `q` is the only parameter that changes the outcome; RFC 9110 permits others, and
   // ignoring them is what it asks for.
   const weight = parameters.find((parameter) => parameter.startsWith('q='))?.slice(2);
-  const quality = weight === undefined ? 1 : Number.parseFloat(weight);
-  if (Number.isNaN(quality) || quality <= 0) return null;
+
+  // RFC 9110's qvalue grammar exactly: 0 or 1, with at most three decimals and nothing above
+  // 1. Matched with a pattern rather than measured with `Number.parseFloat`, which reads a
+  // number off the front of a string and discards the rest — `q=0.9junk` comes back as 0.9 and
+  // outranks a well-formed `q=0.8`, and `q=2` outranks everything. Both are malformed
+  // parameters, and a malformed parameter is ignored, not guessed at.
+  if (weight !== undefined && !/^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(weight)) return null;
+
+  const quality = weight === undefined ? 1 : Number(weight);
+  if (quality <= 0) return null;
 
   return { tag, quality };
 }

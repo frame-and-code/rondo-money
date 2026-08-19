@@ -56,9 +56,21 @@ describe('detectLanguageTag', () => {
     // A malformed weight drops the entry rather than defaulting it to 1, which would let it
     // outrank everything the client did state properly.
     expect(detectLanguageTag('pl;q=nonsense,ru;q=0.1')).toBe('ru');
+    // Malformed *after* a valid prefix, which is the case a `parseFloat` reading silently
+    // accepts: it returns 0.9 for `0.9junk` and lets it outrank a well-formed 0.8.
+    expect(detectLanguageTag('pl;q=0.9junk,en;q=0.8')).toBe('en');
+    // Above the maximum weight RFC 9110 allows, which `parseFloat` also accepts happily.
+    expect(detectLanguageTag('pl;q=2,en;q=1')).toBe('en');
+    expect(detectLanguageTag('pl;q=1.5,en;q=0.4')).toBe('en');
   });
 
   it('ignores parameters other than q', () => {
     expect(detectLanguageTag('pl;charset=utf-8')).toBe('pl');
+  });
+
+  it('accepts every weight the grammar does allow', () => {
+    expect(detectLanguageTag('en;q=1,pl;q=1.000')).toBe('en');
+    expect(detectLanguageTag('en;q=0.001,pl;q=0.002')).toBe('pl');
+    expect(detectLanguageTag('en;q=0.5,pl;q=1')).toBe('pl');
   });
 });
