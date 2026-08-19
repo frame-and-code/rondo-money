@@ -94,6 +94,13 @@ status check keeps the exact id `gate` that branch rules point at.
   it has hung against an unreachable Ubuntu mirror for a job's entire 25-minute budget. Hence
   the per-attempt `timeout`, the single retry and the step's own `timeout-minutes` — a stuck
   mirror should cost minutes and say so, not consume the job and report a bare cancellation.
+- **Why that retry kills `apt-get` before it runs.** `timeout` signals only the process it
+  started, and here that is the head of a chain (pnpm → node → apt-get). The first version of
+  this retry killed the head and left apt-get holding `/var/lib/apt/lists/lock`, so the second
+  attempt died in one second with "Could not get lock" — the retry existed and could not
+  possibly work. The orphan is cleared between attempts for that reason, and it is the sort of
+  thing that only shows up in a log: both attempts are announced as warnings so the next
+  failure is readable.
 - **Clerk keys in e2e** (F1.1): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
   come from repository secrets (GitHub → Settings → Secrets → Actions) — the whole web app
   is behind auth, so without them not a single page serves. GitHub hides those secrets from

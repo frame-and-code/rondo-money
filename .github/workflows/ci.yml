@@ -386,7 +386,17 @@ jobs:
             if timeout 300 pnpm --filter @rondo/web exec playwright "$@"; then
               exit 0
             fi
+
             echo "::warning::Playwright install attempt ${attempt} timed out or failed — retrying"
+
+            # `timeout` signals only the process it started, and this one is the head of a chain:
+            # pnpm → node → apt-get. Killing the head leaves apt-get running and still holding
+            # /var/lib/apt/lists/lock, so the retry died in one second with "Could not get lock"
+            # — measured, not guessed. Clearing the orphan is what makes a second attempt mean
+            # anything. `|| true` because finding nothing to kill is the normal case, and the
+            # shell runs under `-e`.
+            sudo pkill -KILL -f apt-get || true
+            sleep 5
           done
 
           exit 1
