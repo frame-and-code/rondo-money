@@ -84,9 +84,16 @@ status check keeps the exact id `gate` that branch rules point at.
   variable for a test/server → declare it there too, otherwise everything is green
   locally with `.env`, but in CI the variable never reaches the process.
 - **E2E**: Playwright builds and starts api and web itself (`reuseExistingServer` is off
-  in CI); the browser is installed by the `playwright install --with-deps chromium` step.
-  The CI reporter is `github` (annotations right in the PR); on failure, traces
+  in CI). The CI reporter is `github` (annotations right in the PR); on failure, traces
   (`apps/web/test-results`) are uploaded as the `playwright-traces` artifact.
+- **Installing the browser is the slowest step in that job, and it has two halves.** The
+  browser binaries are cached on the resolved Playwright version, so a hit skips the CDN
+  download. The system packages cannot be cached — they are apt packages and each run gets a
+  fresh VM — so `--with-deps` runs every time, and it is not ceremony: nine of the libraries
+  Chromium needs are missing from the runner image. That apt half is also the one that fails:
+  it has hung against an unreachable Ubuntu mirror for a job's entire 25-minute budget. Hence
+  the per-attempt `timeout`, the single retry and the step's own `timeout-minutes` — a stuck
+  mirror should cost minutes and say so, not consume the job and report a bare cancellation.
 - **Clerk keys in e2e** (F1.1): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
   come from repository secrets (GitHub → Settings → Secrets → Actions) — the whole web app
   is behind auth, so without them not a single page serves. GitHub hides those secrets from

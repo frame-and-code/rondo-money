@@ -337,8 +337,59 @@ jobs:
       - name: Apply migrations
         run: pnpm --filter @rondo/db run db:deploy
 
+      # This step is the slowest in the job, and measuring it decides what is worth fixing.
+      # On a healthy run (32269953397) it split into: apt index refresh 1m14s, nine genuinely
+      # missing system packages 1m05s, browser download ~17s — 2m44s in total. On the next run
+      # (32270576388) the apt index refresh hung against an unreachable Azure mirror and took
+      # the job's whole 25-minute cap with it.
+      #
+      # So the two halves get different treatment, and the cache is the smaller of the two
+      # wins: it removes the browser download, which was never the expensive part.
+      #
+      # Keyed on the resolved Playwright version rather than on the lockfile — the browser
+      # build is pinned to the driver, so a Playwright bump *must* miss the cache while an
+      # unrelated dependency change must not. Read from the installed binary, because a
+      # hand-written version here would drift from package.json in silence.
+      - name: Resolve the Playwright version
+        id: playwright
+        run: >-
+          echo "version=$(pnpm --filter @rondo/web exec playwright --version | awk '{print $2}')"
+          >> "$GITHUB_OUTPUT"
+
+      - name: Restore the Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
+      # The apt half is what actually hangs, and no cache reaches it: those packages live
+      # outside `~/.cache/ms-playwright` and every run starts on a fresh VM. What helps there is
+      # not waiting forever — `timeout` bounds a single attempt, the loop gives it one more go
+      # against a mirror that is usually only briefly unreachable, and `timeout-minutes` is the
+      # backstop. A stuck mirror now costs about ten minutes and says so, instead of consuming
+      # the job's entire budget and reporting nothing but a cancellation.
+      #
+      # `--with-deps` stays: it is not ceremony. The healthy run above installed nine packages
+      # the runner image does not ship, so dropping it trades a slow step for a browser that
+      # cannot launch.
       - name: Install Playwright Chromium
-        run: pnpm --filter @rondo/web exec playwright install --with-deps chromium
+        timeout-minutes: 12
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
+            set -- install-deps chromium
+          else
+            set -- install --with-deps chromium
+          fi
+
+          for attempt in 1 2; do
+            if timeout 300 pnpm --filter @rondo/web exec playwright "$@"; then
+              exit 0
+            fi
+            echo "::warning::Playwright install attempt ${attempt} timed out or failed — retrying"
+          done
+
+          exit 1
 
       # The Clerk variables are declared in the test:e2e task env in turbo.json — otherwise
       # turbo strict env mode strips them.
