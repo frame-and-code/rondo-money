@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses } from './types.gen';
+import type { HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -33,5 +33,16 @@ export const healthControllerCheck = <ThrowOnError extends boolean = false>(opti
 export const meControllerIdentify = <ThrowOnError extends boolean = false>(options?: Options<MeControllerIdentifyData, ThrowOnError>): RequestResult<MeControllerIdentifyResponses, MeControllerIdentifyErrors, ThrowOnError> => (options?.client ?? client).get<MeControllerIdentifyResponses, MeControllerIdentifyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/me',
+    ...options
+});
+
+/**
+ * The caller's settings
+ *
+ * Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. Never returns another user’s settings — the caller is the verified token’s subject and nothing else.
+ */
+export const userSettingsControllerRead = <ThrowOnError extends boolean = false>(options?: Options<UserSettingsControllerReadData, ThrowOnError>): RequestResult<UserSettingsControllerReadResponses, UserSettingsControllerReadErrors, ThrowOnError> => (options?.client ?? client).get<UserSettingsControllerReadResponses, UserSettingsControllerReadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/user-settings',
     ...options
 });

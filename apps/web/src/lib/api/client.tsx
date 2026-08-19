@@ -52,13 +52,22 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   // soft navigation, so without this, signing out and back in as someone else on the same tab
   // would serve the previous user's cached data until a refetch landed.
   //
-  // Two details matter. It waits for `isLoaded`, because Clerk reports `userId: undefined`
-  // until it has a session — reacting to that would rebuild the cache once on every page load
-  // for nothing. And it *swaps the client* rather than remounting the subtree: the children
-  // here include the theme provider and every screen, which would lose their state on each
-  // change of identity. Adjusting state during render is React's documented alternative to an
-  // effect for deriving state from props — the component re-runs before its children render,
-  // so nothing below ever reads the previous user's cache, which an effect could not promise.
+  // ⚠️ **This does not do that for a screen that is already on the page** — verified in F1.6,
+  // against the installed `@tanstack/react-query@5.101.4`. `useBaseQuery` builds its observer
+  // once (`const [observer] = React.useState(() => new Observer(client, defaultedOptions))`)
+  // and afterwards only calls `observer.setOptions`, which does not rebind the client. So a
+  // mounted `useQuery` keeps reading the cache it started with, and swapping the value here
+  // reaches only what mounts afterwards — which is the opposite of the case this was written
+  // for, since signing out and back in is a soft navigation and nothing unmounts. Until that
+  // is fixed, a component that must not be handed the previous user's data remounts itself per
+  // identity; `src/i18n/settings-locale.tsx` does exactly that and says why.
+  //
+  // It waits for `isLoaded`, because Clerk reports `userId: undefined` until it has a session —
+  // reacting to that would rebuild the cache once on every page load for nothing. And it *swaps
+  // the client* rather than remounting the subtree: the children here include the theme
+  // provider and every screen, which would lose their state on each change of identity.
+  // Adjusting state during render is React's documented alternative to an effect for deriving
+  // state from props, so the swap itself lands before the children render.
   if (isLoaded && cache.identity !== userId) {
     setCache({ identity: userId, client: new QueryClient() });
   }

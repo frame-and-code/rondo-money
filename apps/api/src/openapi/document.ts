@@ -19,7 +19,16 @@ export const API_DOCS_PATH = 'docs';
  * carries non-operation keys (`parameters`, `servers`, `$ref`). Listing the methods keeps the
  * walk below typed instead of casting whatever `Object.values` hands back.
  */
-const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
+export const HTTP_METHODS = [
+  'get',
+  'put',
+  'post',
+  'delete',
+  'options',
+  'head',
+  'patch',
+  'trace',
+] as const;
 
 const DESCRIPTION = `The REST contract of Rondo Money — a zero-based budgeting app. The backend owns every
 database access (ADR-002); this spec is what the typed client in \`packages/api-client\` is

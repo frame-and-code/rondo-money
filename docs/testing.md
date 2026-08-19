@@ -50,11 +50,16 @@ The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
 All app routes are behind Clerk, so any scenario touching a screen needs a session:
 
 - The Clerk **dev instance** treats `<name>+clerk_test@example.com` as a test account:
-  the OTP is always `424242` and no real mail is sent. The address lives in
+  the OTP is always `424242` and no real mail is sent. The addresses live in
   [`apps/web/e2e/clerk.ts`](../apps/web/e2e/clerk.ts).
+- There are **two** accounts, and the second one is not redundancy. Since F1.6 the first
+  authenticated request a user makes creates their settings row and fixes their interface
+  language from `Accept-Language`, so whichever scenario signs in first decides it for every
+  later one. `locale.spec.ts` therefore owns `LOCALE_TEST_EMAIL` and no other spec touches it;
+  a scenario that needs a language of its own adds an account rather than sharing one.
 - [`e2e/global-setup.ts`](../apps/web/e2e/global-setup.ts) issues the Clerk **Testing
   Token** (`@clerk/testing` — bypasses bot detection for automated browsers) and creates
-  that account through the Backend API, idempotently — a fresh instance needs no manual
+  those accounts through the Backend API, idempotently — a fresh instance needs no manual
   setup.
 - In a spec: call `setupClerkTestingToken({ page })`, then sign in programmatically with
   `clerk.signIn(...)` (strategy `email_code`) on a page where clerk-js is loaded —
@@ -101,10 +106,12 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
 - **Cross-tenant tests** are mandatory for every phase that adds domain tables — copy
   [`apps/api/test/user-scoping.integration.spec.ts`](../apps/api/test/user-scoping.integration.spec.ts),
   which covers reads, bulk writes, ownership reassignment and behaviour inside `$transaction`.
-- To exercise the **whole chain** (HTTP → guard → context → query) declare a probe controller
-  on the testing module, the way
-  [`scoped-raw.integration.spec.ts`](../apps/api/test/scoped-raw.integration.spec.ts) does; the
-  app has no domain endpoint of its own until F1.6.
+- To exercise the **whole chain** (HTTP → guard → context → query) over a real endpoint, copy
+  [`apps/api/test/user-settings.integration.spec.ts`](../apps/api/test/user-settings.integration.spec.ts)
+  (F1.6) — it signs a token, calls the route and checks what landed in Postgres through the
+  unscoped client. Where no endpoint exposes the behaviour under test, declare a probe
+  controller on the testing module instead, the way
+  [`scoped-raw.integration.spec.ts`](../apps/api/test/scoped-raw.integration.spec.ts) does.
 
 ## How to add tests to a new feature
 

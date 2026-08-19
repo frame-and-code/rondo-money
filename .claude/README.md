@@ -11,6 +11,7 @@ each kind of file may cost and what it may contain:
 | ---------------------- | --------------------------------- | ------------------------------------------------- |
 | `CLAUDE.md` + `rules/` | every turn, via `@` imports       | short imperatives — what must and must not happen |
 | `commands/`            | when the user types `/name`       | workflow entry points                             |
+| `skills/`              | when a task matches one           | how a recurring piece of work is actually done    |
 | `hooks/`               | by the runtime, deterministically | guarantees; not LLM, cannot be talked out of      |
 | `settings.json`        | at start                          | which tools may run without asking                |
 | `config/`              | when an agent goes looking        | pointers to external truth                        |
@@ -40,6 +41,15 @@ turn. They stay short deliberately: detail belongs in `docs/`, and the rule link
 | [`specs.md`](rules/specs.md)                     | Notion as the decision memory; repository docs corrected in the same PR                                   |
 | [`testing.md`](rules/testing.md)                 | tests written with the feature; invariant 5.5 and cross-tenant tests are mandatory                        |
 | [`communication.md`](rules/communication.md)     | English in git, Russian in chat; git is the user's call; branch/commit/PR wording                         |
+
+## Skills (`skills/`)
+
+| Skill                                                         | Use when                                                                                  |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that reads or writes a domain table (the F1.6 `user-settings` shape) |
+
+A skill is grounded in code that exists: every step names a real file to copy from, so it
+cannot drift into describing an API nobody wrote.
 
 ## Commands (`commands/`)
 
@@ -95,7 +105,7 @@ a link list nobody can justify becomes a link list nobody opens.
 Deliberate, not missing. Each arrives with the phase that gives it something true to
 describe — a skill grounded in code that does not exist yet would be fiction:
 
-- `skills/` — `add-a-mutation`, `testing-patterns` (F2.2); `aggregate-query`,
+- more `skills/` — `add-a-mutation`, `testing-patterns` (F2.2); `aggregate-query`,
   `budget-invariant` (F4.2);
 - `agents/` — `migration-reviewer` (F3.1), `invariant-debugger` (F4.2).
 

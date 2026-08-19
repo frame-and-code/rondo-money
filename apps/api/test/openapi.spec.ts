@@ -1,7 +1,7 @@
 import { type OpenAPIObject } from '@nestjs/swagger';
 
 import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
-import { SESSION_TOKEN_SCHEME } from '@/openapi/document';
+import { HTTP_METHODS, SESSION_TOKEN_SCHEME } from '@/openapi/document';
 import { generateOpenApiDocument } from '@/openapi/generate';
 
 /**
@@ -21,13 +21,51 @@ describe('OpenAPI document', () => {
   });
 
   it('describes the endpoints the app actually serves', () => {
-    expect(Object.keys(document.paths).sort()).toEqual(['/health', '/me']);
+    expect(Object.keys(document.paths).sort()).toEqual(['/health', '/me', '/user-settings']);
   });
 
   it('gives every response a schema, so a client is typed rather than guessing', () => {
     expect(document.components?.schemas).toHaveProperty('CurrentUserResponse');
     expect(document.components?.schemas).toHaveProperty('HealthResponse');
+    expect(document.components?.schemas).toHaveProperty('UserSettingsResponse');
     expect(document.paths['/me']?.get?.responses['200']).toBeDefined();
+  });
+
+  it('names the language enum, so clients get a union type instead of a bare string', () => {
+    // `enumName` on the @ApiProperty is what lifts the enum into `components.schemas`; without
+    // it the generated client types `language` as `string` and every screen needs a guard.
+    expect(document.components?.schemas).toHaveProperty('LanguageTag');
+    expect(document.components?.schemas?.['LanguageTag']).toMatchObject({
+      enum: ['ru', 'en', 'pl'],
+    });
+  });
+
+  it('describes each parameter once, whatever the case it is written in', () => {
+    // HTTP header names are case-insensitive, so `Accept-Language` and `accept-language` are
+    // one parameter — and OpenAPI forbids two entries sharing `name` + `in`. This is not
+    // hypothetical: a handler carrying both `@Headers('accept-language')` and an `@ApiHeader`
+    // named `Accept-Language` publishes both, one of them `required: true` against an optional
+    // argument. Nothing else catches it — the client generator collapses the pair by name, so
+    // the F1.5 drift gate stays green while the contract is wrong.
+    const duplicates = Object.entries(document.paths).flatMap(([path, pathItem]) =>
+      HTTP_METHODS.flatMap((method) => {
+        const seen = new Set<string>();
+
+        return (pathItem[method]?.parameters ?? [])
+          .map((parameter) =>
+            'name' in parameter ? `${parameter.in}:${parameter.name.toLowerCase()}` : null,
+          )
+          .filter((key): key is string => key !== null)
+          .filter((key) => {
+            const repeated = seen.has(key);
+            seen.add(key);
+            return repeated;
+          })
+          .map((key) => `${method.toUpperCase()} ${path} — ${key}`);
+      }),
+    );
+
+    expect(duplicates).toEqual([]);
   });
 
   describe('security', () => {

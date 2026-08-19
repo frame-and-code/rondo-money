@@ -36,8 +36,10 @@ really do ship inside the package (`node_modules/next/dist/docs/`).
 - **No hand-written CSS files and no inline `style`.** Screens are Tailwind utilities plus
   shadcn/ui components from `@rondo/ui` (theme Ocean Breeze). Missing a primitive? Add it with
   `pnpm dlx shadcn@latest add <component>` into `packages/ui`, not here.
-- **No hardcoded UI strings.** They go through `src/i18n` (ru is the default, en and pl beside
-  it) from the first line, not "once the screen works".
+- **No hardcoded UI strings.** They go through `src/i18n` (ru, en and pl; en is the fallback
+  since F1.6) from the first line, not "once the screen works". The active locale is not a
+  component's to guess: `useTranslations()` resolves it from the user's own stored pick, then
+  their account settings, then the browser.
 - **Money arrives as a string** and is parsed with the helpers in `@rondo/types` — JSON has no
   bigint. Never do arithmetic on the raw response value.
 - **DTOs come from `@rondo/types`.** A type restated here is a second source of truth.

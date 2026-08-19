@@ -2,7 +2,7 @@ import { createClerkClient } from '@clerk/backend';
 import { clerkSetup } from '@clerk/testing/playwright';
 import { loadEnvConfig } from '@next/env';
 
-import { hasClerkKeys, TEST_EMAIL } from './clerk';
+import { hasClerkKeys, TEST_EMAILS } from './clerk';
 
 // Obtains a Clerk Testing Token for the dev instance (reads NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 // and CLERK_SECRET_KEY) so automated browsers bypass Clerk's bot detection — the official
@@ -28,19 +28,19 @@ export default async function globalSetup() {
   }
 
   await clerkSetup();
-  await ensureTestUser();
+  await Promise.all(TEST_EMAILS.map((email) => ensureTestUser(email)));
 }
 
 // clerk.signIn() signs an existing user in — it never registers one, so a fresh dev
 // instance (or a CI instance that was reset) has no account to sign in with. Create it
-// through the Backend API, idempotently: every run reuses the same account.
-async function ensureTestUser() {
+// through the Backend API, idempotently: every run reuses the same accounts.
+async function ensureTestUser(email: string) {
   const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-  const { totalCount } = await clerk.users.getUserList({ emailAddress: [TEST_EMAIL] });
+  const { totalCount } = await clerk.users.getUserList({ emailAddress: [email] });
   if (totalCount > 0) return;
 
   await clerk.users.createUser({
-    emailAddress: [TEST_EMAIL],
+    emailAddress: [email],
     skipPasswordRequirement: true,
   });
 }

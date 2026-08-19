@@ -68,6 +68,49 @@
           "Me"
         ]
       }
+    },
+    "/user-settings": {
+      "get": {
+        "description": "Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. Never returns another user’s settings — the caller is the verified token’s subject and nothing else.",
+        "operationId": "UserSettingsController_read",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "required": false,
+            "in": "header",
+            "description": "Standard BCP 47 preference list, q-values included. Read only when the settings row does not exist yet; browsers send it on their own. Anything outside ru/en/pl — or a missing header — settles on `en`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The settings that exist now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The caller's settings",
+        "tags": [
+          "UserSettings"
+        ]
+      }
     }
   },
   "info": {
@@ -156,6 +199,32 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "LanguageTag": {
+        "type": "string",
+        "enum": [
+          "ru",
+          "en",
+          "pl"
+        ],
+        "description": "The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7."
+      },
+      "UserSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "description": "The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.",
+            "example": "en",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LanguageTag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "language"
         ]
       }
     }
