@@ -88,8 +88,11 @@ status check keeps the exact id `gate` that branch rules point at.
   (`apps/web/test-results`) are uploaded as the `playwright-traces` artifact.
 - **Installing the browser is the slowest step in that job, and it has two halves.** The
   browser binaries are cached on the resolved Playwright version, so a hit skips the CDN
-  download. The system packages cannot be cached — they are apt packages and each run gets a
-  fresh VM — so `--with-deps` runs every time, and it is not ceremony: nine of the libraries
+  download. The cache is saved by an explicit step rather than by `actions/cache`'s post step,
+  which GitHub skips when the job fails — otherwise a run of failing tests, which is exactly
+  when the loop is tightest, would never populate it. The system packages cannot be cached — they are apt packages and each run gets a
+  fresh VM — so the system dependencies are installed on every run — `install --with-deps`
+  on a cache miss, `install-deps` on a hit — and that is not ceremony: nine of the libraries
   Chromium needs are missing from the runner image. That apt half is also the one that fails:
   it has hung against an unreachable Ubuntu mirror for a job's entire 25-minute budget. Hence
   the per-attempt `timeout`, the single retry and the step's own `timeout-minutes` — a stuck

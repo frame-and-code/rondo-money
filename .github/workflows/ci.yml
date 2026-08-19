@@ -356,9 +356,15 @@ jobs:
           echo "version=$(pnpm --filter @rondo/web exec playwright --version | awk '{print $2}')"
           >> "$GITHUB_OUTPUT"
 
+      # Restore and save are separate halves on purpose. The all-in-one `actions/cache` saves
+      # from a post step, and a post step is **skipped when the job fails** — observed on this
+      # very job: the run whose install step failed shows "Post Restore … skipped", the run that
+      # passed shows it succeeded. That is backwards for a debugging loop, where the tests fail
+      # repeatedly and every one of those runs would re-download the browser. Saving right after
+      # a successful install stores it regardless of how the suite then goes.
       - name: Restore the Playwright browser cache
         id: playwright-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
@@ -400,6 +406,13 @@ jobs:
           done
 
           exit 1
+
+      - name: Save the Playwright browser cache
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
 
       # The Clerk variables are declared in the test:e2e task env in turbo.json — otherwise
       # turbo strict env mode strips them.

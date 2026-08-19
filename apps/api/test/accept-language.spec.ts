@@ -68,6 +68,13 @@ describe('detectLanguageTag', () => {
     expect(detectLanguageTag('pl;charset=utf-8')).toBe('pl');
   });
 
+  it('reads a weight written with spaces around the equals sign', () => {
+    // Not legal per RFC 9110, but reading `q = 0` as an unrecognised parameter would leave `pl`
+    // on the default weight of 1 — serving the one language the client refused outright.
+    expect(detectLanguageTag('pl;q = 0,en;q=0.5')).toBe('en');
+    expect(detectLanguageTag('en;q = 0.2,pl;q = 0.9')).toBe('pl');
+  });
+
   it('accepts every weight the grammar does allow', () => {
     expect(detectLanguageTag('en;q=1,pl;q=1.000')).toBe('en');
     expect(detectLanguageTag('en;q=0.001,pl;q=0.002')).toBe('pl');

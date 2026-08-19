@@ -21,7 +21,15 @@ function parsePreference(entry: string): LanguagePreference | null {
 
   // `q` is the only parameter that changes the outcome; RFC 9110 permits others, and
   // ignoring them is what it asks for.
-  const weight = parameters.find((parameter) => parameter.startsWith('q='))?.slice(2);
+  //
+  // Split rather than matched on the `q=` prefix, so that spaces around the `=` are read as the
+  // weight they plainly are. RFC 9110 does not allow them there, but the alternative is worse
+  // than lenience: `pl;q = 0` would fall through as a parameter we do not recognise, `pl` would
+  // keep the default weight of 1, and the one language the client explicitly refused would win.
+  const weight = parameters
+    .map((parameter) => parameter.split('='))
+    .find(([name]) => name?.trim() === 'q')?.[1]
+    ?.trim();
 
   // RFC 9110's qvalue grammar exactly: 0 or 1, with at most three decimals and nothing above
   // 1. Matched with a pattern rather than measured with `Number.parseFloat`, which reads a
