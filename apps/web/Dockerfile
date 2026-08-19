@@ -43,9 +43,17 @@ ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 # Fast-fail: without these variables the build would "pass", but the bundle would
 # silently carry the localhost fallback from lib/api/config.ts (and with an empty Clerk
-# key the middleware would fail every request at runtime).
-RUN [ -n "$NEXT_PUBLIC_API_URL" ] \
-    || { echo "ERROR: build arg NEXT_PUBLIC_API_URL is required (inlined into the browser bundle)" >&2; exit 1; } \
+# key the middleware would fail every request at runtime). Non-empty is not enough for
+# the URL: a truncated paste ("https://", a bare host) once passed that check and shipped
+# a dev bundle that could not reach the api (F1.7) — so the shape is checked too, the
+# same contract `assertWebOriginConfigured` enforces for WEB_ORIGIN on the api side.
+RUN case "$NEXT_PUBLIC_API_URL" in \
+      http://?* | https://?*) ;; \
+      *) echo "ERROR: build arg NEXT_PUBLIC_API_URL must be a full origin like https://host (baked into the browser bundle); got: '$NEXT_PUBLIC_API_URL'" >&2; exit 1 ;; \
+    esac \
+    && case "$NEXT_PUBLIC_API_URL" in \
+      */) echo "ERROR: build arg NEXT_PUBLIC_API_URL must not end with a slash; got: '$NEXT_PUBLIC_API_URL'" >&2; exit 1 ;; \
+    esac \
     && [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] \
     || { echo "ERROR: build arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required (inlined into the browser bundle)" >&2; exit 1; } \
     && pnpm exec turbo run build --filter=@rondo/web
