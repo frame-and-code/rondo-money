@@ -25,9 +25,20 @@ datasource db {
   provider = "postgresql"
 }
 
-/// A user's own settings. F1.3 creates the table carrying nothing but identity and
-/// timestamps; the interface language (an enum) and the endpoint that reads it arrive in
-/// F1.6.
+/// The interface languages the app ships (F0.7). Stored as a Postgres enum rather than a
+/// string: three known values, and a typo becomes a failed write instead of a row nobody
+/// can render. Upper case here, lower-case BCP 47 tags (`ru`/`en`/`pl`) over the wire —
+/// `apps/api/src/user-settings/language.ts` owns that mapping.
+enum Language {
+  RU
+  EN
+  PL
+
+  @@map("language")
+}
+
+/// A user's own settings. F1.3 created the table carrying nothing but identity and
+/// timestamps; F1.6 adds the interface language and the endpoint that reads it.
 ///
 /// It exists this early because the auto-scoping Client Extension cannot be typed against
 /// a schema with no models at all: Prisma resolves the query callback of a model-less
@@ -40,6 +51,11 @@ model UserSettings {
   /// the query or a header. Every read of this model is filtered by it (ADR-005), which is
   /// also why the model is registered in `apps/api/src/prisma/scoped-models.ts`.
   userId String @unique @map("user_id")
+
+  /// The interface language, detected from the caller's `Accept-Language` when the row is
+  /// first created (F1.6) and editable by the user in Phase 7. The default is not cosmetic:
+  /// a NOT NULL column cannot be added to a non-empty table without one.
+  language Language @default(EN)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

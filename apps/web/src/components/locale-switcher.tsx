@@ -10,7 +10,7 @@ import {
 } from '@rondo/ui/components/ui/dropdown-menu';
 
 import { useTranslations } from '@/i18n/locale-context';
-import { localeLabels, locales, type Locale } from '@/i18n/locales';
+import { isLocale, localeLabels, locales } from '@/i18n/locales';
 
 export function LocaleSwitcher() {
   const { locale, setLocale, t } = useTranslations();
@@ -25,7 +25,11 @@ export function LocaleSwitcher() {
       <DropdownMenuContent align="end">
         <DropdownMenuRadioGroup
           value={locale}
-          onValueChange={(value) => setLocale(value as Locale)}
+          onValueChange={(value) => {
+            // Radix types its value as a bare string; narrowed rather than cast, so a locale
+            // removed from `locales` fails here instead of reaching `messages[locale]`.
+            if (isLocale(value)) setLocale(value);
+          }}
         >
           {locales.map((code) => (
             <DropdownMenuRadioItem key={code} value={code}>

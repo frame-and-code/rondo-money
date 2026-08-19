@@ -22,6 +22,19 @@ export const zUnauthorizedResponse = z.object({
 });
 
 /**
+ * The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
+ */
+export const zLanguageTag = z.enum([
+    'ru',
+    'en',
+    'pl'
+]);
+
+export const zUserSettingsResponse = z.object({
+    language: zLanguageTag
+});
+
+/**
  * The database answered.
  */
 export const zHealthControllerCheckResponse = zHealthResponse;
@@ -30,3 +43,12 @@ export const zHealthControllerCheckResponse = zHealthResponse;
  * The token was valid.
  */
 export const zMeControllerIdentifyResponse = zCurrentUserResponse;
+
+export const zUserSettingsControllerReadHeaders = z.object({
+    'accept-language': z.string().optional()
+});
+
+/**
+ * The settings that exist now.
+ */
+export const zUserSettingsControllerReadResponse = zUserSettingsResponse;

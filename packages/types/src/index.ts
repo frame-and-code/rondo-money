@@ -7,3 +7,4 @@
  */
 export type { Money } from './money';
 export { serializeMoney, parseMoney } from './money';
+export type { LanguageTag, UserSettingsDto } from './user-settings';

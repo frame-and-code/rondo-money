@@ -26,9 +26,11 @@ up.
 
 ## How a module reaches the database
 
-The full controller → service → mutation-point pattern is established where it will first
-exist: the read path in F1.6 (with the `user-settings` module) and the write path in F2.2. Only
-what is already true is written here, and it is not optional:
+The read path exists since F1.6 — [`apps/api/src/user-settings`](../../apps/api/src/user-settings)
+is controller → service → `SCOPED_PRISMA` in full, and
+[`.claude/skills/add-a-domain-module`](../skills/add-a-domain-module/SKILL.md) walks a new module
+through it file by file. The write path, where a mutation and its `ChangeLog` entry share one
+transaction, arrives in F2.2. What follows holds for both, and is not optional:
 
 - a handler takes the caller from `@CurrentUserId()`, never from the body, a query parameter
   or a header;

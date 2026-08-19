@@ -5,10 +5,11 @@ F1.2, scoping every query for domain data to the caller since F1.3. The one deli
 exception is the healthcheck's `SELECT 1`, which touches no tenant data and is named as such
 below.
 
-There are still no endpoints that touch a table: the first one arrives in F1.6 and the single
-mutation point in F2.2. What exists already is the machinery they are built on — the request
-context, the auto-scoped Prisma client and the raw-SQL repository below — plus the contract
-those endpoints will be published through (F1.4).
+F1.6 adds the first endpoint that touches a table — [`src/user-settings`](src/user-settings),
+the read path in full: controller → service → `SCOPED_PRISMA`. The single mutation point, where
+a state change and its `ChangeLog` entry are written in one transaction, arrives in F2.2. The
+machinery both are built on is already here: the request context, the auto-scoped Prisma client
+and the raw-SQL repository below, plus the contract they are published through (F1.4).
 
 ## Endpoints
 
@@ -16,7 +17,13 @@ those endpoints will be published through (F1.4).
   is reachable, `503` if not. Public (see below).
 - `GET /me` — echoes back the `userId` the guard verified. Protected, and touches no table:
   it exists so the whole auth chain (token → guard → `@CurrentUserId()`) can be exercised
-  over HTTP, by tests and by the web client, before any domain data exists (F1.4).
+  over HTTP, by tests and by the web client, with no query in the way (F1.4).
+- `GET /user-settings` — the caller's own settings, today just the interface language.
+  Get-or-create: the first call stores the language read from `Accept-Language` (ru/en/pl,
+  anything else → `en`), every later one only reads. A GET that can write is deliberate —
+  there is exactly one settings row per user and nothing for a client to decide, so a
+  create-then-read handshake would add a round-trip with one possible outcome (F1.6).
+  Changing the language is Phase 7.
 
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.

@@ -84,9 +84,26 @@ status check keeps the exact id `gate` that branch rules point at.
   variable for a test/server → declare it there too, otherwise everything is green
   locally with `.env`, but in CI the variable never reaches the process.
 - **E2E**: Playwright builds and starts api and web itself (`reuseExistingServer` is off
-  in CI); the browser is installed by the `playwright install --with-deps chromium` step.
-  The CI reporter is `github` (annotations right in the PR); on failure, traces
+  in CI). The CI reporter is `github` (annotations right in the PR); on failure, traces
   (`apps/web/test-results`) are uploaded as the `playwright-traces` artifact.
+- **Installing the browser is the slowest step in that job, and it has two halves.** The
+  browser binaries are cached on the resolved Playwright version, so a hit skips the CDN
+  download. The cache is saved by an explicit step rather than by `actions/cache`'s post step,
+  which GitHub skips when the job fails — otherwise a run of failing tests, which is exactly
+  when the loop is tightest, would never populate it. The system packages cannot be cached — they are apt packages and each run gets a
+  fresh VM — so the system dependencies are installed on every run — `install --with-deps`
+  on a cache miss, `install-deps` on a hit — and that is not ceremony: nine of the libraries
+  Chromium needs are missing from the runner image. That apt half is also the one that fails:
+  it has hung against an unreachable Ubuntu mirror for a job's entire 25-minute budget. Hence
+  the per-attempt `timeout`, the single retry and the step's own `timeout-minutes` — a stuck
+  mirror should cost minutes and say so, not consume the job and report a bare cancellation.
+- **Why that retry kills `apt-get` before it runs.** `timeout` signals only the process it
+  started, and here that is the head of a chain (pnpm → node → apt-get). The first version of
+  this retry killed the head and left apt-get holding `/var/lib/apt/lists/lock`, so the second
+  attempt died in one second with "Could not get lock" — the retry existed and could not
+  possibly work. The orphan is cleared between attempts for that reason, and it is the sort of
+  thing that only shows up in a log: both attempts are announced as warnings so the next
+  failure is readable.
 - **Clerk keys in e2e** (F1.1): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
   come from repository secrets (GitHub → Settings → Secrets → Actions) — the whole web app
   is behind auth, so without them not a single page serves. GitHub hides those secrets from

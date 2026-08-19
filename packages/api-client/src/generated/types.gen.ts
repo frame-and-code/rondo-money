@@ -29,6 +29,18 @@ export type UnauthorizedResponse = {
     message: string;
 };
 
+/**
+ * The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
+ */
+export type LanguageTag = 'ru' | 'en' | 'pl';
+
+export type UserSettingsResponse = {
+    /**
+     * The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
+     */
+    language: LanguageTag;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -78,3 +90,34 @@ export type MeControllerIdentifyResponses = {
 };
 
 export type MeControllerIdentifyResponse = MeControllerIdentifyResponses[keyof MeControllerIdentifyResponses];
+
+export type UserSettingsControllerReadData = {
+    body?: never;
+    headers?: {
+        /**
+         * Standard BCP 47 preference list, q-values included. Read only when the settings row does not exist yet; browsers send it on their own. Anything outside ru/en/pl — or a missing header — settles on `en`.
+         */
+        'accept-language'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/user-settings';
+};
+
+export type UserSettingsControllerReadErrors = {
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type UserSettingsControllerReadError = UserSettingsControllerReadErrors[keyof UserSettingsControllerReadErrors];
+
+export type UserSettingsControllerReadResponses = {
+    /**
+     * The settings that exist now.
+     */
+    200: UserSettingsResponse;
+};
+
+export type UserSettingsControllerReadResponse = UserSettingsControllerReadResponses[keyof UserSettingsControllerReadResponses];

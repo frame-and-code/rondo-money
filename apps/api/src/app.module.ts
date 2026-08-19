@@ -7,6 +7,7 @@ import { MeModule } from '@/me/me.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { RawSqlModule } from '@/raw-sql/raw-sql.module';
 import { RequestContextModule } from '@/request-context/request-context.module';
+import { UserSettingsModule } from '@/user-settings/user-settings.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RequestContextModule } from '@/request-context/request-context.module';
     RawSqlModule,
     HealthModule,
     MeModule,
+    UserSettingsModule,
   ],
 })
 export class AppModule {}

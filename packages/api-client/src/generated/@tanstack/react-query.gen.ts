@@ -3,8 +3,8 @@
 import { queryOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { healthControllerCheck, meControllerIdentify, type Options } from '../sdk.gen';
-import type { HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse } from '../types.gen';
+import { healthControllerCheck, meControllerIdentify, type Options, userSettingsControllerRead } from '../sdk.gen';
+import type { HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -77,4 +77,24 @@ export const meControllerIdentifyOptions = (options?: Options<MeControllerIdenti
         return data;
     },
     queryKey: meControllerIdentifyQueryKey(options)
+});
+
+export const userSettingsControllerReadQueryKey = (options?: Options<UserSettingsControllerReadData>) => createQueryKey('userSettingsControllerRead', options);
+
+/**
+ * The caller's settings
+ *
+ * Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. Never returns another user’s settings — the caller is the verified token’s subject and nothing else.
+ */
+export const userSettingsControllerReadOptions = (options?: Options<UserSettingsControllerReadData>) => queryOptions<UserSettingsControllerReadResponse, UserSettingsControllerReadError, UserSettingsControllerReadResponse, ReturnType<typeof userSettingsControllerReadQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await userSettingsControllerRead({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: userSettingsControllerReadQueryKey(options)
 });
