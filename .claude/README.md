@@ -46,7 +46,7 @@ turn. They stay short deliberately: detail belongs in `docs/`, and the rule link
 | Command              | Does                                                                                           |
 | -------------------- | ---------------------------------------------------------------------------------------------- |
 | `/dev`               | brings up Postgres, migrations, api and web, and reports what is actually running              |
-| `/check`             | the CI gate locally: lint, typecheck, format, build, tests, secret scan                        |
+| `/check`             | the CI gate locally: lint, typecheck, format, build, tests, secret scan, contract drift        |
 | `/plan <F1.x>`       | reads the ticket and returns an ordered, file-scoped plan; writes no code                      |
 | `/grill-me <task>`   | interviews until the scope is shared, then hands off to `/plan`                                |
 | `/sync-docs`         | sweeps the documentation the change touched and corrects what went stale                       |

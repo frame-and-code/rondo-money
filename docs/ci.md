@@ -1,9 +1,10 @@
 # CI gate (F0.9 — GitHub Actions)
 
-Mandatory gate on every PR: **lint · format:check · typecheck · build · unit · integration ·
-e2e**. Workflow — [.github/workflows/ci.yml](../.github/workflows/ci.yml). Every check that
-consumes no other check's output is its own job, so they all start at once; `gate` is the
-single status check that aggregates them and the only one worth requiring on `main`:
+Mandatory gate on every PR: **lint · format:check · typecheck · contract drift · build ·
+unit · integration · e2e**. Workflow —
+[.github/workflows/ci.yml](../.github/workflows/ci.yml). Every check that consumes no other
+check's output is its own job, so they all start at once; `gate` is the single status check
+that aggregates them and the only one worth requiring on `main`:
 
 ```text
 secrets      ─┐
@@ -36,6 +37,21 @@ status check keeps the exact id `gate` that branch rules point at.
   in the workflow (the rule set changes between versions, so an unpinned scanner makes the
   gate a moving target); the official `gitleaks-action` is deliberately not used — it needs
   a paid licence for repositories owned by an organisation, while the binary itself is free.
+- **The contract drift check runs the same script as the pre-commit hook** — `codegen.sh`
+  (F1.5), the hook in `stage` mode and the `static` job in `check` mode. Both regenerate
+  `apps/api/openapi.json` and `packages/api-client/src/generated`; the hook adds the result
+  to the commit, CI fails if regenerating changed anything. That is the same shape as the
+  secret scan and for the same reason: the hook is convenience, the job is the guarantee — a
+  commit made with `--no-verify`, from a machine without husky or through GitHub's web editor
+  lands here instead. The one asymmetry worth knowing is that a generator reads the working
+  tree while a commit is built from the index: on a partial commit the hook would otherwise
+  stage a contract the commit's own sources do not produce, so when the contract moved and
+  its sources are not all staged it refuses the commit instead of guessing — the same failure
+  CI would report, an hour earlier. The check compares with `git status` rather than
+  `git diff --exit-code`: `diff` only compares tracked content, so a file the generator has
+  only just started emitting — what a generator bump does — would slip past it untracked and
+  unnoticed. The step sits last in `static` on purpose: `pnpm typecheck` above already pulled
+  the whole chain, so turbo replays it from cache and the check itself costs a `git status`.
 - Each job reinstalls dependencies — that is the price of running them in parallel, and a
   warm pnpm store cache keeps it far below the time saved. The setup steps (checkout →
   pnpm → node → install) are repeated verbatim rather than extracted into a local
@@ -62,7 +78,7 @@ status check keeps the exact id `gate` that branch rules point at.
   boots the app in Nest's preview mode, which constructs no providers. **`build` deliberately
   does not pull that chain:** the generated files are committed, so the web image builds from
   them instead of compiling the whole API to produce them again. A stale commit of those files
-  is what the drift check is for, not a rebuild.
+  is what the drift check above is for, not a rebuild.
 - **Turborepo strict env mode:** turbo passes a task only the variables declared
   in that task's `env` in `turbo.json` (plus `globalPassThroughEnv`). A new environment
   variable for a test/server → declare it there too, otherwise everything is green

@@ -58,7 +58,16 @@ itself is published with no response shape at all — and the generated client t
 - `pnpm openapi` rewrites [`apps/api/openapi.json`](../../apps/api/openapi.json) and
   `pnpm --filter @rondo/api-client codegen` the client. Both artefacts are committed, so a
   contract change is a reviewable diff; turbo runs them in order, so neither is a step anyone
-  has to remember.
+  has to remember. Since F1.5 neither is a step anyone _can_ forget either: the pre-commit hook
+  regenerates both and adds them to the commit, and the CI gate re-runs them and fails on any
+  difference — both through [`codegen.sh`](../../codegen.sh). So do not hand-edit a generated
+  file to "fix" something; change the NestJS code that produces it. The hook **refuses** the
+  commit in one case: the contract changed, but the sources it was generated from are not all
+  staged. That is a partial commit, not a broken hook — the generator reads the working tree
+  while the commit is built from the index, so staging the result would ship a contract this
+  commit's own sources do not produce. Stage those files, or set them aside with `git stash -u`
+  — a plain `git stash` leaves an untracked file where it is, so the next attempt is refused
+  the same way.
 - What the client gets from that spec is not only types: request functions, TanStack Query
   options and zod schemas all come out of it. So an endpoint documented sloppily produces a
   sloppy client — the spec is the product, not paperwork about it.

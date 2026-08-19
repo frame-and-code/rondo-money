@@ -2,9 +2,8 @@ set -e
 
 # Pre-commit gate — fail fast (set -e) in order:
 #   1. secret scan — staged changes only (F1.9, landed early with F1.10, which depends on it).
-#   2. (future) regenerate the typed API client and stage it, e.g.
-#        pnpm --filter @rondo/api-client codegen && git add packages/api-client/src/generated
-#      lint-staged below then formats + lints whatever was just staged.
+#   2. codegen — regenerate the API contract and its typed client, and stage them (F1.5), so
+#      a change to a response class cannot be committed without the client that matches it.
 #   3. format + lint — staged files only: `prettier --write` then `eslint`.
 #      lint-staged re-stages the formatted result, so it lands in the commit.
 #   4. typecheck — whole project (cached by turbo).
@@ -21,6 +20,19 @@ set -e
 # The scan itself lives in secret-scan.sh, shared verbatim with the `secrets` job in CI so
 # the two can't drift; `staged` is the mode that reads only what is about to be committed.
 ./secret-scan.sh staged
+
+# Same shape: codegen.sh is shared with the `static` job in CI, which runs it in `check` mode
+# and fails on anything this one would have staged. Note that the generated output is NOT
+# formatted by lint-staged below — both Prettier and ESLint ignore it on purpose, because the
+# only formatting the drift check can compare against is the generator's own (F1.4).
+#
+# Unlike the scan above it reads the working tree, not the index, because that is what a
+# compiler reads — so when the contract changed and the sources it came from are not all
+# staged, it refuses the commit rather than staging a contract this commit does not produce.
+#
+# The cost is one NestJS build, which step 4 pays anyway; turbo caches it between the two —
+# which also means an api that does not compile stops the commit here rather than at step 4.
+./codegen.sh stage
 
 pnpm exec lint-staged
 pnpm run typecheck

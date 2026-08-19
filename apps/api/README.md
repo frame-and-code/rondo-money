@@ -31,6 +31,12 @@ pnpm openapi                              # → apps/api/openapi.json (builds th
 pnpm --filter @rondo/api-client codegen   # → packages/api-client/src/generated
 ```
 
+Both are printed here to say what the chain _is_ — running them by hand is not part of the
+workflow (F1.5). The pre-commit hook runs them and stages the result — or refuses the commit,
+when the contract moved and the sources behind it are not all staged — and the CI gate re-runs
+them and fails if that changes anything; `codegen.sh` at the repository root is the one
+definition both callers share.
+
 - **Generation needs neither a server nor a database.** The script boots the compiled app in
   Nest's _preview_ mode ([`src/openapi/generate.ts`](src/openapi/generate.ts)), which wires the
   module graph and the controller prototypes — all the Swagger scanner reads — without
