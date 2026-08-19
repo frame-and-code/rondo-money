@@ -91,9 +91,10 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
      `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` = the Clerk keys
      (dashboard.clerk.com → API Keys; F1.1). Without the secret key every request
      500s at runtime; without the publishable key the build fast-fails. The build also
-     refuses a `NEXT_PUBLIC_API_URL` that is not a full origin (`https://host`, no
-     trailing slash) — a paste truncated to `https://` or a bare host once passed the
-     empty-check and shipped a dev bundle that could not reach the api (F1.7);
+     refuses a `NEXT_PUBLIC_API_URL` that is not an exact http(s) origin (`https://host` —
+     no path, query or trailing slash, the same rule the api enforces for `WEB_ORIGIN`) —
+     a paste truncated to `https://` or a bare host once passed the empty-check and
+     shipped a dev bundle that could not reach the api (F1.7);
    - Settings → Networking → **Generate Domain**, and check the target port (3001 for
      web) exactly as in step 2 — the same drift applies here.
 4. Domains are generated after the services are created, so the cross-referencing

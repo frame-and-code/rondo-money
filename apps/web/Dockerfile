@@ -45,15 +45,18 @@ ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 # silently carry the localhost fallback from lib/api/config.ts (and with an empty Clerk
 # key the middleware would fail every request at runtime). Non-empty is not enough for
 # the URL: a truncated paste ("https://", a bare host) once passed that check and shipped
-# a dev bundle that could not reach the api (F1.7) — so the shape is checked too, the
-# same contract `assertWebOriginConfigured` enforces for WEB_ORIGIN on the api side.
-RUN case "$NEXT_PUBLIC_API_URL" in \
-      http://?* | https://?*) ;; \
-      *) echo "ERROR: build arg NEXT_PUBLIC_API_URL must be a full origin like https://host (baked into the browser bundle); got: '$NEXT_PUBLIC_API_URL'" >&2; exit 1 ;; \
-    esac \
-    && case "$NEXT_PUBLIC_API_URL" in \
-      */) echo "ERROR: build arg NEXT_PUBLIC_API_URL must not end with a slash; got: '$NEXT_PUBLIC_API_URL'" >&2; exit 1 ;; \
-    esac \
+# a dev bundle that could not reach the api (F1.7). The generated client concatenates
+# baseUrl + route, so a path, query or trailing slash would misroute every request just
+# as silently — the value must be an exact http(s) origin, the same `new URL().origin`
+# contract `assertWebOriginConfigured` enforces for WEB_ORIGIN on the api side.
+RUN node -e '\
+const value = process.env.NEXT_PUBLIC_API_URL ?? ""; \
+let origin = null; \
+try { origin = new URL(value).origin; } catch {} \
+if (origin !== value || !/^https?:\/\//.test(value)) { \
+  console.error(`ERROR: build arg NEXT_PUBLIC_API_URL must be an exact http(s) origin, with no path, query or trailing slash (it is baked into the browser bundle): got "${value}"${origin && origin !== value ? `, expected "${origin}"` : ""}`); \
+  process.exit(1); \
+}' \
     && [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] \
     || { echo "ERROR: build arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required (inlined into the browser bundle)" >&2; exit 1; } \
     && pnpm exec turbo run build --filter=@rondo/web
