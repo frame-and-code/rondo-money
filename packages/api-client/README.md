@@ -17,6 +17,14 @@ a contract change shows up as a reviewable diff. `turbo.json` wires the order, s
 and `pnpm test` regenerate what they need on their own. `pnpm build` deliberately does not: it
 consumes the committed files, which is what keeps a full NestJS build out of the web image.
 
+Nobody runs those two commands by hand, and nobody has to remember them (F1.5). The pre-commit
+hook regenerates both artefacts and adds them to the commit, so changing a response class in
+`apps/api` cannot land without the client that matches it — unless the contract changed while
+the sources it came from are not all staged, which is the one case the hook refuses rather than
+guesses at. What the hook does locally, the `static` job of the CI gate does as a check — same
+script (`codegen.sh`), opposite ending: it fails if regenerating changed anything. See
+[docs/ci.md](../../docs/ci.md).
+
 > `src/generated/` is machine-written. Edits there are overwritten by the next run, and both
 > Prettier and ESLint skip the directory. Change the NestJS code instead.
 

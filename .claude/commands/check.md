@@ -1,5 +1,5 @@
 ---
-description: Run the full quality gate — lint, typecheck, format, tests — and report failures honestly.
+description: Run the full quality gate — lint, typecheck, format, contract, tests — and report failures honestly.
 argument-hint: '[workspace filter, e.g. @rondo/api]'
 ---
 
@@ -10,7 +10,7 @@ it is parallelised across workspaces and cached where caching is safe.
 
 ## Steps
 
-Run all six, and run them all even if an earlier one fails — a single report beats six
+Run all seven, and run them all even if an earlier one fails — a single report beats seven
 round trips:
 
 ```bash
@@ -20,14 +20,18 @@ pnpm format:check
 pnpm build
 pnpm test
 pnpm scan:secrets
+./codegen.sh check
 ```
 
-`build` and `scan:secrets` are in the list because the gate CI enforces is
+`build`, `scan:secrets` and `codegen.sh` are in the list because the gate CI enforces is
 `secrets · static · build · unit · integration · e2e`: without them this command can pass
 while CI fails. `build` is not covered by `typecheck` — [`docs/ci.md`](../../docs/ci.md)
 records the case where a TypeScript bump left `apps/api` unbuildable while `tsc --noEmit`
 stayed green. `scan:secrets` needs gitleaks on `PATH`; if it is missing, say so rather than
-reporting a gate that did not run.
+reporting a gate that did not run. `./codegen.sh check` is the `static` job's contract drift
+step (F1.5): it regenerates `apps/api/openapi.json` and the client and fails if either moved,
+which on a clean tree means the committed pair is stale. It runs last because everything
+above has already warmed turbo's cache for it.
 
 `pnpm test` covers unit, integration and e2e. Integration and e2e need Postgres
 (`docker compose up -d`) and e2e needs Clerk keys in `apps/web/.env.local`; if either is

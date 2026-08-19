@@ -99,7 +99,7 @@ jobs:
         run: ./secret-scan.sh history
 
   static:
-    name: Static checks (lint · format · types)
+    name: Static checks (lint · format · types · contract)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -130,6 +130,15 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      # Runs last on purpose: `pnpm typecheck` above already pulls the whole contract chain
+      # (@rondo/api#build → openapi → codegen), so by now turbo replays it from cache and this
+      # step costs a `git status`. The script is the same one the pre-commit hook runs, in the
+      # mode that fails instead of staging — so a commit made without the hook (--no-verify, a
+      # machine without husky, GitHub's web editor) is caught here rather than shipping a
+      # client that no longer matches the API.
+      - name: Contract drift check
+        run: ./codegen.sh check
 
   build:
     # Typecheck is not a substitute for this: `tsc --noEmit` only reads the sources, while
