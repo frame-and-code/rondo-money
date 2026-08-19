@@ -44,9 +44,9 @@ turn. They stay short deliberately: detail belongs in `docs/`, and the rule link
 
 ## Skills (`skills/`)
 
-| Skill                                                         | Use when                                                                                  |
-| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that reads or writes a domain table (the F1.6 `user-settings` shape) |
+| Skill                                                         | Use when                                                                                             |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that **reads** a domain table (the F1.6 `user-settings` shape); writes are F2.2 |
 
 A skill is grounded in code that exists: every step names a real file to copy from, so it
 cannot drift into describing an API nobody wrote.

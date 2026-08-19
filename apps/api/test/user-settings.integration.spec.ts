@@ -30,6 +30,7 @@ const USER_REPEAT = `${USER_PREFIX}Repeat`;
 const USER_CONCURRENT = `${USER_PREFIX}Concurrent`;
 const USER_POLISH = `${USER_PREFIX}Polish`;
 const USER_GERMAN = `${USER_PREFIX}German`;
+const USER_SILENT = `${USER_PREFIX}Silent`;
 const USER_A = `${USER_PREFIX}OwnerA`;
 const USER_B = `${USER_PREFIX}OwnerB`;
 
@@ -75,8 +76,14 @@ describe('GET /user-settings (integration)', () => {
   });
 
   afterAll(async () => {
-    if (app) {
+    // Guarded on `prisma` rather than on `app`: `app` exists the moment
+    // `createNestApplication()` returns, but `prisma` is only read out of it once `init()` has
+    // resolved. If `init()` rejects, cleaning up would dereference an undefined client and
+    // bury the real setup failure under a TypeError from `afterAll`.
+    if (prisma) {
       await removeFixtures();
+    }
+    if (app) {
       await app.close();
     }
     // Integration specs share one process (--runInBand) — leave the environment as found.
@@ -145,6 +152,16 @@ describe('GET /user-settings (integration)', () => {
     // German is not one of the three we ship, and the fallback is English everywhere (F1.6).
     const german = await get(USER_GERMAN, 'de-DE,de;q=0.9');
     expect(german.body).toEqual({ language: 'en' });
+  });
+
+  it('settles on English when the caller sends no Accept-Language at all', async () => {
+    // The unit suite already fixes the parser's answer for a missing header. What only this
+    // level can show is that the handler is actually handed `undefined` — not an empty string,
+    // and not a default header inserted somewhere between supertest and Nest.
+    const response = await get(USER_SILENT);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ language: 'en' });
   });
 
   it('answers 401 to an anonymous caller, in the shape the spec documents', async () => {

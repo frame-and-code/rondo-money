@@ -1,6 +1,6 @@
 ---
 name: add-a-domain-module
-description: Add an API module in apps/api that reads or writes a domain table — controller, service, response class, registration and the tests that are not optional. Use when a feature needs a new endpoint backed by Postgres.
+description: Add an API module in apps/api that reads a domain table — controller, service, response class, registration and the tests that are not optional. Use when a feature needs a read endpoint backed by Postgres. The write path (one mutation point, its ChangeLog entry and their shared transaction) is F2.2 and is deliberately not covered here.
 ---
 
 # Add a domain module
