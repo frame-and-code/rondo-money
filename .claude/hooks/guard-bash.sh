@@ -56,14 +56,22 @@ JOINED=${COMMAND//\\$'\n'/ }
 # — `echo $(npm install)` reads as one command called `echo` and matches nothing.
 NESTED=$(printf '%s' "$JOINED" | sed -E 's/\$\(/ ; /g; s/`/ ; /g')
 
+# `eval` runs the string it is handed, so the quotes around that string belong to eval, not
+# to the command inside it. Unwrap them before anything quote-aware runs: otherwise
+# `eval 'git commit -n -m x'` blanks to `''` for the secret-scan checks while bash runs the
+# commit with the hook disabled.
+UNEVAL=$(printf '%s' "$NESTED" | sed -E "s/(^|[;&|(][[:space:]]*)eval[[:space:]]+\"([^\"]*)\"/\1\2/g")
+UNEVAL=$(printf '%s' "$UNEVAL" | sed -E "s/(^|[;&|(][[:space:]]*)eval[[:space:]]+'([^']*)'/\1\2/g")
+
 # A prefix match sees only the first word, so wrappers and inline assignments would hide the
 # real command: `command npm i`, `env FOO=1 npm i`, `sudo npm i`, `nohup git push`,
 # `timeout 60 git push`. Peel them off — three passes cover the nestings worth worrying
 # about. The HUSKY=0 check below deliberately reads the original command, since peeling
 # removes the very assignment it looks for.
-NAKED="$NESTED"
+NAKED="$UNEVAL"
+PEEL="s/(^|[;&|(][[:space:]]*)((command|exec|eval|env|sudo|time|nice|nohup|xargs)[[:space:]]+|(timeout[[:space:]]+[0-9]+[smhd]?|stdbuf([[:space:]]+-[^[:space:]]+)*|pnpm[[:space:]]+exec)[[:space:]]+|[A-Za-z_][A-Za-z0-9_]*=(\"[^\"]*\"|'[^']*'|[^[:space:]]*)[[:space:]]+)/\1/g"
 for _ in 1 2 3; do
-  NAKED=$(printf '%s' "$NAKED" | sed -E 's/(^|[;&|(][[:space:]]*)((command|exec|eval|env|sudo|time|nice|nohup|xargs)[[:space:]]+|(timeout[[:space:]]+[0-9]+[smhd]?|stdbuf([[:space:]]+-[^[:space:]]+)*|pnpm[[:space:]]+exec)[[:space:]]+|[A-Za-z_][A-Za-z0-9_]*=("[^"]*"|[^[:space:]]*)[[:space:]]+)/\1/g')
+  NAKED=$(printf '%s' "$NAKED" | sed -E "$PEEL")
 done
 
 # git's own global options push the verb away from `git`: `git -C repo push`,
@@ -146,13 +154,20 @@ if segments_of "$BLANKED" | grep -E "$ANY_COMMIT" | grep -qE '[[:space:]]-[a-zA-
   exit 2
 fi
 
-# These two read the command as typed apart from its quotes — peeling would remove the very
-# assignment the first one looks for, and collapsing the very `-c` the second does. The quotes
-# come off because `HUSKY="0"` reaches husky as `HUSKY=0`: what husky checks is the value bash
-# hands it, not the spelling.
-DEQUOTED=$(printf '%s' "$COMMAND" | tr -d "\"'")
+# These two read the command as typed — peeling would remove the very assignment the first one
+# looks for, and collapsing the very `-c` the second does. Only the quotes bash itself removes
+# come off: `HUSKY="0"` reaches husky as `HUSKY=0` and `git -c "core.hooksPath"=x` reaches git
+# as `core.hooksPath=x`, so a quoted key or value is not a different command. Whatever quoting
+# is left after that is an argument to something else — `grep -rn "HUSKY=0" .` is a search, not
+# an assignment — so it is blanked rather than unwrapped.
+SCANNED=$(printf '%s' "$COMMAND" | sed -E "s/=\"([^\"]*)\"/=\1/g")
+SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/='([^']*)'/=\1/g")
+SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/\"([^\"]*)\"=/\1=/g")
+SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/'([^']*)'=/\1=/g")
+SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/\"[^\"]*\"/\"\"/g")
+SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/'[^']*'/''/g")
 
-if printf '%s' "$DEQUOTED" | grep -qE '(^|\s)HUSKY=0(\s|$)'; then
+if printf '%s' "$SCANNED" | grep -qE '(^|\s)HUSKY=0(\s|$)'; then
   echo "BLOCKED: HUSKY=0 disables the git hooks, including the secret scan." >&2
   exit 2
 fi
@@ -160,7 +175,7 @@ fi
 # `git -c core.hooksPath=/dev/null commit` points git at an empty hook directory: the same
 # effect as --no-verify, by a different door. `git config core.hooksPath /dev/null` is the
 # same door left open — it persists in the repository's config rather than lasting one command.
-if printf '%s' "$DEQUOTED" | grep -qE 'core\.hooksPath([[:space:]]*=|[[:space:]]+[^-])'; then
+if printf '%s' "$SCANNED" | grep -qE 'core\.hooksPath([[:space:]]*=|[[:space:]]+[^-])'; then
   echo "BLOCKED: overriding core.hooksPath disables the git hooks, including the secret scan." >&2
   exit 2
 fi
@@ -184,12 +199,19 @@ while IFS= read -r SEGMENT; do
   set -f
   REFSPECS=0
   SKIP_VALUE=0
+  TAGS_ONLY=0
   for TOKEN in $ARGS; do
     if [ "$SKIP_VALUE" -eq 1 ]; then
       SKIP_VALUE=0
       continue
     fi
     case "$TOKEN" in
+      # `git push origin --tags` publishes refs/tags and no branch, so the no-refspec fallback
+      # below must not read it as a push of whatever is checked out.
+      --tags)
+        TAGS_ONLY=1
+        continue
+        ;;
       --all | --mirror)
         echo "BLOCKED: --all/--mirror pushes every branch, main included. Name the branch instead." >&2
         exit 2
@@ -232,7 +254,7 @@ while IFS= read -r SEGMENT; do
   # The first non-option token is the remote, so one or none of them means no refspec was
   # named — and git then publishes the current branch. That is the accidental way onto main,
   # and the likelier one: the refspec forms above all take a deliberate keystroke.
-  if [ "$REFSPECS" -le 1 ]; then
+  if [ "$REFSPECS" -le 1 ] && [ "$TAGS_ONLY" -eq 0 ]; then
     case "$(git -C "$PROJECT_DIR" symbolic-ref --quiet --short HEAD 2>/dev/null)" in
       main | master)
         echo "BLOCKED: this pushes the current branch, and it is main. Changes reach main through a PR." >&2

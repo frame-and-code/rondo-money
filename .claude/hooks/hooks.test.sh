@@ -157,6 +157,13 @@ expect_block guard-bash.sh 'if ! git commit --no-verify -m x; then echo; fi' '--
 expect_block guard-bash.sh 'for f in a; do git commit -n -m x; done' '-n inside a for loop'
 expect_block guard-bash.sh 'cat msg.txt | git commit --no-verify -F -' '--no-verify after a pipe'
 expect_block guard-bash.sh 'GIT_EDITOR="code -w" git commit --no-verify -m x' '--no-verify after an assignment whose value is quoted and contains a space'
+expect_block guard-bash.sh "GIT_EDITOR='code -w' git commit --no-verify -m x" '--no-verify after a single-quoted assignment value'
+# eval runs the string it is handed, so those quotes are eval's, not the command's.
+expect_block guard-bash.sh "eval 'git commit -n -m x'" '-n inside a single-quoted eval payload'
+expect_block guard-bash.sh 'eval "git commit --no-verify -m x"' '--no-verify inside a double-quoted eval payload'
+# Searching for the text of a guarded spelling is not that spelling.
+expect_allow guard-bash.sh 'grep -rn "HUSKY=0" .' 'a search for the text HUSKY=0'
+expect_allow guard-bash.sh 'grep -n "core.hooksPath value" file' 'a search for the text core.hooksPath'
 expect_allow guard-bash.sh "git commit -m 'docs: use grep -n to number lines'" 'a single-quoted message that merely contains -n'
 expect_allow guard-bash.sh 'grep -n "hooksPath\|npm after" .claude/hooks/guard-bash.sh' 'a grep whose quoted pattern contains an alternation and the word npm'
 # HUSKY reads the value bash hands it, so the quotes are not a different command.
@@ -234,6 +241,11 @@ expect_block guard-bash.sh 'yes | git push origin main' 'push to main after a pi
 expect_block guard-bash.sh 'GIT_SSH_COMMAND="ssh -i key" git push origin main' 'push after an assignment whose value is quoted and contains a space' "$NAMES_MAIN"
 # On push, -n is --dry-run: it writes to no remote.
 expect_allow guard-bash.sh 'git push -n' 'a -n dry-run push while on main'
+# --tags publishes refs/tags and no branch, so it is not a push of what is checked out.
+expect_allow guard-bash.sh 'git push origin --tags' 'a tags-only push while on main'
+expect_block guard-bash.sh 'git push origin --tags main' 'a tags push that also names main' "$NAMES_MAIN"
+expect_block guard-bash.sh "GIT_SSH_COMMAND='ssh -i key' git push origin main" 'push after a single-quoted assignment value' "$NAMES_MAIN"
+expect_block guard-bash.sh "eval 'git push origin main'" 'push inside a single-quoted eval payload' "$NAMES_MAIN"
 # The value of an option that takes a separate word is not a refspec.
 expect_block guard-bash.sh 'git push -o ci.skip origin' 'push whose only refspec-looking token is an option value, on main' "$CURRENT_IS_MAIN"
 # These write to no remote at all.

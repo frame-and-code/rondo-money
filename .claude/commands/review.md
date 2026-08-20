@@ -25,9 +25,12 @@ is the pass that knows ADR-005 exists.
    `git diff`, and `git status --porcelain` for untracked files, which no diff shows. This
    command's whole point is to run _before_ the PR, so the usual case is work that is staged
    and not yet committed: reviewing only `main...HEAD` there reports "nothing to review" on a
-   full branch of changes. A branch name: `git diff main...<branch>`. A `#N`: `gh pr diff N`,
-   and say in the report that the reviewers read that diff against the local tree — the files
-   around it are this checkout's, not the PR's, unless the PR is checked out first. A path:
+   full branch of changes. A branch name: `git diff main...<branch>`. A `#N`: `gh pr diff N` **and the PR's own
+   files** — a reviewer is told to read around the diff, and those files resolve against
+   whatever is checked out here, so a diff from one state read against another is worse than
+   no review. Check the PR head out first, or give each reviewer the contents at that SHA. If
+   neither is possible, say contextual review is unavailable and stop rather than reporting a
+   review that read the wrong tree. A path:
    that path. Print `--stat` so the size of what is being reviewed is visible, and stop only
    when the sources for the target you were given are genuinely empty.
 2. **Fan out — one message, four `Agent` calls, `subagent_type: pr-reviewer`.** Parallel

@@ -7,7 +7,6 @@
       "Edit(**)",
       "Write(**)",
       "Bash(pnpm *)",
-      "Bash(pnpm dlx *)",
       "Bash(node --version)",
       "Bash(ls *)",
       "Bash(find *)",
