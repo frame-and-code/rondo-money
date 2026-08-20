@@ -29,7 +29,9 @@ pnpm scan:secrets
 `secrets · static · build · unit · integration · e2e · sonar`: without them this command can
 pass while CI fails. `sonar` is the one member with no local counterpart — the analysis needs
 a token and the server's verdict, so this command cannot anticipate it. On a pull request it
-blocks (F1.12), so a green run here is not a promise that `gate` will be green. `build` is not covered by `typecheck` — [`docs/ci.md`](../../docs/ci.md)
+blocks (F1.12), so a green run here is not a promise that `gate` will be green.
+
+`build` is not covered by `typecheck` — [`docs/ci.md`](../../docs/ci.md)
 records the case where a TypeScript bump left `apps/api` unbuildable while `tsc --noEmit`
 stayed green. `scan:secrets` needs gitleaks on `PATH`; if it is missing, say so rather than
 reporting a gate that did not run. `./codegen.sh check` is the `static` job's contract drift

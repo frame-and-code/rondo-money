@@ -190,4 +190,6 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
   into the workspace (git-ignored). The `sonar` CI job imports those files into SonarQube
   Cloud (see [ci.md](ci.md)); the lcov reporter's `projectRoot` option keeps the paths
   repo-root-relative, which the Sonar scanner requires — copy it along when adding a jest
-  config to a new package, and list the new lcov in `sonar-project.properties`.
+  config to a new package, and list the new lcov in `sonar-project.properties`. Since F1.12
+  this is not only a report: the Sonar quality gate blocks a pull request whose **new** code
+  is under-covered, so a red `sonar` is answered with a test, not with a threshold.

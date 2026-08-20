@@ -19,8 +19,8 @@ Everything runs on its own on every `pull_request` event; nothing needs to be su
   really does block: the job waits for the quality gate verdict
   (`-Dsonar.qualitygate.wait=true`) rather than reporting success as soon as the analysis
   uploads. The wait is switched off on pushes to `main`, so a green `gate` there says
-  nothing about Sonar (see [`docs/ci.md`](../../docs/ci.md)) — but on the PR you are
-  babysitting, red Sonar is red `gate`.
+  nothing about Sonar's **verdict** (see [`docs/ci.md`](../../docs/ci.md)) — but on the PR
+  you are babysitting, red Sonar is red `gate`.
 - **Greptile Review** and **CodeRabbit** — AI reviewers that post review threads.
   CodeRabbit reports `Review rate limited` under load; that is a wait, not a failure, and
   not a reason to retrigger it.
@@ -36,7 +36,7 @@ for the current branch. Confirm with the user if it is ambiguous.
 ## Step 1 — Enter the loop
 
 Hand off to `/loop` in dynamic mode (no interval — self-paced) with a self-contained
-directive covering Steps 2–4. Pick each `delaySeconds` from what is actually being waited
+directive covering Steps 2–3. Pick each `delaySeconds` from what is actually being waited
 on: ~180–300s while jobs are `IN_PROGRESS` (the whole gate finishes in about two minutes
 here), ~1200s while waiting out a CodeRabbit rate limit or an idle reviewer.
 
@@ -109,11 +109,24 @@ real error. Fix the cause, never the symptom, and re-run the gate locally with
 [`/check`](check.md) before pushing. One failure can be a flake; the same failure twice on
 the same commit is a bug.
 
-`Sonar analysis` needs no separate check on a pull request — it is inside `gate`, and it
-fails the run when the quality gate fails. What it still needs is _reading_: the gate's
-verdict is one bit, while the analysis names the lines behind it. A failure is almost always
-new-code coverage, and the fix is a test, not a threshold. Surface what it flagged even when
-it passed — saying nothing about Sonar reads as "green".
+`Sonar analysis` needs no separate pass/fail check on a pull request — it is inside `gate`,
+and it fails the run when the quality gate fails. What it still needs is _reading_, on every
+tick and on a pass too: the gate's verdict is one bit, while the analysis names the lines
+behind it. `gh run view --log-failed` will not show it, because a passing job has no failed
+step — read the job log instead and take the two things the scanner prints:
+
+```bash
+gh run view --job <sonar-job-id> --log | grep -E 'QUALITY GATE STATUS|Check Quality Gate'
+```
+
+The job id is the tail of the `Sonar analysis` link `gh pr checks` prints
+(`…/actions/runs/<run-id>/job/<sonar-job-id>`).
+
+The `QUALITY GATE STATUS` line carries the verdict and the dashboard URL for this PR
+(`…/dashboard?id=frame-and-code_rondo-money&pullRequest=<PR#>`), which is where the flagged
+files and lines are. Put the status and anything flagged in the status report even when it
+passed — saying nothing about Sonar reads as "green". A failure is almost always new-code
+coverage, and the fix is a test, not a threshold.
 
 ### (d) Push once per tick
 

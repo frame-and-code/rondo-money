@@ -1,19 +1,19 @@
 # CI gate (F0.9 — GitHub Actions)
 
-Mandatory gate on every PR: **lint · format:check · typecheck · contract drift · build ·
-unit · integration · e2e**. Workflow —
+Mandatory gate on every PR: **secret scan · lint · format:check · typecheck · contract
+drift · build · unit · integration · e2e · Sonar quality gate (pull requests only)**. Workflow —
 [.github/workflows/ci.yml](../.github/workflows/ci.yml). Every check that consumes no other
 check's output is its own job, so they all start at once; `gate` is the single status check
 that aggregates them and the only one worth requiring on `main`:
 
 ```text
-secrets      ─┐
-static       ─┤
-build        ─┤
-unit         ─┼─→ gate
-integration  ─┤
-preflight → e2e     ─┤
-preflight → sonar   ─┘
+secrets            ─┐
+static             ─┤
+build              ─┤
+unit               ─┼─→ gate
+integration        ─┤
+preflight → e2e    ─┤
+preflight → sonar  ─┘
 ```
 
 `gate` runs with `if: always()` and fails unless every job it needs ended in `success` or
@@ -25,7 +25,9 @@ status check keeps the exact id `gate` that branch rules point at.
 
 - Every step uses the same root commands as locally: `pnpm lint`, `pnpm typecheck`,
   `pnpm test:unit` etc. (see [testing.md](testing.md)). CI doesn't invent its own way
-  of running things — if the gate is red, the same failure reproduces locally.
+  of running things — if the gate is red, the same failure reproduces locally. One member
+  is the exception and cannot: the Sonar quality gate is computed server-side, so a red
+  `gate` can mean a verdict no local command produces (see `sonar` below).
 - **`secrets` runs the same script as the pre-commit hook** — `secret-scan.sh`, in its
   `history` mode (`pnpm scan:secrets` locally). One script, two callers, so the local and CI
   scans cannot drift apart; CI only adds the install step, and puts gitleaks on `PATH` so the
@@ -157,8 +159,15 @@ status check keeps the exact id `gate` that branch rules point at.
   fix. On a push to `main` the new-code window is the last 30 days: a failure there is debt
   from already-merged commits, no single commit can move it, and — because both Railway
   services deploy with Wait for CI (see [deploy-railway.md](deploy-railway.md)) — a red gate
-  on `main` would stop the dev deployment over that number. The analysis still runs on `main`
-  and still reports its status; it just does not fail the run. The price of waiting is a
+  on `main` would stop the dev deployment over that number. Read that narrowly: what stops
+  being fatal on `main` is the **verdict**, not the job. `sonar` is in the gate's `needs`
+  unconditionally, so a scanner error, an unreachable SonarQube Cloud or a failed service
+  still turns `main` red and still holds the deployment — deliberately, and for the same
+  reason a missing token is refused rather than swallowed: a scanner that could not run is
+  worth saying out loud, while coverage debt no commit can pay is not. The exemption has a
+  cost worth knowing: with no wait, nothing polls the compute-engine task, so on `main` a
+  report that uploads and then fails server-side leaves the job green. Main's verdict lives
+  on the dashboard, and only there. The price of waiting is a
   dependency on someone else's availability: if SonarQube Cloud is unreachable or slow, the
   scanner gives up after `sonar.qualitygate.timeout` (300s) and the pull request cannot merge
   until it is retried. That is the ordinary cost of a blocking quality gate, and it is worth
