@@ -14,11 +14,13 @@ Merging itself stays the user's call — `gh pr merge` is denied in
 Everything runs on its own on every `pull_request` event; nothing needs to be summoned:
 
 - **`gate`** — the aggregate status check. It needs `secrets`, `static`, `build`, `unit`,
-  `integration` and `e2e`, and it is the only check the branch ruleset requires.
-- **`Sonar analysis`** — reports its own status and is **deliberately not in `gate`'s
-  `needs`** (see [`docs/ci.md`](../../docs/ci.md)). A green `gate` therefore says nothing
-  about Sonar: check it separately or you will report "all green" over a failed quality
-  gate.
+  `integration`, `e2e` and `sonar`, and it is the only check the branch ruleset requires.
+- **`Sonar analysis`** — part of `gate` since F1.12 was finished, and on a pull request it
+  really does block: the job waits for the quality gate verdict
+  (`-Dsonar.qualitygate.wait=true`) rather than reporting success as soon as the analysis
+  uploads. The wait is switched off on pushes to `main`, so a green `gate` there says
+  nothing about Sonar (see [`docs/ci.md`](../../docs/ci.md)) — but on the PR you are
+  babysitting, red Sonar is red `gate`.
 - **Greptile Review** and **CodeRabbit** — AI reviewers that post review threads.
   CodeRabbit reports `Review rate limited` under load; that is a wait, not a failure, and
   not a reason to retrigger it.
@@ -107,11 +109,11 @@ real error. Fix the cause, never the symptom, and re-run the gate locally with
 [`/check`](check.md) before pushing. One failure can be a flake; the same failure twice on
 the same commit is a bug.
 
-Check `Sonar analysis` explicitly — `gate` does not cover it. It is on probation:
-deliberately outside `gate`'s `needs` until it has stayed green and quiet across several
-PRs (see [`docs/ci.md`](../../docs/ci.md)). So while that lasts, a red Sonar does **not**
-block merge-ready — surface what it flagged, fix what is real, and leave the call to the
-user. Report it either way: saying nothing about Sonar reads as "green".
+`Sonar analysis` needs no separate check on a pull request — it is inside `gate`, and it
+fails the run when the quality gate fails. What it still needs is _reading_: the gate's
+verdict is one bit, while the analysis names the lines behind it. A failure is almost always
+new-code coverage, and the fix is a test, not a threshold. Surface what it flagged even when
+it passed — saying nothing about Sonar reads as "green".
 
 ### (d) Push once per tick
 
@@ -131,8 +133,8 @@ authority to move the branch. A user who wants it unattended widens their own gi
 Report **ready to merge** and end the loop when all of these hold:
 
 - every check `gate` aggregates is `SUCCESS` or `SKIPPED`;
-- `Sonar analysis` has been reported with anything it flagged surfaced — while it stays
-  outside `gate` it does not block, but it is never silently skipped;
+- `Sonar analysis` has been reported with anything it flagged surfaced — it is inside
+  `gate` and blocks on a PR, but it is never silently skipped even when green;
 - every review thread is resolved, or the remainder are open questions listed for the user;
 - the branch is up to date with `main` and `mergeable`.
 

@@ -12,8 +12,8 @@ static       ─┤
 build        ─┤
 unit         ─┼─→ gate
 integration  ─┤
-preflight → e2e
-preflight → sonar   (reports its own status; not aggregated by gate yet)
+preflight → e2e     ─┤
+preflight → sonar   ─┘
 ```
 
 `gate` runs with `if: always()` and fails unless every job it needs ended in `success` or
@@ -147,10 +147,22 @@ status check keeps the exact id `gate` that branch rules point at.
   secret stores — Actions and Dependabot — so unlike e2e (whose Clerk keys are Actions-only)
   the analysis also runs on Dependabot PRs; fork PRs see neither store, so `sonar` branches
   on the same `preflight` mechanism as e2e
-  (`if: needs.preflight.outputs.has_sonar_token == 'true'`). **The job is deliberately not
-  in the gate's `needs` yet**: the switch-on order is to watch it stay green and quiet
-  across several PRs, and only then promote it into `gate` — the reverse order means a red
-  gate on the first PR because of tuning, not code.
+  (`if: needs.preflight.outputs.has_sonar_token == 'true'`). **The job is part of `gate`**:
+  it was held out until it had stayed green and quiet across every run from F1.6 through
+  F1.11, because the reverse order means a red gate on the first PR because of tuning, not
+  code. Aggregating the job is only half of what makes it a gate, though — the scanner exits
+  0 on a _failing_ quality gate unless asked to wait for the verdict, so the job also passes
+  `-Dsonar.qualitygate.wait=true`, **and only on pull requests**. On a PR the quality gate is
+  computed over that PR's own new code, so a failure names something the author can still
+  fix. On a push to `main` the new-code window is the last 30 days: a failure there is debt
+  from already-merged commits, no single commit can move it, and — because both Railway
+  services deploy with Wait for CI (see [deploy-railway.md](deploy-railway.md)) — a red gate
+  on `main` would stop the dev deployment over that number. The analysis still runs on `main`
+  and still reports its status; it just does not fail the run. The price of waiting is a
+  dependency on someone else's availability: if SonarQube Cloud is unreachable or slow, the
+  scanner gives up after `sonar.qualitygate.timeout` (300s) and the pull request cannot merge
+  until it is retried. That is the ordinary cost of a blocking quality gate, and it is worth
+  recognising for what it is when a run fails — an outage reads exactly like a code problem.
 - **Coverage for Sonar**: the jest configs keep coverage always on, so the plain test
   commands (`pnpm test:unit`, `pnpm test:integration`) emit `coverage/lcov.info` in each
   tested workspace — the same command produces the same artefacts locally and in CI, and
