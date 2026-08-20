@@ -5,13 +5,13 @@
 # The jobs are independent by construction — none of them consumes another's output, so
 # there is nothing to order. What used to be one sequential job is now:
 #
-#   secrets      ─┐
-#   static       ─┤
-#   build        ─┤
-#   unit         ─┼─→ gate
-#   integration  ─┤
-#   preflight → e2e
-#   preflight → sonar   (reports its own status; not aggregated by `gate` yet — see the job)
+#   secrets            ─┐
+#   static             ─┤
+#   build              ─┤
+#   unit               ─┼─→ gate
+#   integration        ─┤
+#   preflight → e2e    ─┤
+#   preflight → sonar  ─┘
 #
 # `preflight` is the one exception: it exists only to tell e2e and sonar whether the secrets
 # they need are readable from this run, because that cannot be asked from a job `if` directly.
@@ -282,6 +282,8 @@ jobs:
         env:
           HAS_CLERK_KEYS: ${{ secrets.CLERK_SECRET_KEY != '' && secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY != '' }}
           HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
+          # Empty on a push and on a same-repository pull request; 'true' only for a fork.
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
           echo "has_clerk_keys=${HAS_CLERK_KEYS}" >> "$GITHUB_OUTPUT"
           echo "has_sonar_token=${HAS_SONAR_TOKEN}" >> "$GITHUB_OUTPUT"
@@ -293,6 +295,17 @@ jobs:
               echo "or a Dependabot-triggered one), and the web app cannot serve a single request"
               echo "without them. Every other job in the gate still runs."
             } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # A skipped Sonar is only legitimate when the run genuinely cannot read Actions
+          # secrets, and that is exactly one case: a fork pull request. Everywhere else a
+          # missing token means the secret was renamed, emptied or deleted — and since
+          # `gate` counts a skipped job as a pass, that would leave every later pull
+          # request green with no quality gate at all, announced only in a step summary
+          # nobody opens on a green run. So it fails here instead: the whole point of
+          # F1.12 is a gate that cannot quietly stop gating.
+          if [ "${HAS_SONAR_TOKEN}" != 'true' ] && [ "${IS_FORK}" != 'true' ]; then
+            echo "::error::SONAR_TOKEN is not readable from this run, and this is not a fork pull request — the Sonar quality gate would be skipped without anyone noticing. Check the secret in Settings → Secrets → Actions (and the Dependabot store)."
+            exit 1
           fi
           if [ "${HAS_SONAR_TOKEN}" != 'true' ]; then
             {
@@ -509,10 +522,12 @@ jobs:
     # between jobs as artifacts couples them and silently flattens single-file artifact
     # paths, while a re-run keeps every job self-contained.
     #
-    # Deliberately NOT in the gate's `needs` yet: the switch-on order (F1.12) is to watch
-    # the job stay green and quiet across several PRs first, and only then promote it into
-    # the gate — the reverse order means a red gate on the first PR because of tuning, not
-    # code. Like e2e, it branches on preflight: SONAR_TOKEN is hidden from fork runs
+    # In the gate's `needs` since F1.12 was finished: the job stayed green and quiet across
+    # every run from F1.6 through F1.11, which was the switch-on condition. Note what makes
+    # that meaningful — the scanner exits 0 on a *failing* quality gate unless told to wait,
+    # so aggregating the job without `sonar.qualitygate.wait` would only ever have proven
+    # that an analysis was uploaded. The wait is set on the scan step below, and only for
+    # pull requests. Like e2e, it branches on preflight: SONAR_TOKEN is hidden from fork runs
     # (unlike the Clerk keys it IS configured as a Dependabot secret too, so Dependabot
     # PRs are analysed), and skipping the job openly beats succeeding while doing nothing.
     name: Sonar analysis
@@ -571,7 +586,38 @@ jobs:
       - name: Integration tests with coverage
         run: pnpm test:integration
 
+      # `sonar.qualitygate.wait` makes the scanner poll for the quality gate and exit
+      # non-zero when it fails; without it the step reports success as soon as the analysis
+      # is uploaded, whatever the verdict. It defaults to false, and the poll is bounded by
+      # sonar.qualitygate.timeout (300s by default) — well inside this job's timeout.
+      #
+      # Enabled for pull requests only, and that asymmetry is the decision, not an oversight.
+      # On a PR the quality gate is computed over that PR's own new code, so a red gate names
+      # something the author can still fix. On a push to `main` the analysis is post-hoc — its
+      # new-code window is the last 30 days, so a failure there is debt from commits that are
+      # already merged, and nothing about failing the run makes it smaller. It would, however,
+      # hold the dev deployment: both Railway services run with Wait for CI (see
+      # docs/deploy-railway.md), so a red `gate` on main stops delivery over a number that no
+      # single commit can move. The analysis still runs on main and still uploads.
+      #
+      # Read that narrowly: it is the *verdict* that stops being fatal on main, not the job.
+      # `sonar` is in the gate's `needs` unconditionally, so a scanner error, an unreachable
+      # SonarQube Cloud or a failed service still turns main red and — through Wait for CI —
+      # still holds the deployment. That is deliberate and it is the same principle this job
+      # already follows for a missing token: a scanner that could not run is worth saying out
+      # loud, because a gate that quietly stops gating is the failure mode nobody notices.
+      # Coverage debt is the one thing exempted, because no single commit can pay it.
+      #
+      # The cost of the exemption, so nobody is surprised by it: without the wait nothing
+      # polls the compute-engine task, so on main a report that uploads and then fails
+      # server-side leaves the job green and says nothing. Main's verdict lives on the
+      # dashboard, and only there.
+      #
+      # The expression renders the literal `true` or `false`, so the flag is always passed
+      # explicitly rather than sometimes being absent.
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+        with:
+          args: -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -582,7 +628,7 @@ jobs:
     # Deliberately left without a display name: the status check keeps the exact id "gate"
     # it has today, so anything already pointing at that name keeps working.
     if: always()
-    needs: [secrets, preflight, static, build, unit, integration, e2e]
+    needs: [secrets, preflight, static, build, unit, integration, e2e, sonar]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
