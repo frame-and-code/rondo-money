@@ -53,8 +53,12 @@ the next ticket starts where it should.
 
 ## Process
 
-We work feature by feature from "Plan v1". Current phase — 1 (F1.1–F1.13); phase 0 is done.
-Don't go beyond the scope of the current feature — don't pull in work from later features.
+We work feature by feature from "Plan v1", which owns the phase list. Stay inside the scope
+of the ticket you were given — don't pull in work from later features, and don't widen the
+ticket into cleanups it never opened. If a session starts without a ticket, ask which one
+before writing code. No phase number here on purpose — it belongs to the ticket and the
+branch, which move on their own, and a stale one in this file reads as current. That line
+was wrong twice before it was removed.
 When in doubt, check against the PRD (RU, source of truth) and the ADRs. A green `main`
 ships to the dev environment on Railway — see [`docs/deploy-railway.md`](docs/deploy-railway.md).
 
