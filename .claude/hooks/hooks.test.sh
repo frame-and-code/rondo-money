@@ -314,8 +314,9 @@ expect_block guard-bash.sh 'nohup git push origin main' 'push behind nohup' "$NA
 # A wildcard refspec publishes every branch it matches, whatever is checked out.
 expect_block guard-bash.sh "git push origin 'refs/heads/*:refs/heads/*'" 'push with a wildcard refspec' 'wildcard refspec'
 expect_allow guard-bash.sh 'git push -u origin F1.9-add-ticket-workflow-commands' 'push a feature branch'
-# /close-ticket deletes merged branches on the server whenever one is still there, so the
-# spelling it uses has to keep working — and the same spelling aimed at main has to keep failing.
+# No command here deletes a remote branch — /close-ticket offers, a human runs it. Pinned anyway,
+# because that is the spelling a human reaches for, and the guard's job is to tell a feature
+# branch from main when they do.
 expect_allow guard-bash.sh 'git push origin --delete F1.9-add-ticket-workflow-commands' 'deleting a merged feature branch on the remote'
 expect_block guard-bash.sh 'git push origin --delete main' 'deleting main on the remote' "$NAMES_MAIN"
 expect_allow guard-bash.sh 'git commit -m "note: push to main goes through a PR"' 'the word push inside a message'

@@ -49,7 +49,7 @@ ticket, `/grill-me` clarifies a fuzzy one, `/sync-docs` sweeps the documentation
 ticket out, `/prep-pr` commits, pushes and opens the PR, `/babysit-pr` shepherds it to
 merge-ready and `/close-ticket` records the merged result in the Notion ticket — the PRs that
 carried it and the decisions it took, not only the ✅ — then returns you to a fresh `main` and
-deletes the branches it just closed, so the next ticket starts where it should.
+deletes the local branches it just closed, so the next ticket starts where it should.
 
 ## Process
 
