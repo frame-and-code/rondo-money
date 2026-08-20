@@ -18,6 +18,9 @@
       "@/*": ["./src/*"]
     }
   },
+  // `next-env.d.ts` and `.next/types` are both written by Next and neither is in git (F1.11),
+  // so on a fresh clone these two entries match nothing until something builds — which is
+  // fine: they carry ambient types (non-code imports, generated route types), not the app.
   "include": ["next-env.d.ts", "src", "test", "e2e", "playwright.config.ts", ".next/types/**/*.ts"],
   // Only exclude node_modules (as stock create-next-app does): excluding `.next` here
   // would void the `.next/types/**/*.ts` include above, silently skipping Next's

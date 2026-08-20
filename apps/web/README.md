@@ -19,7 +19,9 @@ src/
                               # first authenticated API call (GET /me, F1.4)
     globals.css               # Tailwind entry point + the theme's CSS variables
     sign-in/[[...sign-in]]/   # the only public screen (Clerk catch-all route)
-    api/health/route.ts       # liveness probe for Railway — public, answers 200 flat
+    api/health/route.ts       # liveness probe for Railway — public, answers 200 flat; also
+                              # reports the mode the bundle was built in, which is what e2e
+                              # read to refuse a dev server (F1.11)
     (app)/                    # route group for the future app shell (Phase 3)
       layout.tsx
       budget/page.tsx         # budget screen placeholder (/budget)
@@ -45,6 +47,13 @@ pnpm --filter @rondo/web start   # next start on :3001
 pnpm --filter @rondo/web test    # jest — smoke test of the home page render
 pnpm test:e2e                   # Playwright — incl. the F1.1 sign-in/out scenarios
 ```
+
+E2E build the app and serve it with `next start` (F1.11) — never `next dev`, which is a
+different application and would make a green suite meaningless as evidence about the deployed
+one. So a run costs a build (about 5 seconds when nothing changed), and a `pnpm dev` server on
+:3001 is refused rather than reused. Don't park a production server there either: the refusal
+reads the build's mode, not its age, so a stale one would be reused silently. Details in
+[docs/testing.md](../../docs/testing.md).
 
 All pages are Clerk-protected (F1.1): anonymous visitors are redirected to `/sign-in`
 by `src/proxy.ts` (`clerkMiddleware` + `auth.protect()`).

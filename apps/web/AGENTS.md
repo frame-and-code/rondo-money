@@ -46,10 +46,14 @@ really do ship inside the package (`node_modules/next/dist/docs/`).
 
 ## Traps worth knowing
 
-- After a local e2e run `next-env.d.ts` shows up modified: Next rewrites it to its dev variant.
-  Discard it (`git checkout -- apps/web/next-env.d.ts`) instead of committing it — see
-  [`docs/testing.md`](../../docs/testing.md).
-- E2E needs the Clerk keys in `.env.local` (`pnpm env:setup`) and, once per machine,
+- E2E run against a **production build** (`next build` + `next start`), never `next dev` —
+  Playwright builds it, and refuses to reuse a dev server that happens to be on :3001. So a
+  local run costs a build (~5s when nothing changed), and a change that only breaks in
+  production mode fails here rather than in CI. The refusal reads the build's mode, not its
+  age, so never park a production server on that port across code changes — it would be reused
+  silently. See [`docs/testing.md`](../../docs/testing.md).
+- E2E needs the Clerk keys in `.env.local` (`pnpm env:setup`) — the publishable one is inlined
+  into the bundle at build time — and, once per machine,
   `pnpm --filter @rondo/web exec playwright install chromium`.
 - The dev server is on **:3001** — :3000 belongs to the api.
 

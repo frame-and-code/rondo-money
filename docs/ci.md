@@ -97,6 +97,16 @@ status check keeps the exact id `gate` that branch rules point at.
 - **E2E**: Playwright builds and starts api and web itself (`reuseExistingServer` is off
   in CI). The CI reporter is `github` (annotations right in the PR); on failure, traces
   (`apps/web/test-results`) are uploaded as the `playwright-traces` artifact.
+- **E2E run against a production build of web** (F1.11) — `next build` + `next start`, not
+  `next dev`, because dev mode is a different application and a green suite against it proved
+  nothing about what ships. That means this job pays for a `next build`, and **it cannot
+  borrow the one from the `build` job**: that job builds without the Clerk keys by design,
+  `NEXT_PUBLIC_*` are inlined into the bundle, so its output would serve nothing. So the two
+  stay independent — as everywhere else in this gate — and the second build is paid for with
+  a cache of `apps/web/.next/cache` instead, restored and saved by explicit steps for the same
+  reason as the browser cache. The publishable Clerk key therefore has to reach the build, and
+  `apps/web/check-public-env.mjs` fails the job when it does not, rather than letting a bundle
+  nobody can sign in to be tested.
 - **Installing the browser is the slowest step in that job, and it has two halves.** The
   browser binaries are cached on the resolved Playwright version, so a hit skips the CDN
   download. The cache is saved by an explicit step rather than by `actions/cache`'s post step,

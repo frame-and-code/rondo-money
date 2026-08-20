@@ -37,23 +37,56 @@ The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
 - **Integration and e2e** hit the local Postgres from F0.3: `docker compose up -d`
   (+ `pnpm db:migrate` if new migrations appeared).
 - **E2E, once**: download the browser — `pnpm --filter @rondo/web exec playwright install chromium`.
-- E2E builds and starts api (`node dist/main.js`) and web (`next dev`) itself; servers
-  already running locally are reused (`reuseExistingServer`).
-- ⚠️ Because e2e runs `next dev`, Next rewrites `apps/web/next-env.d.ts` to its dev variant
-  (`./.next/dev/types/…`). The committed file must stay on the build variant
-  (`./.next/types/…`) — that is what CI and `next build` produce, and the dev paths do not
-  exist there, which silently disables typed-route checking. After a local e2e run the file
-  shows up as modified: discard it (`git checkout -- apps/web/next-env.d.ts`) instead of
-  sweeping it into a commit with `git add -A`.
-- **E2E needs the Clerk keys** (F1.1) in `apps/web/.env.local` — `pnpm env:setup`;
-  Playwright loads that file itself (`@next/env` in `e2e/global-setup.ts`). Without the
-  keys the auth scenarios are skipped locally, while **in CI their absence fails the
-  run** — a green gate must never mean "auth was never tested".
+- E2E builds and starts both servers itself — api (`node dist/main.js`) and web
+  (`next build` + `next start`, see below); servers already running locally are reused
+  (`reuseExistingServer`). A **dev server on :3001 aborts the run** rather than being
+  replaced, so stop `pnpm dev` (and the one [`/dev`](../.claude/commands/dev.md) starts)
+  before running e2e.
+- **E2E needs the Clerk keys** (F1.1) in `apps/web/.env.local` — `pnpm env:setup`. The
+  publishable one is needed by the **build**, not at startup: `next build` inlines it into
+  the bundle, and `apps/web/check-public-env.mjs` refuses to build without it in CI (locally
+  it warns, and the auth scenarios skip themselves). Playwright also loads that file for its
+  own use (`@next/env` in `e2e/global-setup.ts`). In CI a missing key **fails the run** — a
+  green gate must never mean "auth was never tested".
 - **And the api's own key** (F1.2) in `apps/api/.env.local` — the same `pnpm env:setup`
   writes it. Playwright starts the api before `globalSetup` loads any `.env`, so the api
   reads the key from that file rather than from the environment; without it the server
   exits at startup and every scenario fails on an unreachable web server. A machine set up
   before F1.2 needs `pnpm env:setup` re-run.
+
+### E2E run against a production build (F1.11)
+
+Playwright serves web with `next build` + `next start`, never `next dev`. Dev mode is a
+different application — no minification, different static optimisation and caching,
+different server-component behaviour — so a green suite against it said nothing about what
+Railway serves, which is the one thing this level exists to say.
+
+What follows from that:
+
+- **A local run costs a build.** The first one is the slow one; after it, Next's
+  `.next/cache` makes the rebuild incremental. CI caches that directory too, and
+  deliberately does not reuse the `build` job's output — that job builds without the Clerk
+  keys on purpose, and `NEXT_PUBLIC_*` are inlined, so its bundle cannot serve a page.
+- **Reuse still works, but only for a production server.** `e2e/global-setup.ts` asks
+  `/api/health` which mode the bundle on that port was built in, and fails the run on a dev
+  server rather than testing it.
+- **Reuse cannot see age, so don't keep a server warm.** A production server built an hour ago
+  answers that probe exactly like one built a minute ago — the field comes from the bundle, and
+  nothing in it says which sources it came from. So `reuseExistingServer` is for a server this
+  suite itself left running, not for one you park in another terminal: after changing app code,
+  stop it and let Playwright build. That is the one hole this level still has, and it is cheap
+  to stay out of — a no-change rebuild costs about 5 seconds.
+- **`apps/web/next-env.d.ts` is no longer in git.** Next rewrites it on every run and writes
+  a different variant in each mode; it is an artefact, and Next's own documentation says to
+  keep it out of version control. Nothing to discard after a run any more. The one thing to
+  know: on a fresh clone `pnpm typecheck` runs before anything has built, so Next's ambient
+  declarations are absent. Most code never notices — the stylesheet import in
+  `src/app/layout.tsx` type-checks without them (checked) — but an import that **binds a
+  value** does: `import logo from './logo.png'` fails with `TS2307` until something has
+  written the file. On your machine a build has run, so it passes; the CI `static` job never
+  builds, so it fails there. Loudly, which is the point. The fix is a one-line declaration
+  file of our own (`/// <reference types="next/image-types/global" />`), not committing the
+  generated one back.
 
 ### Auth in e2e (F1.1)
 

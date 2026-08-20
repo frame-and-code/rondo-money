@@ -13,10 +13,15 @@ On your own initiative, only `git add`. `commit`, `push`, branching, rebasing, o
 PR — every other git action waits for the user to ask. Drafting the message is your job;
 deciding that it runs is theirs. Typing [`/prep-pr`](../commands/prep-pr.md) **is** that
 decision — the command then commits, pushes and opens the PR in one go — and so is asking in
-words. What is forbidden is reaching for git because it seemed like the next step.
+words. So is [`/close-ticket`](../commands/close-ticket.md), which ends on a fresh `main` so
+that the next ticket does not start on the last one's branch: from a clean tree only, never
+building a merge commit (`--ff-only`), and never deleting the merged branch without asking.
+What is forbidden is reaching for git because it seemed like the next step.
 
 The one exception, because it prevents work from landing in the wrong place: when a new
-feature starts while the branch is `main`, create the feature branch first.
+feature starts while the branch is `main`, create the feature branch first. That rule and the
+return above are two halves of one thing — a flow that never comes back to `main` never
+reaches the branching rule at all.
 
 ## Naming and messages describe behaviour
 

@@ -14,7 +14,21 @@ describe('health route', () => {
     const response = GET();
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ status: 'ok' });
+    await expect(response.json()).resolves.toEqual({ status: 'ok', mode: process.env.NODE_ENV });
+  });
+
+  // F1.11: e2e/global-setup.ts reads this field to refuse a `next dev` server on the port, so
+  // the suite cannot quietly stop being evidence about the build that ships.
+  //
+  // What this can prove is that the field is there and comes from NODE_ENV. It cannot prove
+  // the value the e2e guard actually compares: in a real build Next replaces
+  // `process.env.NODE_ENV` with a literal (`define-env.js`), while @swc/jest inlines nothing,
+  // so here it is simply the test process's own value. The suite itself is what exercises the
+  // built one.
+  it('reports the mode it was built in, taken from NODE_ENV', async () => {
+    // `toMatchObject` rather than a cast on the parsed body: the shape is what the test
+    // states, not something it asserts past the type system (code-quality.md).
+    await expect(GET().json()).resolves.toMatchObject({ mode: expect.any(String) });
   });
 
   it('does not redirect — Railway rejects anything that is not 2xx', () => {

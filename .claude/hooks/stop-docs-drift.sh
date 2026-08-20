@@ -23,12 +23,6 @@ cd "$PROJECT_DIR" 2>/dev/null || exit 0
 # exist before. This hook fires at Stop, where unstaged is the normal shape.
 CHANGED=$(git status --porcelain -uall 2>/dev/null | sed -E 's/^.{3}//; s/^.* -> //')
 
-# next-env.d.ts is committed, but `next dev` rewrites it to its dev variant on every local
-# e2e run and that rewrite is discarded rather than committed (docs/testing.md). It is dropped
-# here rather than in one of the checks below, because every one of them would have to
-# remember: counting it as changed code makes the hook nag about apps/web after every test
-# run, which is the fastest way to teach someone to ignore it.
-CHANGED=$(printf '%s\n' "$CHANGED" | grep -vE '(^|/)next-env\.d\.ts$' || true)
 [ -z "$CHANGED" ] && exit 0
 
 CODE=$(printf '%s\n' "$CHANGED" | grep -E '^(apps/|packages/|\.github/|\.husky/|\.claude/|.*\.(ts|tsx|mjs|cjs|js|jsx|prisma|sql|sh|ya?ml|json|properties)$)' | grep -vE '\.md$' || true)

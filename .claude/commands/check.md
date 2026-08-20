@@ -45,6 +45,11 @@ from going through, so the gap is not a cosmetic one.
 (`docker compose up -d`) and e2e needs Clerk keys in `apps/web/.env.local`; if either is
 missing, say which level was not exercised instead of calling the run green.
 
+E2E also need **:3001 free of a dev server** (F1.11). They run against a production build,
+and Playwright reuses whatever already holds that port — so the `pnpm dev` server
+[`/dev`](dev.md) starts there does not get replaced, it aborts the level with "reports mode
+development". Stop it before `/check`, or run the two apart.
+
 With `$ARGUMENTS`, target one workspace: `pnpm --filter <name> lint` and so on.
 
 ## Report
@@ -54,11 +59,3 @@ With `$ARGUMENTS`, target one workspace: `pnpm --filter <name> lint` and so on.
 - Fix what is mechanical (formatting, auto-fixable lint) and say what you fixed. For
   anything that changes behaviour, propose the fix and let the user decide.
 - If everything passed, say what ran — including which levels were skipped and why.
-
-## Local e2e trap
-
-After a local e2e run `apps/web/next-env.d.ts` shows up modified, because `next dev`
-rewrites it to its dev variant. It must never be swept into a commit; the fix is to discard
-it with `git checkout -- apps/web/next-env.d.ts`. That command throws local changes away,
-so propose it and let the user run it — like every git action beyond `git add`. Details in
-[`docs/testing.md`](../../docs/testing.md).
