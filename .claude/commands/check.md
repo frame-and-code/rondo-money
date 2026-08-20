@@ -10,7 +10,7 @@ it is parallelised across workspaces and cached where caching is safe.
 
 ## Steps
 
-Run all seven, and run them all even if an earlier one fails — a single report beats seven
+Run all eight, and run them all even if an earlier one fails — a single report beats eight
 round trips:
 
 ```bash
@@ -19,6 +19,7 @@ pnpm typecheck
 pnpm format:check
 pnpm build
 pnpm test
+pnpm test:hooks
 pnpm scan:secrets
 ./codegen.sh check
 ```
@@ -32,6 +33,11 @@ reporting a gate that did not run. `./codegen.sh check` is the `static` job's co
 step (F1.5): it regenerates `apps/api/openapi.json` and the client and fails if either moved,
 which on a clean tree means the committed pair is stale. It runs last because everything
 above has already warmed turbo's cache for it.
+
+`pnpm test:hooks` is the odd one out: it tests `.claude/`, not the app — the guard hooks
+that keep a secret-scan bypass or a migration against dev from going through. They are bash
+pattern matching, so the way they fail is silently, and they are not covered by any
+workspace's `test` task.
 
 `pnpm test` covers unit, integration and e2e. Integration and e2e need Postgres
 (`docker compose up -d`) and e2e needs Clerk keys in `apps/web/.env.local`; if either is

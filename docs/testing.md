@@ -11,6 +11,14 @@ the feature** — a feature without tests doesn't count as done (no test debt ac
 | Integration | API ↔ Postgres (from F0.3)                  | Jest + supertest    | `apps/api/test`                                                                | `*.integration.spec.ts`    |
 | E2E         | Browser → web → api → Postgres              | Playwright          | `apps/web/e2e`                                                                 | `*.spec.ts`                |
 
+Plus one that is not a level of the app at all: **the agent guard hooks**
+([`.claude/hooks/hooks.test.sh`](../.claude/hooks/hooks.test.sh), `pnpm test:hooks`, a step
+of the CI `unit` job). `guard-bash.sh` and `guard-db.sh` are what stop a secret-scan bypass
+or a migration against the dev database, and they decide by matching patterns against a
+command string — so they fail by matching nothing and exiting 0. Bash and node only, no
+Postgres and no keys. A new blocking hook lands with its cases; see
+[`.claude/README.md`](../.claude/README.md).
+
 ## Commands
 
 ```bash
@@ -18,6 +26,7 @@ pnpm test               # all levels in all workspaces (turbo run test)
 pnpm test:unit          # unit only
 pnpm test:integration   # integration only (needs Postgres)
 pnpm test:e2e           # e2e only (needs Postgres; Playwright starts the servers itself)
+pnpm test:hooks         # the agent guard hooks (.claude/hooks) — bash, no DB, no secrets
 ```
 
 The same, targeted: `pnpm --filter @rondo/api test:integration` etc.

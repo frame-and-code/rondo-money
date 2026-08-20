@@ -195,6 +195,13 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
+      # The guard hooks (.claude/hooks) belong to no workspace, so `turbo run test:unit`
+      # never sees them. They are bash pattern matching over a command string, which fails
+      # by matching nothing and exiting 0 — the same silent mode ADR-005 refused to accept
+      # for raw SQL. Needs no database and no secrets, so it rides along here.
+      - name: Guard hook tests
+        run: pnpm test:hooks
+
   integration:
     name: Integration tests (Postgres)
     runs-on: ubuntu-latest

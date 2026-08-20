@@ -16,6 +16,7 @@
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
+    "test:hooks": "./.claude/hooks/hooks.test.sh",
     "dev": "turbo run dev",
     "env:setup": "./setup-env.sh",
     "scan:secrets": "./secret-scan.sh history",

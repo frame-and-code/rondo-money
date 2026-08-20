@@ -6,7 +6,10 @@ argument-hint: '<F1.x ticket>'
 # Phase done
 
 Everything that stands between "the code works on my machine" and "this ticket is
-finished". Run it before asking the user to commit.
+finished" — the verification pass, run before the PR exists. What follows it:
+[`/prep-pr`](prep-pr.md) tidies, gates and opens the PR, [`/babysit-pr`](babysit-pr.md)
+shepherds it to merge-ready, and once the user has merged,
+[`/close-ticket`](close-ticket.md) records the result in Notion.
 
 ## Steps
 
@@ -27,7 +30,8 @@ finished". Run it before asking the user to commit.
 5. **Draft the git text** in the format from
    [`.claude/rules/communication.md`](../rules/communication.md): the commit message and
    the full PR description (What & why / Changes / Testing / Notes & follow-ups). Draft
-   only — the user runs `commit`, `push` and the PR.
+   only — nothing here commits or pushes; [`/prep-pr`](prep-pr.md) does that when the user
+   asks for it.
 
 ## Report
 

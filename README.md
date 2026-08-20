@@ -74,7 +74,7 @@ packages/
   api-client/ # typed API client, generated from the API's OpenAPI spec — F1.4
   config/     # shared configs (eslint / tsconfig / prettier) — F0.2
   ui/         # shared UI components (shadcn/ui) — F0.6
-.claude/      # agent setup: rules, commands, hooks, permissions — F1.9
+.claude/      # agent setup: rules, commands, skills, agents, hooks, permissions — F1.9
 ```
 
 ## Written with an agent
@@ -166,13 +166,15 @@ full env contract — in [`apps/web`](apps/web/README.md).
 
 ## Tests
 
-Three levels — unit / integration / e2e; tests are written together with the feature:
+Three levels — unit / integration / e2e — plus the agent guard hooks, which are not a level
+of the app at all; tests are written together with the feature:
 
 ```bash
 pnpm test               # all levels (turbo run test)
 pnpm test:unit          # unit (Jest + fast-check)
 pnpm test:integration   # API ↔ Postgres (needs docker compose up -d)
 pnpm test:e2e           # Playwright: browser → web → api → Postgres
+pnpm test:hooks         # the agent guard hooks in .claude/hooks (bash; no DB, no keys)
 ```
 
 Once before e2e: `pnpm --filter @rondo/web exec playwright install chromium`.

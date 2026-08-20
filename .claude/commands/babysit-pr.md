@@ -136,7 +136,8 @@ Report **ready to merge** and end the loop when all of these hold:
 - every review thread is resolved, or the remainder are open questions listed for the user;
 - the branch is up to date with `main` and `mergeable`.
 
-Then stop and hand back. Do not merge.
+Then stop and hand back. Do not merge — once the user has,
+[`/close-ticket`](close-ticket.md) records the result in Notion.
 
 ## Guardrails
 

@@ -52,6 +52,13 @@ status check keeps the exact id `gate` that branch rules point at.
   only just started emitting — what a generator bump does — would slip past it untracked and
   unnoticed. The step sits last in `static` on purpose: `pnpm typecheck` above already pulled
   the whole chain, so turbo replays it from cache and the check itself costs a `git status`.
+- **`unit` carries one test suite that is not the app's** — `pnpm test:hooks`
+  (`.claude/hooks/hooks.test.sh`, F1.9). The guard hooks are what stop an agent from skipping
+  the secret scan or running a migration against dev, they belong to no workspace, so
+  `turbo run test:unit` never sees them, and they decide by matching patterns against a
+  command string — which fails by matching nothing and exiting 0. It needs no database and no
+  secrets, so it rides along in `unit` rather than paying for a job of its own. Levels and
+  prerequisites: [testing.md](testing.md).
 - Each job reinstalls dependencies — that is the price of running them in parallel, and a
   warm pnpm store cache keeps it far below the time saved. The setup steps (checkout →
   pnpm → node → install) are repeated verbatim rather than extracted into a local

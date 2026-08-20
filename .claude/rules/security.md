@@ -54,9 +54,12 @@ polish:
 - `.env` and `apps/*/.env.local` stay out of git. Only `.env.example` and `*.env.local.tpl`
   are tracked, and they hold placeholders — never values.
 - The pre-commit hook runs gitleaks on the staged diff and fails the commit on a hit. Do
-  not route around it: `--no-verify`, `-n`, `HUSKY=0` and `git -c core.hooksPath=…` are all
-  blocked by [`guard-bash.sh`](../hooks/guard-bash.sh). If the hook fires, the fix is to
-  remove the secret, never to skip the scan.
+  not route around it: `--no-verify`, `-n` and the bundles it hides in (`-nm`, `-anm`),
+  `HUSKY=0` and both `core.hooksPath` spellings are blocked by
+  [`guard-bash.sh`](../hooks/guard-bash.sh), which reads a normalised copy of the command so
+  quoting, grouping, nesting and wrappers do not hide them. It is not a sandbox and says so
+  in its own header — a command handed to another interpreter still gets through. If the hook
+  fires, the fix is to remove the secret, never to skip the scan.
 - Never print a secret's value — not into the transcript, a log, an error message or a
   document, not even "to check it". Read the variable's _name_; leave the value alone.
 - `pnpm scan:secrets` scans the whole history.
