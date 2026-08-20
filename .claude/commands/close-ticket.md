@@ -1,5 +1,5 @@
 ---
-description: After the PR is merged, close the Notion ticket — tick the AC/DoD items that have evidence, correct what the work made false, record the PRs and the decisions, put ✅ in the title.
+description: After the PR is merged, close the Notion ticket — tick the AC/DoD items that have evidence, correct what the work made false, record the PRs and the decisions, put ✅ in the title, and leave the session on a fresh main.
 argument-hint: '<F1.x ticket or Notion link>'
 ---
 
@@ -73,7 +73,34 @@ user has merged — never to make an unmerged ticket look finished.
 6. **Tick the title** once every item is either ticked or explicitly declared out of scope
    by the user: prefix the page title with `✅ ` (the phase page lists child titles, so
    nothing else needs editing). Idempotent — a title already carrying ✅ is left alone.
-7. **Report** what changed and what stayed open. Nothing here touches git.
+7. **Leave the ground ready for the next ticket.** The work has landed, so this branch is
+   history — and a session that stays on it starts the next feature there. That is not
+   hypothetical: the rule in `CLAUDE.md` about branching only fires when the branch _is_
+   `main`, so a flow that never returns there never fires it, and F1.11 duly began on F1.9's
+   branch. Closing the ticket is the moment the ground can be cleared, so clear it:
+
+   ```bash
+   git switch main && git pull --ff-only
+   ```
+
+   Three conditions, none of them optional:
+
+   - **Only with a clean working tree.** `git status --porcelain` non-empty → change nothing,
+     name what is uncommitted and let the user decide. Switching would either drag those
+     changes onto `main` or fail halfway through.
+   - **`--ff-only`.** A plain `pull` can build a merge commit on `main` out of a local
+     divergence. This one fails loudly instead, which is the right outcome: a diverged `main`
+     is something to look at, not to resolve on the way past.
+   - **The merged branch is not deleted on its own.** A squash merge leaves it looking
+     unmerged to git, so removing it takes `git branch -D`, and a force delete is not run
+     unasked. Offer it — with the merge commit from step 1 as the evidence that its content
+     is in `main` — and let the user answer.
+
+   Already on `main`: just pull. This is the one step of this command that touches git, and
+   it is deliberate — typing `/close-ticket` is the decision, the same way typing
+   [`/prep-pr`](prep-pr.md) is ([communication.md](../rules/communication.md)).
+
+8. **Report** what changed and what stayed open.
 
 ## Report
 
@@ -86,6 +113,8 @@ user has merged — never to make an unmerged ticket look finished.
 - Corrected: <a criterion's note the merged work made false> (omit when none)
 - Recorded: <the decisions written into the ticket, and the comment linking the PRs>
 - Title: ✅ set / already set / withheld — <open items>
+- Branch: on `main`, up to date / left on `<branch>` because <what is uncommitted, or why the
+  pull could not fast-forward> — and whether the merged branch is still there to delete
 ```
 
 $ARGUMENTS

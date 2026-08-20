@@ -46,6 +46,13 @@ pnpm --filter @rondo/web test    # jest — smoke test of the home page render
 pnpm test:e2e                   # Playwright — incl. the F1.1 sign-in/out scenarios
 ```
 
+E2E build the app and serve it with `next start` (F1.11) — never `next dev`, which is a
+different application and would make a green suite meaningless as evidence about the deployed
+one. So a run costs a build (about 5 seconds when nothing changed), and a `pnpm dev` server on
+:3001 is refused rather than reused. Don't park a production server there either: the refusal
+reads the build's mode, not its age, so a stale one would be reused silently. Details in
+[docs/testing.md](../../docs/testing.md).
+
 All pages are Clerk-protected (F1.1): anonymous visitors are redirected to `/sign-in`
 by `src/proxy.ts` (`clerkMiddleware` + `auth.protect()`).
 

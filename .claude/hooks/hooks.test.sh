@@ -543,10 +543,6 @@ expect_names "$(stop_fixture_untracked new-workspace apps/newapp/src/index.ts)" 
   'a brand-new untracked workspace is named, not collapsed to one entry'
 expect_quiet_about "$(stop_fixture prose-only README.md)" 'stale' \
   'prose alone is not a reason to warn'
-# Rewritten by `next dev` on every e2e run and never committed — a nag about it every time
-# is how a hook gets ignored.
-expect_quiet_about "$(stop_fixture e2e-artefact apps/web/next-env.d.ts)" 'stale' \
-  'the next-env.d.ts an e2e run rewrites is not changed code'
 expect_quiet_about "$(stop_fixture untouched)" 'stale' \
   'a clean tree says nothing'
 

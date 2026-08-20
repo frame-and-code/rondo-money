@@ -54,11 +54,3 @@ With `$ARGUMENTS`, target one workspace: `pnpm --filter <name> lint` and so on.
 - Fix what is mechanical (formatting, auto-fixable lint) and say what you fixed. For
   anything that changes behaviour, propose the fix and let the user decide.
 - If everything passed, say what ran — including which levels were skipped and why.
-
-## Local e2e trap
-
-After a local e2e run `apps/web/next-env.d.ts` shows up modified, because `next dev`
-rewrites it to its dev variant. It must never be swept into a commit; the fix is to discard
-it with `git checkout -- apps/web/next-env.d.ts`. That command throws local changes away,
-so propose it and let the user run it — like every git action beyond `git add`. Details in
-[`docs/testing.md`](../../docs/testing.md).
