@@ -15,8 +15,10 @@ on any update.
 Run it to read the code, to try the idea, or to hack on it. Do not make it the only place
 your budget exists.
 
-Current stage: **Phase 1 — authentication**. Phase 0 (infrastructure, CI, deployment) is
-done; the budgeting model itself is not built yet.
+Current stage: **phase 1, authentication, is done.** Sign-in, per-user isolation and the
+typed API contract work end to end, on top of phase 0 (infrastructure, CI, deployment).
+Phase 2, the single write point and the change log, is next. The budgeting model itself is
+not built yet.
 
 ## What it is
 
