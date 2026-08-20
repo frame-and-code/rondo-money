@@ -225,6 +225,20 @@ expect_block guard-bash.sh 'git push -o -n origin HEAD:main' '-n as a push-optio
 expect_block guard-bash.sh 'git push --push-option -n origin HEAD:main' '-n as a --push-option value' "$NAMES_MAIN"
 # send-pack is push by another name.
 expect_block guard-bash.sh 'git send-pack origin +feat:main' 'send-pack to main' "$NAMES_MAIN"
+# `env -S` splits its argument into a command and runs it — eval's shape again.
+expect_block guard-bash.sh 'env -S "HUSKY=0 git commit -n -m x"' 'HUSKY inside an env split-string'
+expect_block guard-bash.sh 'env --split-string="git push origin main"' 'push inside an env split-string' "$NAMES_MAIN"
+# A leading redirection is not the command; treating it as one silenced every rule.
+expect_block guard-bash.sh '2>/dev/null git commit --no-verify -m x' '--no-verify behind a leading redirection'
+expect_block guard-bash.sh '2>/dev/null git push origin main' 'push to main behind a leading redirection' "$NAMES_MAIN"
+# The value of a global option is not the subcommand — and a subcommand we have no rule for
+# ends the search, so an argument that merely looks like one is not read as a command.
+expect_block guard-bash.sh 'git -C config push origin main' 'push whose -C value spells a subcommand' "$NAMES_MAIN"
+expect_allow guard-bash.sh 'git grep push' 'a search for the word push'
+expect_allow guard-bash.sh 'git log --oneline main' 'a log of main'
+# Judged by where the path leads, so a Linux root is no different from a macOS one.
+expect_block guard-bash.sh 'rm -rf /tmp/cache' 'rm -rf of a path outside the project'
+expect_block guard-bash.sh 'rm -rf /home/user/data' 'rm -rf of a Linux home path'
 # Wrappers and keywords the suite did not pin before.
 expect_block guard-bash.sh 'exec git push origin main' 'push behind exec' "$NAMES_MAIN"
 expect_block guard-bash.sh 'time git push origin main' 'push behind time' "$NAMES_MAIN"

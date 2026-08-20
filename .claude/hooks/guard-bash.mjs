@@ -36,6 +36,7 @@
 // because a local hook was bypassed. Judge a new finding by which class it is in.
 
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 
 const PROJECT_DIR = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -240,6 +241,7 @@ const KEYWORDS = new Set([
 function strip(words) {
   const assignments = [];
   let lookup = false;
+  let splitString = null;
   let i = 0;
 
   for (;;) {
@@ -266,6 +268,14 @@ function strip(words) {
         // `command -v npm` looks a name up rather than running it — the one option in this
         // list that turns the word after it from a command into a string.
         if (w === 'command' && (opt === '-v' || opt === '-V')) lookup = true;
+        // `env -S "…"` splits its argument into a command and runs it — the same shape as
+        // `eval` and a shell's `-c`, so the string is read rather than swallowed as a value.
+        if (w === 'env' && opt.startsWith('--split-string=')) {
+          splitString = opt.slice('--split-string='.length);
+        }
+        if (w === 'env' && (opt === '-S' || opt === '--split-string')) {
+          splitString = words[i + 1] ?? '';
+        }
         i++;
         if (takesValue.includes(opt) && words[i] !== undefined) i++;
       }
@@ -284,7 +294,7 @@ function strip(words) {
     break;
   }
 
-  return { assignments, argv: words.slice(i), lookup };
+  return { assignments, argv: words.slice(i), lookup, splitString };
 }
 
 /**
@@ -333,6 +343,72 @@ const PROTECTED = new Set(['main', 'master']);
 // remote and takes the same refspecs.
 const GIT_SUBCOMMANDS = new Set(['commit', 'push', 'send-pack', 'config']);
 
+// git's global options that take the next word. Short and closed, unlike the options of every
+// subcommand — and a miss is recoverable, see gitParts.
+const GIT_GLOBAL_WITH_VALUE = new Set([
+  '-c',
+  '-C',
+  '--git-dir',
+  '--work-tree',
+  '--namespace',
+  '--exec-path',
+  '--attr-source',
+  '--config-env',
+  '--super-prefix',
+]);
+
+// Enough of git's own commands to recognise one when it is not a command we have a rule for.
+// Without this, the word after an unrecognised global reads as "some subcommand", and the
+// scan-forward below would run past it into an argument — `git grep push` refusing a search.
+const GIT_ANY_SUBCOMMAND = new Set([
+  ...GIT_SUBCOMMANDS,
+  'add',
+  'am',
+  'apply',
+  'archive',
+  'bisect',
+  'blame',
+  'branch',
+  'cat-file',
+  'checkout',
+  'cherry-pick',
+  'clean',
+  'clone',
+  'describe',
+  'diff',
+  'fetch',
+  'for-each-ref',
+  'gc',
+  'grep',
+  'init',
+  'log',
+  'ls-files',
+  'ls-remote',
+  'merge',
+  'mv',
+  'notes',
+  'pull',
+  'rebase',
+  'reflog',
+  'remote',
+  'reset',
+  'restore',
+  'rev-parse',
+  'revert',
+  'rm',
+  'shortlog',
+  'show',
+  'stash',
+  'status',
+  'submodule',
+  'subtree',
+  'switch',
+  'symbolic-ref',
+  'tag',
+  'update-ref',
+  'worktree',
+]);
+
 // `git push` options that take the next word, so its value is never mistaken for a refspec —
 // `git push -o ci.skip origin` names no refspec at all.
 const PUSH_OPTS_WITH_VALUE = new Set([
@@ -355,9 +431,28 @@ const PUSH_OPTS_WITH_VALUE = new Set([
  * always precedes its own arguments, so the first of these words is the one.
  */
 function gitParts(argv) {
-  const at = argv.findIndex((w, n) => n > 0 && GIT_SUBCOMMANDS.has(w));
-  if (at === -1) return { pre: argv.slice(1), sub: undefined, rest: [] };
-  return { pre: argv.slice(1, at), sub: argv[at], rest: argv.slice(at + 1) };
+  // Walk the globals, skipping the value of each one that takes a separate word — otherwise
+  // `git -C config push origin main` reads `config` as the subcommand and the push goes
+  // unexamined.
+  let i = 1;
+  while (i < argv.length && argv[i].startsWith('-')) {
+    const opt = argv[i];
+    i++;
+    if (GIT_GLOBAL_WITH_VALUE.has(opt) && argv[i] !== undefined) i++;
+  }
+
+  // The first word that is not an option is the subcommand — unless the list above missed a
+  // global, in which case that global's value is standing here. Recognising git's commands
+  // generally is what tells the two apart: a word that is not one of them is a value, so scan
+  // on; a word that is one of them ends the search even when we have no rule for it, which is
+  // what keeps `git grep push` a search rather than a push.
+  if (i < argv.length && !GIT_ANY_SUBCOMMAND.has(argv[i])) {
+    const at = argv.findIndex((w, n) => n > i && GIT_ANY_SUBCOMMAND.has(w));
+    if (at !== -1) i = at;
+  }
+
+  if (i >= argv.length) return { pre: argv.slice(1), sub: undefined, rest: [] };
+  return { pre: argv.slice(1, i), sub: argv[i], rest: argv.slice(i + 1) };
 }
 
 // git accepts any unambiguous abbreviation of a long option, and `--no-veri` is the shortest
@@ -381,8 +476,18 @@ const bundlesNoVerify = (w) => {
 
 /** The refusal, or null. */
 function verdict(command, depth = 0) {
-  for (const words of tokenise(command)) {
-    const { assignments, argv, lookup } = strip(words);
+  for (const rawWords of tokenise(command)) {
+    // Redirections are not arguments, and a *leading* one is not the command either:
+    // `2>/dev/null git commit --no-verify` had `2>/dev/null` as its first word, so every rule
+    // that asks what the command is looked at the wrong thing and none of them fired.
+    const words = withoutRedirects(rawWords);
+    const { assignments, argv, lookup, splitString } = strip(words);
+
+    if (splitString !== null) {
+      const inner = depth < 8 ? verdict(splitString, depth + 1) : null;
+      if (inner) return inner;
+      continue;
+    }
 
     // The pre-commit hook is the secret scan (ADR-003: publishing exposes the whole history),
     // and HUSKY=0 turns it off wherever the assignment is written — **before** the empty-argv
@@ -433,20 +538,19 @@ function verdict(command, depth = 0) {
         flags.some((f) => f === '--force' || /^-[a-zA-Z]*f/i.test(f));
       // Judged by shape rather than by equality: `../node_modules` walks out of the project
       // exactly as `..` does, and `/*` expands to everything `/` holds.
-      const reckless = (t) =>
-        // A path inside the project is the ordinary case, however it is spelled — and the
-        // environment asks for absolute paths, so the recommended spelling must not be the
-        // refused one.
-        !t.startsWith(`${PROJECT_DIR}/`) &&
-        (t === '/' ||
-          t === '.' ||
-          t === '..' ||
-          t === '*' ||
-          t === '/*' ||
-          t === './*' ||
-          t.startsWith('~') || // `~`, `~/…` and `~user`, all of which are somebody's home
-          t.startsWith('/Users') ||
-          t.startsWith('../'));
+      // Judged by where the path leads once resolved, not by how it is spelled: `/Users` was
+      // one root among many, so `/tmp/cache`, `/home/user/data` and
+      // `<project>/../other-project` all read as ordinary. A path inside the project is the
+      // ordinary case however it is written — this environment asks for absolute paths, so the
+      // recommended spelling must not be the refused one. Relative paths are resolved against
+      // the project rather than the shell's cwd, which the hook cannot see; that is
+      // conservative in the right direction.
+      const reckless = (t) => {
+        if (t.startsWith('~')) return true; // `~`, `~/…` and `~user` are somebody's home
+        if (t === '*' || t === './*' || t === '/*') return true; // stands for a whole root
+        const target = path.resolve(PROJECT_DIR, t.replace(/\/\*$/, ''));
+        return target === PROJECT_DIR || !target.startsWith(`${PROJECT_DIR}/`);
+      };
       if (recursive && targets.some(reckless)) {
         return 'dangerous recursive delete. Name the exact path to remove.';
       }
