@@ -202,6 +202,42 @@ expect_block guard-bash.sh "zsh -c 'npm install'" 'npm inside a zsh -c payload'
 expect_block guard-bash.sh 'bash -lc "git commit -n -m x"' '-n inside a bundled -lc payload'
 expect_allow guard-bash.sh 'bash -c "echo hello"' 'a harmless bash -c payload'
 expect_allow guard-bash.sh 'bash script.sh' 'running a script file, whose contents this guard does not read'
+# `$'…'` and `$"…"` are quoting forms too: bash drops the `$`, so these are the same words.
+expect_block guard-bash.sh "git push origin HEAD:\$'main'" 'a destination in ANSI-C quotes' "$NAMES_MAIN"
+expect_block guard-bash.sh 'git push origin HEAD:$"main"' 'a destination in locale-translated quotes' "$NAMES_MAIN"
+expect_block guard-bash.sh "\$'npm' install" 'npm named in ANSI-C quotes'
+expect_block guard-bash.sh "git commit -m x \$'-n'" '-n written in ANSI-C quotes'
+# A statement that is only an assignment has no command of its own; one Bash call is one shell.
+expect_block guard-bash.sh 'set -a; HUSKY=0; git commit -m x' 'HUSKY set as its own statement under set -a'
+expect_block guard-bash.sh 'HUSKY=0; export HUSKY; git commit -m x' 'HUSKY assigned then exported separately'
+# The subcommand is found by name, so an unlisted global that takes a value cannot stand in it.
+expect_block guard-bash.sh 'git --attr-source HEAD push origin +feat:main' 'push behind an unlisted global option' "$NAMES_MAIN"
+expect_block guard-bash.sh 'git --config-env core.dummy=HOME push origin main' 'push behind --config-env' "$NAMES_MAIN"
+expect_block guard-bash.sh 'git --attr-source HEAD commit --no-verify -m x' '--no-verify behind an unlisted global option'
+expect_block guard-bash.sh 'git --git-dir x/.git push origin main' 'push behind --git-dir' "$NAMES_MAIN"
+# git accepts any unambiguous abbreviation of a long option.
+expect_block guard-bash.sh 'git commit -m x --no-veri' 'an abbreviated --no-verify'
+expect_block guard-bash.sh 'git push --no-veri origin HEAD' 'an abbreviated --no-verify on push'
+# An unqualified destination resolves against the refs the remote already has.
+expect_block guard-bash.sh 'git push origin HEAD:heads/main' 'a heads/ destination' "$NAMES_MAIN"
+# `-n` as the value of an option is not --dry-run.
+expect_block guard-bash.sh 'git push -o -n origin HEAD:main' '-n as a push-option value' "$NAMES_MAIN"
+expect_block guard-bash.sh 'git push --push-option -n origin HEAD:main' '-n as a --push-option value' "$NAMES_MAIN"
+# send-pack is push by another name.
+expect_block guard-bash.sh 'git send-pack origin +feat:main' 'send-pack to main' "$NAMES_MAIN"
+# Wrappers and keywords the suite did not pin before.
+expect_block guard-bash.sh 'exec git push origin main' 'push behind exec' "$NAMES_MAIN"
+expect_block guard-bash.sh 'time git push origin main' 'push behind time' "$NAMES_MAIN"
+expect_block guard-bash.sh 'until git push origin main; do sleep 1; done' 'push to main inside an until loop' "$NAMES_MAIN"
+# A comment is text bash never runs.
+expect_allow guard-bash.sh 'rm -rf tmp # careful with ..' 'a comment mentioning a reckless path'
+expect_allow guard-bash.sh 'git push origin feature-x # not main' 'a comment mentioning main'
+expect_allow guard-bash.sh 'git commit -m "wip" # do not use -n here' 'a comment mentioning -n'
+# In a short-flag cluster the first value-taking option swallows the rest as its value.
+expect_allow guard-bash.sh 'git commit -uno -m wip' '-uno, which is --untracked-files=no'
+expect_allow guard-bash.sh 'git commit -m"nit"' 'a message attached to -m'
+expect_allow guard-bash.sh 'git commit -am"note"' 'a message attached to -am'
+expect_allow guard-bash.sh 'git config --get-all core.hooksPath' 'reading every value of the setting'
 expect_block guard-bash.sh 'xargs git commit --no-verify -m wip' '--no-verify behind xargs'
 expect_block guard-bash.sh 'pnpm exec git commit --no-verify -m wip' '--no-verify behind pnpm exec'
 # One unrecognised word before `git` used to switch every check off. These are retry idioms
@@ -332,7 +368,10 @@ PROJECT_DIR="$SANDBOX"
 expect_allow guard-bash.sh 'git push' 'bare push outside a repository — nothing to verify'
 
 echo "guard-bash.sh — destructive deletes"
-expect_block guard-bash.sh 'rm -rf --no-preserve-root /' '--no-preserve-root'
+expect_block guard-bash.sh 'rm -rf --no-preserve-root /' '--no-preserve-root' 'no-preserve-root'
+# Without a reason, this case was satisfied by the reckless-target rule firing instead, so the
+# arm could be deleted with the suite still green — the defect the fourth argument exists for.
+expect_block guard-bash.sh 'rm -rf --no-preserve-root ./tmp' '--no-preserve-root on a harmless path' 'no-preserve-root'
 expect_block guard-bash.sh 'rm -rf /' 'rm -rf /'
 expect_block guard-bash.sh 'rm -rf ~' 'rm -rf ~'
 expect_block guard-bash.sh 'rm -rf ..' 'rm -rf ..'
@@ -349,6 +388,18 @@ expect_block guard-bash.sh 'rm --recursive --force /' 'rm with the long flag spe
 expect_allow guard-bash.sh 'rm -rf ./node_modules' 'rm -rf of a named path'
 expect_allow guard-bash.sh 'rm -rf apps/web/.next' 'rm -rf of a build directory'
 expect_allow guard-bash.sh 'rm -rf dist/bundle' 'rm -rf inside the project'
+expect_block guard-bash.sh 'rm -rf .' 'rm -rf of the working directory'
+expect_block guard-bash.sh 'rm -rf ~/anything' 'rm -rf inside a home directory'
+expect_block guard-bash.sh 'rm -rf ~someone' 'rm -rf of another user home'
+# A path inside the project is ordinary work however it is spelled, and this environment asks
+# for absolute paths — so the recommended spelling must not be the refused one. The fixture
+# needs a project directory under the same root the rule guards; it need not exist.
+PROJECT_DIR="/Users/fixture-project"
+expect_allow guard-bash.sh 'rm -rf /Users/fixture-project/node_modules' 'an absolute path inside the project'
+expect_allow guard-bash.sh 'rm -rf /Users/fixture-project/apps/web/.next' 'an absolute build path inside the project'
+expect_block guard-bash.sh 'rm -rf /Users/fixture-project' 'the project directory itself'
+expect_block guard-bash.sh 'rm -rf /Users/someone-else/work' 'an absolute path outside the project'
+PROJECT_DIR="$SANDBOX"
 
 echo "guard-bash.sh — malformed input"
 expect_allow guard-bash.sh '' 'empty command'

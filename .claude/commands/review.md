@@ -142,6 +142,16 @@ the code.** NICE TO HAVE findings are not a reason to go again — past that poi
 is the reviewers' taste, not the change. Three rounds is the ceiling; needing a fourth means
 the change is too large to review, not that the reviewing is going well.
 
+**For code with an adversarial surface — a guard, a parser, a validator — that rule is wrong
+and this repository has the scar to prove it.** A reviewer told to find a way past a guard
+always finds one, so "stop when a round finds nothing" never fires: eight rounds over
+`guard-bash` each produced real bypasses, and the eighth was still finding them. What ends it
+is the code's own charter. That guard refuses **accidents**, and its header lists the
+deliberate spellings it does not cover, so the stop condition is **"no findings of the class
+the code is for"** — an accident still getting through means keep going; another way for
+someone determined does not. Write that class down in the code before the first round, or
+there is nothing to stop against.
+
 Nothing loops this command, and deliberately so: a round can only follow a fix, and fixing is
 not this command's to do. The loop lives one level up — [`/prep-pr`](prep-pr.md) runs a round
 before it commits and refuses to open a PR while a MUST FIX or a SHOULD FIX stands, so fixing

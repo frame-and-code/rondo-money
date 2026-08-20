@@ -15,15 +15,25 @@
 // keeps its message as one word, so it can never be read as a flag. That distinction is free
 // here and was the source of half the patches before.
 //
-// Scope, stated honestly: this refuses an agent's own shortcuts, it is not a sandbox. A
-// command string handed to `eval` or to a shell's `-c` is read as the command it is, but
-// beyond that the parser expands nothing: `$VAR` standing in for a literal, `$IFS` games, an
-// encoded string, a script file and a renamed binary all still get through, as does anything
-// `ssh host "…"` runs elsewhere. Resolving those would mean tracking variables across a
-// command list — rebuilding the shell — and refusing every unresolved expansion would refuse
-// most ordinary commands. What this buys is that the obvious ways round a rule fail loudly,
-// which is where the accidents actually happen; the layer that cannot be talked round is the
-// CI secret scan, which reads the whole history and runs whatever the local hook did.
+// Scope, stated honestly, because a guard whose limits are unwritten gets trusted past them.
+// This refuses an agent's own **accidents** — the ways a rule gets broken by someone who was
+// not trying to break it. It is not a sandbox, and these deliberate spellings reach the same
+// acts and are known to:
+//
+//   - `$VAR` standing in for a literal, and `$IFS` games — resolving them means tracking
+//     variables across a command list against an environment this process does not have;
+//   - a git alias (`git -c alias.zz='commit --no-verify' zz`) and `GIT_CONFIG_KEY_*` /
+//     `GIT_CONFIG_COUNT` in the environment, both of which move the real command out of the
+//     command line;
+//   - an encoded or obfuscated string, a script file (`bash script.sh` — its contents are not
+//     in the payload), a renamed binary, and anything `ssh host "…"` runs on another machine;
+//   - a heredoc body, which is read as commands rather than as data.
+//
+// Each of those takes a deliberate keystroke that nobody types by accident, and closing them
+// would mean re-implementing the shell — which is how the version this replaced got to eight
+// bypasses. The layer that does not depend on any of this is the CI `secrets` job: it scans
+// the whole history on every PR and cannot be skipped, so a secret does not reach `main`
+// because a local hook was bypassed. Judge a new finding by which class it is in.
 
 import { execFileSync } from 'node:child_process';
 
@@ -99,9 +109,26 @@ function tokenise(input) {
       continue;
     }
 
+    // `$'…'` and `$"…"` are quoting forms too: bash drops the `$` and the word is what is
+    // inside. Keeping it made `HEAD:$'main'` read as `HEAD:$main`, which is a destination
+    // nothing matches — one spelling that defeated every word-level rule at once.
+    if (c === '$' && (input[i + 1] === "'" || input[i + 1] === '"')) {
+      quote = input[++i];
+      hasWord = true;
+      continue;
+    }
+
     if (c === "'" || c === '"') {
       quote = c;
       hasWord = true; // `""` is an empty word, not the absence of one
+      continue;
+    }
+
+    // Everything after an unquoted `#` that opens a word is a comment: bash never runs it, so
+    // reading it as arguments refused ordinary commands for what their own comment said.
+    if (c === '#' && !hasWord) {
+      while (i < input.length && input[i] !== '\n') i++;
+      endCommand();
       continue;
     }
 
@@ -302,15 +329,10 @@ function currentBranch() {
 
 const PROTECTED = new Set(['main', 'master']);
 
-// git's own global options, and which of them take the next word as their value.
-const GIT_GLOBAL_WITH_VALUE = new Set([
-  '-c',
-  '-C',
-  '--git-dir',
-  '--work-tree',
-  '--namespace',
-  '--exec-path',
-]);
+// The subcommands with rules here. `send-pack` is push by another name — it writes refs to a
+// remote and takes the same refspecs.
+const GIT_SUBCOMMANDS = new Set(['commit', 'push', 'send-pack', 'config']);
+
 // `git push` options that take the next word, so its value is never mistaken for a refspec —
 // `git push -o ci.skip origin` names no refspec at all.
 const PUSH_OPTS_WITH_VALUE = new Set([
@@ -322,29 +344,58 @@ const PUSH_OPTS_WITH_VALUE = new Set([
   '--recurse-submodules',
 ]);
 
-/** Split `git` global options off the front, returning them and the subcommand's words. */
+/**
+ * Split a `git` invocation into what precedes the subcommand and what follows it.
+ *
+ * Found by **naming** the subcommand rather than by enumerating the global options that take a
+ * value — which is the difference between a rule that holds and a list that has to be
+ * complete. Enumerating left `--attr-source` and `--config-env` off, and their value then
+ * stood where the subcommand is read: `git --attr-source HEAD push origin +feat:main` was read
+ * as a `HEAD` subcommand with no rules at all, and really did publish to main. A subcommand
+ * always precedes its own arguments, so the first of these words is the one.
+ */
 function gitParts(argv) {
-  const globals = [];
-  let i = 1;
-  while (i < argv.length && argv[i].startsWith('-')) {
-    const opt = argv[i];
-    globals.push(opt);
-    i++;
-    if (GIT_GLOBAL_WITH_VALUE.has(opt) && argv[i] !== undefined) {
-      globals.push(argv[i]);
-      i++;
-    }
-  }
-  return { globals, sub: argv[i], rest: argv.slice(i + 1) };
+  const at = argv.findIndex((w, n) => n > 0 && GIT_SUBCOMMANDS.has(w));
+  if (at === -1) return { pre: argv.slice(1), sub: undefined, rest: [] };
+  return { pre: argv.slice(1, at), sub: argv[at], rest: argv.slice(at + 1) };
 }
+
+// git accepts any unambiguous abbreviation of a long option, and `--no-veri` is the shortest
+// one that is not also a prefix of `--no-verbose`. Abbreviating is an ordinary keystroke, so
+// matching the full spelling alone left the flag reachable by typing less of it.
+const isNoVerify = (w) => w.startsWith('--no-veri') && '--no-verify'.startsWith(w);
+
+// In a short-flag cluster the first option that takes a value swallows the rest as that value,
+// so `-uno` is `--untracked-files=no` and has nothing to do with hooks. Read the cluster up to
+// that point and no further; testing it whole refused a legal commit for a flag it never
+// passed.
+const GIT_SHORT_WITH_VALUE = 'mucCFtS';
+const bundlesNoVerify = (w) => {
+  if (!/^-[a-zA-Z]+$/.test(w)) return false;
+  for (const ch of w.slice(1)) {
+    if (ch === 'n') return true;
+    if (GIT_SHORT_WITH_VALUE.includes(ch)) return false;
+  }
+  return false;
+};
 
 /** The refusal, or null. */
 function verdict(command, depth = 0) {
   for (const words of tokenise(command)) {
     const { assignments, argv, lookup } = strip(words);
+
+    // The pre-commit hook is the secret scan (ADR-003: publishing exposes the whole history),
+    // and HUSKY=0 turns it off wherever the assignment is written — **before** the empty-argv
+    // bail below, because a statement that is only an assignment has no command of its own and
+    // was skipped entirely. One Bash call is one shell, so `set -a; HUSKY=0; git commit` and
+    // `HUSKY=0; export HUSKY; git commit` really do commit with the hook unrun.
+    if (assignments.includes('HUSKY=0')) {
+      return 'HUSKY=0 disables the git hooks, including the secret scan.';
+    }
+
     if (!argv.length || lookup) continue;
 
-    // An exported assignment outlives its own command, so it is checked wherever it is set.
+    // The same assignment written as an argument of the builtin that exports it.
     if (EXPORTERS.has(argv[0]) && argv.slice(1).includes('HUSKY=0')) {
       return 'HUSKY=0 disables the git hooks, including the secret scan.';
     }
@@ -366,12 +417,6 @@ function verdict(command, depth = 0) {
       }
     }
 
-    // The pre-commit hook is the secret scan (ADR-003: publishing exposes the whole history),
-    // and HUSKY=0 turns it off wherever the assignment is written.
-    if (assignments.includes('HUSKY=0')) {
-      return 'HUSKY=0 disables the git hooks, including the secret scan.';
-    }
-
     // This project is pnpm-only: a stray npm/yarn install rewrites the lockfile.
     if (argv[0] === 'npm' || argv[0] === 'yarn') {
       return 'this project uses pnpm. Use pnpm instead of npm/yarn.';
@@ -389,16 +434,19 @@ function verdict(command, depth = 0) {
       // Judged by shape rather than by equality: `../node_modules` walks out of the project
       // exactly as `..` does, and `/*` expands to everything `/` holds.
       const reckless = (t) =>
-        t === '/' ||
-        t === '.' ||
-        t === '..' ||
-        t === '*' ||
-        t === '~' ||
-        t === '/*' ||
-        t === './*' ||
-        t.startsWith('~/') ||
-        t.startsWith('/Users') ||
-        t.startsWith('../');
+        // A path inside the project is the ordinary case, however it is spelled — and the
+        // environment asks for absolute paths, so the recommended spelling must not be the
+        // refused one.
+        !t.startsWith(`${PROJECT_DIR}/`) &&
+        (t === '/' ||
+          t === '.' ||
+          t === '..' ||
+          t === '*' ||
+          t === '/*' ||
+          t === './*' ||
+          t.startsWith('~') || // `~`, `~/…` and `~user`, all of which are somebody's home
+          t.startsWith('/Users') ||
+          t.startsWith('../'));
       if (recursive && targets.some(reckless)) {
         return 'dangerous recursive delete. Name the exact path to remove.';
       }
@@ -407,7 +455,7 @@ function verdict(command, depth = 0) {
 
     if (argv[0] !== 'git') continue;
 
-    const { globals, sub, rest } = gitParts(argv);
+    const { pre, sub, rest } = gitParts(argv);
 
     // `git -c core.hooksPath=…` points git at an empty hook directory for one command;
     // `git config core.hooksPath …` writes it into the repository and outlives the command.
@@ -419,34 +467,31 @@ function verdict(command, depth = 0) {
     const configReads = rest.some((w) => /^--(get|get-all|get-regexp|list|name-only)$/.test(w));
     const keyAt = configWords.findIndex((w) => w.includes('core.hooksPath'));
     const overridesHooks =
-      globals.some((g) => g.includes('core.hooksPath')) ||
+      pre.some((g) => g.includes('core.hooksPath')) ||
       (sub === 'config' && !configReads && keyAt !== -1 && configWords.length > keyAt + 1);
     if (overridesHooks) {
       return 'overriding core.hooksPath disables the git hooks, including the secret scan.';
     }
 
     if (sub === 'commit') {
-      // `-n` is --no-verify here, and it bundles with git's other short flags.
-      if (rest.includes('--no-verify')) {
+      if (rest.some(isNoVerify)) {
         return '--no-verify skips the gitleaks pre-commit scan. Remove the secret instead.';
       }
-      if (rest.some((w) => /^-[a-zA-Z]*n[a-zA-Z]*$/.test(w))) {
+      if (rest.some(bundlesNoVerify)) {
         return 'git commit -n skips the gitleaks pre-commit scan. Remove the secret instead.';
       }
       continue;
     }
 
-    if (sub !== 'push') continue;
+    if (sub !== 'push' && sub !== 'send-pack') continue;
 
-    if (rest.includes('--no-verify')) {
+    if (rest.some(isNoVerify)) {
       return '--no-verify skips the gitleaks pre-commit scan. Remove the secret instead.';
     }
 
-    // On push, `-n` means --dry-run: these write to no remote at all.
-    if (rest.some((w) => w === '--dry-run' || w === '-n' || w === '--help')) continue;
-
     let refspecs = 0;
     let tagsOnly = false;
+    let dryRun = false;
     const args = withoutRedirects(rest);
     for (let i = 0; i < args.length; i++) {
       const w = args[i];
@@ -459,6 +504,13 @@ function verdict(command, depth = 0) {
         tagsOnly = true;
         continue;
       }
+      // On push, `-n` means --dry-run — but only when it is an option rather than the *value*
+      // of one: `git push -o -n origin HEAD:main` really pushes, and reading the raw list for
+      // `-n` let that whole push read as a preview.
+      if (w === '--dry-run' || w === '-n' || w === '--help') {
+        dryRun = true;
+        continue;
+      }
       if (PUSH_OPTS_WITH_VALUE.has(w)) {
         i++;
         continue;
@@ -469,8 +521,13 @@ function verdict(command, depth = 0) {
 
       // In `src:dst` the destination is what gets written; a leading `+` forces the push, the
       // spelling `--force` in the deny list never sees.
+      // `heads/main` is stripped as well as `refs/heads/main`: git resolves an unqualified
+      // destination against the refs the remote already has, and `refs/heads/main` always does.
       let dest = w.includes(':') ? w.slice(w.lastIndexOf(':') + 1) : w;
-      dest = dest.replace(/^\+/, '').replace(/^refs\/heads\//, '');
+      dest = dest
+        .replace(/^\+/, '')
+        .replace(/^refs\/heads\//, '')
+        .replace(/^heads\//, '');
 
       if (dest.includes('*')) {
         return 'a wildcard refspec pushes every branch it matches, main included.';
@@ -487,7 +544,7 @@ function verdict(command, depth = 0) {
     // The first non-option word is the remote, so one or none means no refspec was named and
     // git publishes the current branch. That is the accidental way onto main, and the likelier
     // one: every spelled-out form above takes a deliberate keystroke.
-    if (refspecs <= 1 && !tagsOnly && PROTECTED.has(currentBranch())) {
+    if (refspecs <= 1 && !tagsOnly && !dryRun && PROTECTED.has(currentBranch())) {
       return 'this pushes the current branch, and it is main. Changes reach main through a PR.';
     }
   }
