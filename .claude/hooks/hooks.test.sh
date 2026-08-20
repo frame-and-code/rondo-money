@@ -194,6 +194,14 @@ expect_block guard-bash.sh 'echo "$(git push origin main)"' 'push substituted in
 expect_block guard-bash.sh 'echo "`git push origin main`"' 'push backtick-substituted inside double quotes' "$NAMES_MAIN"
 expect_block guard-bash.sh 'X="$(git commit --no-verify -m x)"' '--no-verify substituted into an assignment'
 expect_allow guard-bash.sh 'git commit -m "wip $(date)"' 'a harmless substitution inside a commit message'
+# A shell handed a command string with -c runs it — the same shape as eval, so it is read the
+# same way. What runs on another machine (`ssh host "…"`) is a different matter and stays out.
+expect_block guard-bash.sh 'bash -c "git commit --no-verify -m x"' '--no-verify inside a bash -c payload'
+expect_block guard-bash.sh 'sh -c "git push origin main"' 'push to main inside an sh -c payload' "$NAMES_MAIN"
+expect_block guard-bash.sh "zsh -c 'npm install'" 'npm inside a zsh -c payload'
+expect_block guard-bash.sh 'bash -lc "git commit -n -m x"' '-n inside a bundled -lc payload'
+expect_allow guard-bash.sh 'bash -c "echo hello"' 'a harmless bash -c payload'
+expect_allow guard-bash.sh 'bash script.sh' 'running a script file, whose contents this guard does not read'
 expect_block guard-bash.sh 'xargs git commit --no-verify -m wip' '--no-verify behind xargs'
 expect_block guard-bash.sh 'pnpm exec git commit --no-verify -m wip' '--no-verify behind pnpm exec'
 # One unrecognised word before `git` used to switch every check off. These are retry idioms

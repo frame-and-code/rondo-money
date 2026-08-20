@@ -15,12 +15,15 @@
 // keeps its message as one word, so it can never be read as a flag. That distinction is free
 // here and was the source of half the patches before.
 //
-// Scope, stated honestly: this refuses an agent's own shortcuts, it is not a sandbox. It does
-// not expand variables and does not follow a command into another interpreter, so
-// `bash -c "…"`, `$VAR` in place of a literal, `$IFS` games and encoded strings still get
-// through, as does a script file or a renamed binary. Chasing those would rebuild the shell.
-// What this buys is that the obvious ways round a rule fail loudly, which is where the
-// accidents actually happen.
+// Scope, stated honestly: this refuses an agent's own shortcuts, it is not a sandbox. A
+// command string handed to `eval` or to a shell's `-c` is read as the command it is, but
+// beyond that the parser expands nothing: `$VAR` standing in for a literal, `$IFS` games, an
+// encoded string, a script file and a renamed binary all still get through, as does anything
+// `ssh host "…"` runs elsewhere. Resolving those would mean tracking variables across a
+// command list — rebuilding the shell — and refusing every unresolved expansion would refuse
+// most ordinary commands. What this buys is that the obvious ways round a rule fail loudly,
+// which is where the accidents actually happen; the layer that cannot be talked round is the
+// CI secret scan, which reads the whole history and runs whatever the local hook did.
 
 import { execFileSync } from 'node:child_process';
 
@@ -276,6 +279,11 @@ function withoutRedirects(words) {
   return out;
 }
 
+// A shell handed a command string with `-c` runs that string, which makes it the same shape
+// as `eval`: an argument that is really a command. `ssh host "…"` is not in this set, because
+// what it runs runs somewhere else.
+const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash', 'ksh']);
+
 // Builtins that set an environment variable for everything after them in the same shell —
 // which is the whole Bash call, so `export HUSKY=0 && git commit …` really does commit with
 // the hook disabled even though the two are separate commands.
@@ -331,7 +339,7 @@ function gitParts(argv) {
 }
 
 /** The refusal, or null. */
-function verdict(command) {
+function verdict(command, depth = 0) {
   for (const words of tokenise(command)) {
     const { assignments, argv, lookup } = strip(words);
     if (!argv.length || lookup) continue;
@@ -343,9 +351,19 @@ function verdict(command) {
 
     // `eval` runs the string it is handed: re-read that string as a command of its own.
     if (argv[0] === 'eval') {
-      const inner = verdict(argv.slice(1).join(' '));
+      const inner = depth < 8 ? verdict(argv.slice(1).join(' '), depth + 1) : null;
       if (inner) return inner;
       continue;
+    }
+
+    // `bash -c "…"` (and `-lc`, and the other shells) is the same shape.
+    if (SHELLS.has(argv[0])) {
+      const flag = argv.findIndex((w, n) => n > 0 && /^-[a-zA-Z]*c$/.test(w));
+      if (flag !== -1 && argv[flag + 1] !== undefined) {
+        const inner = depth < 8 ? verdict(argv[flag + 1], depth + 1) : null;
+        if (inner) return inner;
+        continue;
+      }
     }
 
     // The pre-commit hook is the secret scan (ADR-003: publishing exposes the whole history),
