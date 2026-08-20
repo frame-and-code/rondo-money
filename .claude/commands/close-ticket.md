@@ -30,8 +30,18 @@ user has merged — never to make an unmerged ticket look finished.
    empty diff does. Comparing against `origin/main` instead looks equivalent and is not: it
    needs a local branch that may be gone, and once anything else lands on `main` it reports
    those unrelated changes as if this ticket's work were missing. The merge commit is the PR's
-   own snapshot, so the comparison stays true however long afterwards it is run. What it
-   catches is work pushed after the merge button — which is not hypothetical.
+   own snapshot, so the comparison stays true however long afterwards it is run.
+
+   That the diff is empty rather than "main's changes since the branch forked" **depends on
+   the ruleset requiring the branch to be up to date before merging** — it does today
+   (`strict_required_status_checks_policy`), which is why GitHub refuses a behind branch and
+   updating it produces a new head. If that requirement is ever relaxed, expect the target's
+   own changes here and compare only the paths the PR touched.
+
+   And check the other end too: `git rev-parse HEAD` against `headRefOid`. Equal diffs prove
+   the merge carried what the PR held; they say nothing about a commit pushed _after_ the
+   merge button, which never entered the PR at all and is invisible to any comparison that
+   starts from it.
 
 2. **Fetch the ticket** from Notion (MCP server; the link the user provides, or search by
    the ticket code). Collect every checkbox — Acceptance Criteria, DoD, and any inline
