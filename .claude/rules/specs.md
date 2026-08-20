@@ -26,6 +26,11 @@ Both are **inputs** to the work, not paperwork produced after it.
   our minds", which is the part nobody can reconstruct later.
 - An open question in the PRD or the plan is answered by the user and written back into
   the ticket (see [model integrity](model-integrity.md)).
+- **When the work lands**, the ticket gets what the diff cannot show: which PRs carried it,
+  and the decisions taken along the way — the option rejected and why, the boundary drawn,
+  the rule that changed. [`/close-ticket`](../commands/close-ticket.md) does this sweep. A
+  ticket that records only that the work is done leaves the next agent to re-decide
+  everything, which is the failure this whole rule exists to prevent.
 
 ## Repository documents
 

@@ -47,7 +47,8 @@ In a session: `/dev` brings the local stack up, `/check` runs the gate, `/plan` 
 ticket, `/grill-me` clarifies a fuzzy one, `/sync-docs` sweeps the documentation,
 `/review` runs parallel reviewers with clean context over the branch, `/phase-done` closes a
 ticket out, `/prep-pr` commits, pushes and opens the PR, `/babysit-pr` shepherds it to
-merge-ready and `/close-ticket` marks the merged ticket done in Notion.
+merge-ready and `/close-ticket` records the merged result in the Notion ticket — the PRs that
+carried it and the decisions it took, not only the ✅.
 
 ## Process
 
