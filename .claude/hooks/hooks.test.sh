@@ -2,10 +2,12 @@
 # Tests for the guard hooks. Run: pnpm test:hooks (also part of /check and the CI gate).
 #
 # Why they exist: guard-bash.sh and guard-db.sh are the only mechanical stop between an
-# agent's shortcut and a burned secret or a wiped remote database, and both decide by
-# pattern-matching a command string. A pattern that quietly stops matching still exits 0 —
-# the failure is silence, which is the same reason ADR-005 refused to leave raw SQL to a
-# convention. AI review on PR #40 closed four bypasses in these scripts, so
+# agent's shortcut and a burned secret or a wiped remote database, and neither announces a
+# miss. guard-db.sh pattern-matches the command string, so a pattern that quietly stops
+# matching still exits 0; guard-bash.sh tokenises the command first, which removes that whole
+# class but not the risk of being wrong about which words matter. Either way the failure is
+# silence — the same reason ADR-005 refused to leave raw SQL to a convention. AI review on
+# PR #40 closed four bypasses in these scripts, so
 # the cases below are adversarial by design: every wrapper, spelling and refspec form the
 # patterns were written against is pinned here, and so is every command that must stay
 # allowed — a guard that blocks ordinary work gets switched off, which is worse than none.
@@ -143,6 +145,14 @@ expect_block guard-bash.sh 'for f in a; do npm install; done' 'npm inside a for 
 # inside it is never a flag, and a command that merely names another is not that command.
 expect_allow guard-bash.sh 'grep -n "git commit --no-verify" file' 'a search for the text of a guarded command'
 expect_allow guard-bash.sh 'pnpm exec playwright install chromium' 'a local binary run through pnpm exec'
+# An exported assignment outlives the command that made it — one Bash call is one shell.
+expect_block guard-bash.sh 'export HUSKY=0 && git commit -m x' 'HUSKY exported before the commit'
+expect_block guard-bash.sh 'export HUSKY=0; git commit -m x' 'HUSKY exported in a separate statement'
+expect_block guard-bash.sh 'declare -x HUSKY=0 && git commit -m x' 'HUSKY exported through declare'
+# `command -v` looks a name up rather than running it, and reading a config is not writing it.
+expect_allow guard-bash.sh 'command -v npm' 'looking up where npm is'
+expect_allow guard-bash.sh 'git config --get core.hooksPath' 'reading the hooksPath setting'
+expect_allow guard-bash.sh 'git config --list' 'listing the git config'
 
 echo "guard-bash.sh — routes around the secret scan"
 expect_block guard-bash.sh 'git commit --no-verify -m "wip"' '--no-verify'
@@ -277,6 +287,11 @@ expect_block guard-bash.sh 'yes | git push origin main' 'push to main after a pi
 expect_block guard-bash.sh 'GIT_SSH_COMMAND="ssh -i key" git push origin main' 'push after an assignment whose value is quoted and contains a space' "$NAMES_MAIN"
 # On push, -n is --dry-run: it writes to no remote.
 expect_allow guard-bash.sh 'git push -n' 'a -n dry-run push while on main'
+# A redirection target is not a refspec; counting it made the push look deliberate enough to
+# skip the current-branch check, and only in some spellings.
+expect_block guard-bash.sh 'git push > /tmp/log' 'a bare push whose output is redirected, on main' "$CURRENT_IS_MAIN"
+expect_block guard-bash.sh 'git push origin > log' 'a push to a remote with output redirected, on main' "$CURRENT_IS_MAIN"
+expect_block guard-bash.sh 'git push 2> err' 'a push with stderr redirected in two words, on main' "$CURRENT_IS_MAIN"
 # --tags publishes refs/tags and no branch, so it is not a push of what is checked out.
 expect_allow guard-bash.sh 'git push origin --tags' 'a tags-only push while on main'
 expect_block guard-bash.sh 'git push origin --tags main' 'a tags push that also names main' "$NAMES_MAIN"
@@ -309,8 +324,17 @@ expect_block guard-bash.sh 'rm -rf ~' 'rm -rf ~'
 expect_block guard-bash.sh 'rm -rf ..' 'rm -rf ..'
 expect_block guard-bash.sh 'rm -rf *' 'rm -rf *'
 expect_block guard-bash.sh 'rm -fr /Users/someone' 'rm -fr with the flags reversed'
+# Judged by shape: a path that walks out of the project, or a glob standing for everything a
+# root holds, is the same delete however it is spelled.
+expect_block guard-bash.sh 'rm -rf ../node_modules' 'rm -rf of a path outside the project'
+expect_block guard-bash.sh 'rm -rf ../..' 'rm -rf two levels up'
+expect_block guard-bash.sh 'rm -rf /*' 'rm -rf of everything under root'
+expect_block guard-bash.sh 'rm -rf ./*' 'rm -rf of everything here'
+expect_block guard-bash.sh 'rm -Rf /*' 'rm with a capital R'
+expect_block guard-bash.sh 'rm --recursive --force /' 'rm with the long flag spellings'
 expect_allow guard-bash.sh 'rm -rf ./node_modules' 'rm -rf of a named path'
 expect_allow guard-bash.sh 'rm -rf apps/web/.next' 'rm -rf of a build directory'
+expect_allow guard-bash.sh 'rm -rf dist/bundle' 'rm -rf inside the project'
 
 echo "guard-bash.sh — malformed input"
 expect_allow guard-bash.sh '' 'empty command'

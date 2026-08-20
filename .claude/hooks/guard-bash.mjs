@@ -201,6 +201,7 @@ const KEYWORDS = new Set([
  */
 function strip(words) {
   const assignments = [];
+  let lookup = false;
   let i = 0;
 
   for (;;) {
@@ -224,6 +225,9 @@ function strip(words) {
       // The wrapper's own options — and where an option takes a separate word, that word too.
       while (words[i] !== undefined && words[i].startsWith('-')) {
         const opt = words[i];
+        // `command -v npm` looks a name up rather than running it — the one option in this
+        // list that turns the word after it from a command into a string.
+        if (w === 'command' && (opt === '-v' || opt === '-V')) lookup = true;
         i++;
         if (takesValue.includes(opt) && words[i] !== undefined) i++;
       }
@@ -242,8 +246,32 @@ function strip(words) {
     break;
   }
 
-  return { assignments, argv: words.slice(i) };
+  return { assignments, argv: words.slice(i), lookup };
 }
+
+/**
+ * Drop redirections, so their targets are not read as arguments. `git push > log` names no
+ * refspec, and counting `log` as one made the push look deliberate enough to skip the
+ * current-branch check.
+ */
+function withoutRedirects(words) {
+  const out = [];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (/^[0-9]*(&?>>?|<<?)/.test(w)) {
+      // `> file` puts the target in the next word; `>file` carries it inline.
+      if (/^[0-9]*(&?>>?|<<?)$/.test(w)) i++;
+      continue;
+    }
+    out.push(w);
+  }
+  return out;
+}
+
+// Builtins that set an environment variable for everything after them in the same shell —
+// which is the whole Bash call, so `export HUSKY=0 && git commit …` really does commit with
+// the hook disabled even though the two are separate commands.
+const EXPORTERS = new Set(['export', 'declare', 'typeset', 'readonly', 'set']);
 
 function currentBranch() {
   try {
@@ -297,8 +325,13 @@ function gitParts(argv) {
 /** The refusal, or null. */
 function verdict(command) {
   for (const words of tokenise(command)) {
-    const { assignments, argv } = strip(words);
-    if (!argv.length) continue;
+    const { assignments, argv, lookup } = strip(words);
+    if (!argv.length || lookup) continue;
+
+    // An exported assignment outlives its own command, so it is checked wherever it is set.
+    if (EXPORTERS.has(argv[0]) && argv.slice(1).includes('HUSKY=0')) {
+      return 'HUSKY=0 disables the git hooks, including the secret scan.';
+    }
 
     // `eval` runs the string it is handed: re-read that string as a command of its own.
     if (argv[0] === 'eval') {
@@ -325,15 +358,21 @@ function verdict(command) {
         return 'rm --no-preserve-root. Name the exact path to remove.';
       }
       const recursive =
-        flags.some((f) => /^-[a-zA-Z]*r/i.test(f)) && flags.some((f) => /^-[a-zA-Z]*f/i.test(f));
+        flags.some((f) => f === '--recursive' || /^-[a-zA-Z]*r/i.test(f)) &&
+        flags.some((f) => f === '--force' || /^-[a-zA-Z]*f/i.test(f));
+      // Judged by shape rather than by equality: `../node_modules` walks out of the project
+      // exactly as `..` does, and `/*` expands to everything `/` holds.
       const reckless = (t) =>
         t === '/' ||
-        t === '..' ||
         t === '.' ||
+        t === '..' ||
         t === '*' ||
         t === '~' ||
+        t === '/*' ||
+        t === './*' ||
         t.startsWith('~/') ||
-        t.startsWith('/Users');
+        t.startsWith('/Users') ||
+        t.startsWith('../');
       if (recursive && targets.some(reckless)) {
         return 'dangerous recursive delete. Name the exact path to remove.';
       }
@@ -346,9 +385,16 @@ function verdict(command) {
 
     // `git -c core.hooksPath=…` points git at an empty hook directory for one command;
     // `git config core.hooksPath …` writes it into the repository and outlives the command.
+    // Only a *write* of it, though: `git config --get core.hooksPath` is what someone reads
+    // when the pre-commit hook is behaving oddly, and answering that with "you are bypassing
+    // the secret scan" is both wrong and the fastest way to get the guard switched off. A
+    // write names the key and a value; a read names the key alone or carries a read flag.
+    const configWords = sub === 'config' ? rest.filter((w) => !w.startsWith('-')) : [];
+    const configReads = rest.some((w) => /^--(get|get-all|get-regexp|list|name-only)$/.test(w));
+    const keyAt = configWords.findIndex((w) => w.includes('core.hooksPath'));
     const overridesHooks =
       globals.some((g) => g.includes('core.hooksPath')) ||
-      (sub === 'config' && rest.some((w) => w.includes('core.hooksPath')));
+      (sub === 'config' && !configReads && keyAt !== -1 && configWords.length > keyAt + 1);
     if (overridesHooks) {
       return 'overriding core.hooksPath disables the git hooks, including the secret scan.';
     }
@@ -375,8 +421,9 @@ function verdict(command) {
 
     let refspecs = 0;
     let tagsOnly = false;
-    for (let i = 0; i < rest.length; i++) {
-      const w = rest[i];
+    const args = withoutRedirects(rest);
+    for (let i = 0; i < args.length; i++) {
+      const w = args[i];
 
       if (w === '--all' || w === '--mirror') {
         return '--all/--mirror pushes every branch, main included. Name the branch instead.';

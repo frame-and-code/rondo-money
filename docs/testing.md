@@ -14,9 +14,10 @@ the feature** — a feature without tests doesn't count as done (no test debt ac
 Plus one that is not a level of the app at all: **the agent guard hooks**
 ([`.claude/hooks/hooks.test.sh`](../.claude/hooks/hooks.test.sh), `pnpm test:hooks`, a step
 of the CI `unit` job). `guard-bash.sh` and `guard-db.sh` are what stop a secret-scan bypass
-or a migration against the dev database, and they decide by matching patterns against a
-command string — so they fail by matching nothing and exiting 0. Bash and node only, no
-Postgres and no keys. A new blocking hook lands with its cases; see
+or a migration against the dev database, and neither announces a miss: `guard-db.sh` matches
+patterns against the command string, so it fails by matching nothing and exiting 0, while
+`guard-bash.sh` tokenises the command first and can still be wrong about which words matter.
+Bash and node only, no Postgres and no keys. A new blocking hook lands with its cases; see
 [`.claude/README.md`](../.claude/README.md).
 
 ## Commands

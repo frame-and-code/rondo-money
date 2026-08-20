@@ -203,9 +203,9 @@ jobs:
         run: pnpm test:unit
 
       # The guard hooks (.claude/hooks) belong to no workspace, so `turbo run test:unit`
-      # never sees them. They are bash pattern matching over a command string, which fails
-      # by matching nothing and exiting 0 — the same silent mode ADR-005 refused to accept
-      # for raw SQL. Needs no database and no secrets, so it rides along here.
+      # never sees them. A mistake in either is silent — a refusal that never fires looks
+      # exactly like a command that was fine, the same mode ADR-005 refused to accept for raw
+      # SQL. Needs no database and no secrets, so it rides along here.
       - name: Guard hook tests
         run: pnpm test:hooks
 

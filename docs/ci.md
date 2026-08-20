@@ -59,8 +59,8 @@ status check keeps the exact id `gate` that branch rules point at.
 - **`unit` carries one test suite that is not the app's** — `pnpm test:hooks`
   (`.claude/hooks/hooks.test.sh`, F1.9). The guard hooks are what stop an agent from skipping
   the secret scan or running a migration against dev, they belong to no workspace, so
-  `turbo run test:unit` never sees them, and they decide by matching patterns against a
-  command string — which fails by matching nothing and exiting 0. It needs no database and no
+  `turbo run test:unit` never sees them, and a mistake in either is silent — the refusal that
+  never fires looks exactly like the command that was fine. It needs no database and no
   secrets, so it rides along in `unit` rather than paying for a job of its own. Levels and
   prerequisites: [testing.md](testing.md).
 - Each job reinstalls dependencies — that is the price of running them in parallel, and a
