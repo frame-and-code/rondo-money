@@ -56,10 +56,12 @@ polish:
 - The pre-commit hook runs gitleaks on the staged diff and fails the commit on a hit. Do
   not route around it: `--no-verify`, `-n` and the bundles it hides in (`-nm`, `-anm`),
   `HUSKY=0` and both `core.hooksPath` spellings are blocked by
-  [`guard-bash.sh`](../hooks/guard-bash.sh), which reads a normalised copy of the command so
-  quoting, grouping, nesting and wrappers do not hide them. It is not a sandbox and says so
-  in its own header — a command handed to another interpreter still gets through. If the hook
-  fires, the fix is to remove the secret, never to skip the scan.
+  [`guard-bash.sh`](../hooks/guard-bash.sh), which tokenises the command the way a shell does
+  and matches words rather than text — so quoting, grouping, keywords and wrappers change
+  nothing. It is not a sandbox and says so in its own header: it expands no variables and does
+  not follow a command into another interpreter, so `bash -c "…"` and `$VAR` in place of a
+  literal still get through. If the hook fires, the fix is to remove the secret, never to skip
+  the scan.
 - Never print a secret's value — not into the transcript, a log, an error message or a
   document, not even "to check it". Read the variable's _name_; leave the value alone.
 - `pnpm scan:secrets` scans the whole history.

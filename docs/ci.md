@@ -52,6 +52,10 @@ status check keeps the exact id `gate` that branch rules point at.
   only just started emitting — what a generator bump does — would slip past it untracked and
   unnoticed. The step sits last in `static` on purpose: `pnpm typecheck` above already pulled
   the whole chain, so turbo replays it from cache and the check itself costs a `git status`.
+- **`static` lints one directory that is not a workspace** — `pnpm lint:hooks` (`eslint .claude`).
+  `pnpm lint` is `turbo run lint` and only reaches workspaces, so a lint error in the agent
+  setup passes it. The pre-commit hook catches one through lint-staged, but by the same
+  reasoning as the secret scan the hook is convenience and the job is the guarantee.
 - **`unit` carries one test suite that is not the app's** — `pnpm test:hooks`
   (`.claude/hooks/hooks.test.sh`, F1.9). The guard hooks are what stop an agent from skipping
   the secret scan or running a migration against dev, they belong to no workspace, so

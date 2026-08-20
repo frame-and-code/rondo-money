@@ -10,11 +10,12 @@ it is parallelised across workspaces and cached where caching is safe.
 
 ## Steps
 
-Run all eight, and run them all even if an earlier one fails — a single report beats eight
+Run all nine, and run them all even if an earlier one fails — a single report beats nine
 round trips:
 
 ```bash
 pnpm lint
+pnpm lint:hooks
 pnpm typecheck
 pnpm format:check
 pnpm build
@@ -34,10 +35,11 @@ step (F1.5): it regenerates `apps/api/openapi.json` and the client and fails if 
 which on a clean tree means the committed pair is stale. It runs last because everything
 above has already warmed turbo's cache for it.
 
-`pnpm test:hooks` is the odd one out: it tests `.claude/`, not the app — the guard hooks
-that keep a secret-scan bypass or a migration against dev from going through. They are bash
-pattern matching, so the way they fail is silently, and they are not covered by any
-workspace's `test` task.
+`pnpm lint:hooks` and `pnpm test:hooks` are the odd ones out: they cover `.claude/`, not the
+app. `pnpm lint` and `pnpm test` are `turbo run …`, so they only reach workspaces, and
+`.claude` is not one — a lint error or a broken guard there is invisible to both. That is
+where the guard hooks live, the ones that keep a secret-scan bypass or a migration against dev
+from going through, so the gap is not a cosmetic one.
 
 `pnpm test` covers unit, integration and e2e. Integration and e2e need Postgres
 (`docker compose up -d`) and e2e needs Clerk keys in `apps/web/.env.local`; if either is

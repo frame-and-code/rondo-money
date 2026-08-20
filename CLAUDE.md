@@ -37,10 +37,11 @@ backend).
 ## Commands
 
 `pnpm install`; then `pnpm dev | build | lint | typecheck | test | format` (Turborepo, across
-all workspaces). Two more are root scripts rather than turbo tasks, and both are CI gate
-steps: `pnpm scan:secrets` runs the full-history gitleaks scan (`secret-scan.sh`, shared with
-the pre-commit hook and the CI `secrets` job), and `pnpm test:hooks` tests the agent guard
-hooks, which belong to no workspace.
+all workspaces). Three more are root scripts rather than turbo tasks, and all three are CI
+gate steps, because a turbo task only reaches workspaces: `pnpm scan:secrets` runs the
+full-history gitleaks scan (`secret-scan.sh`, shared with the pre-commit hook and the CI
+`secrets` job), while `pnpm lint:hooks` and `pnpm test:hooks` lint and test the agent setup in
+`.claude/`, which is not a workspace.
 
 In a session: `/dev` brings the local stack up, `/check` runs the gate, `/plan` decomposes a
 ticket, `/grill-me` clarifies a fuzzy one, `/sync-docs` sweeps the documentation,

@@ -87,13 +87,13 @@ Wired in [`settings.json`](settings.json). Blocking hooks exit 2 and the reason 
 the agent; advisory hooks exit 0 and their output becomes context. They parse their JSON
 input with `node`, which this repository already requires — no extra prerequisite.
 
-| Hook                                                         | Event                  | Behaviour                                                                                                                                                                                                                                                                        |
-| ------------------------------------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`guard-bash.sh`](hooks/guard-bash.sh)                       | `PreToolUse` :: `Bash` | **blocks** npm/yarn, every way round the secret scan (`--no-verify`, `-n` and its bundles, `HUSKY=0`, `core.hooksPath`), pushes to `main`, reckless `rm -rf` — reading a normalised copy, so wrappers, quoting, grouping, nesting and line continuations do not hide the command |
-| [`guard-db.sh`](hooks/guard-db.sh)                           | `PreToolUse` :: `Bash` | **blocks** `prisma migrate` / `db push` / `DROP` / `TRUNCATE` unless `DATABASE_URL` points at the local database                                                                                                                                                                 |
-| [`session-start-context.sh`](hooks/session-start-context.sh) | `SessionStart`         | prints branch, uncommitted count, last five commits; warns when the branch is `main`; when the branch names a ticket, points at that ticket and at the commands that close it out                                                                                                |
-| [`stop-docs-drift.sh`](hooks/stop-docs-drift.sh)             | `Stop`                 | per area: names the document a changed area describes when that document did not change too — falling back to a general nudge when the session touched no `.md` at all                                                                                                           |
-| [`stop-scoping-drift.sh`](hooks/stop-scoping-drift.sh)       | `Stop`                 | when `schema.prisma` changed but the scoped-model registry did not, lists what a new user-owned table needs (registry, migration, cross-tenant test, `@map`)                                                                                                                     |
+| Hook                                                         | Event                  | Behaviour                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`guard-bash.sh`](hooks/guard-bash.sh)                       | `PreToolUse` :: `Bash` | **blocks** npm/yarn, every way round the secret scan (`--no-verify`, `-n` and its bundles, `HUSKY=0`, `core.hooksPath`), pushes to `main`, reckless `rm -rf`. The entry point and the fail-closed wrapper; the decision is [`guard-bash.mjs`](hooks/guard-bash.mjs) |
+| [`guard-db.sh`](hooks/guard-db.sh)                           | `PreToolUse` :: `Bash` | **blocks** `prisma migrate` / `db push` / `DROP` / `TRUNCATE` unless `DATABASE_URL` points at the local database                                                                                                                                                    |
+| [`session-start-context.sh`](hooks/session-start-context.sh) | `SessionStart`         | prints branch, uncommitted count, last five commits; warns when the branch is `main`; when the branch names a ticket, points at that ticket and at the commands that close it out                                                                                   |
+| [`stop-docs-drift.sh`](hooks/stop-docs-drift.sh)             | `Stop`                 | per area: names the document a changed area describes when that document did not change too — falling back to a general nudge when the session touched no `.md` at all                                                                                              |
+| [`stop-scoping-drift.sh`](hooks/stop-scoping-drift.sh)       | `Stop`                 | when `schema.prisma` changed but the scoped-model registry did not, lists what a new user-owned table needs (registry, migration, cross-tenant test, `@map`)                                                                                                        |
 
 ### The guards have tests
 
@@ -103,13 +103,24 @@ silence: a pattern that stops matching still exits 0 and the command goes throug
 on PR #40 closed four defects across the pair; writing these cases found another, and two
 rounds of [`/review`](commands/review.md) over the cases themselves found four more.
 
-They all have one shape: the command means one thing to bash and reads as another to a
-pattern. A bare `git push` names no refspec, `origin HEAD` names one that resolves at runtime,
-`+main` forces the push in a spelling `--force` in the deny list never sees, `"main"` and
-`(git push origin main)` carry punctuation bash strips before git ever sees it, and a
-backslash continuation is one command that looks like two. That is why every check here
-matches a normalised copy rather than the raw string — and why a round of review after fixing
-is not optional: three of those were found in the fix for the one before.
+They all had one shape, and it took six rounds to see it: **the command means one thing to
+bash and another to a pattern.** A quoted flag is still the flag; a wrapper carrying its own
+option pushes the verb along; a grouping paren, a keyword, a line continuation and a nested
+`$(…)` each change where a command begins. Every fix picked a different syntactic tell —
+an anchor, a character class, the presence of quotes — and the next round found a spelling
+that tell did not cover.
+
+So the guard stopped matching text. [`guard-bash.mjs`](hooks/guard-bash.mjs) **tokenises the
+command the way a shell does** — splitting on the operators, resolving quoting and escaping
+exactly once — and the rules then talk about _words_: is this word `--no-verify`, is that word
+an assignment of `HUSKY`, does this refspec name `main`. `git commit "--no-verify"` and
+`git commit --no-verify` become the same list of words, so there is no spelling left to find;
+and `git commit -m "use -n here"` keeps its message as a single word, so text inside it can
+never be read as a flag — a distinction that cost three separate patches to approximate.
+
+What it still does not do is stated in its own header and is the honest boundary: it does not
+expand variables and does not follow a command into another interpreter, so `bash -c "…"`,
+`$VAR` in place of a literal and an encoded string get through, as they did before.
 
 The cases are adversarial on purpose: every wrapper (`sudo`, `env`, `command`, an inline
 assignment), every route round the secret scan, every refspec form that names main, and — just

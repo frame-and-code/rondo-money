@@ -102,6 +102,10 @@ expect_stderr_lacks() {
   fi
 }
 
+# The two refusals a push can draw, kept here because several blocks pin which one fired.
+NAMES_MAIN='main takes changes through a PR only'
+CURRENT_IS_MAIN='this pushes the current branch'
+
 echo "guard-bash.sh — package manager"
 expect_block guard-bash.sh 'npm install' 'npm install'
 expect_block guard-bash.sh 'yarn add lodash' 'yarn add'
@@ -112,6 +116,33 @@ expect_block guard-bash.sh 'CI=1 npm ci' 'npm behind an inline assignment'
 expect_block guard-bash.sh 'pnpm build && npm i' 'npm after &&'
 expect_allow guard-bash.sh 'pnpm install' 'pnpm install'
 expect_allow guard-bash.sh 'git commit -m "docs: explain why npm is not used"' 'npm named inside a commit message'
+
+echo "guard-bash.sh — the command is words, not text"
+# Everything in this block was allowed while the guard matched patterns against the command
+# string. They are one bug, not nineteen: quoting, grouping, a keyword and a wrapper's own
+# option each defeated a different syntactic tell. Reading the command as the shell reads it —
+# words, with quoting resolved once — is what makes them all the same case.
+expect_block guard-bash.sh 'git commit "--no-verify" -m x' 'a quoted --no-verify is still the flag'
+expect_block guard-bash.sh 'git commit "-n" -m x' 'a quoted -n is still the flag'
+expect_block guard-bash.sh 'env -i HUSKY=0 git commit -m x' 'HUSKY behind an env option'
+expect_block guard-bash.sh 'env -u FOO HUSKY=0 git commit -m x' 'HUSKY behind an env option that takes a value'
+expect_block guard-bash.sh 'sudo -E git push origin main' 'push behind a wrapper carrying its own flag' "$NAMES_MAIN"
+expect_block guard-bash.sh 'nice -n 10 git push origin main' 'push behind a wrapper option that takes a value' "$NAMES_MAIN"
+expect_block guard-bash.sh 'xargs -I{} git push origin main' 'push behind xargs with a replace string' "$NAMES_MAIN"
+expect_block guard-bash.sh 'command -p git push origin main' 'push behind command -p' "$NAMES_MAIN"
+expect_block guard-bash.sh 'sudo -E npm install' 'npm behind a wrapper carrying its own flag'
+expect_block guard-bash.sh '(HUSKY=0 git commit -m x)' 'HUSKY inside a subshell'
+expect_block guard-bash.sh '{ HUSKY=0 git commit -m x; }' 'HUSKY inside a group'
+expect_block guard-bash.sh 'if HUSKY=0 git commit -m x; then echo ok; fi' 'HUSKY inside an if'
+expect_block guard-bash.sh 'for f in a; do HUSKY=0 git commit -m x; done' 'HUSKY inside a for loop'
+expect_block guard-bash.sh 'timeout 60 HUSKY=0 git commit -m x' 'HUSKY behind timeout'
+expect_block guard-bash.sh '(git -c core.hooksPath=/dev/null commit -m x)' 'a hooksPath override inside a subshell'
+expect_block guard-bash.sh 'if true; then npm install; fi' 'npm inside an if'
+expect_block guard-bash.sh 'for f in a; do npm install; done' 'npm inside a for loop'
+# The same reading is what keeps ordinary work allowed: a quoted argument is one word, so text
+# inside it is never a flag, and a command that merely names another is not that command.
+expect_allow guard-bash.sh 'grep -n "git commit --no-verify" file' 'a search for the text of a guarded command'
+expect_allow guard-bash.sh 'pnpm exec playwright install chromium' 'a local binary run through pnpm exec'
 
 echo "guard-bash.sh — routes around the secret scan"
 expect_block guard-bash.sh 'git commit --no-verify -m "wip"' '--no-verify'
@@ -180,9 +211,6 @@ expect_block guard-bash.sh 'HUSKY="0" git commit -m "wip"' 'a quoted HUSKY=0'
 expect_block guard-bash.sh 'git config core.hooksPath /dev/null' 'core.hooksPath set persistently'
 
 echo "guard-bash.sh — pushing to main"
-NAMES_MAIN='main takes changes through a PR only'
-CURRENT_IS_MAIN='this pushes the current branch'
-
 expect_block guard-bash.sh 'git push origin main' 'push origin main' "$NAMES_MAIN"
 expect_block guard-bash.sh 'git push origin master' 'push origin master' "$NAMES_MAIN"
 expect_block guard-bash.sh 'git push origin HEAD:main' 'push HEAD:main' "$NAMES_MAIN"

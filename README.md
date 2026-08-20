@@ -175,6 +175,7 @@ pnpm test:unit          # unit (Jest + fast-check)
 pnpm test:integration   # API ↔ Postgres (needs docker compose up -d)
 pnpm test:e2e           # Playwright: browser → web → api → Postgres
 pnpm test:hooks         # the agent guard hooks in .claude/hooks (bash; no DB, no keys)
+pnpm lint:hooks         # lint .claude, which no turbo task reaches
 ```
 
 Once before e2e: `pnpm --filter @rondo/web exec playwright install chromium`.

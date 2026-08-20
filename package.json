@@ -17,6 +17,7 @@
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
     "test:hooks": "./.claude/hooks/hooks.test.sh",
+    "lint:hooks": "eslint .claude",
     "dev": "turbo run dev",
     "env:setup": "./setup-env.sh",
     "scan:secrets": "./secret-scan.sh history",
