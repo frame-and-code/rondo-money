@@ -38,16 +38,21 @@ user has merged — never to make an unmerged ticket look finished.
    updating it produces a new head. If that requirement is ever relaxed, expect the target's
    own changes here and compare only the paths the PR touched.
 
-   And check the other end too: `git rev-parse <headRefName>` against `headRefOid`. Equal
-   diffs prove the merge carried what the PR held; they say nothing about a commit pushed
-   _after_ the merge button, which never entered the PR at all and is invisible to any
-   comparison that starts from it.
+   And check the other end too: `git rev-parse --verify refs/heads/<headRefName>` against
+   `headRefOid`. Equal diffs prove the merge carried what the PR held; they say nothing about
+   a commit pushed _after_ the merge button, which never entered the PR at all and is
+   invisible to any comparison that starts from it.
 
-   Name the branch, not `HEAD`. Run from `main` — which step 7 contemplates, and which is
-   where the session stands after it — `HEAD` is main's tip and never matches, and the
+   Two things about that spelling, both load-bearing because a force delete hangs off it.
+   Name the branch rather than `HEAD`: whenever the session is on `main` — which step 7
+   contemplates, and where it leaves you — `HEAD` is main's tip and never matches, and the
    mismatch reads as "the branch carries something the PR did not" about a commit that does
-   not exist. No local branch at all is not a failed proof either: there is simply nothing
-   local to delete, and step 7's remote half still applies.
+   not exist. And name the ref in full: a bare `<headRefName>` goes through ordinary revision
+   lookup, which tries `refs/tags/` **before** `refs/heads/`, so a tag of the same name answers
+   instead — measured: git prints `refname is ambiguous` on stderr and puts the tag's sha on
+   stdout, where anything reading the command sees only the wrong sha. `--verify refs/heads/…` asks the one question meant here, and its failure
+   then means exactly one thing — no such local branch, which is not a failed proof either:
+   there is simply nothing local to delete, and step 7's remote half still applies.
 
 2. **Fetch the ticket** from Notion (MCP server; the link the user provides, or search by
    the ticket code). Collect every checkbox — Acceptance Criteria, DoD, and any inline
@@ -126,11 +131,11 @@ user has merged — never to make an unmerged ticket look finished.
    each half is judged on its own evidence, because each half destroys a different ref:
 
    ```bash
-   git fetch origin --prune                    # so the report is not written from stale refs
-   git rev-parse <headRefName>                 # == headRefOid → delete locally; no such branch → nothing local to delete
-   git branch -D <headRefName>                 # -D, not -d: a squash merge leaves it looking unmerged
-   git ls-remote --heads origin <headRefName>  # 0 + headRefOid → delete on the server; 0 + empty → already gone
-   git push origin --delete <headRefName>      # non-zero from ls-remote → the check did not run; say so, delete nothing
+   git fetch origin --prune                          # so the report is not written from stale refs
+   git rev-parse --verify refs/heads/<headRefName>   # == headRefOid → delete locally; fails → nothing local to delete
+   git branch -D -- <headRefName>                    # -D, not -d: a squash merge leaves it looking unmerged
+   git ls-remote --heads origin <headRefName>        # 0 + headRefOid → delete on the server; 0 + empty → already gone
+   git push origin --delete <headRefName>            # non-zero from ls-remote → the check did not run; delete nothing
    ```
 
    **The local head does not vouch for the remote one.** A commit can reach `origin/<branch>`
