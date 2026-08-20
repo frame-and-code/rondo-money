@@ -164,6 +164,14 @@ expect_block guard-bash.sh 'eval "git commit --no-verify -m x"' '--no-verify ins
 # Searching for the text of a guarded spelling is not that spelling.
 expect_allow guard-bash.sh 'grep -rn "HUSKY=0" .' 'a search for the text HUSKY=0'
 expect_allow guard-bash.sh 'grep -n "core.hooksPath value" file' 'a search for the text core.hooksPath'
+expect_allow guard-bash.sh 'grep -c "HUSKY=0" file' 'a counting grep, whose -c is not gits'
+# bash removes every quote before the program sees the value, so a wholly quoted setting is
+# the same setting. What tells a setting from a search is where it sits, not how it is quoted.
+expect_block guard-bash.sh 'env "HUSKY=0" git commit -m x' 'a wholly quoted HUSKY assignment after env'
+expect_block guard-bash.sh "env 'HUSKY=0' git commit -m x" 'a single-quoted HUSKY assignment after env'
+expect_block guard-bash.sh 'sudo env HUSKY=0 git commit -m x' 'a HUSKY assignment behind two wrappers'
+expect_block guard-bash.sh 'git -c "core.hooksPath=/dev/null" commit -m x' 'a wholly quoted hooksPath override'
+expect_block guard-bash.sh "git -c 'core.hooksPath=/dev/null' commit -m x" 'a single-quoted hooksPath override'
 expect_allow guard-bash.sh "git commit -m 'docs: use grep -n to number lines'" 'a single-quoted message that merely contains -n'
 expect_allow guard-bash.sh 'grep -n "hooksPath\|npm after" .claude/hooks/guard-bash.sh' 'a grep whose quoted pattern contains an alternation and the word npm'
 # HUSKY reads the value bash hands it, so the quotes are not a different command.

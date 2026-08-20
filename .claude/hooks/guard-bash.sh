@@ -154,20 +154,22 @@ if segments_of "$BLANKED" | grep -E "$ANY_COMMIT" | grep -qE '[[:space:]]-[a-zA-
   exit 2
 fi
 
-# These two read the command as typed — peeling would remove the very assignment the first one
-# looks for, and collapsing the very `-c` the second does. Only the quotes bash itself removes
-# come off: `HUSKY="0"` reaches husky as `HUSKY=0` and `git -c "core.hooksPath"=x` reaches git
-# as `core.hooksPath=x`, so a quoted key or value is not a different command. Whatever quoting
-# is left after that is an argument to something else — `grep -rn "HUSKY=0" .` is a search, not
-# an assignment — so it is blanked rather than unwrapped.
-SCANNED=$(printf '%s' "$COMMAND" | sed -E "s/=\"([^\"]*)\"/=\1/g")
-SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/='([^']*)'/=\1/g")
-SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/\"([^\"]*)\"=/\1=/g")
-SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/'([^']*)'=/\1=/g")
-SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/\"[^\"]*\"/\"\"/g")
-SCANNED=$(printf '%s' "$SCANNED" | sed -E "s/'[^']*'/''/g")
+# These two read the command as typed apart from its quotes — peeling would remove the very
+# assignment the first one looks for, and collapsing the very `-c` the second does. Every quote
+# comes off, because bash removes them all before the program sees anything: `HUSKY="0"`,
+# `env "HUSKY=0"` and `git -c "core.hooksPath=/dev/null"` reach husky and git exactly as their
+# unquoted twins do.
+#
+# What separates a setting from a search is therefore **position**, not quoting: an assignment
+# sits at the head of a command, and a `git` option belongs to a `git` invocation, while
+# `grep -rn "HUSKY=0" .` names the same text as an argument to something else. Deciding by
+# quotes instead was tried and was wrong in both directions at once — it refused the search and
+# allowed the wholly quoted setting.
+BARE=$(printf '%s' "$COMMAND" | tr -d "\"'")
+ASSIGN_POS='^[[:space:]]*((command|exec|eval|env|sudo|time|nice|nohup|xargs)[[:space:]]+|[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*'
+GIT_ANY='^[[:space:]]*((!|if|then|else|elif|while|until|do)[[:space:]]+)*git([[:space:]]|$)'
 
-if printf '%s' "$SCANNED" | grep -qE '(^|\s)HUSKY=0(\s|$)'; then
+if segments_of "$BARE" | grep -qE "${ASSIGN_POS}HUSKY=0([[:space:]]|$)"; then
   echo "BLOCKED: HUSKY=0 disables the git hooks, including the secret scan." >&2
   exit 2
 fi
@@ -175,7 +177,7 @@ fi
 # `git -c core.hooksPath=/dev/null commit` points git at an empty hook directory: the same
 # effect as --no-verify, by a different door. `git config core.hooksPath /dev/null` is the
 # same door left open — it persists in the repository's config rather than lasting one command.
-if printf '%s' "$SCANNED" | grep -qE 'core\.hooksPath([[:space:]]*=|[[:space:]]+[^-])'; then
+if segments_of "$BARE" | grep -E "$GIT_ANY" | grep -qE 'core\.hooksPath([[:space:]]*=|[[:space:]]+[^-])'; then
   echo "BLOCKED: overriding core.hooksPath disables the git hooks, including the secret scan." >&2
   exit 2
 fi
