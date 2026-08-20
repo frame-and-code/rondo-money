@@ -14,7 +14,8 @@ the test in a follow-up" is not an option the DoD offers.
 - **Unit** — domain logic and components, no DB or network. Cheapest, so most coverage
   lives here.
 - **Integration** — API ↔ Postgres: the real module, real queries, real transactions.
-  This is the only level that can prove atomicity, scoping and soft-delete behaviour.
+  This is the only level that can prove the atomicity of a composite operation, scoping
+  and idempotency.
 - **E2E** — one or two user scenarios per feature. The most expensive level: use it to
   prove the screens are wired together, not to cover branches.
 

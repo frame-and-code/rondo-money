@@ -1,6 +1,6 @@
 // API lint = shared base + the opt-in type-aware layer (F0.2 carry-over): the API is
-// where atomic state + ChangeLog mutations live, so no-floating-promises / no-misused-
-// promises are enforced here.
+// where atomic money mutations live, so no-floating-promises / no-misused-promises are
+// enforced here.
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

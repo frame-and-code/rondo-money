@@ -61,7 +61,7 @@ report it as a review.
      `ScopedRawRepository`, `userId` sourced anywhere but `@CurrentUserId()`, new models
      missing from `scoped-models.ts`, nested writes assuming scoping, missing cross-tenant
      tests.
-   - **boundaries** — ADR-002 / ADR-001: web reaching the database or hand-writing a request
+   - **boundaries** — ADR-002 / ADR-006: web reaching the database or hand-writing a request
      beside the generated client, the module-level client configured on the server, DTOs
      restated instead of imported, mutations bypassing the single write point, derived state
      given a column, endpoints whose contract says nothing.

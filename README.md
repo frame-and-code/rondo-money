@@ -17,8 +17,8 @@ your budget exists.
 
 Current stage: **phase 1, authentication, is done.** Sign-in, per-user isolation and the
 typed API contract work end to end, on top of phase 0 (infrastructure, CI, deployment).
-Phase 2, the single write point and the change log, is next. The budgeting model itself is
-not built yet.
+Phase 2 is next: validated input at the API boundary, and money that takes its number of
+minor digits from the budget's currency. The budgeting model itself is not built yet.
 
 ## What it is
 

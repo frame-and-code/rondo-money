@@ -167,9 +167,9 @@ describe('userId auto-scoping (integration)', () => {
     });
 
     it('keeps scoping inside a transaction', async () => {
-      // Phase 2 puts every mutation inside `$transaction` (F2.2, ADR-001), so the extension
-      // has to hold on the transactional client too — proving it here means that phase starts
-      // from a known-good base instead of discovering this later.
+      // F3.2 puts every mutation inside `$transaction` (ADR-006), so the extension has to
+      // hold on the transactional client too — proving it here means that phase starts from
+      // a known-good base instead of discovering this later.
       const seenInTransaction = await asUser(USER_B, () =>
         scoped.$transaction(async (tx) => {
           await tx.userSettings.create({ data: { userId: USER_A } });

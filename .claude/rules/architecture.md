@@ -29,8 +29,8 @@ up.
 The read path exists since F1.6 — [`apps/api/src/user-settings`](../../apps/api/src/user-settings)
 is controller → service → `SCOPED_PRISMA` in full, and
 [`.claude/skills/add-a-domain-module`](../skills/add-a-domain-module/SKILL.md) walks a new module
-through it file by file. The write path, where a mutation and its `ChangeLog` entry share one
-transaction, arrives in F2.2. What follows holds for both, and is not optional:
+through it file by file. The write path, where one user operation is one database
+transaction, arrives in F3.2. What follows holds for both, and is not optional:
 
 - a handler takes the caller from `@CurrentUserId()`, never from the body, a query parameter
   or a header;
@@ -82,11 +82,24 @@ second source of truth that will disagree with the first.
 
 ## One write point
 
-Every domain mutation goes through the single mutation service (F2.2): the state change
-and its `ChangeLog` entry are written atomically in one transaction, or not at all
-(ADR-001). A transfer's two legs share a `transferId` and are created, edited, deleted and
-undone together. undo/redo are themselves logged mutations — redo moves a cursor, it never
-rewrites history.
+Every domain mutation goes through the single mutation service (F3.2), and what it buys is
+atomicity, not a journal (ADR-006): one user operation is one database transaction, or
+nothing at all. The invariant it protects is 5.5 — a composite write torn in half (a
+transfer leg without its pair) is the main way to break it, and PRD 6.3 requires a
+transfer to be atomic regardless. So a transfer's two legs share a `transferId` and are
+created, edited and deleted together.
+
+The same transaction carries the idempotency key: `IdempotencyKey` (the F3.1 migration)
+is unique per (user, key) and stores the mutation's result, inserted alongside it, so a
+double submit hits the unique index instead of writing twice — and gets that result back,
+as if it had just run.
+
+There is no server-side change log and no soft-delete: deletion is physical, and undo
+lives in the browser — a stack of money operations, each inverted through the same API
+(Phase 8). Its scope is the part that cannot be re-derived: transactions and moves between
+envelopes, where RTA is an envelope too, so setting an Assigned amount **is** a move and
+undoes like one; a rename, an archive and a hide are not undoable at all. Nothing on the
+server replays history.
 
 ## Money, dates, schema
 
@@ -98,8 +111,10 @@ rewrites history.
 - Dates are calendar dates without time. "Today" and `YYYY-MM` bucketing are computed in
   one reference timezone (the budget's) through a single shared helper, never a
   `new Date()` scattered across call sites.
-- The schema grows one migration per phase. Deleting a category must keep its past
-  Activity counted in the aggregates — an expense is never orphaned.
+- The schema grows one migration per phase. A category is never deleted, only hidden
+  (`hiddenAt`, from the F3.1 migration). That is a visibility marker, not a soft-delete —
+  the row stays in every aggregate, so its past Activity keeps counting and an expense is
+  never orphaned.
 - Naming, set by the first table in F1.3: PascalCase models and camelCase fields in Prisma,
   snake_case tables and columns in Postgres via `@@map` / `@map`; ids are
   `String @id @default(uuid(7)) @db.Uuid`. The mapping exists for the hand-written aggregates
@@ -151,4 +166,5 @@ component therefore never touches a token, a header or a base URL, and never wri
   a URL string.
 - **Mutations** (from Phase 3) invalidate through the generated query keys. Expect the
   invalidation to be wide: no derived value is stored, so one assignment moves RTA and every
-  later month's Available at once.
+  later month's Available at once. Their idempotency key belongs to the user's intent —
+  minted once when the form opens, not per HTTP request, or a double click writes twice.

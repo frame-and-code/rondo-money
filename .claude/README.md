@@ -36,7 +36,7 @@ turn. They stay short deliberately: detail belongs in `docs/`, and the rule link
 | Rule                                             | Holds                                                                                                     |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | [`model-integrity.md`](rules/model-integrity.md) | do not invent version-dependent detail; open questions go to the user; report what actually happened      |
-| [`architecture.md`](rules/architecture.md)       | layer boundaries (ADR-002), no derived state, one write point (ADR-001), money/dates, invariant 5.5       |
+| [`architecture.md`](rules/architecture.md)       | layer boundaries (ADR-002), no derived state, one write point (ADR-006), money/dates, invariant 5.5       |
 | [`security.md`](rules/security.md)               | tenant isolation without RLS (ADR-005), secrets in a public repository (ADR-003), destructive DB commands |
 | [`code-quality.md`](rules/code-quality.md)       | types, errors, comments, dead code, dependencies                                                          |
 | [`specs.md`](rules/specs.md)                     | Notion as the decision memory; repository docs corrected in the same PR                                   |
@@ -47,7 +47,7 @@ turn. They stay short deliberately: detail belongs in `docs/`, and the rule link
 
 | Skill                                                         | Use when                                                                                             |
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that **reads** a domain table (the F1.6 `user-settings` shape); writes are F2.2 |
+| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that **reads** a domain table (the F1.6 `user-settings` shape); writes are F3.2 |
 
 A skill is grounded in code that exists: every step names a real file to copy from, so it
 cannot drift into describing an API nobody wrote.
@@ -174,7 +174,7 @@ a link list nobody can justify becomes a link list nobody opens.
 Deliberate, not missing. Each arrives with the phase that gives it something true to
 describe — a skill grounded in code that does not exist yet would be fiction:
 
-- more `skills/` — `add-a-mutation`, `testing-patterns` (F2.2); `aggregate-query`,
+- more `skills/` — `add-a-mutation`, `testing-patterns` (F3.2); `aggregate-query`,
   `budget-invariant` (F4.2);
 - more `agents/` — `migration-reviewer` (F3.1), `invariant-debugger` (F4.2).
 

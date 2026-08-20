@@ -28,8 +28,8 @@ export interface RawQueryScope {
  * that adds a raw aggregate (Phases 4–5).
  *
  * Both methods run on the top-level client, **not** on an enclosing `$transaction`. Reads are
- * unaffected, and there is no writer today: `execute` has no callers, and from F2.2 every
- * domain mutation goes through the single mutation point with its journal entry. When that
+ * unaffected, and there is no writer today: `execute` has no callers, and from F3.2 every
+ * domain mutation goes through the single mutation point, in one transaction. When that
  * phase needs raw SQL inside its transaction, it passes the transactional client in — adding
  * the parameter now would be an unused API whose only test would be its own scaffolding.
  */
@@ -53,8 +53,8 @@ export class ScopedRawRepository {
   /**
    * Runs a statement that writes, and returns the number of affected rows.
    *
-   * Reach for it only where the model API genuinely cannot express the write — from F2.2
-   * every domain mutation goes through the single mutation point, journal entry included.
+   * Reach for it only where the model API genuinely cannot express the write — from F3.2
+   * every domain mutation goes through the single mutation point, in one transaction.
    */
   async execute(build: (scope: RawQueryScope) => Prisma.Sql): Promise<number> {
     return this.prisma.$executeRaw(build(this.currentScope()));

@@ -1,6 +1,6 @@
 ---
 name: add-a-domain-module
-description: Add an API module in apps/api that reads a domain table — controller, service, response class, registration and the tests that are not optional. Use when a feature needs a read endpoint backed by Postgres. The write path (one mutation point, its ChangeLog entry and their shared transaction) is F2.2 and is deliberately not covered here.
+description: Add an API module in apps/api that reads a domain table — controller, service, response class, registration and the tests that are not optional. Use when a feature needs a read endpoint backed by Postgres. The write path (one mutation point, one transaction per user operation) is F3.2 and is deliberately not covered here.
 ---
 
 # Add a domain module
@@ -11,8 +11,9 @@ describes, so read it alongside — five small files, and every decision below i
 of them.
 
 Scope: the **read** path (F1.6). A mutation additionally goes through the single mutation
-service and writes its `ChangeLog` entry in the same transaction (F2.2, ADR-001) — that is a
-separate skill, and until it exists a write is a design conversation, not a copy.
+service, which puts the whole user operation and its idempotency key in one transaction
+(F3.2, ADR-006) — that is a separate skill, and until it exists a write is a design
+conversation, not a copy.
 
 ## Before writing anything
 

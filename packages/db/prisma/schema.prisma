@@ -1,7 +1,8 @@
 // Prisma schema for Rondo Money — grows incrementally, one migration per phase.
 // F0.4 is the skeleton: datasource + generator + an empty baseline migration.
-// The domain core (budgets, accounts, transactions) and the ChangeLog journal land in
-// Phases 2–3; F1.3 adds the first table, UserSettings.
+// The domain core (budgets, accounts, transactions) lands in Phase 3; F1.3 adds the first
+// table, UserSettings. There is no change-log journal and no `deletedAt` anywhere: both were
+// dropped by ADR-006, which keeps undo in the browser.
 //
 // Naming convention, set here by the first table and followed by every later one:
 // models are PascalCase and fields camelCase in Prisma, while tables and columns are
