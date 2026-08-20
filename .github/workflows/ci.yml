@@ -125,6 +125,13 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # `pnpm lint` is `turbo run lint`, so it only reaches workspaces — and `.claude` is not
+      # one. The pre-commit hook lints it through lint-staged, but a hook is convenience and a
+      # job is the guarantee: a commit made with --no-verify, from a machine without husky or
+      # through GitHub's web editor lands here instead. Same reasoning as the secret scan.
+      - name: Lint the agent setup
+        run: pnpm lint:hooks
+
       - name: Format check
         run: pnpm format:check
 
@@ -194,6 +201,13 @@ jobs:
 
       - name: Unit tests
         run: pnpm test:unit
+
+      # The guard hooks (.claude/hooks) belong to no workspace, so `turbo run test:unit`
+      # never sees them. A mistake in either is silent — a refusal that never fires looks
+      # exactly like a command that was fine, the same mode ADR-005 refused to accept for raw
+      # SQL. Needs no database and no secrets, so it rides along here.
+      - name: Guard hook tests
+        run: pnpm test:hooks
 
   integration:
     name: Integration tests (Postgres)

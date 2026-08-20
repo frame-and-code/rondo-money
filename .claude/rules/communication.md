@@ -11,7 +11,9 @@ Chat with the user in their language (Russian).
 
 On your own initiative, only `git add`. `commit`, `push`, branching, rebasing, opening a
 PR — every other git action waits for the user to ask. Drafting the message is your job;
-running the command is theirs.
+deciding that it runs is theirs. Typing [`/prep-pr`](../commands/prep-pr.md) **is** that
+decision — the command then commits, pushes and opens the PR in one go — and so is asking in
+words. What is forbidden is reaching for git because it seemed like the next step.
 
 The one exception, because it prevents work from landing in the wrong place: when a new
 feature starts while the branch is `main`, create the feature branch first.
@@ -55,5 +57,8 @@ the work does.
   genuinely the user's (see [model integrity](model-integrity.md)) get asked; routine ones
   get made.
 - Grade findings as **MUST FIX** (breaks behaviour, violates a rule, fails CI) /
-  **SHOULD FIX** (convention or maintainability) / **NICE TO HAVE** (deferrable).
+  **SHOULD FIX** (convention or maintainability) / **NICE TO HAVE** (deferrable). The first
+  two block [`/prep-pr`](../commands/prep-pr.md) until they are fixed or explicitly
+  overruled, and the third ships — so the grade answers "should the PR wait for this?", not
+  "how much does it bother me?".
 - Close by saying what was run, what it proved, and what is still open.

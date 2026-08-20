@@ -36,4 +36,13 @@ if [ "$BRANCH" = "main" ]; then
   echo "⚠️ On \`main\`. Starting a feature? Create the branch first: \`F<phase>.<feature>-<what-it-does>\`."
 fi
 
+# The branch name already carries the ticket, so the one thing the agent should read before
+# writing code can be named instead of waited for (.claude/rules/specs.md: read before, not
+# only write after). Only the code is echoed, never the rest of the branch name.
+TICKET=$(printf '%s' "$BRANCH" | sed -nE 's/^(F[0-9]{1,2}\.[0-9]{1,2}).*/\1/p')
+if [ -n "$TICKET" ]; then
+  echo
+  echo "This branch carries **$TICKET**. Read that ticket in Notion, and the ADRs it touches, before writing code — then \`/prep-pr\` when the work is ready and \`/close-ticket\` once it is merged."
+fi
+
 exit 0

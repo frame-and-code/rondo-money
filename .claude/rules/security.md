@@ -54,9 +54,19 @@ polish:
 - `.env` and `apps/*/.env.local` stay out of git. Only `.env.example` and `*.env.local.tpl`
   are tracked, and they hold placeholders — never values.
 - The pre-commit hook runs gitleaks on the staged diff and fails the commit on a hit. Do
-  not route around it: `--no-verify`, `-n`, `HUSKY=0` and `git -c core.hooksPath=…` are all
-  blocked by [`guard-bash.sh`](../hooks/guard-bash.sh). If the hook fires, the fix is to
-  remove the secret, never to skip the scan.
+  not route around it: `--no-verify`, `-n` and the bundles it hides in (`-nm`, `-anm`),
+  `HUSKY=0` and both `core.hooksPath` spellings are blocked by
+  [`guard-bash.sh`](../hooks/guard-bash.sh), which tokenises the command the way a shell does
+  and matches words rather than text — so quoting, grouping, keywords, wrappers, and a command
+  string handed to `eval` or a shell's `-c` change nothing. **It refuses accidents, not a
+  determined bypass**, and [`guard-bash.mjs`](../hooks/guard-bash.mjs) lists the deliberate
+  spellings that reach the same acts anyway: `$VAR` in place of a literal, a git alias,
+  `GIT_CONFIG_KEY_*`, an encoded string, a script file, a heredoc body, another machine. Each
+  takes a keystroke nobody types by accident, and closing them means re-implementing the shell.
+  So it is the early layer and not the guarantee — **the layer that cannot be talked round is
+  the CI `secrets` job**, which scans the whole history on every PR and is what actually keeps
+  a secret out of `main` (see [`docs/ci.md`](../../docs/ci.md)). If the hook fires, the fix is
+  to remove the secret, never to skip the scan.
 - Never print a secret's value — not into the transcript, a log, an error message or a
   document, not even "to check it". Read the variable's _name_; leave the value alone.
 - `pnpm scan:secrets` scans the whole history.

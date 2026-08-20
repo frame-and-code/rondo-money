@@ -32,17 +32,22 @@ backend).
   (F1.4, ADR-002); `apps/web` consumes it instead of hand-written fetch.
 - `packages/config` — shared configs: eslint / tsconfig / prettier (F0.2).
 - `packages/ui` — UI components, shadcn/ui (F0.6).
-- `.claude/` — the agent setup: rules, commands, hooks, permissions.
+- `.claude/` — the agent setup: rules, commands, skills, agents, hooks, permissions.
 
 ## Commands
 
 `pnpm install`; then `pnpm dev | build | lint | typecheck | test | format` (Turborepo, across
-all workspaces). `pnpm scan:secrets` runs the full-history gitleaks scan (`secret-scan.sh`,
-shared with the pre-commit hook and the CI `secrets` job).
+all workspaces). Three more are root scripts rather than turbo tasks, and all three are CI
+gate steps, because a turbo task only reaches workspaces: `pnpm scan:secrets` runs the
+full-history gitleaks scan (`secret-scan.sh`, shared with the pre-commit hook and the CI
+`secrets` job), while `pnpm lint:hooks` and `pnpm test:hooks` lint and test the agent setup in
+`.claude/`, which is not a workspace.
 
 In a session: `/dev` brings the local stack up, `/check` runs the gate, `/plan` decomposes a
 ticket, `/grill-me` clarifies a fuzzy one, `/sync-docs` sweeps the documentation,
-`/phase-done` closes a ticket out and `/babysit-pr` shepherds an open PR to merge-ready.
+`/review` runs parallel reviewers with clean context over the branch, `/phase-done` closes a
+ticket out, `/prep-pr` commits, pushes and opens the PR, `/babysit-pr` shepherds it to
+merge-ready and `/close-ticket` marks the merged ticket done in Notion.
 
 ## Process
 
