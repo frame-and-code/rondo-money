@@ -28,9 +28,11 @@ is the pass that knows ADR-005 exists.
    full branch of changes. A branch name: `git diff main...<branch>`. A `#N`: `gh pr diff N` **and the PR's own
    files** — a reviewer is told to read around the diff, and those files resolve against
    whatever is checked out here, so a diff from one state read against another is worse than
-   no review. Check the PR head out first, or give each reviewer the contents at that SHA. If
-   neither is possible, say contextual review is unavailable and stop rather than reporting a
-   review that read the wrong tree. A path:
+   no review. Give each reviewer the contents at the PR head SHA, read without changing the
+   working tree (`gh api …/contents/<path>?ref=<sha>`, or `git show <sha>:<path>` once the ref
+   is fetched). **Do not check the PR out**: this command changes no files, and a checkout
+   replaces the caller's tree with someone else's branch. If that read is unavailable, say
+   contextual review is unavailable and stop rather than reporting a review of the wrong tree. A path:
    that path. Print `--stat` so the size of what is being reviewed is visible, and stop only
    when the sources for the target you were given are genuinely empty.
 2. **Fan out — one message, four `Agent` calls, `subagent_type: pr-reviewer`.** Parallel

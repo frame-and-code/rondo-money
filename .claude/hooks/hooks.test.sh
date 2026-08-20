@@ -188,6 +188,12 @@ expect_block guard-bash.sh '{ git commit --no-verify -m "wip"; }' '--no-verify o
 # A nested command keeps the outer command's first word unless the opener becomes a
 # separator, and then it matches nothing.
 expect_block guard-bash.sh 'echo $(npm install)' 'npm inside a command substitution'
+# Double quotes suppress word splitting, not execution — bash runs these too.
+expect_block guard-bash.sh 'echo "$(npm install)"' 'npm substituted inside double quotes'
+expect_block guard-bash.sh 'echo "$(git push origin main)"' 'push substituted inside double quotes' "$NAMES_MAIN"
+expect_block guard-bash.sh 'echo "`git push origin main`"' 'push backtick-substituted inside double quotes' "$NAMES_MAIN"
+expect_block guard-bash.sh 'X="$(git commit --no-verify -m x)"' '--no-verify substituted into an assignment'
+expect_allow guard-bash.sh 'git commit -m "wip $(date)"' 'a harmless substitution inside a commit message'
 expect_block guard-bash.sh 'xargs git commit --no-verify -m wip' '--no-verify behind xargs'
 expect_block guard-bash.sh 'pnpm exec git commit --no-verify -m wip' '--no-verify behind pnpm exec'
 # One unrecognised word before `git` used to switch every check off. These are retry idioms

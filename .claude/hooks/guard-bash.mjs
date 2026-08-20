@@ -72,6 +72,14 @@ function tokenise(input) {
       // Inside double quotes a backslash only escapes these four; anywhere else it is literal.
       if (c === '\\' && '"\\$`'.includes(input[i + 1])) {
         push(input[++i]);
+      } else if ((c === '$' && input[i + 1] === '(') || c === '`') {
+        // Double quotes suppress word splitting, not execution: bash runs a substitution
+        // inside them exactly as it does outside. Treating one as text was the single place
+        // this parser was inert where the shell is not, and `echo "$(git push origin main)"`
+        // walked straight through it.
+        if (c === '$') i++;
+        quote = null;
+        endCommand();
       } else if (c === '"') {
         quote = null;
       } else {

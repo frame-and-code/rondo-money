@@ -118,9 +118,14 @@ an assignment of `HUSKY`, does this refspec name `main`. `git commit "--no-verif
 and `git commit -m "use -n here"` keeps its message as a single word, so text inside it can
 never be read as a flag — a distinction that cost three separate patches to approximate.
 
-What it still does not do is stated in its own header and is the honest boundary: it does not
-expand variables and does not follow a command into another interpreter, so `bash -c "…"`,
-`$VAR` in place of a literal and an encoded string get through, as they did before.
+"The way a shell does" is a claim worth being precise about, because it is the claim the whole
+design rests on. What it parses: word splitting, single and double quotes, backslash escapes
+and line continuations, the operators `;` `&&` `||` `|` and newline, grouping with `( )` and
+`{ }`, and command substitutions — `$(…)` and backticks — **including inside double quotes**,
+which suppress word splitting but not execution. What it deliberately does not do, and the
+honest boundary: it expands no variables and follows no command into another interpreter, so
+`bash -c "…"`, `$VAR` in place of a literal, `$IFS` games and an encoded string get through,
+as they did before. Those are in the file's own header too.
 
 The cases are adversarial on purpose: every wrapper (`sudo`, `env`, `command`, an inline
 assignment), every route round the secret scan, every refspec form that names main, and — just
