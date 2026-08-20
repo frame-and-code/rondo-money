@@ -7,15 +7,15 @@ is: checked-in configuration Claude Code loads automatically.
 Everything here is organised by **when it reaches the model**, because that decides what
 each kind of file may cost and what it may contain:
 
-| Layer                  | Loaded                            | Contains                                          |
-| ---------------------- | --------------------------------- | ------------------------------------------------- |
-| `CLAUDE.md` + `rules/` | every turn, via `@` imports       | short imperatives — what must and must not happen |
-| `commands/`            | when the user types `/name`       | workflow entry points                             |
-| `skills/`              | when a task matches one           | how a recurring piece of work is actually done    |
-| `agents/`              | when one is spawned               | a reviewer's brief, read with no session history  |
-| `hooks/`               | by the runtime, deterministically | guarantees; not LLM, cannot be talked out of      |
-| `settings.json`        | at start                          | which tools may run without asking                |
-| `config/`              | when an agent goes looking        | pointers to external truth                        |
+| Layer                  | Loaded                            | Contains                                           |
+| ---------------------- | --------------------------------- | -------------------------------------------------- |
+| `CLAUDE.md` + `rules/` | every turn, via `@` imports       | short imperatives — what must and must not happen  |
+| `commands/`            | when the user types `/name`       | workflow entry points                              |
+| `skills/`              | when a task matches one           | how a recurring piece of work is actually done     |
+| `agents/`              | when one is spawned               | a reviewer's brief, read with no session history   |
+| `hooks/`               | by the runtime, deterministically | guarantees; not LLM, cannot be talked out of       |
+| `settings.json`        | at start                          | which tools may run without asking, and which must |
+| `config/`              | when an agent goes looking        | pointers to external truth                         |
 
 A rule is a sentence you must not break. A hook is a rule that cannot be broken. Anything
 that must hold every time belongs in a hook or in `settings.json` — not only in prose.
@@ -139,7 +139,17 @@ The third guarantee is not a hook: `git commit`, `git push`, `git switch -c` and
 mutating `git branch` are deliberately **absent** from the allow list in `settings.json`, so
 each of them prompts. Only the read-only spellings are listed, and as exact entries rather
 than a `git branch*` prefix — the prefix once let `git branch -m` and `git branch -D main`
-run unattended, which is not what "which tools may run without asking" was meant to grant. That is the mechanical twin of the top rule in `CLAUDE.md` — and the reason a
+run unattended, which is not what "which tools may run without asking" was meant to grant.
+
+`Bash(pnpm dlx *)` sits in the **`ask`** list rather than `deny`, and the difference is the
+point. Rules resolve deny → ask → allow, first match wins, and specificity never changes that
+order — so a deny cannot carry an exception, and denying `pnpm dlx` would have taken
+`pnpm dlx shadcn@latest add` (the documented way to add a UI component, see
+[`architecture.md`](rules/architecture.md)) away for good. An `ask` beats the broad
+`Bash(pnpm *)` the same way a deny would, so nothing fetches and executes a package unattended
+— four reviewers spawned with no user turn between them least of all — while the legitimate
+use stays one confirmation away. Reach for `ask` whenever the answer is "not without me"
+rather than "never". That is the mechanical twin of the top rule in `CLAUDE.md` — and the reason a
 guard hook for them would be redundant.
 
 Neither layer is a sandbox, and `guard-bash.sh` says so in its own header: they refuse an

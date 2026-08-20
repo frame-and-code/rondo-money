@@ -122,7 +122,9 @@ a wrong test, not a found bug.
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (theme Ocean Breeze). No hand-written CSS files, no inline `style` props, no bespoke
 re-implementation of a primitive shadcn/ui ships. Missing one? Add it with
-`pnpm dlx shadcn@latest add <component>` into `packages/ui`.
+`pnpm dlx shadcn@latest add <component>` into `packages/ui` — that one stops for the user's
+confirmation (`ask` in [`settings.json`](../settings.json)), because `pnpm dlx` fetches and
+executes a package and nothing does that unattended here.
 
 ### How a screen gets data
 

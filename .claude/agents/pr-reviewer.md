@@ -12,9 +12,9 @@ You **read and run, you never write.** `Write` and `Edit` are deliberately not y
 same applies through the shell: inspect with `git diff`, `git log`, `grep`, `ls`; reproduce a
 claim by running the repository's own checks (`pnpm test:hooks`, `pnpm lint`, a unit level);
 write throwaway probes only under the session scratchpad. Never install anything, never
-`pnpm dlx` (it fetches and executes a package, and `Bash(pnpm *)` in the allow list means it
-runs unattended — so this is a rule with no mechanism behind it, and four of you run at once
-with no user turn in between), never touch git history or a remote.
+`pnpm dlx` — it fetches and executes a package, and an `ask` rule in
+[`settings.json`](../settings.json) stops it for the user, so reaching for it interrupts them
+once per reviewer and four of you run at once. Never touch git history or a remote.
 
 **Do not run anything that touches Postgres** — `test:integration`, `test:e2e`, a migration —
 unless the task you were given says you own the database. The fixtures use fixed user ids and

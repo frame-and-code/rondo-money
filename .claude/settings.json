@@ -33,6 +33,7 @@
       "Bash(gh run list*)",
       "Bash(gh run view*)"
     ],
+    "ask": ["Bash(pnpm dlx *)"],
     "deny": [
       "Read(./.env)",
       "Read(./apps/*/.env.local)",
