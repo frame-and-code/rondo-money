@@ -17,10 +17,21 @@ user has merged — never to make an unmerged ticket look finished.
    `mergedAt` via `gh pr view`. Not merged → stop and say so: this command records history, it
    does not predict it.
 
-   Then check what actually landed, not just that something did: `git fetch origin main` and
-   `git diff origin/main <branch>`. A squash merge leaves no branch commits in `main`, so the
-   commit log proves nothing — an empty diff does. Work pushed after the merge button is the
-   case this catches.
+   Then check what actually landed, not just that something did — **compare the PR's head
+   against its merge commit**, not against `main`:
+
+   ```bash
+   gh pr view <N> --json headRefOid,mergeCommit   # the two SHAs
+   git fetch origin refs/pull/<N>/head            # reachable even if the branch was deleted
+   git diff <headRefOid> <mergeCommit.oid>        # empty = the merge carried exactly that work
+   ```
+
+   A squash merge leaves no branch commits in `main`, so the commit log proves nothing and an
+   empty diff does. Comparing against `origin/main` instead looks equivalent and is not: it
+   needs a local branch that may be gone, and once anything else lands on `main` it reports
+   those unrelated changes as if this ticket's work were missing. The merge commit is the PR's
+   own snapshot, so the comparison stays true however long afterwards it is run. What it
+   catches is work pushed after the merge button — which is not hypothetical.
 
 2. **Fetch the ticket** from Notion (MCP server; the link the user provides, or search by
    the ticket code). Collect every checkbox — Acceptance Criteria, DoD, and any inline
