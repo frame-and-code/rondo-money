@@ -50,9 +50,10 @@ user has merged — never to make an unmerged ticket look finished.
    not exist. And name the ref in full: a bare `<headRefName>` goes through ordinary revision
    lookup, which tries `refs/tags/` **before** `refs/heads/`, so a tag of the same name answers
    instead — measured: git prints `refname is ambiguous` on stderr and puts the tag's sha on
-   stdout, where anything reading the command sees only the wrong sha. `--verify refs/heads/…` asks the one question meant here, and its failure
-   then means exactly one thing — no such local branch, which is not a failed proof either:
-   there is simply nothing local to delete, and step 7's remote half still applies.
+   stdout, where anything reading the command sees only the wrong sha. `--verify refs/heads/…`
+   asks the one question meant here, and its failure then means exactly one thing — no such
+   local branch, which is not a failed proof either: there is simply nothing to delete, and
+   step 7 reports that rather than treating it as a problem.
 
 2. **Fetch the ticket** from Notion (MCP server; the link the user provides, or search by
    the ticket code). Collect every checkbox — Acceptance Criteria, DoD, and any inline
