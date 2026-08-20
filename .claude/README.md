@@ -68,18 +68,18 @@ as much as a real one.
 
 ## Commands (`commands/`)
 
-| Command                | Does                                                                                                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/dev`                 | brings up Postgres, migrations, api and web, and reports what is actually running                                                                                               |
-| `/check`               | the CI gate locally: lint, typecheck, format, build, tests, secret scan, contract drift                                                                                         |
-| `/plan <F1.x>`         | reads the ticket and returns an ordered, file-scoped plan; writes no code                                                                                                       |
-| `/grill-me <task>`     | interviews until the scope is shared, then hands off to `/plan`                                                                                                                 |
-| `/sync-docs`           | sweeps the documentation the change touched and corrects what went stale                                                                                                        |
-| `/review [target]`     | fans parallel `pr-reviewer` subagents over the branch, verifies each finding, reports — changes nothing                                                                         |
-| `/phase-done <F1.x>`   | verifies the ticket's Acceptance Criteria one by one, runs the gate, drafts the PR text                                                                                         |
-| `/prep-pr <F1.x>`      | tidies, gates, sweeps the docs, runs a review round, then commits, pushes and opens the PR                                                                                      |
-| `/babysit-pr [#N]`     | polls CI, Sonar and the AI reviewers on an open PR, fixes what they find, stops at merge-ready                                                                                  |
-| `/close-ticket <F1.x>` | after the merge: ticks the ticket's AC/DoD with evidence, corrects what the work made false, records the PRs and the decisions, puts ✅ in the title, returns to a fresh `main` |
+| Command                | Does                                                                                                                                                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/dev`                 | brings up Postgres, migrations, api and web, and reports what is actually running                                                                                                                                     |
+| `/check`               | the CI gate locally: lint, typecheck, format, build, tests, secret scan, contract drift                                                                                                                               |
+| `/plan <F1.x>`         | reads the ticket and returns an ordered, file-scoped plan; writes no code                                                                                                                                             |
+| `/grill-me <task>`     | interviews until the scope is shared, then hands off to `/plan`                                                                                                                                                       |
+| `/sync-docs`           | sweeps the documentation the change touched and corrects what went stale                                                                                                                                              |
+| `/review [target]`     | fans parallel `pr-reviewer` subagents over the branch, verifies each finding, reports — changes nothing                                                                                                               |
+| `/phase-done <F1.x>`   | verifies the ticket's Acceptance Criteria one by one, runs the gate, drafts the PR text                                                                                                                               |
+| `/prep-pr <F1.x>`      | tidies, gates, sweeps the docs, runs a review round, then commits, pushes and opens the PR                                                                                                                            |
+| `/babysit-pr [#N]`     | polls CI, Sonar and the AI reviewers on an open PR, fixes what they find, stops at merge-ready                                                                                                                        |
+| `/close-ticket <F1.x>` | after the merge: ticks the ticket's AC/DoD with evidence, corrects what the work made false, records the PRs and the decisions, puts ✅ in the title, returns to a fresh `main` and deletes the merged local branches |
 
 ## Hooks (`hooks/`)
 

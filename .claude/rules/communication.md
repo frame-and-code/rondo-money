@@ -15,7 +15,17 @@ deciding that it runs is theirs. Typing [`/prep-pr`](../commands/prep-pr.md) **i
 decision — the command then commits, pushes and opens the PR in one go — and so is asking in
 words. So is [`/close-ticket`](../commands/close-ticket.md), which ends on a fresh `main` so
 that the next ticket does not start on the last one's branch: from a clean tree only, never
-building a merge commit (`--ff-only`), and never deleting the merged branch without asking.
+building a merge commit (`--ff-only`), and deleting the **local** branches the ticket came in
+on as part of the close. That last one asks nothing **in words** — closing the ticket is what
+makes those branches history, so the command neither hands the decision back nor leaves them
+standing pending an answer. The harness still confirms the delete, exactly as it confirms
+`/prep-pr`'s commit and push. And it licenses that act and nothing past it: a merge, or a
+branch this ticket did not produce, still waits for the user, and a force push is denied
+outright rather than asked about. The branch on the **server** is not included, and that
+asymmetry is deliberate: a local delete loses nothing the merge commit and the reflog do not
+still hold, while deleting a remote branch can destroy a commit that reached it after the
+merge and lives nowhere else. GitHub removes it on merge anyway; when one survives, the
+command names it and offers.
 What is forbidden is reaching for git because it seemed like the next step.
 
 The one exception, because it prevents work from landing in the wrong place: when a new

@@ -1,5 +1,5 @@
 ---
-description: After the PR is merged, close the Notion ticket — tick the AC/DoD items that have evidence, correct what the work made false, record the PRs and the decisions, put ✅ in the title, and leave the session on a fresh main.
+description: After the PR is merged, close the Notion ticket — tick the AC/DoD items that have evidence, correct what the work made false, record the PRs and the decisions, put ✅ in the title, return to a fresh main and delete the merged local branches.
 argument-hint: '<F1.x ticket or Notion link>'
 ---
 
@@ -21,7 +21,7 @@ user has merged — never to make an unmerged ticket look finished.
    against its merge commit**, not against `main`:
 
    ```bash
-   gh pr view <N> --json headRefOid,mergeCommit   # the two SHAs
+   gh pr view <N> --json headRefOid,headRefName,mergeCommit   # the SHAs, and the branch name
    git fetch origin refs/pull/<N>/head            # reachable even if the branch was deleted
    git diff <headRefOid> <mergeCommit.oid>        # empty = the merge carried exactly that work
    ```
@@ -38,10 +38,21 @@ user has merged — never to make an unmerged ticket look finished.
    updating it produces a new head. If that requirement is ever relaxed, expect the target's
    own changes here and compare only the paths the PR touched.
 
-   And check the other end too: `git rev-parse HEAD` against `headRefOid`. Equal diffs prove
-   the merge carried what the PR held; they say nothing about a commit pushed _after_ the
-   merge button, which never entered the PR at all and is invisible to any comparison that
-   starts from it.
+   And check the other end too: `git rev-parse --verify refs/heads/<headRefName>` against
+   `headRefOid`. Equal diffs prove the merge carried what the PR held; they say nothing about
+   a commit pushed _after_ the merge button, which never entered the PR at all and is
+   invisible to any comparison that starts from it.
+
+   Two things about that spelling, both load-bearing because a force delete hangs off it.
+   Name the branch rather than `HEAD`: whenever the session is on `main` — which step 7
+   contemplates, and where it leaves you — `HEAD` is main's tip and never matches, and the
+   mismatch reads as "the branch carries something the PR did not" about a commit that does
+   not exist. And name the ref in full: a bare `<headRefName>` goes through ordinary revision
+   lookup, which tries `refs/tags/` **before** `refs/heads/`, so a tag of the same name answers
+   instead — measured: git prints `refname is ambiguous` on stderr and puts the tag's sha on
+   stdout, where anything reading the command sees only the wrong sha. `--verify refs/heads/…` asks the one question meant here, and its failure
+   then means exactly one thing — no such local branch, which is not a failed proof either:
+   there is simply nothing local to delete, and step 7's remote half still applies.
 
 2. **Fetch the ticket** from Notion (MCP server; the link the user provides, or search by
    the ticket code). Collect every checkbox — Acceptance Criteria, DoD, and any inline
@@ -90,7 +101,7 @@ user has merged — never to make an unmerged ticket look finished.
    git switch main && git pull --ff-only
    ```
 
-   Four conditions, none of them optional:
+   Three conditions on the move, none of them optional:
 
    - **Only with a clean working tree.** `git status --porcelain` non-empty → change nothing,
      name what is uncommitted and let the user decide. Switching would either drag those
@@ -102,13 +113,52 @@ user has merged — never to make an unmerged ticket look finished.
      creates it from `origin/main`, and there is nothing to pull.)
    - **`--ff-only` even so.** The check and the pull race in principle, and this is the belt
      that makes the braces unnecessary: a merge commit on `main` cannot be built by accident.
-   - **The merged branch is not deleted on its own**, and only offered when step 1 proved the
-     whole of it landed. A squash merge leaves it looking unmerged to git, so removing it takes
-     `git branch -D` — a force delete, which is not run unasked. Offer it only when step 1's
-     `git rev-parse HEAD` matched `headRefOid`: if it did not, the branch carries a commit
-     pushed after the merge that never entered the PR, and the merge commit is evidence about
-     what the PR held, not about what the branch holds. Name that commit instead and do not
-     offer the delete.
+
+   **Once the session stands on `main`, delete the local branches the ticket came in on.**
+   Closing the ticket is what turns them into history, so removing them belongs to the close
+   and is not a separate question ([communication.md](../rules/communication.md)). The branch
+   on the server is not this command's to remove — see below.
+
+   Skip the deletion entirely, and say so, whenever the move did not leave you on a clean
+   `main`: conditions 1 or 2 kept the session on the feature branch, or the tree is dirty
+   however you arrived. Git refuses to delete a branch that is checked out, so attempting it
+   there fails, and a `git branch -D` that fails or that the user refuses ends the deletion
+   for that branch rather than being retried another way.
+
+   One branch per PR, each judged against **its own** PR — step 1 collects every PR that
+   carried the ticket, so a ticket closed by three of them has three branches to clear.
+
+   ```bash
+   git fetch origin --prune                          # prune is what makes "gone" mean gone
+   git ls-remote --heads origin <headRefName>        # non-empty → still on the server: propose, delete nothing
+   git rev-parse --verify refs/heads/<headRefName>   # == headRefOid → the work landed; fails → nothing local to delete
+   git branch -vv --list <headRefName>               # upstream marked "gone" → the server has let go of it
+   git branch -D -- <headRefName>                    # -D, not -d: a squash merge leaves it looking unmerged
+   ```
+
+   **The remote branch is deleted by GitHub, not by this command.** The repository has
+   `delete_branch_on_merge` switched on, so pressing Merge removes it; by the time a ticket is
+   closed it is normally gone already. What is left for the command is to notice, not to act:
+   a branch still standing on the server after a merge is unusual enough to be worth a human
+   look, so name it in the report and **offer** the deletion rather than running it. That is
+   deliberately narrower than the local half, and the asymmetry is the point — `git branch -D`
+   loses nothing that the merge commit and the reflog do not still hold, while
+   `git push origin --delete` can destroy a commit that reached `origin` after the merge and
+   exists in no `refs/pull/<N>/head`. There is no version of that command this loop should run
+   on its own authority, so it does not appear here at all.
+
+   The two local checks answer different questions and both are cheap. `rev-parse` says the
+   branch is the work the PR carried; the `gone` upstream marker says the server has already
+   let go of it, which after the prune above is the local record of what `ls-remote` just
+   confirmed. A branch that fails either check is left standing and named — no local branch at
+   all is not a failed proof, there is simply nothing to delete.
+
+   Expect the deletion to pause: `git branch -D` is not in the allow list in
+   [`settings.json`](../settings.json), so it reaches the user as a permission prompt — the
+   same arrangement [`/prep-pr`](prep-pr.md) has for commit and push. That is where the
+   authorisation actually happens and it is the design, not friction to route around. It is
+   also not the command asking: not asking means not handing the decision back to the user in
+   words and not leaving the branch standing pending an answer.
 
    Already on `main`: just pull. This is the one step that changes which branch you are on —
    step 1's fetch and diff read git without moving anything — and it is deliberate: typing
@@ -129,8 +179,8 @@ user has merged — never to make an unmerged ticket look finished.
 - Recorded: <the decisions written into the ticket, and the comment linking the PRs>
 - Title: ✅ set / already set / withheld — <open items>
 - Branch: on `main`, up to date / left on `<branch>` because <what is uncommitted, or that
-  `main` has diverged> — and whether the merged branch is still there to delete, or why it is
-  not safe to offer
+  `main` has diverged> — and which local branches were deleted, or why any were left standing;
+  name any branch still on the server and offer to remove it
 ```
 
 $ARGUMENTS

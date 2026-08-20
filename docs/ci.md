@@ -209,9 +209,15 @@ against slips and against everyone who is not an admin, not a wall — a direct 
 from an admin account still goes through. The trade-off is worth revisiting the moment a
 second person gets write access.
 
-Like every other repository setting, this is not in code: the ruleset and **Allow auto-merge**
-(Settings → General, needed by the workflow below) both have to be recreated by hand if the
-repository moves.
+Like every other repository setting, this is not in code: the ruleset, **Allow auto-merge**
+(Settings → General, needed by the workflow below) and **Automatically delete head branches**
+(same page) all have to be recreated by hand if the repository moves. The last one is load
+bearing rather than tidiness — it is what removes the head branch on merge, and
+[`/close-ticket`](../.claude/commands/close-ticket.md) relies on it: the command clears the
+local branch and deliberately does not delete anything on the server, because a remote delete
+can destroy a commit pushed after the merge while a local one loses nothing the merge commit
+still holds. Switch it off and merged branches simply accumulate; the command notices and
+offers, it does not act.
 
 ## Dependabot: patch and minor merge themselves
 
