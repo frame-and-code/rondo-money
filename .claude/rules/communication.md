@@ -15,7 +15,16 @@ deciding that it runs is theirs. Typing [`/prep-pr`](../commands/prep-pr.md) **i
 decision — the command then commits, pushes and opens the PR in one go — and so is asking in
 words. So is [`/close-ticket`](../commands/close-ticket.md), which ends on a fresh `main` so
 that the next ticket does not start on the last one's branch: from a clean tree only, never
-building a merge commit (`--ff-only`), and never deleting the merged branch without asking.
+building a merge commit (`--ff-only`), and deleting the branches the ticket came in on, local
+and remote, as part of the close. That last one asks nothing **in words** — closing the ticket
+is what makes those branches history, so the command neither hands the decision back nor
+leaves them standing pending an answer. The harness still confirms each delete, exactly as it
+confirms `/prep-pr`'s commit and push. And it licenses that act and nothing past it: a merge,
+or a branch this ticket did not produce, still waits for the user, and a force push is denied
+outright rather than asked about. What keeps it
+safe is not permission but proof, and each ref is judged by its own head — the local branch
+goes when its head is the head the PR carried, the branch on the server goes when _its_ head
+is, because the local one vouches for nothing about the remote.
 What is forbidden is reaching for git because it seemed like the next step.
 
 The one exception, because it prevents work from landing in the wrong place: when a new
