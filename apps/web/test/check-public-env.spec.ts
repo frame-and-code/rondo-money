@@ -57,15 +57,24 @@ describe('check-public-env, image mode (the Railway build)', () => {
     await expect(run('image', VALID)).resolves.toMatchObject({ code: 0 });
   });
 
-  it('refuses a build with no Clerk key — the bundle could authenticate nobody', async () => {
-    const { code, stderr } = await run('image', {
-      ...VALID,
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: '',
-    });
+  // Whitespace counts as missing. The shell check this replaced (`[ -n "$KEY" ]`) let "   "
+  // through, and a bundle carrying it authenticates nobody — the failure this script exists
+  // to move forward in time.
+  it.each([
+    ['empty', ''],
+    ['whitespace', '   '],
+  ])(
+    'refuses a build whose Clerk key is %s — the bundle could authenticate nobody',
+    async (_case, value) => {
+      const { code, stderr } = await run('image', {
+        ...VALID,
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: value,
+      });
 
-    expect(code).toBe(1);
-    expect(stderr).toContain('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY');
-  });
+      expect(code).toBe(1);
+      expect(stderr).toContain('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY');
+    },
+  );
 
   it('refuses a build with no API URL — a deployed bundle must not fall back to localhost', async () => {
     const { code, stderr } = await run('image', WITHOUT_API_URL);

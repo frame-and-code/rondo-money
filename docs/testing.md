@@ -39,7 +39,9 @@ The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
 - **E2E, once**: download the browser — `pnpm --filter @rondo/web exec playwright install chromium`.
 - E2E builds and starts both servers itself — api (`node dist/main.js`) and web
   (`next build` + `next start`, see below); servers already running locally are reused
-  (`reuseExistingServer`), as long as the web one is a production build.
+  (`reuseExistingServer`). A **dev server on :3001 aborts the run** rather than being
+  replaced, so stop `pnpm dev` (and the one [`/dev`](../.claude/commands/dev.md) starts)
+  before running e2e.
 - **E2E needs the Clerk keys** (F1.1) in `apps/web/.env.local` — `pnpm env:setup`. The
   publishable one is needed by the **build**, not at startup: `next build` inlines it into
   the bundle, and `apps/web/check-public-env.mjs` refuses to build without it in CI (locally

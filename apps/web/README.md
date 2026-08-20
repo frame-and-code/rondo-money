@@ -19,7 +19,9 @@ src/
                               # first authenticated API call (GET /me, F1.4)
     globals.css               # Tailwind entry point + the theme's CSS variables
     sign-in/[[...sign-in]]/   # the only public screen (Clerk catch-all route)
-    api/health/route.ts       # liveness probe for Railway — public, answers 200 flat
+    api/health/route.ts       # liveness probe for Railway — public, answers 200 flat; also
+                              # reports the mode the bundle was built in, which is what e2e
+                              # read to refuse a dev server (F1.11)
     (app)/                    # route group for the future app shell (Phase 3)
       layout.tsx
       budget/page.tsx         # budget screen placeholder (/budget)

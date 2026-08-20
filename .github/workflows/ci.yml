@@ -366,10 +366,12 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml', 'apps/web/src/**', 'packages/ui/src/**', 'packages/api-client/src/**') }}
-          # An older cache is still worth having: Next reuses it per file, so a partial hit
-          # is a partial build rather than nothing.
-          restore-keys: ${{ runner.os }}-nextjs-
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/web/src/**', 'packages/ui/src/**', 'packages/api-client/src/**') }}
+          # An older cache is still worth having: Next reuses it per file, so a partial hit is
+          # a partial build rather than nothing. The lockfile hash stays in the fallback (the
+          # shape Next's own CI guide uses) so a toolchain bump starts from a cold cache
+          # instead of one written by the previous version of the bundler.
+          restore-keys: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
       # This step is the slowest in the job, and measuring it decides what is worth fixing.
       # On a healthy run (32269953397) it split into: apt index refresh 1m14s, nine genuinely

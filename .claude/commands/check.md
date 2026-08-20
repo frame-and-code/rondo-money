@@ -45,6 +45,11 @@ from going through, so the gap is not a cosmetic one.
 (`docker compose up -d`) and e2e needs Clerk keys in `apps/web/.env.local`; if either is
 missing, say which level was not exercised instead of calling the run green.
 
+E2E also need **:3001 free of a dev server** (F1.11). They run against a production build,
+and Playwright reuses whatever already holds that port — so the `pnpm dev` server
+[`/dev`](dev.md) starts there does not get replaced, it aborts the level with "reports mode
+development". Stop it before `/check`, or run the two apart.
+
 With `$ARGUMENTS`, target one workspace: `pnpm --filter <name> lint` and so on.
 
 ## Report

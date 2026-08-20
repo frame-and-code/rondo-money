@@ -75,7 +75,10 @@ if (apiUrl === undefined) {
   }
 }
 
-if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+// `.trim()`: whitespace is not a key, and the shell check this replaced (`[ -n "$KEY" ]`)
+// accepted "   " — which builds cleanly and then rejects every request in clerkMiddleware.
+// The URL branch above already refuses whitespace, because `new URL(' ')` throws.
+if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()) {
   const message =
     'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is missing. It is inlined into the browser bundle, so ' +
     'a build without it serves an app that cannot authenticate anyone. Locally: `pnpm env:setup` ' +

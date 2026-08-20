@@ -79,26 +79,41 @@ user has merged — never to make an unmerged ticket look finished.
    `main`, so a flow that never returns there never fires it, and F1.11 duly began on F1.9's
    branch. Closing the ticket is the moment the ground can be cleared, so clear it:
 
+   **Ask before you move, not after.** `git switch main` followed by a `git pull` that cannot
+   fast-forward leaves the session standing on a diverged `main` — the one state this step
+   exists to avoid, reached by the step itself. So establish that the move is a fast-forward
+   first, and only then make it:
+
    ```bash
+   git fetch origin
+   git merge-base --is-ancestor main origin/main   # no local main yet? skip — switch creates it
    git switch main && git pull --ff-only
    ```
 
-   Three conditions, none of them optional:
+   Four conditions, none of them optional:
 
    - **Only with a clean working tree.** `git status --porcelain` non-empty → change nothing,
      name what is uncommitted and let the user decide. Switching would either drag those
      changes onto `main` or fail halfway through.
-   - **`--ff-only`.** A plain `pull` can build a merge commit on `main` out of a local
-     divergence. This one fails loudly instead, which is the right outcome: a diverged `main`
-     is something to look at, not to resolve on the way past.
-   - **The merged branch is not deleted on its own.** A squash merge leaves it looking
-     unmerged to git, so removing it takes `git branch -D`, and a force delete is not run
-     unasked. Offer it — with the merge commit from step 1 as the evidence that its content
-     is in `main` — and let the user answer.
+   - **Only when `main` can fast-forward.** The `--is-ancestor` check above answers that
+     without moving anything; false means `main` has commits of its own. Stay on the current
+     branch, say so, and let the user look — a diverged `main` is a thing to understand, not
+     to resolve on the way past. (No local `main` at all is not divergence: `git switch main`
+     creates it from `origin/main`, and there is nothing to pull.)
+   - **`--ff-only` even so.** The check and the pull race in principle, and this is the belt
+     that makes the braces unnecessary: a merge commit on `main` cannot be built by accident.
+   - **The merged branch is not deleted on its own**, and only offered when step 1 proved the
+     whole of it landed. A squash merge leaves it looking unmerged to git, so removing it takes
+     `git branch -D` — a force delete, which is not run unasked. Offer it only when step 1's
+     `git rev-parse HEAD` matched `headRefOid`: if it did not, the branch carries a commit
+     pushed after the merge that never entered the PR, and the merge commit is evidence about
+     what the PR held, not about what the branch holds. Name that commit instead and do not
+     offer the delete.
 
-   Already on `main`: just pull. This is the one step of this command that touches git, and
-   it is deliberate — typing `/close-ticket` is the decision, the same way typing
-   [`/prep-pr`](prep-pr.md) is ([communication.md](../rules/communication.md)).
+   Already on `main`: just pull. This is the one step that changes which branch you are on —
+   step 1's fetch and diff read git without moving anything — and it is deliberate: typing
+   `/close-ticket` is the decision, the same way typing [`/prep-pr`](prep-pr.md) is
+   ([communication.md](../rules/communication.md)).
 
 8. **Report** what changed and what stayed open.
 
@@ -113,8 +128,9 @@ user has merged — never to make an unmerged ticket look finished.
 - Corrected: <a criterion's note the merged work made false> (omit when none)
 - Recorded: <the decisions written into the ticket, and the comment linking the PRs>
 - Title: ✅ set / already set / withheld — <open items>
-- Branch: on `main`, up to date / left on `<branch>` because <what is uncommitted, or why the
-  pull could not fast-forward> — and whether the merged branch is still there to delete
+- Branch: on `main`, up to date / left on `<branch>` because <what is uncommitted, or that
+  `main` has diverged> — and whether the merged branch is still there to delete, or why it is
+  not safe to offer
 ```
 
 $ARGUMENTS
