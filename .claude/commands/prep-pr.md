@@ -46,7 +46,10 @@ git-ignored `settings.local.json`.
    cannot be told apart from a sweep nobody ran.
 5. **One review round** — [`/review`](review.md) — unless the change is of a kind that rule
    says does not earn one (a copy edit, a dependency bump, a one-line fix that cannot fail
-   silently). Print what it found, then:
+   silently). That command fans out to `pr-reviewer` subagents, and **reaching this step is
+   the explicit request to spawn them** — exactly as typing `/prep-pr` is the request for the
+   three git actions. A standing "no subagents unless asked" is satisfied here; doing the
+   round single-context instead is a weaker pass reported under the same name. Print what it found, then:
    - a **MUST FIX** or **SHOULD FIX** that survived verification **stops this command here**,
      before any git action. Report it and hand back: fixing is the user's call, and so is
      deciding that the finding is wrong or that its severity was inflated — an overruled

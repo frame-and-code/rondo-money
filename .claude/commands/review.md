@@ -18,6 +18,17 @@ keeps the reading out of this window: what returns is the findings, not the file
 This does not replace the generic pass (`/code-review`, CodeRabbit, Greptile on the PR). It
 is the pass that knows ADR-005 exists.
 
+**Invoking this command — by typing it, or through [`/prep-pr`](prep-pr.md), which calls it at
+step 5 — _is_ the explicit request to spawn subagents.** Say so plainly, because the opposite
+reading has cost real reviews: a session may carry a standing instruction like "do not use
+subagents unless the user requested it", and an agent that reads it narrowly does the review
+itself, reports a weaker pass, and the user finds out afterwards. Asking for a command whose
+definition is a fan-out asks for the fan-out; there is no version of this command that runs
+without it. This is the same construction [`/prep-pr`](prep-pr.md) uses for git — typing the
+command is the ask. If subagents are genuinely unavailable in this environment rather than
+merely discouraged, **say that and stop** — never quietly substitute a single-context read and
+report it as a review.
+
 ## Steps
 
 1. **Scope it.** No argument: the branch's own work, committed **and** not — all four of

@@ -66,6 +66,12 @@
       "version": "n/a — standard, not a dependency",
       "why": "SIX is the ISO 4217 maintenance agency and publishes the authoritative code list with each currency's minor-unit exponent. Money is minor units in bigint and the digit count comes from the currency, never a hardcoded 2 — so this list, not intuition, decides how a budget's amounts are parsed and rendered. Readable summary: https://en.wikipedia.org/wiki/ISO_4217",
       "checked": "2026-08-16"
+    },
+    "sonarqube-cloud-analysis-parameters": {
+      "url": "https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/analysis-parameters.md",
+      "version": "SonarSource/sonarqube-scan-action v8.2.1, sonar-scanner-cli 8.1.0.6389",
+      "why": "Whether CI blocks on code quality is decided by one scanner parameter, so it is not a thing to remember. sonar.qualitygate.wait defaults to FALSE: without it the scanner uploads the analysis and exits 0 whatever the verdict, which is why F1.12 aggregating the sonar job into `gate` would have proven nothing on its own. With it the scanner polls and fails the step on a red quality gate, bounded by sonar.qualitygate.timeout (300s by default). We pass it on the command line rather than in sonar-project.properties because it is true only for pull requests — see the sonar job in .github/workflows/ci.yml. The `args` input that carries it is declared by the action itself (action.yml at the pinned SHA: 'Additional arguments to the Sonar Scanner CLI'); if a bump ever drops that input the runner only warns, and the gate silently stops gating — check it here before bumping. Note the docs site renders through a query interface: append ?ask=<question> to the .md URL when the plain page does not carry the parameter.",
+      "checked": "2026-08-20"
     }
   }
 }
