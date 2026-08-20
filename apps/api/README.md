@@ -7,7 +7,7 @@ below.
 
 F1.6 adds the first endpoint that touches a table — [`src/user-settings`](src/user-settings),
 the read path in full: controller → service → `SCOPED_PRISMA`. The single mutation point, where
-a state change and its `ChangeLog` entry are written in one transaction, arrives in F2.2. The
+one user operation and its idempotency key are written in one transaction, arrives in F3.2. The
 machinery both are built on is already here: the request context, the auto-scoped Prisma client
 and the raw-SQL repository below, plus the contract they are published through (F1.4).
 
@@ -123,7 +123,7 @@ is ordinary code here — and code fails silently. Four mechanisms carry it, in 
    middleware opens the scope before any guard runs; the guard fills it from the verified
    token. Nothing reads the identity from a parameter, so no call site can forget to pass it.
    Later phases add fields to the same store: the active `budgetId` (F3.1) and the
-   inside-the-mutator marker (F2.2).
+   inside-the-mutator marker (F3.2).
 2. **The auto-scoped client** — inject `SCOPED_PRISMA`
    ([`scoped-prisma.ts`](src/prisma/scoped-prisma.ts)), not `PrismaService`. Reads of a
    registered model are filtered by the caller, writes are stamped with them, and an operation
@@ -139,7 +139,7 @@ is ordinary code here — and code fails silently. Four mechanisms carry it, in 
    - It sees **top-level operations only.** A write that nests a relation (a `create` inside
      another model's `data`) keeps whatever `userId` the caller put on the nested rows.
      Unreachable today (one model, no relations), but that is the shape a transfer's two legs
-     are written in, so F2.2 either scopes them explicitly or creates them as separate
+     are written in, so F3.2 either scopes them explicitly or creates them as separate
      top-level writes inside its transaction.
 3. **The registry** — [`scoped-models.ts`](src/prisma/scoped-models.ts) lists the models this
    applies to, and a new table joins it in the same change that creates it. Forgetting is

@@ -65,7 +65,7 @@ function carriesScope(args: unknown, userId: string): boolean {
  * - it sees **top-level operations only**. A nested write — `create({ data: { legs: { create:
  *   [...] } } })` — keeps whatever `userId` the caller put on the nested rows, and the backstop
  *   below cannot tell, because it inspects that same top-level `data`. Unreachable today (one
- *   model, no relations), but it is the shape F2.2 writes a transfer's two legs in: scope the
+ *   model, no relations), but it is the shape F3.2 writes a transfer's two legs in: scope the
  *   nested rows explicitly there, or create them as separate top-level writes inside the
  *   transaction.
  *

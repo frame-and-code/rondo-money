@@ -8,9 +8,11 @@ Both are **inputs** to the work, not paperwork produced after it.
 
 - **PRD (RU)** — the source of truth. PRD (EN) is a mirror; when they disagree, RU wins.
 - **Development Plan v1 (High-Level)** — phases, the per-phase DoD, the table of migrations.
-- **ADRs** — ADR-001 (a change log instead of event sourcing), ADR-002 (a separate NestJS
-  backend owns all DB access), ADR-003 (public repository, AGPL-3.0-only), ADR-004 (locale
-  detection — proposed, deferred), ADR-005 (no RLS; isolation lives in the backend).
+- **ADRs** — ADR-001 (a change log instead of event sourcing — **revised by ADR-006**),
+  ADR-002 (a separate NestJS backend owns all DB access), ADR-003 (public repository,
+  AGPL-3.0-only), ADR-004 (locale detection — proposed, deferred), ADR-005 (no RLS;
+  isolation lives in the backend), ADR-006 (no server-side change log; undo is a client
+  stack).
 - **The phase ticket** — the feature currently being built, with its own Acceptance
   Criteria.
 

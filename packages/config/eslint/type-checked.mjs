@@ -1,7 +1,7 @@
 // @rondo/config/eslint/type-checked — opt-in type-aware layer.
 // Deferred from F0.2 (the base is deliberately syntactic-only), enabled in F0.4 now
 // that real async code exists. Adds typescript-eslint's type-checked rules plus the
-// floating/misused-promise rules the single-write-point + ChangeLog principle relies on.
+// floating/misused-promise rules the single-write-point principle relies on.
 //
 // Opt in per workspace because it needs a tsconfig and is slower than the base:
 //

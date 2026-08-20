@@ -64,8 +64,8 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
      ⚠️ **Rotating the Clerk signing key means updating this variable**, and nothing will
      tell you: the api starts, `/health` stays 200 because it is public, the deploy goes
      green — and every authenticated request answers 401. Until the api checks its key
-     against the published JWKS at boot (tracked in Улучшения), this note is the only
-     safeguard;
+     against the published JWKS at boot (tracked in the Notion backlog page "Улучшения" —
+     Improvements), this note is the only safeguard;
 
      **`NODE_ENV`** (F1.4) decides whether the API serves its own documentation at `/docs`:
      everywhere except production. The image sets `NODE_ENV=production` itself
@@ -109,8 +109,8 @@ migrate deploy --config packages/db/prisma.config.ts`), which is why `prisma` an
 Both images build from the **repository root**: after the manifest layer each Dockerfile does
 `COPY . .`, so a change in any workspace, in the lockfile or in `turbo.json` changes what ends
 up in the image. Watch paths narrowed to `/apps/<service>/**` therefore hid a whole class of
-commits from dev — F1.9 merged and nothing deployed. The expensive case is migrations: F2.1,
-F3.1 and F4.1 are almost entirely `packages/db`, and without `/packages/**` dev would keep
+commits from dev — F1.9 merged and nothing deployed. The expensive case is migrations: F3.1
+and F4.1 are almost entirely `packages/db`, and without `/packages/**` dev would keep
 running the old schema under fresh code, with nothing in the application logs to explain it.
 
 The patterns live in `build.watchPatterns` of each `railway.json`:

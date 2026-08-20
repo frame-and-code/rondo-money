@@ -17,10 +17,11 @@ public under AGPL-3.0-only.
 
 The canonical documents live in Notion: the **PRD (RU)** is the source of truth, PRD (EN)
 mirrors it, the **Development Plan v1 (High-Level)** owns the phases and their DoD, and the
-ADRs hold the decisions — ADR-001 (a change log instead of event sourcing), ADR-002 (a
-separate NestJS backend owns all DB access), ADR-003 (public repository under AGPL-3.0-only),
-ADR-004 (locale detection — proposed, deferred), ADR-005 (no RLS; isolation lives in the
-backend).
+ADRs hold the decisions — ADR-001 (a change log instead of event sourcing, revised by
+ADR-006), ADR-002 (a separate NestJS backend owns all DB access), ADR-003 (public repository
+under AGPL-3.0-only), ADR-004 (locale detection — proposed, deferred), ADR-005 (no RLS;
+isolation lives in the backend), ADR-006 (no server-side change log and no soft-delete; undo
+is a stack in the browser, and the single write point stays for atomicity).
 
 ## Structure
 

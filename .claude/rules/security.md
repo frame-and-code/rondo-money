@@ -30,7 +30,7 @@ polish:
   importing `PrismaService` outside `src/prisma`, `src/raw-sql` and the tests.
 - The extension covers **top-level operations only**. A nested write keeps whatever `userId`
   the caller put on the nested rows, so a relation written that way (a transfer's two legs,
-  F2.2) is scoped explicitly or split into separate top-level writes inside the transaction.
+  F3.2) is scoped explicitly or split into separate top-level writes inside the transaction.
 - A model that carries user data joins the registry
   ([`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts)) in the same change that
   creates it — never "in a follow-up". Not left to memory: `apps/api/test/scoped-models.spec.ts`

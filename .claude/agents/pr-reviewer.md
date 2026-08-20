@@ -1,6 +1,6 @@
 ---
 name: pr-reviewer
-description: Reviews a change against this project's own invariants — tenant isolation (ADR-005), layer boundaries (ADR-002), one write point (ADR-001), money and dates, tests, and the prose a change makes false. Spawned per dimension by /review; each run is one dimension, not a whole review.
+description: Reviews a change against this project's own invariants — tenant isolation (ADR-005), layer boundaries (ADR-002), one write point (ADR-006), money and dates, tests, and the prose a change makes false. Spawned per dimension by /review; each run is one dimension, not a whole review.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -53,8 +53,9 @@ Weight these accordingly:
   `ScopedRawRepository`, a `userId` taken from the body/query/header instead of
   `@CurrentUserId()`, a new user-owned model missing from `scoped-models.ts`, or a nested
   write assuming the extension scopes it (it does not — top-level only);
-- a domain mutation that does not go through the single mutation service, or a state change
-  and its `ChangeLog` entry that could land apart; a transfer with one leg;
+- a domain mutation that does not go through the single mutation service, a composite
+  operation split across two transactions — the mutation and its idempotency key included —
+  or a transfer with one leg;
 - derived state given a column: balance, RTA, Assigned, Activity, Available, net worth;
 - `apps/web` reaching the database, hand-writing a `fetch` beside the generated client, or
   the module-level client being configured on the server (one client per process — that is a

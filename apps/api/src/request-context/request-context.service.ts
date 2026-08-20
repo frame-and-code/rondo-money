@@ -8,7 +8,7 @@ import { Injectable } from '@nestjs/common';
  *
  * An object rather than a bare string because later phases add fields to the same store —
  * the active `budgetId` (F3.1) and the marker saying a write is happening inside the
- * mutation service (F2.2). Those fields arrive with the tickets that need them.
+ * mutation service (F3.2). Those fields arrive with the tickets that need them.
  */
 interface RequestScope {
   userId?: string;

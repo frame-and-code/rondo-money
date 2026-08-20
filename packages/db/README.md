@@ -4,13 +4,15 @@ Data layer: Prisma schema, migrations and the generated client — skeleton F0.4
 
 The schema grows incrementally: each phase brings its own migration. F0.4 is the base
 skeleton (datasource + generator + an empty initial `0_init` migration); F1.3 adds the first
-table, `UserSettings`, F1.6 its `language` column, and the `ChangeLog` journal plus the domain
-core arrive in Phases 2–3.
+table, `UserSettings`, F1.6 its `language` column, and the domain core arrives in Phase 3 —
+six tables in one migration (`Budget`, `CategoryGroup`, `Category`, `Account`, `Transaction`,
+`IdempotencyKey`). No table carries `deletedAt`: soft-delete and the change-log journal were
+both dropped by ADR-006.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum —
 `RU` / `EN` / `PL`, defaulting to `EN`). It exists this early because the `userId` auto-scoping
-extension in `apps/api` cannot be typed against a schema with no models at all; currency,
-timezone and number format join it in Phases 2–3.
+extension in `apps/api` cannot be typed against a schema with no models at all. Currency is
+not here: it belongs to `Budget` (F3.1).
 
 ## Conventions
 

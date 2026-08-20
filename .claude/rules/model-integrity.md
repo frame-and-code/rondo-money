@@ -21,8 +21,9 @@ leak.
 
 ## Open questions go to the user, not to a guess
 
-The plan leaves decisions deliberately open — the default category list (F3.3), the
-category-deletion rules (F4.6), undo depth and journal retention (F8). When work reaches
+The plan leaves decisions deliberately open — the default category list (F3.4), whether a
+category holding a non-zero Available can be hidden (F4.6), how validation differs between
+assigning money and moving it between envelopes (F4.3 / F4.4). When work reaches
 one:
 
 1. State the question, the options, and your recommendation with a reason.

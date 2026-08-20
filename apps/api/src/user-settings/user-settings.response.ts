@@ -7,8 +7,8 @@ import { LANGUAGE_TAGS } from '@/user-settings/language';
  * A user's own settings, as published.
  *
  * Only `language`: the row's id and timestamps are the backend's business, and a field
- * published once is far harder to withdraw from a contract than to add to it. Phases 2–3 add
- * currency, timezone and number format here as they arrive.
+ * published once is far harder to withdraw from a contract than to add to it. Currency is not
+ * coming here — it belongs to `Budget` (F3.1).
  */
 export class UserSettingsResponse implements UserSettingsDto {
   @ApiProperty({
