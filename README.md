@@ -75,7 +75,7 @@ apps/
   api/        # backend (NestJS REST) — owns every database access
 packages/
   db/         # Prisma schema and migrations
-  types/      # shared DTOs; money as BigInt (minor units)
+  types/      # shared DTOs; money as BigInt minor units, a string on the wire
   api-client/ # typed API client, generated from the API's OpenAPI spec
   config/     # shared configs (eslint / tsconfig / prettier)
   ui/         # shared UI components (shadcn/ui)
