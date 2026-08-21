@@ -697,9 +697,24 @@ expect_docs_fail "$D" 'prose in .claude/config JSON is part of the corpus' 'owne
 
 # GitHub replaces each space, so punctuation between words leaves a double hyphen.
 D=$(docs_fixture anchor-slug)
-printf 'It sees top-level operations only.\n\n## Step 1 — Enter the loop\n' > "$D/owner.md"
+printf 'It sees top-level operations only.\n\n## Step 1 / Enter the loop\n' > "$D/owner.md"
 printf 'See [it](owner.md#step-1--enter-the-loop).\n' > "$D/other.md"
 expect_docs_ok "$D" 'an anchor slugged the way GitHub slugs it resolves'
+
+D=$(docs_fixture em-dash)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The gate runs first \xe2\x80\x94 then the tests.\n' > "$D/other.md"
+expect_docs_fail "$D" 'an em dash in prose is refused' 'AI tell'
+
+D=$(docs_fixture em-dash-literal)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The note format is `\xe2\x80\x94 done <date>`.\n' > "$D/other.md"
+expect_docs_ok "$D" 'a dash inside a backticked literal is quoted, not written'
+
+D=$(docs_fixture managed-block)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf '<!-- BEGIN:vendor -->\nA tool wrote this \xe2\x80\x94 we did not.\n<!-- END:vendor -->\n' > "$D/other.md"
+expect_docs_ok "$D" 'a block a dependency maintains is not ours to fix'
 
 D=$(docs_fixture fenced-heading)
 printf 'It sees top-level operations only.\n\n```bash\n# Not a heading\n```\n' > "$D/owner.md"

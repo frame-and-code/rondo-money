@@ -5,7 +5,7 @@ method, computed on the fly, no bank sync.
 
 Monorepo on **Turborepo + pnpm**, published by Frame & Code.
 
-## ⚠️ Status: pre-alpha — do not put real data here
+## ⚠️ Status: pre-alpha. Do not put real data here
 
 There are no releases. The database schema changes between phases **without backwards
 compatibility**, and migrations are written for a schema that is still being designed.
@@ -15,11 +15,11 @@ on any update.
 Run it to read the code, to try the idea, or to hack on it. Do not make it the only place
 your budget exists.
 
-Current stage: **the foundations are in place, the budgeting model is not.** Sign-in works,
+**The foundations are in place, the budgeting model is not.** Sign-in works,
 every query is scoped to the user who made it, the typed API client is generated from the
 API's own contract, and money is an integer number of minor units whose digit count comes from
 the currency. The boundary that rejects a request body carrying an undeclared field is in
-place before the first endpoint takes one — nothing accepts a body yet.
+place before the first endpoint takes one. Nothing accepts a body yet.
 What does not exist yet is the product: budgets, accounts, categories and transactions.
 Storing a budget is the next thing to land.
 
@@ -27,28 +27,28 @@ Storing a budget is the next thing to land.
 
 A personal budgeting app in the YNAB tradition: money is distributed into category
 envelopes for the month _before_ it is spent, unspent remainders roll forward, and
-balances, "available" amounts and net worth are never stored — they are computed from
+balances, "available" amounts and net worth are never stored. They are computed from
 transactions and assignments on demand.
 
 **Transactions are entered by hand, on purpose.** There is no bank synchronisation and no
-automatic import, and that is a product decision rather than a missing feature: the moment
+automatic import, and that is a product decision rather than a missing feature. The moment
 you write a transaction down is the moment you notice it. Automation optimises the
 completeness of a report; manual entry optimises attention.
 
 ## Licence
 
-**AGPL-3.0-only** — see [LICENSE](LICENSE). You may run, study, modify and redistribute
+**AGPL-3.0-only**, see [LICENSE](LICENSE). You may run, study, modify and redistribute
 this code, including as a hosted service, provided your version stays under the same
 licence and its users can get its source.
 
-The **name and logo are not covered by the licence** — see [NOTICE](NOTICE). Fork the
+The **name and logo are not covered by the licence**, see [NOTICE](NOTICE). Fork the
 code freely; give your fork its own name.
 
 ## Contributions and support
 
 Pull requests are **not accepted**: creating one is restricted to collaborators, and
 anything that does reach the repository is closed automatically. Issues are disabled. This
-is deliberate — the reasoning is in [CONTRIBUTING.md](CONTRIBUTING.md).
+is deliberate, and the reasoning is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Security problems are the one open channel: report them privately through the
 [Security tab](../../security/advisories/new), see [SECURITY.md](SECURITY.md).
@@ -60,9 +60,9 @@ no support obligation, and no promise that an upgrade will preserve your data.
 
 - Node.js 26 (see `.nvmrc`; the same version runs in CI and in the Docker images)
 - pnpm 11 (`corepack enable` picks up the version from the `packageManager` field)
-- Docker (Desktop / Engine / OrbStack) — for the local database
-- A [Clerk](https://clerk.com) account — the web app does not start without its keys
-- [gitleaks](https://github.com/gitleaks/gitleaks) — only if you intend to commit: the
+- Docker (Desktop / Engine / OrbStack), for the local database
+- A [Clerk](https://clerk.com) account; the web app does not start without its keys
+- [gitleaks](https://github.com/gitleaks/gitleaks), only if you intend to commit. The
   pre-commit hook scans the staged changes for secrets and refuses to run without it
   (`brew install gitleaks`). It is a binary rather than a pinned dependency, so its rule
   set travels with whatever version you install; developed against 8.30.1
@@ -85,9 +85,9 @@ packages/
 ## Written with an agent
 
 Most of this code is written by Claude Code, so the project's conventions are checked in
-rather than remembered: [`CLAUDE.md`](CLAUDE.md) and [`.claude/`](.claude/README.md) hold
+rather than remembered. [`CLAUDE.md`](CLAUDE.md) and [`.claude/`](.claude/README.md) hold
 the rules that load into every session, the workflow commands, and the hooks that block
-what must never happen — a push to `main`, a commit that skips the secret scan, a
+what must never happen: a push to `main`, a commit that skips the secret scan, a
 destructive migration against a non-local database. If you fork this repository and work
 in it by hand, none of it gets in your way; if you work in it with an agent, it is the
 part that keeps the result consistent.
@@ -106,7 +106,7 @@ pnpm scan:secrets # scan the whole git history for secrets (gitleaks)
 `dev`, `build`, `lint` and `test` are Turborepo tasks, parallelized across workspaces.
 `scan:secrets` is a root script, because a turbo task only reaches a workspace.
 
-### Configuration — with your own keys
+### Configuration with your own keys
 
 Three files are needed, and none of them is in git:
 
@@ -118,12 +118,12 @@ Then create `apps/web/.env.local` and `apps/api/.env.local` from the `.env.local
 to each ([web](apps/web/.env.local.tpl), [api](apps/api/.env.local.tpl)) and fill in **your
 own** Clerk keys, taken from `dashboard.clerk.com` → API Keys of a development instance.
 Those templates are the full env contract of each app; nothing in this repository is tied
-to a particular Clerk or Railway instance. Without its key the API refuses to start — it
+to a particular Clerk or Railway instance. Without its key the API refuses to start. It
 verifies every request's token (see [`apps/api`](apps/api/README.md)).
 
 The `{{ op://... }}` placeholders in the template are 1Password references used by the
 author's own `pnpm env:setup`. Without the 1Password CLI, replace them with your keys by
-hand — that is the expected path for everyone else.
+hand. That is the expected path for everyone else.
 
 ### Database
 
@@ -140,7 +140,7 @@ volume and survives container restarts.
 The credentials in `.env.example` are applied by Postgres **only when it initialises an
 empty data directory**. If you ran an earlier version of this project, the volume still
 holds the old role and you will get `password authentication failed` with no further hint.
-Recreate it once — the local database holds nothing but test data:
+Recreate it once; the local database holds nothing but test data:
 
 ```bash
 docker compose down -v && docker compose up -d && pnpm db:migrate
@@ -158,7 +158,7 @@ Outside production the API also serves its own documentation at
 [`/docs`](http://localhost:3000/docs), generated from the same OpenAPI spec the typed client
 is built from.
 
-`DATABASE_URL` is read from the root `.env` (see `.env.example`). Details —
+`DATABASE_URL` is read from the root `.env` (see `.env.example`). Details are
 in [`apps/api`](apps/api/README.md) and [`packages/db`](packages/db/README.md).
 
 ### Web
@@ -168,12 +168,12 @@ pnpm --filter @rondo/web dev   # http://localhost:3001 (redirects to /sign-in)
 ```
 
 Without Clerk keys in `apps/web/.env.local` every request fails. Where to get them and the
-full env contract — in [`apps/web`](apps/web/README.md).
+full env contract are in [`apps/web`](apps/web/README.md).
 
 ## Tests
 
-Three levels — unit / integration / e2e — plus the agent guard hooks, which are not a level
-of the app at all; tests are written together with the feature:
+Three levels: unit, integration and e2e. There are also the agent guard hooks, which are
+not a level of the app at all. Tests are written together with the feature:
 
 ```bash
 pnpm test               # all levels (turbo run test)
@@ -185,4 +185,4 @@ pnpm lint:hooks         # lint .claude and the root scripts, which no turbo task
 ```
 
 Once before e2e: `pnpm --filter @rondo/web exec playwright install chromium`.
-How to add tests to a new feature — in [`docs/testing.md`](docs/testing.md).
+How to add tests to a new feature is in [`docs/testing.md`](docs/testing.md).

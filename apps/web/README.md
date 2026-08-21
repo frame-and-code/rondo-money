@@ -1,10 +1,10 @@
 # @rondo/web
 
-Rondo Money frontend on **Next.js (App Router)** — skeleton F0.5.
+Rondo Money frontend on **Next.js (App Router)**. Skeleton F0.5.
 
 The app shell is in place: sign-in and route protection (F1.1), the shadcn/ui base from
 `@rondo/ui` (F0.6), the locale switcher (F0.7) and the typed API client `@rondo/api-client`
-(F1.4, ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack Query — server
+(F1.4, ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack Query. Server
 state lives in that cache, not in component state. Still ahead: the full navigation skeleton
 and the real screens (Phase 3).
 
@@ -48,21 +48,21 @@ pnpm --filter @rondo/web test    # unit, then e2e (see docs/testing.md for prere
 pnpm test:e2e                   # Playwright — incl. the F1.1 sign-in/out scenarios
 ```
 
-E2E build the app and serve it with `next start` (F1.11) — never `next dev`, which is a
+E2E build the app and serve it with `next start` (F1.11), never `next dev`, which is a
 different application and would make a green suite meaningless as evidence about the deployed
-one. So a run costs a build (about 5 seconds when nothing changed), and a `pnpm dev` server on
-:3001 is refused rather than reused. Don't park a production server there either: the refusal
-reads the build's mode, not its age, so a stale one would be reused silently. Details in
-[docs/testing.md](../../docs/testing.md).
+one. So a run costs a build (about 5 seconds when nothing changed), and Playwright refuses a
+`pnpm dev` server on :3001 rather than reusing it. Don't park a production server there either.
+The refusal reads the build's mode, not its age, so a stale one would be reused silently.
+Details in [docs/testing.md](../../docs/testing.md).
 
-All pages are Clerk-protected (F1.1): anonymous visitors are redirected to `/sign-in`
-by `src/proxy.ts` (`clerkMiddleware` + `auth.protect()`).
+All pages are Clerk-protected (F1.1). `src/proxy.ts` redirects anonymous visitors to
+`/sign-in` (`clerkMiddleware` + `auth.protect()`).
 
 ## Data from the API
 
 `ApiProvider` (in [src/lib/api](src/lib/api/client.tsx), mounted in the root layout) configures
-the generated client once — base URL, Clerk token, TanStack Query cache. Screens then only ask
-for data:
+the generated client once, with the base URL, the Clerk token and the TanStack Query cache.
+Screens then only ask for data:
 
 ```tsx
 import { meControllerIdentifyOptions } from '@rondo/api-client/react-query';
@@ -70,41 +70,41 @@ import { meControllerIdentifyOptions } from '@rondo/api-client/react-query';
 const { data, isError } = useQuery(meControllerIdentifyOptions());
 ```
 
-There is no token handling at the call site, and there should never be: each generated request
+There is no token handling at the call site, and there should never be. Each generated request
 carries the security its operation declares in the OpenAPI spec, so `GET /me` is sent with a
-bearer token and the public healthcheck without one. Which endpoints are open is decided by
-`@Public()` in `apps/api` — web holds no list of them.
+bearer token and the public healthcheck without one. `@Public()` in `apps/api` decides which
+endpoints are open, and web holds no list of them.
 
-It configures during render, not in an effect: a parent's effects run after its children's, so
+It configures during render, not in an effect. A parent's effects run after its children's, so
 an effect would let the first screen fire against an unconfigured client, and the cache is
-cleared during render for the same reason. The `isLoaded` guard is separate — Clerk reports
+cleared during render for the same reason. The `isLoaded` guard is separate. Clerk reports
 `userId: undefined` until it has a session, and reacting to that would empty the cache on every
 page load for nothing.
 
 The provider configures that client **in the browser only**. It is a single instance per
 process, so configuring it while Next renders on the server would hand one visitor's token to
-every concurrent request — server code therefore gets a deliberately unconfigured client.
+every concurrent request. Server code therefore gets a deliberately unconfigured client.
 Nothing needs one yet; when something does, it builds its own per request from `await auth()`
 and passes it explicitly, in this same `src/lib/api` module rather than in a hand-written
 `fetch`.
 
 `ApiProvider` empties the query cache when the Clerk user id changes, so signing out and back
 in as someone else on the same tab starts from nothing rather than serving the previous user's
-data — including to screens that were already on the page.
+data, including to screens that were already on the page.
 
 That last part is the whole point, and it is why the provider _clears_ one cache instead of
 handing out a new one, which is what it did until F1.6. `useBaseQuery` binds its observer to a
 client once and never rebinds it (verified against the installed
-`@tanstack/react-query@5.101.4`), so replacing the client reached only what mounted afterwards —
-and signing out and back in is a soft navigation, so nothing unmounts. Remounting the subtree
-per identity would also work and costs far too much: `userId` goes from `undefined` to the
+`@tanstack/react-query@5.101.4`), so replacing the client reached only what mounted afterwards.
+Signing out and back in is a soft navigation, so nothing unmounts. Remounting the subtree
+per identity would also work and costs far too much. `userId` goes from `undefined` to the
 signed-in user on every page load, so the theme provider and every screen would be rebuilt once
 per load rather than once per user.
 
 The first thing the app asks for is the user's own settings.
 [`SettingsLocaleSync`](src/i18n/settings-locale.tsx) sits in the root layout, renders nothing,
-and calls `GET /user-settings` as soon as there is a session — which is also what creates that
-row, since the endpoint is get-or-create (F1.6). Three sources can decide the interface
+and calls `GET /user-settings` as soon as there is a session. That call is also what creates
+the row, since the endpoint is get-or-create (F1.6). Three sources can decide the interface
 language, and [`locale-context.tsx`](src/i18n/locale-context.tsx) holds the order in one
 expression: **the user's own pick** (kept in `localStorage`, because `PATCH /user-settings` is
 Phase 7 and the sign-in screen has no session to read settings with) beats **the account's
@@ -112,10 +112,10 @@ settings**, which beat **the browser**. Reversing the last two would hand the ch
 the server on every reload, which is the defect the storage exists to remove.
 
 Both of the first two are scoped to the signed-in account, because browsers get shared. The
-stored pick lives under `rondo.locale:<userId>` — a signed-out visitor gets the bare
-`rondo.locale`, which is the sign-in screen, belonging to no account — and the settings
+stored pick lives under `rondo.locale:<userId>`, and a signed-out visitor gets the bare
+`rondo.locale`, which is the sign-in screen, belonging to no account. The settings
 language is reported together with the user it belongs to, so a language arriving for the
-previous account cannot be applied to the next one. Storage access is wrapped as well: Safari
+previous account cannot be applied to the next one. Storage access is wrapped as well. Safari
 with "Block All Cookies" and a sandboxed iframe throw on reading `window.localStorage` at all,
 and this provider sits above every screen with no error boundary under it.
 
@@ -131,11 +131,11 @@ pnpm env:setup   # at the repo root; needs the 1Password CLI (see setup-env.sh)
 Without 1Password, copy the template to `.env.local` and fill the `{{ op://... }}`
 references by hand.
 
-- `NEXT_PUBLIC_API_URL` — base address of `@rondo/api`. The value is inlined into the
-  browser bundle (`NEXT_PUBLIC_*`), defaults to `http://localhost:3000`. On Railway it
+- `NEXT_PUBLIC_API_URL` is the base address of `@rondo/api`. Next inlines the value into the
+  browser bundle (`NEXT_PUBLIC_*`), and it defaults to `http://localhost:3000`. On Railway it
   points to the deployed API.
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — Clerk authentication
-  (F1.1), **required**: without them `clerkMiddleware` rejects every request. Take both
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` carry Clerk authentication
+  (F1.1) and are **required**. Without them `clerkMiddleware` rejects every request. Take both
   from [dashboard.clerk.com](https://dashboard.clerk.com) → your application → API Keys
   (the dev instance); the instance must have the **email verification code** sign-in
   method enabled (e2e test accounts use it). The publishable key is inlined into the
@@ -144,10 +144,10 @@ references by hand.
 ## Tooling (carry-overs closed from F0.2)
 
 - **tsconfig:** on top of `@rondo/config/tsconfig/base.json` we add `jsx: preserve`,
-  DOM libraries and the `next` plugin. The base is already ESM/bundler-oriented — exactly
+  DOM libraries and the `next` plugin. The base is already ESM/bundler-oriented, exactly
   what App Router needs, so we only duplicate the Next-specific bits.
 - **Browser globals in ESLint:** the shared base registers only `globals.node`;
   here `globals.browser` is added on top for client code (otherwise `no-undef`
   on `window`/`document`).
-- **`@/` alias:** `@/* → src/*` was set in F0.2; Next resolves it natively — no extra
+- **`@/` alias:** `@/* → src/*` was set in F0.2; Next resolves it natively, with no extra
   configuration needed.

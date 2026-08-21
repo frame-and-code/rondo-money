@@ -17,8 +17,15 @@ const tracked = (...globs) =>
     .filter(Boolean)
     .filter((f) => !f.includes('/generated/'));
 
-const fenced = /```[\s\S]*?```/g;
-const blankFences = (text) => text.replace(fenced, (b) => b.replace(/[^\n]/g, ' '));
+const blank = (m) => m.replace(/[^\n]/g, ' ');
+const FENCE = /```[\s\S]*?```/g;
+const MANAGED = /<!--\s*BEGIN:[\s\S]*?<!--\s*END:[^>]*-->/g;
+const INLINE_CODE = /`[^`\n]*`/g;
+
+// Prose is what this repository wrote: fences and blocks a dependency maintains are neither.
+const blankFences = (text) => text.replace(FENCE, blank).replace(MANAGED, blank);
+// A backticked literal is quoted, not written, so a style rule has no business inside it.
+const narrativeOf = (prose) => prose.replace(INLINE_CODE, blank);
 
 function load(files) {
   const corpus = new Map();
@@ -30,7 +37,8 @@ function load(files) {
       fail(file, 0, 'tracked by git but missing from the working tree');
       continue;
     }
-    corpus.set(file, { raw, prose: blankFences(raw) });
+    const prose = blankFences(raw);
+    corpus.set(file, { raw, prose, narrative: narrativeOf(prose) });
   }
   return corpus;
 }
@@ -107,10 +115,10 @@ function checkLinks(corpus) {
 
 function checkDriftProse(corpus, banned) {
   const patterns = banned.map(({ pattern, why }) => ({ re: new RegExp(pattern, 'gi'), why }));
-  for (const [file, { prose }] of corpus) {
+  for (const [file, { narrative }] of corpus) {
     for (const { re, why } of patterns) {
-      for (const match of prose.matchAll(re)) {
-        fail(file, lineOf(prose, match.index), `"${match[0]}" — ${why}`);
+      for (const match of narrative.matchAll(re)) {
+        fail(file, lineOf(narrative, match.index), `"${match[0]}": ${why}`);
       }
     }
   }

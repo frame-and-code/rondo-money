@@ -37,6 +37,30 @@
   ],
   "banned": [
     {
+      "pattern": "—",
+      "why": "an em dash is the loudest AI tell; end the sentence or use a comma (communication.md)"
+    },
+    {
+      "pattern": "[“”‘’]",
+      "why": "curly quotes; use straight ones (communication.md)"
+    },
+    {
+      "pattern": "\\b(utilize|leverage|facilitate|numerous|delve|showcase|testament|underscore)\\b",
+      "why": "reach for the plain word (communication.md)"
+    },
+    {
+      "pattern": "\\b(in order to|due to the fact that|it is important to note that)\\b",
+      "why": "filler; cut it (communication.md)"
+    },
+    {
+      "pattern": "\\bnot (just|only) [^,.]{1,40}, but\\b",
+      "why": "state the point directly (communication.md)"
+    },
+    {
+      "pattern": "\\b(serves as|stands as|boasts)\\b",
+      "why": "just say is or has (communication.md)"
+    },
+    {
       "pattern": "\\bPR #\\d+",
       "why": "a war story, not an instruction — specs.md forbids it; the decision belongs to its Notion ticket"
     },
