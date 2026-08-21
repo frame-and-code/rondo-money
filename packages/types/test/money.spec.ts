@@ -1,5 +1,3 @@
-import fc from 'fast-check';
-
 import {
   MONEY_MAX,
   MONEY_MAX_LENGTH,
@@ -12,6 +10,7 @@ import {
   serializeMoney,
   toDecimalString,
 } from '@rondo/types';
+import fc from 'fast-check';
 
 // Covers the money convention (money is bigint minor units, string on the wire).
 // Moved from apps/api with the F0.8 harness — domain logic is tested where it lives.
