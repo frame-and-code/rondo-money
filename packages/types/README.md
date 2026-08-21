@@ -37,6 +37,11 @@ Two consequences worth knowing before debugging something stranger:
   package ever becomes ESM, where they would stop being optional;
 - `apps/api` tests resolve this package through `dist`, so they need it built first. Turbo's
   `^build` already does that — a bare `npx jest` in `apps/api` on a fresh clone does not.
+- ⚠️ **`pnpm dev` builds this package once, at startup, and does not watch it.** Edit
+  `src` during a running session and the api keeps loading the previous `dist` — its
+  `nest start --watch` watches `apps/api/src`, not a linked package. Rebuild with
+  `pnpm --filter @rondo/types build`, the same way `@rondo/db` asks after a migration.
+  There is no watch mode here yet.
 
 ```bash
 pnpm --filter @rondo/types build   # tsc → dist
