@@ -43,7 +43,7 @@ function readStoredLocale(userId: string | null): Locale | null {
   return stored !== null && isLocale(stored) ? stored : null;
 }
 
-function storeLocale(userId: string | null, locale: Locale): void {
+function storeLocaleIfPossible(userId: string | null, locale: Locale): void {
   try {
     window.localStorage.setItem(storageKey(userId), locale);
   } catch {
@@ -92,7 +92,7 @@ export function LocaleProvider({
         return;
       }
 
-      storeLocale(identity, next);
+      storeLocaleIfPossible(identity, next);
     },
     [identity],
   );
@@ -118,7 +118,7 @@ export function LocaleProvider({
     unfiledPick.current = null;
 
     if (unfiled !== null) {
-      storeLocale(identity, unfiled);
+      storeLocaleIfPossible(identity, unfiled);
       setChosen(unfiled);
       return;
     }

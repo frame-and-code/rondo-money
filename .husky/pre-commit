@@ -1,7 +1,5 @@
 set -e
 
-# Order matters and is explained in docs/ci.md; secrets go first because that failure is the
-# only one a later commit cannot repair.
 ./secret-scan.sh staged
 ./codegen.sh stage
 pnpm exec lint-staged

@@ -212,7 +212,8 @@ node would restart on the source edit — before the watcher had re-emitted — 
 
 **Start the api through turbo**, never `pnpm --filter @rondo/api dev`: the watch paths must
 exist before the server starts, and the `dev` task's `^build` is what produces them — from the
-cache too, since those two builds declare their `dist` as an output. `prisma
+cache too, since the builds declare their output. The direct spelling refuses rather than
+failing inside node: a `predev` step checks both paths and says what to run instead. `prisma
 generate` is watched by nothing, so a migration still ends with a generate — see
 [`packages/db/README.md`](../../packages/db/README.md).
 

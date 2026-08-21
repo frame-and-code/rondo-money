@@ -556,25 +556,27 @@ expect_quiet_about "$(stop_fixture untouched)" 'stale' \
 # no longer fires, leaves the check green and the drift shipping. The reflow case is a
 # regression — Prettier rewraps prose, so a phrase is routinely split across two lines.
 
-CHECK_DOCS="$(cd -- "$HOOKS_DIR/../.." && pwd)/check-docs.mjs"
+REPO_ROOT=$(cd -- "$HOOKS_DIR/../.." && pwd)
+CHECK_DOCS="$REPO_ROOT/check-docs.mjs"
 
 docs_fixture() {
   local dir="$SANDBOX/docs-$1"
   mkdir -p "$dir/.claude/config"
   git init -q "$dir"
-  cat > "$dir/.claude/config/docs-ownership.json" <<'JSON'
-{
-  "owned": [{ "phrase": "top-level operations only", "owner": "owner.md" }],
-  "banned": [{ "pattern": "\\bPR #\\d+", "why": "a war story" }],
-  "githubRelativeLinks": []
-}
-JSON
+  # The banned patterns come from the real manifest, so a typo there fails these cases
+  # rather than passing a copy of itself.
+  node -e 'const real=JSON.parse(require("fs").readFileSync(process.argv[1]));
+    require("fs").writeFileSync(process.argv[2], JSON.stringify({
+      owned: [{ phrase: "top-level operations only", owner: "owner.md" }],
+      banned: real.banned,
+      githubRelativeLinks: [],
+    }))' "$REPO_ROOT/.claude/config/docs-ownership.json" "$dir/.claude/config/docs-ownership.json"
   printf '%s' "$dir"
 }
 
 run_check_docs() {
   local dir="$1"
-  git -C "$dir" add -A >/dev/null 2>&1
+  [ "${SKIP_ADD-}" = 1 ] || git -C "$dir" add -A >/dev/null 2>&1
   DOCS_OUT=$(cd "$dir" && node "$CHECK_DOCS" 2>&1)
   DOCS_EXIT=$?
 }
@@ -645,6 +647,45 @@ D=$(docs_fixture war-story)
 printf 'It sees top-level operations only.\n' > "$D/owner.md"
 printf 'This was closed by PR #40.\n' > "$D/other.md"
 expect_docs_fail "$D" 'a war story is refused' 'a war story'
+
+# One case per banned pattern: a typo in any of them would otherwise leave the gate green.
+D=$(docs_fixture measurement)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Measured on node v26, the answer is 2.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a measurement is refused' 'not the measurement'
+
+D=$(docs_fixture transcript)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Verified by removing both dist directories.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a reproduction transcript is refused' 'goes stale'
+
+D=$(docs_fixture dated)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Checked 18 Aug 2026 against the release.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a dated observation is refused' 'next release'
+
+D=$(docs_fixture missing-owner)
+node -e 'const f=process.argv[1];const m=JSON.parse(require("fs").readFileSync(f));m.owned=[{phrase:"ghost",owner:"gone.md"}];require("fs").writeFileSync(f,JSON.stringify(m))' \
+  "$D/.claude/config/docs-ownership.json"
+printf 'nothing here\n' > "$D/other.md"
+expect_docs_fail "$D" 'a manifest owner that does not exist is reported' 'does not exist'
+
+D=$(docs_fixture vanished)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'gone soon\n' > "$D/other.md"
+git -C "$D" add -A >/dev/null 2>&1
+rm "$D/other.md"
+SKIP_ADD=1 expect_docs_fail "$D" 'a tracked file missing from the tree is a message, not a stack' 'missing from the working tree'
+
+D=$(docs_fixture dead-anchor)
+printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
+printf 'See [it](owner.md#no-such-heading).\n' > "$D/other.md"
+expect_docs_fail "$D" 'a link to a heading that does not exist fails' 'no heading'
+
+D=$(docs_fixture live-anchor)
+printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
+printf 'See [it](owner.md#real-heading).\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link to a heading that exists passes'
 
 
 echo

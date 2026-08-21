@@ -27,8 +27,9 @@ pnpm scan:secrets
 ```
 
 ⚠️ **`--force` on the cached tasks.** Turbo caches `lint`, `typecheck`, `build`, `test:unit`,
-`openapi` and `codegen`; on a hit it prints the previous run's output — `✓`, timings and all — and exits 0. The output is indistinguishable from a real pass, so a report that calls it one is
-describing a check that did not run this time
+`openapi` and `codegen`; on a hit it prints the previous run's output — `✓`, timings and all —
+and exits 0. That is indistinguishable from a real pass, so a report calling it one describes a
+check that did not run this time
 ([model integrity](../rules/model-integrity.md)). The cached tasks take seconds here, so
 forcing them costs nothing and removes the question.
 
@@ -52,7 +53,8 @@ mv packages/types/dist /tmp/dist-aside && pnpm lint --force; mv /tmp/dist-aside 
 
 `build`, `scan:secrets` and `codegen.sh` are in the list because CI's gate has members this
 command would otherwise miss — the job list lives in [`docs/ci.md`](../../docs/ci.md) and is
-not restated here. Without them this command can pass while CI fails. `sonar` is the one member with no local counterpart — the analysis needs
+not restated here. Without them this command can pass while CI fails. `sonar` is the one member with
+no local counterpart — the analysis needs
 a token and the server's verdict, so this command cannot anticipate it. On a pull request it
 blocks (F1.12), so a green run here is not a promise that `gate` will be green.
 
@@ -65,9 +67,12 @@ which on a clean tree means the committed pair is stale. It runs last because ev
 above has already warmed turbo's cache for it.
 
 `pnpm lint:hooks`, `pnpm test:hooks` and `pnpm lint:docs` are the odd ones out: they cover
-`.claude/` and the prose, not the app. `lint:docs` enforces "one home per fact" ([specs](../rules/specs.md)) — an owned phrase in a
-second document, a relative link with no target, or one of the prose spellings its manifest
-lists. It catches the copy-paste, not the paraphrase. `pnpm lint` and `pnpm test` are `turbo run …`, so they only reach workspaces, and
+`.claude/` and the prose, not the app. `lint:docs` enforces "one home per fact"
+([specs](../rules/specs.md)) — an owned phrase in a second document, a relative link with no
+target, or one of the prose spellings its manifest lists. It catches the copy-paste, not the
+paraphrase.
+
+`pnpm lint` and `pnpm test` are `turbo run …`, so they only reach workspaces, and
 `.claude` is not one — a lint error or a broken guard there is invisible to both. That is
 where the guard hooks live, the ones that keep a secret-scan bypass or a migration against dev
 from going through, so the gap is not a cosmetic one.

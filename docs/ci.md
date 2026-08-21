@@ -105,6 +105,9 @@ status check keeps the exact id `gate` that branch rules point at.
   `package.json`, `node-version` in this workflow, and the `node:*-slim` base image in both
   Dockerfiles. Nothing compares them, so a Dependabot PR that bumps only the images leaves CI
   testing the old runtime.
+- **The pre-commit hook runs the same checks in a fixed order** — secret scan, contract
+  regeneration, lint-staged, `lint:docs`, typecheck — and the order is not arbitrary: the scan
+  goes first because a secret in a commit is the one failure a later commit cannot repair.
 - **`turbo.json` takes no comments.** It is JSON, and a `"//"` key inside `"tasks"` is parsed
   as a task rather than ignored.
 - **Turborepo strict env mode:** turbo passes a task only the variables declared

@@ -226,5 +226,6 @@ That failure means a missing test, never a lowered threshold.
   config to a new package, and list the new lcov in `sonar-project.properties`.
   **A workspace with two test levels needs two directories and two entries** — `apps/api` writes
   `coverage/unit/` and `coverage/integration/`, and why that matters is in
-  [ci.md](ci.md#sonar). Since the quality gate landed, this is not only a report: the Sonar quality gate blocks a pull request whose **new** code
+  [ci.md](ci.md). Since the quality gate landed, this is not only a report: the Sonar quality gate
+  blocks a pull request whose **new** code
   is under-covered, so a red `sonar` is answered with a test, not with a threshold.
