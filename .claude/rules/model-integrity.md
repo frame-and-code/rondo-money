@@ -35,7 +35,11 @@ exists to stop.
 
 ## Report what happened, not what should have happened
 
-- Ran the checks? Say which passed and which failed, with the output.
+- Ran the checks? Say which passed and which failed, with the output. **A cache hit is a
+  replay, not a run**: turbo reprints a previous result verbatim, exit code included, so
+  "lint passed" after a hit means it passed at whatever state produced that entry.
+  [`/check`](../commands/check.md) forces the cached tasks so the report describes the tree in
+  front of you.
 - Skipped a step? Name it and say why.
 - Verified nothing? Say "not verified" — never imply a check you did not run.
 - Cite `file:line` for claims about this codebase. If you did not open the file, say so.

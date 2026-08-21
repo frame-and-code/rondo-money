@@ -64,7 +64,7 @@
     "iso-4217-currency-codes": {
       "url": "https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html",
       "version": "n/a — standard, not a dependency",
-      "why": "SIX is the ISO 4217 maintenance agency and publishes the authoritative code list with each currency's minor-unit exponent. Money is minor units in bigint and the digit count comes from the currency, never a hardcoded 2 — so this list, not intuition, decides how a budget's amounts are parsed and rendered. Readable summary: https://en.wikipedia.org/wiki/ISO_4217",
+      "why": "SIX is the ISO 4217 maintenance agency and publishes the authoritative code list with each currency's minor-unit exponent. Come here to know what the standard says — but note that `minorDigits()` deliberately does NOT use it: it reads the runtime's ICU/CLDR data instead, and the two disagree for sixteen currencies whose minor unit has left circulation (AFN ALL COP HUF IDR IQD IRR KPW LAK LBP MGA MMK PKR SOS SYP YER — ICU 0, ISO 2 or 3). CLDR is the right answer for a budgeting UI and ISO is the right answer for a settlement system; we are the former. The divergent set is pinned in packages/types/test/currency.spec.ts, so consult this list when that test fails and you need to know which side moved. Readable summary: https://en.wikipedia.org/wiki/ISO_4217",
       "checked": "2026-08-16"
     },
     "sonarqube-cloud-analysis-parameters": {
@@ -72,6 +72,18 @@
       "version": "SonarSource/sonarqube-scan-action v8.2.1, sonar-scanner-cli 8.1.0.6389",
       "why": "Whether CI blocks on code quality is decided by one scanner parameter, so it is not a thing to remember. sonar.qualitygate.wait defaults to FALSE: without it the scanner uploads the analysis and exits 0 whatever the verdict, which is why F1.12 aggregating the sonar job into `gate` would have proven nothing on its own. With it the scanner polls and fails the step on a red quality gate, bounded by sonar.qualitygate.timeout (300s by default). We pass it on the command line rather than in sonar-project.properties because it is true only for pull requests — see the sonar job in .github/workflows/ci.yml. The `args` input that carries it is declared by the action itself (action.yml at the pinned SHA: 'Additional arguments to the Sonar Scanner CLI'); if a bump ever drops that input the runner only warns, and the gate silently stops gating — check it here before bumping. Note the docs site renders through a query interface: append ?ask=<question> to the .md URL when the plain page does not carry the parameter.",
       "checked": "2026-08-20"
+    },
+    "class-validator-nestjs-pipe": {
+      "url": "https://docs.nestjs.com/techniques/validation",
+      "version": "class-validator ^0.15.1, class-transformer ^0.5.1, @nestjs/common ^11.1.28",
+      "why": "The global ValidationPipe is the whole input boundary, and its behaviour is entirely in its options: `whitelist` strips undeclared fields, `forbidNonWhitelisted` turns that into a 400, and `transform` is what constructs the DTO instance the validators run against. One option is deliberately OFF and must stay off: transformOptions.enableImplicitConversion coerces by the property's declared type, which silently turns a JSON number into the string a money field expects — after the precision is already lost. Two things measured here rather than read: a custom `registerDecorator` validator must be typed `PropertyDecorator` for `applyDecorators` to accept it (its own signature takes `propertyKey: string | symbol`), and `ApiPropertyOptions` is a union whose members disagree about required keys, so `Omit` over it collapses into a shape demanding `enumName` — declare a narrow options interface instead.",
+      "checked": "2026-08-21"
+    },
+    "intl-numberformat-currency-digits": {
+      "url": "https://tc39.es/ecma402/#sec-currencydigits",
+      "version": "node >=26 (ICU bundled with the runtime)",
+      "why": "Where `minorDigits()` gets a currency's minor-digit count from, instead of a table we would have to maintain. This is CLDR display data, not the ISO 4217 exponent, and the two differ for sixteen currencies — see the iso-4217-currency-codes entry. Measured on node v26.7.0: JPY 0, USD 2, BHD 3, KWD 3, CLF 4. Three traps the spec does not put in one place. First, an unknown-but-well-formed code does NOT throw — `ZZZ` resolves to 2 — so this can never be the gate on whether a currency exists; the allowed-currency list still has to be written where budgets are created, and shape (`/^[A-Z]{3}$/`) is all `minorDigits` checks. A two-letter code does throw RangeError, and a lower-case one is accepted and normalised, which is why we refuse it ourselves. Second, `resolvedOptions().maximumFractionDigits` is typed `number | undefined` by TypeScript's lib, so reading it needs either a cast or a fallback digit count — both forbidden here; count the `fraction` part of `formatToParts(0)` instead, which is honestly typed and returns nothing at all for a currency with no minor unit. Third, and the reason this entry matters most: the number decides the scale money is STORED at, and it travels with the runtime — so a Node upgrade is a data-migration question, and the divergent codes are pinned by a test to make that failure loud.",
+      "checked": "2026-08-21"
     }
   }
 }

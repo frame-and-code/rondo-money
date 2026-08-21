@@ -106,4 +106,22 @@ describe('OpenAPI document', () => {
     expect(document.info.description).toContain('minor units');
     expect(document.info.description).toContain('packages/types/src/money.ts');
   });
+
+  it('states the convention for money coming in, not only going out', () => {
+    // A client reading only this document has to learn that an amount is sent as a string
+    // too — the boundary rejects a JSON number, and a contract that mentioned only the
+    // response side would make that rejection look like a bug.
+    //
+    // Asserted on the specific claims rather than on the words `sent` and `400`, which any
+    // unrelated paragraph could supply: a description that stopped saying money travels in
+    // both directions would still have passed that.
+    const description = document.info.description ?? '';
+
+    expect(description).toContain('an amount **sent** to this API is the same string');
+    expect(description).toContain('is a JSON number');
+    expect(description).toContain('rejected with 400');
+    // The canonical form is what makes the published `maxLength` sound, so the document has to
+    // say it rather than leave a client to discover it from a rejection.
+    expect(description).toContain('no leading zeros and no `-0`');
+  });
 });

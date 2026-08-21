@@ -577,9 +577,10 @@ jobs:
         run: pnpm --filter @rondo/db run db:deploy
 
       # Coverage is always on in the jest configs, so the plain test commands produce the
-      # lcov files sonar-project.properties points at. Order matters for apps/api: its
-      # unit run writes an empty lcov (no unit tests yet), the integration run overwrites
-      # it with the real one.
+      # lcov files sonar-project.properties points at. The two apps/api levels
+      # write to separate directories and both are reported, so the order of these steps no
+      # longer decides what Sonar sees — it used to, because both wrote one file and the
+      # second run erased the first.
       - name: Unit tests with coverage
         run: pnpm test:unit
 

@@ -34,6 +34,11 @@ The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
 
 ### Prerequisites
 
+- **A targeted run needs its workspace dependencies built.** The root commands go through
+  turbo, which builds them first; `pnpm --filter` runs the package script directly and does
+  not. `@rondo/api` resolves `@rondo/types` through that package's `dist`, so on a fresh clone
+  a targeted api run fails on a missing module until `pnpm --filter @rondo/types build` — or
+  just use the root command.
 - **Integration and e2e** hit the local Postgres from F0.3: `docker compose up -d`
   (+ `pnpm db:migrate` if new migrations appeared).
 - **E2E, once**: download the browser — `pnpm --filter @rondo/web exec playwright install chromium`.
@@ -186,10 +191,17 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
 - Jest globals (`describe` / `it` / `expect`) are registered for test files in the shared
   ESLint config (`@rondo/config/eslint`); in Playwright specs, `test`/`expect` are imported.
 - Turbo doesn't cache integration and e2e (external state — the DB); the unit level is cached.
-- Jest always collects coverage — every unit/integration run writes `coverage/lcov.info`
-  into the workspace (git-ignored). The `sonar` CI job imports those files into SonarQube
+- Jest always collects coverage — every unit/integration run writes an `lcov.info` into the
+  workspace (git-ignored). The `sonar` CI job imports those files into SonarQube
   Cloud (see [ci.md](ci.md)); the lcov reporter's `projectRoot` option keeps the paths
   repo-root-relative, which the Sonar scanner requires — copy it along when adding a jest
-  config to a new package, and list the new lcov in `sonar-project.properties`. Since F1.12
+  config to a new package, and list the new lcov in `sonar-project.properties`.
+  **A workspace with two test levels needs two directories and two entries:** `apps/api`
+  writes `coverage/unit/` and `coverage/integration/`, because the levels cover different
+  code — the unit run is the only one that reaches `openapi/` and `environment.ts`, while the
+  guard and the scoping extension are covered far more deeply by the integration run than the
+  unit one reaches on its own. They used to share one path, so the second
+  run erased the first and Sonar measured the app by half its tests (78% reported against 83%
+  actual). Since the quality gate landed,
   this is not only a report: the Sonar quality gate blocks a pull request whose **new** code
   is under-covered, so a red `sonar` is answered with a test, not with a threshold.

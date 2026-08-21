@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_PIPE } from '@nestjs/core';
 
 import { AuthModule } from '@/auth/auth.module';
 import { HealthModule } from '@/health/health.module';
@@ -8,6 +9,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { RawSqlModule } from '@/raw-sql/raw-sql.module';
 import { RequestContextModule } from '@/request-context/request-context.module';
 import { UserSettingsModule } from '@/user-settings/user-settings.module';
+import { VALIDATION_PIPE } from '@/validation/validation.options';
 
 @Module({
   imports: [
@@ -26,6 +28,13 @@ import { UserSettingsModule } from '@/user-settings/user-settings.module';
     HealthModule,
     MeModule,
     UserSettingsModule,
+  ],
+  providers: [
+    // Validation is on for the whole app, the way the guard is: an endpoint gets a validated,
+    // whitelisted DTO without wiring anything, and opening a hole is a decision written at the
+    // handler rather than an omission nobody notices. No endpoint takes a body yet; the
+    // boundary is settled before anything starts putting money through it.
+    { provide: APP_PIPE, useValue: VALIDATION_PIPE },
   ],
 })
 export class AppModule {}

@@ -14,16 +14,60 @@ Run all nine, and run them all even if an earlier one fails — a single report 
 round trips:
 
 ```bash
-pnpm lint
+pnpm lint --force
 pnpm lint:hooks
-pnpm typecheck
+pnpm typecheck --force
 pnpm format:check
-pnpm build
+pnpm build --force
 pnpm test
 pnpm test:hooks
 pnpm scan:secrets
 ./codegen.sh check
 ```
+
+⚠️ **`--force` on the cached tasks.** Turbo caches `lint`, `typecheck`, `build`, `test:unit`,
+`openapi` and `codegen`; on a hit it prints the previous run's output — `✓`, timings and all —
+and exits 0. The output is indistinguishable from a real pass, so a report that calls it one is
+describing a check that did not run this time
+([model integrity](../rules/model-integrity.md)). The cached tasks take seconds here, so
+forcing them costs nothing and removes the question.
+
+Be precise about what this does and does not buy, because guessing at it has already produced a
+wrong diagnosis. Turbo's invalidation is sound: change a file and the task re-executes —
+measured, by introducing a lint error and watching `cache miss` catch it. What `--force` buys
+is that a green line in your report describes _this_ state of the tree, rather than an earlier
+one that happened to hash the same.
+
+What it does **not** buy is agreement with CI, because the hash covers files rather than
+environment. A task whose result depends on state turbo does not hash — most sharply, whether a
+workspace has been **built** — passes locally and fails in CI at the identical commit, cache or
+no cache. That is what happened on PR #59: `import-x` classifies `@rondo/types` differently
+depending on whether its `dist` exists, `lint` has no `^build` dependency, so a locally-built
+tree linted clean and CI did not. The fix was to pin the classification
+(`packages/config/eslint/base.mjs`), not to re-run anything. When local and CI disagree on the
+same commit, look for that kind of difference before blaming the cache.
+
+`test`, `test:integration` and `test:e2e` are already `cache: false` in `turbo.json` and need
+no flag.
+
+### When local and CI disagree on the same commit
+
+Reproduce CI's conditions before forming a theory. The difference is environment, and the
+sharpest one in this repository is written in `turbo.json`: **`lint` is the only task with
+`dependsOn: []`**. Everything else builds first (`^build`) or chains (`^typecheck`), and the
+`static` job runs `pnpm install` then `pnpm lint` with nothing built — while a developer's tree
+has `dist` in it after any `test`, `build` or `dev`. So `lint` is the one gate step that reads a
+different tree on each side.
+
+To reproduce it, take the built output away and lint again:
+
+```bash
+mv packages/types/dist /tmp/dist-aside && pnpm lint --force; mv /tmp/dist-aside packages/types/dist
+```
+
+That is how the PR #59 failure was pinned, after a first guess blamed the turbo cache and was
+wrong — the cache invalidates correctly, which was itself confirmed by introducing a lint error
+and watching `cache miss` catch it. Guessing costs more than the two minutes reproducing it.
 
 `build`, `scan:secrets` and `codegen.sh` are in the list because the gate CI enforces is
 `secrets · static · build · unit · integration · e2e · sonar`: without them this command can

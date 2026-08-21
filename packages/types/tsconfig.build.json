@@ -1,0 +1,14 @@
+{
+  // Build config: emit JS + declarations to dist, the package's runtime entry. Overrides the
+  // base `noEmit`. Tests are excluded — `dist` is what ships, not what proves it.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "sourceMap": false,
+    "types": []
+  },
+  "include": ["src"]
+}

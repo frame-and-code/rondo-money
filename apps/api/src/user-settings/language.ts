@@ -10,9 +10,10 @@ import { type LanguageTag } from '@rondo/types';
  * stops compiling here until it is mapped, and a row nobody can render is exactly the bug a
  * quietly-defaulting lookup would ship instead.
  *
- * Both imports are types only. `@rondo/types` has no build step, so importing a *value* from
- * it would leave a `require('@rondo/types')` in `dist` resolving to a `.ts` file — the api
- * would build and then fail to boot.
+ * Both imports here are types only, but that is now a local fact rather than a constraint:
+ * `@rondo/types` has a build step, so a *value* imported from it resolves to compiled
+ * JavaScript in `dist`. Until then it resolved to a `.ts` file, and the api built and then
+ * failed to boot.
  */
 const TAG_BY_LANGUAGE: Record<Language, LanguageTag> = { RU: 'ru', EN: 'en', PL: 'pl' };
 

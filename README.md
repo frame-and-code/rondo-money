@@ -15,11 +15,13 @@ on any update.
 Run it to read the code, to try the idea, or to hack on it. Do not make it the only place
 your budget exists.
 
-Current stage: **phase 1, authentication, is done.** Sign-in, per-user isolation and the
-typed API contract work end to end, on top of phase 0 (infrastructure, CI, deployment).
-Phase 2 is next: validated input at the API boundary, and money that knows how many minor
-digits its currency has. The budgeting model itself — budgets, accounts, transactions — is
-not built yet.
+Current stage: **the foundations are in place, the budgeting model is not.** Sign-in works,
+every query is scoped to the user who made it, the typed API client is generated from the
+API's own contract, and money is an integer number of minor units whose digit count comes from
+the currency. The boundary that rejects a request body carrying an undeclared field is in
+place before the first endpoint takes one — nothing accepts a body yet.
+What does not exist yet is the product: budgets, accounts, categories and transactions.
+Storing a budget is the next thing to land.
 
 ## What it is
 
@@ -69,15 +71,15 @@ no support obligation, and no promise that an upgrade will preserve your data.
 
 ```text
 apps/
-  web/        # frontend (Next.js App Router) — skeleton in F0.5
-  api/        # backend (NestJS REST) — skeleton in F0.4
+  web/        # frontend (Next.js App Router)
+  api/        # backend (NestJS REST) — owns every database access
 packages/
-  db/         # Prisma schema and migrations — F0.4
-  types/      # shared DTOs; money as BigInt (minor units) — from day one
-  api-client/ # typed API client, generated from the API's OpenAPI spec — F1.4
-  config/     # shared configs (eslint / tsconfig / prettier) — F0.2
-  ui/         # shared UI components (shadcn/ui) — F0.6
-.claude/      # agent setup: rules, commands, skills, agents, hooks, permissions — F1.9
+  db/         # Prisma schema and migrations
+  types/      # shared DTOs; money as BigInt minor units, a string on the wire
+  api-client/ # typed API client, generated from the API's OpenAPI spec
+  config/     # shared configs (eslint / tsconfig / prettier)
+  ui/         # shared UI components (shadcn/ui)
+.claude/      # agent setup: rules, commands, skills, agents, hooks, permissions
 ```
 
 ## Written with an agent

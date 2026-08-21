@@ -41,12 +41,23 @@ platform healthcheck, which the deployment probes anonymously. The token must al
 cannot be replayed here.
 
 **Money.** Amounts are an integer number of **minor units** (cents, kopeks, grosze), and the
-number of minor digits comes from the budget's currency (ISO 4217) rather than a fixed 2.
-JSON has no bigint, so every money field crosses the wire as a base-10 **string** — an
-optional leading \`-\` followed by digits, never a float and never a decimal string. The
-single definition of that convention, with its serializer and parser, is
+number of minor digits comes from the budget's currency rather than a fixed 2 — 0 for JPY,
+3 for BHD.
+JSON has no bigint, so every money field crosses the wire as a base-10 **string**, in its
+shortest form: digits with an optional leading \`-\`, no leading zeros and no \`-0\` — \`0\`,
+\`-4500\`, \`120000\`. One amount therefore has exactly one spelling, which is also what lets a
+money field publish a \`maxLength\` alongside its \`pattern\`. That applies in both directions:
+an amount **sent** to this API is the same string, and one that is a JSON number, carries a
+decimal point, uses exponent notation or pads itself with zeros is rejected with 400 rather
+than rounded or quietly normalised into something plausible. So is one that falls outside the
+range the money column holds — a signed 64-bit integer — which is the only rejection a client
+cannot predict from the schema, because JSON Schema's numeric bounds do not apply to a string. The single definition of the convention, with its
+serializer, its parser and the pattern published on every money field, is
 \`packages/types/src/money.ts\`. No endpoint carries money yet; the convention is stated here
-because the contract is published before the first amount travels over it.`;
+because the contract is published before the first amount travels over it.
+
+**Request bodies** are validated against the schema published here: a field the schema does
+not declare is an error, not something quietly ignored.`;
 
 /**
  * The OpenAPI document for the whole app, built from the code itself.

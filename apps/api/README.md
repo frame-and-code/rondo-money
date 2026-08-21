@@ -28,6 +28,35 @@ and the raw-SQL repository below, plus the contract they are published through (
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
 
+## The input boundary
+
+Every request body **declared as a DTO class** is validated before a handler sees it. The pipe
+is registered globally as `APP_PIPE`
+([`src/validation/validation.options.ts`](src/validation/validation.options.ts)), the way the
+guard is: an endpoint gets a validated, whitelisted DTO without wiring anything, and a field
+the DTO never declared is a 400 rather than something quietly dropped.
+
+⚠️ **The class is the condition, not a detail.** A `@Body()` typed as an interface, as
+`Record<string, unknown>` or not at all compiles to the metatype `Object`, and the pipe skips
+it — silently, with `whitelist` and `forbidNonWhitelisted` never running, so undeclared fields
+reach the handler and nothing reports it. This is the request-side twin of the trap below,
+where a response typed as an interface publishes no schema. Both have the same cause: an
+interface leaves no metadata after compilation.
+
+`class-validator` + `class-transformer` rather than zod — the response classes already carry
+`@ApiProperty`, so a DTO validated by decorators is the same metadata model rather than a
+second one beside it.
+
+**Money is declared `string`**, in request DTOs and response classes alike, with
+[`@ApiMoneyProperty()`](src/validation/money.decorator.ts) — one decorator that both publishes
+the field as a string with its `pattern` and refuses anything that is not integer minor units.
+There is no `@nestjs/swagger` CLI plugin here, so a validation decorator contributes nothing to
+the spec on its own; declaring the two separately is how a contract and its guard drift apart.
+The conversion to `bigint` stays explicit, at `serializeMoney` / `parseMoney` in the service —
+never a global interceptor, which would make the code say one thing and the published schema
+another. No endpoint carries an amount yet; the boundary is settled before anything puts money
+through it, and `test/money-boundary.spec.ts` is what proves it works.
+
 ## The contract (F1.4)
 
 The API describes itself, and everything downstream is generated from that description

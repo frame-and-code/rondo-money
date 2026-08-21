@@ -38,8 +38,24 @@ export default tseslint.config(
         'error',
         {
           groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
-          // `@/...` is the intra-package alias for `src/*` (see tsconfig paths).
-          pathGroups: [{ pattern: '@/**', group: 'internal' }],
+          pathGroups: [
+            // `@/...` is the intra-package alias for `src/*` (see tsconfig paths).
+            { pattern: '@/**', group: 'internal' },
+            // Workspace packages are pinned to `external` rather than left to the resolver.
+            // Without this the group a `@rondo/*` import lands in depends on whether the
+            // package happens to be **built**: a package that self-imports (its own tests
+            // import it by its public name, as consumers do) resolves through `exports` to
+            // `dist`, so the same file lints clean locally after a build and fails in CI,
+            // where `lint` has no reason to build anything first. A lint result that depends
+            // on build state is a coin flip, and it cost a red gate before it was pinned.
+            //
+            // One star, not two: a subpath import like `@rondo/ui/lib/utils` resolves off the
+            // package directory and never depended on a build, so it keeps the order it has.
+            { pattern: '@rondo/*', group: 'external' },
+          ],
+          // `external` is excluded from pathGroup handling by default, which would drop the
+          // rule above on the floor.
+          pathGroupsExcludedImportTypes: [],
           'newlines-between': 'always',
           alphabetize: { order: 'asc', caseInsensitive: true },
         },

@@ -1,14 +1,16 @@
 {
+  // Typecheck config. The package emits (see tsconfig.build.json), and consumers load that
+  // `dist` at runtime — so it resolves the way the emit does: nodenext, which lands on
+  // CommonJS here because the package declares no `"type": "module"`. That is what lets
+  // `apps/api` (CommonJS, compiled by SWC) call `parseMoney` rather than only import its type.
   "extends": "@rondo/config/tsconfig/base.json",
   "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     // Explicit like apps/api: jest globals for the F0.8 unit tests in ./test.
     "types": ["jest"],
     "paths": {
-      "@/*": ["./src/*"],
-      // Tests import the package by its public name (as consumers do); without an
-      // `exports` field Node/TS self-reference doesn't apply, so map it by hand
-      // (mirrors moduleNameMapper in jest.config.mjs).
-      "@rondo/types": ["./src/index.ts"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "test"]
