@@ -58,7 +58,8 @@ status check keeps the exact id `gate` that branch rules point at.
   only just started emitting — what a generator bump does — would slip past it untracked and
   unnoticed. The step sits last in `static` on purpose: `pnpm typecheck` above already pulled
   the whole chain, so turbo replays it from cache and the check itself costs a `git status`.
-- **`static` runs two checks `turbo` cannot reach.** `pnpm lint:hooks` (`eslint .claude`),
+- **`static` runs two checks `turbo` cannot reach.** `pnpm lint:hooks`
+  (`eslint .claude check-docs.mjs` — the agent setup and the root scripts),
   because `pnpm lint` is `turbo run lint` and only reaches workspaces, so a lint error in the
   agent setup passes it. And `pnpm lint:docs`, which fails on an **owned phrase** restated
   outside the document that owns it, a relative link with no target, or one of the prose
@@ -108,6 +109,9 @@ status check keeps the exact id `gate` that branch rules point at.
 - **The pre-commit hook runs the same checks in a fixed order** — secret scan, contract
   regeneration, lint-staged, `lint:docs`, typecheck — and the order is not arbitrary: the scan
   goes first because a secret in a commit is the one failure a later commit cannot repair.
+- **A `build` that produces nothing declares `outputs: []`.** `@rondo/api-client` and
+  `@rondo/ui` are consumed as source, so their `build` is a placeholder; without the empty
+  declaration turbo warns on every run that it found no output files.
 - **`turbo.json` takes no comments.** It is JSON, and a `"//"` key inside `"tasks"` is parsed
   as a task rather than ignored.
 - **Turborepo strict env mode:** turbo passes a task only the variables declared

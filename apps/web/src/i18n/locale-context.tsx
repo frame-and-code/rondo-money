@@ -46,9 +46,8 @@ function readStoredLocale(userId: string | null): Locale | null {
 function storeLocaleIfPossible(userId: string | null, locale: Locale): void {
   try {
     window.localStorage.setItem(storageKey(userId), locale);
-  } catch {
-    return;
-  }
+    // eslint-disable-next-line no-empty -- best effort, as the name says: a browser refusing to store a preference must not break the language switch
+  } catch {}
 }
 
 interface SettingsBinding {

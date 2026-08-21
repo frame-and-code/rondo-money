@@ -44,7 +44,7 @@ const slug = (heading) =>
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .trim()
-    .replace(/\s+/g, '-');
+    .replace(/ /g, '-');
 
 function checkOwnership(corpus, owned) {
   for (const { phrase, owner, note } of owned) {
@@ -92,7 +92,9 @@ function checkLinks(corpus) {
         continue;
       }
       if (!anchor || !resolved.endsWith('.md')) continue;
-      const headings = readFileSync(resolved, 'utf8')
+      const rel = path.relative(ROOT, resolved);
+      const text = corpus.get(rel)?.prose ?? blankFences(readFileSync(resolved, 'utf8'));
+      const headings = text
         .split('\n')
         .filter((l) => l.startsWith('#'))
         .map(slug);

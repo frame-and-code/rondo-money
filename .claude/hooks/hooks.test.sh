@@ -682,6 +682,25 @@ printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
 printf 'See [it](owner.md#no-such-heading).\n' > "$D/other.md"
 expect_docs_fail "$D" 'a link to a heading that does not exist fails' 'no heading'
 
+# The two fixes that had no case of their own: fences are blanked for every check, not just
+# links, and the config JSON is part of the corpus. Reverting either must turn this red.
+D=$(docs_fixture fenced-phrase)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Example:\n\n```md\nIt sees top-level operations only, per PR #40.\n```\n' > "$D/other.md"
+expect_docs_ok "$D" 'an owned phrase and a war story inside a fence are examples, not drift'
+
+D=$(docs_fixture config-json)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf '{ "why": "the extension sees top-level operations only" }\n' \
+  > "$D/.claude/config/external-docs.json"
+expect_docs_fail "$D" 'prose in .claude/config JSON is part of the corpus' 'owned by owner.md'
+
+# GitHub replaces each space, so punctuation between words leaves a double hyphen.
+D=$(docs_fixture anchor-slug)
+printf 'It sees top-level operations only.\n\n## Step 1 — Enter the loop\n' > "$D/owner.md"
+printf 'See [it](owner.md#step-1--enter-the-loop).\n' > "$D/other.md"
+expect_docs_ok "$D" 'an anchor slugged the way GitHub slugs it resolves'
+
 D=$(docs_fixture live-anchor)
 printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
 printf 'See [it](owner.md#real-heading).\n' > "$D/other.md"
