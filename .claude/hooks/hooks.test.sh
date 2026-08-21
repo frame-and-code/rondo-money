@@ -701,6 +701,11 @@ printf 'It sees top-level operations only.\n\n## Step 1 — Enter the loop\n' > 
 printf 'See [it](owner.md#step-1--enter-the-loop).\n' > "$D/other.md"
 expect_docs_ok "$D" 'an anchor slugged the way GitHub slugs it resolves'
 
+D=$(docs_fixture fenced-heading)
+printf 'It sees top-level operations only.\n\n```bash\n# Not a heading\n```\n' > "$D/owner.md"
+printf 'See [it](owner.md#not-a-heading).\n' > "$D/other.md"
+expect_docs_fail "$D" 'a # inside a fence is not a heading' 'no heading'
+
 D=$(docs_fixture live-anchor)
 printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
 printf 'See [it](owner.md#real-heading).\n' > "$D/other.md"
