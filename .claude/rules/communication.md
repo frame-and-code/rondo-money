@@ -9,8 +9,8 @@ Chat with the user in their language (Russian).
 
 ## Write like a person, not like a model
 
-Everything here is read by someone: a chat reply, a commit message, a document, the rare comment
-a machine has to read. The tells below are what make writing obviously machine-made, and they
+Everything here is read by someone: a chat reply, a commit message, a document, a Notion ticket,
+the rare comment a machine has to read. The tells below are what make writing obviously machine-made, and they
 are banned in all of it, Russian chat included. The em dash is the sharpest case. It is ordinary
 punctuation in written Russian, but no chat client puts it within reach of the keyboard, so text
 carrying one reads as pasted from a model whatever the language.
@@ -35,7 +35,10 @@ carrying one reads as pasted from a model whatever the language.
 
 `pnpm lint:docs` refuses the mechanical half of this across every tracked document. A backticked
 literal and a block a dependency maintains are quoted rather than written, so the check steps
-over both. The rest is yours, and it applies to chat, where nothing checks it.
+over both. Nothing checks chat, and nothing reaches Notion at all, so what goes into a ticket
+rests on this rule alone. A ticket is also the one place where the writing has to survive being
+read a year later by someone who was not here, which is the opposite of what a padded paragraph
+does.
 
 ## Git is the user's call
 

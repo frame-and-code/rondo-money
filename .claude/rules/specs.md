@@ -29,6 +29,9 @@ Both are **inputs** to the work, not paperwork produced after it.
   our minds", which is the part nobody can reconstruct later.
 - An open question in the PRD or the plan is answered by the user and written back into
   the ticket (see [model integrity](model-integrity.md)).
+  Write a ticket the way [communication](communication.md) asks: no em dash, plain words, one idea
+  per sentence, and the decision stated rather than described. No gate reaches Notion.
+
 - **When the work lands**, the ticket gets what the diff cannot show: which PRs carried it,
   and the decisions taken along the way. Those are the option rejected and why, the boundary
   drawn, the rule that changed. [`/close-ticket`](../commands/close-ticket.md) does this

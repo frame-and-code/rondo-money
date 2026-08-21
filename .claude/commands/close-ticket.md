@@ -71,7 +71,9 @@ user has merged, never to make an unmerged ticket look finished.
    `main` and fix what no longer holds ([specs.md](../rules/specs.md)). Every AC being ticked
    already is not a reason to skip this step; it is the case where it matters most, because
    nothing else will make you read them.
-5. **Record the history, which is the part nobody can reconstruct later.** Two writes:
+5. **Record the history, which is the part nobody can reconstruct later.** Write both of these
+   the way [communication](../rules/communication.md) asks. No gate reaches Notion, and a padded
+   paragraph is worst exactly here, where the reader is a stranger a year from now. Two writes:
    - **A comment on the page** naming every PR that carried the ticket: full URL, merge date,
      merge commit, and one clause on what each contributed. The comment is what makes the
      ticket and the PRs findable from each other; a reader a year from now has the ticket and
