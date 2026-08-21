@@ -83,6 +83,11 @@ COPY apps/api/package.json apps/api/
 COPY packages/db/package.json packages/db/prisma.config.ts packages/db/
 COPY packages/db/prisma packages/db/prisma
 COPY --from=build /app/packages/db/dist packages/db/dist
+# @rondo/types is a runtime dependency — the api calls serializeMoney/parseMoney,
+# not just their types. pnpm's symlink in apps/api/node_modules points here, so the manifest
+# and dist both have to land. No node_modules of its own: the package has no dependencies.
+COPY packages/types/package.json packages/types/
+COPY --from=build /app/packages/types/dist packages/types/dist
 COPY --from=build /app/apps/api/dist apps/api/dist
 
 USER node

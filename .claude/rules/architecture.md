@@ -55,8 +55,23 @@ itself is published with no response shape at all — and the generated client t
   stamps `x-public`, which is what clears the global bearer requirement in the spec. Never add
   a second decorator saying the same thing — the two would eventually disagree.
 - Money crosses the wire as a string of minor units
-  ([`money.ts`](../../packages/types/src/money.ts)); no endpoint carries an amount yet, and the
-  convention is stated in the spec's own description until one does.
+  ([`money.ts`](../../packages/types/src/money.ts)), in both directions. A money field —
+  request DTO or response class — is declared with
+  [`@ApiMoneyProperty()`](../../apps/api/src/validation/money.decorator.ts), which publishes it
+  as a `string` carrying `MONEY_PATTERN` _and_ refuses anything else at the pipe; the two must
+  never be written separately, because with no Swagger CLI plugin here a validation decorator
+  adds nothing to the spec and nothing would catch the drift. The conversion to `bigint` is
+  explicit, at `serializeMoney` / `parseMoney` in the service — **never** a global interceptor,
+  which would leave the code and the published schema saying different things. No endpoint
+  carries an amount yet, and the convention is stated in the spec's own description until one
+  does.
+- Every request body **declared as a DTO class** is validated by the global pipe
+  ([`validation.options.ts`](../../apps/api/src/validation/validation.options.ts)):
+  `class-validator` + `class-transformer`, whitelisted, and a field the DTO never declared is
+  a 400 rather than a silent drop. Implicit conversion is off on purpose — it would coerce a
+  JSON number into the string a money field expects, and by then the precision is already
+  gone. A `@Body()` typed as an interface is skipped by the pipe in silence, exactly as an
+  interface response publishes no schema — see [security](security.md).
 - `pnpm openapi` rewrites [`apps/api/openapi.json`](../../apps/api/openapi.json) and
   `pnpm --filter @rondo/api-client codegen` the client. Both artefacts are committed, so a
   contract change is a reviewable diff; turbo runs them in order, so neither is a step anyone
@@ -105,9 +120,20 @@ server replays history.
 
 - Money is an integer number of minor units in `bigint`
   ([`packages/types/src/money.ts`](../../packages/types/src/money.ts)). The number of minor
-  digits comes from the budget's currency (ISO 4217 exponent), never a hardcoded `2`. Over
-  the wire money is a **string** — JSON has no bigint — via `serializeMoney` /
-  `parseMoney` at the edge.
+  digits comes from the budget's currency, never a hardcoded `2` — `minorDigits()` reads it
+  from the runtime's currency data, so JPY is 0 and BHD is 3. That is **not** the ISO 4217
+  exponent, on purpose: sixteen currencies whose minor unit has left circulation (HUF, IDR,
+  IQD, PKR and others) get 0 where ISO still says 2 or 3, which is what a user of that currency
+  expects to see. The divergent set is pinned by a test. Two consequences that outlive this:
+  the digit count must be **frozen on the budget row** when budgets land rather than recomputed
+  per read, and a runtime upgrade that moves this data is a migration, not a bump — an amount
+  written at one scale and read at another is money multiplied by a hundred. Over the wire money is a
+  **string** — JSON has no bigint — via `serializeMoney` / `parseMoney` at the edge.
+  `toDecimalString` / `parseDecimalString` convert the scale only (`1250n` ↔ `"12.50"`), and
+  refuse more precision than the currency has instead of rounding it off someone's money;
+  locale-aware rendering with a symbol and separators belongs to the UI and builds on them.
+  `@rondo/types` emits to `dist` for exactly this reason — the api calls these functions, it
+  does not merely import their types.
 - Dates are calendar dates without time. "Today" and `YYYY-MM` bucketing are computed in
   one reference timezone (the budget's) through a single shared helper, never a
   `new Date()` scattered across call sites.

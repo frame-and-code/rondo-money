@@ -173,11 +173,14 @@ status check keeps the exact id `gate` that branch rules point at.
   until it is retried. That is the ordinary cost of a blocking quality gate, and it is worth
   recognising for what it is when a run fails — an outage reads exactly like a code problem.
 - **Coverage for Sonar**: the jest configs keep coverage always on, so the plain test
-  commands (`pnpm test:unit`, `pnpm test:integration`) emit `coverage/lcov.info` in each
+  commands (`pnpm test:unit`, `pnpm test:integration`) emit an `lcov.info` in each
   tested workspace — the same command produces the same artefacts locally and in CI, and
   the lcov reporter
   rewrites paths to be repo-root-relative (the scanner runs at the repo root and could not
-  resolve workspace-relative `src/…` otherwise). The `sonar` job re-runs the unit and
+  resolve workspace-relative `src/…` otherwise). `apps/api` emits **two**, one per level
+  (`coverage/unit/`, `coverage/integration/`), and `sonar-project.properties` lists both:
+  the levels cover different code, and they used to share one path, so the integration
+  run erased the unit one and Sonar scored the app on half its tests. The `sonar` job re-runs the unit and
   integration tests itself (with its own Postgres service) to produce those files, rather
   than receiving them from the `unit`/`integration` jobs as artifacts — the same trade as
   reinstalling dependencies everywhere: a re-run keeps every job self-contained, while

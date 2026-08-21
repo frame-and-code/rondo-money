@@ -106,4 +106,12 @@ describe('OpenAPI document', () => {
     expect(document.info.description).toContain('minor units');
     expect(document.info.description).toContain('packages/types/src/money.ts');
   });
+
+  it('states the convention for money coming in, not only going out', () => {
+    // A client reading only this document has to learn that an amount is sent as
+    // a string too — the boundary rejects a JSON number, and a contract that mentioned only
+    // the response side would make that rejection look like a bug.
+    expect(document.info.description).toMatch(/sent\b/i);
+    expect(document.info.description).toContain('400');
+  });
 });

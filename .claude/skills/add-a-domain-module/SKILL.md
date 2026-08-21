@@ -25,14 +25,18 @@ conversation, not a copy.
 ## 1. The DTO — `packages/types`
 
 [`user-settings.ts`](../../../packages/types/src/user-settings.ts) plus a re-export from
-`src/index.ts`.
+`src/index.ts`. **Relative imports inside that package carry a `.js` extension** — a convention
+kept by hand, not something the compiler asks for: the package is CommonJS and extensionless
+imports resolve there perfectly well. Writing them keeps the specifiers valid if it ever
+becomes ESM, where they would stop being optional.
 
-⚠️ **Export it as a type, and import it as a type.** `@rondo/types` has no build step
-(`main: ./src/index.ts`) and `nest build` compiles only `apps/api/src`, so a runtime import of
-a _value_ from that package leaves `require('@rondo/types')` in `dist` pointing at a `.ts`
-file — the api builds and then fails to boot. A runtime constant that both sides need is
-declared in `apps/api` and mapped to the type, the way
-[`language.ts`](../../../apps/api/src/user-settings/language.ts) does.
+Values may be imported from `@rondo/types` at runtime: the package emits to `dist`
+(`exports.default`), which is what lets `apps/api` call `parseMoney` and not merely name its
+type. Before that it had no build step, and a value import left `require('@rondo/types')` in
+`dist` pointing at a `.ts` file — the api built and then failed to boot. Two things follow: a
+new runtime export has to be reachable from `src/index.ts`, and a domain constant that is
+genuinely api-only still belongs in `apps/api`, the way
+[`language.ts`](../../../apps/api/src/user-settings/language.ts) keeps the Prisma-enum mapping.
 
 ## 2. The schema — `packages/db`
 

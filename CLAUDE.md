@@ -28,7 +28,9 @@ is a stack in the browser, and the single write point stays for atomicity).
 - `apps/web` — Next.js (App Router). Skeleton — F0.5.
 - `apps/api` — NestJS (REST). Skeleton — F0.4.
 - `packages/db` — Prisma schema and migrations (F0.4); grows incrementally per phase.
-- `packages/types` — shared DTOs; money as `bigint` in minor units.
+- `packages/types` — shared DTOs; money as `bigint` in minor units, with the currency's
+  digit count. Emits to `dist`, so `apps/api` can call its functions and not merely name
+  their types.
 - `packages/api-client` — typed API client generated from the NestJS OpenAPI spec
   (F1.4, ADR-002); `apps/web` consumes it instead of hand-written fetch.
 - `packages/config` — shared configs: eslint / tsconfig / prettier (F0.2).

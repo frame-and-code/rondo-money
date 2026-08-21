@@ -82,5 +82,14 @@ pipeline, not from a developer's shell.
 
 - Validate at the boundary: every API input is parsed against a schema, unexpected fields
   are rejected, strings are bounded. Nothing downstream re-checks what the edge let in.
+  That is a mechanism rather than an intention — the global `ValidationPipe`
+  ([`validation.options.ts`](../../apps/api/src/validation/validation.options.ts)) whitelists
+  and refuses undeclared fields, so a DTO is the whole statement of what an endpoint accepts,
+  and adding an endpoint adds no validation wiring.
+- **The DTO must be a class, and that is a security condition rather than a style one.** A
+  `@Body()` typed as an interface or a plain object compiles to the metatype `Object`, which
+  the pipe skips: `whitelist` and `forbidNonWhitelisted` never run, undeclared fields reach the
+  handler, and nothing anywhere says so. Unlike `@Public()`, which is a decision written at the
+  handler and readable there, this weakens the boundary by omission.
 - Error responses carry no internals — no stack traces, no SQL, no file paths.
 - Never swallow an exception on a money path: handle it or let it propagate.

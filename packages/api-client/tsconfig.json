@@ -6,10 +6,10 @@
     "lib": ["ES2022", "DOM"],
     // Explicit like the other packages: jest globals for the unit tests in ./test.
     "types": ["jest"],
-    // No mapping for this package's own name, unlike @rondo/types: the `exports` field added
-    // in F1.4 makes Node's self-reference apply, and TypeScript honours it (measured — the
-    // tests import `@rondo/api-client` and typecheck with nothing here). Jest is the one that
-    // does not implement self-reference, so its mapping lives in jest.config.mjs.
+    // No mapping for this package's own name — same as `@rondo/types`: an `exports` field
+    // makes Node's self-reference apply, and TypeScript honours it (measured — the tests
+    // import `@rondo/api-client` and typecheck with nothing here). Jest is the one that does
+    // not implement self-reference, so its mapping lives in jest.config.mjs.
     "paths": {
       "@/*": ["./src/*"]
     }

@@ -13,6 +13,12 @@ export default {
   // to the repo root — the Sonar scanner runs there and cannot resolve `src/…` otherwise.
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*.ts'],
+  // The package is pure functions over strings and bigints — there is no environment to make
+  // a branch unreachable, so anything short of 100% here is a case nobody thought about
+  // rather than a case nobody could reach.
+  coverageThreshold: {
+    global: { statements: 100, branches: 100, functions: 100, lines: 100 },
+  },
   coverageReporters: [['lcov', { projectRoot: '../..' }], 'text-summary'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   testRegex: '\\.(spec|test)\\.ts$',
@@ -23,5 +29,9 @@ export default {
     // Jest doesn't implement Node's package self-reference resolution, so tests can
     // import the package by its public name (as consumers do) — map it by hand.
     '^@rondo/types$': '<rootDir>/src/index.ts',
+    // The sources write relative imports with a `.js` extension while the files on disk are
+    // `.ts` — jest resolves against disk, so strip it back off. (The extension is a convention
+    // here, not a requirement: this package is CommonJS, so extensionless would resolve too.)
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };
