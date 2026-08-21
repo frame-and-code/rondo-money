@@ -70,7 +70,8 @@ report it as a review.
      path, unvalidated input at the edge, errors leaking internals, the edge cases the tests
      skip (zero, negative, month boundary, future month, duplicate request).
    - **prose** — what this change made false: `README.md`, `docs/*`, workspace READMEs,
-     `.claude/` (rules, this command's own table, hook and skill descriptions), and any
+     `.claude/` (rules, the tables in [`.claude/README.md`](../README.md), hook and skill
+     descriptions), and any
      Notion-owned decision the change supersedes.
 
 3. **Verify before reporting — one refuter per dimension, not one per finding.** Deduplicate

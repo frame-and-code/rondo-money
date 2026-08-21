@@ -8,10 +8,6 @@ const jsonResponse = (body: unknown, status = 200): Response =>
     headers: { 'Content-Type': 'application/json' },
   });
 
-/**
- * The `Request` the client handed to `fetch`, or a failure that says which of the two things
- * went wrong — no call at all, or a call shaped differently than expected.
- */
 function sentRequest(mock: jest.MockedFunction<typeof fetch>): Request {
   const call = mock.mock.calls[0];
 
@@ -58,8 +54,6 @@ describe('the generated API client', () => {
   });
 
   it('asks for the token per request, so an expired one is refreshed rather than reused', async () => {
-    // A fresh Response per call: a body can only be read once, so a shared one would fail the
-    // second request for a reason that has nothing to do with what is under test.
     fetchMock.mockImplementation(() => Promise.resolve(jsonResponse({ userId: 'user_2rondo' })));
     getToken.mockResolvedValueOnce('first.token').mockResolvedValueOnce('second.token');
 
@@ -78,18 +72,11 @@ describe('the generated API client', () => {
 
     await healthControllerCheck();
 
-    // Nothing here lists which paths are open. `@Public()` in apps/api clears the security
-    // requirement in the spec, the generated request function carries that through, and the
-    // client only resolves a token where an operation declares one. A hardcoded list of
-    // public paths would be a second source of truth for the same decision.
     expect(getToken).not.toHaveBeenCalled();
     expect(sentRequest(fetchMock).headers.get('Authorization')).toBeNull();
   });
 
   it('reports an API error as a typed value instead of throwing', async () => {
-    // The body the guard actually produces, and now the one the spec documents. While the 401
-    // carried no schema the generated type for it was `unknown`, so an assertion here proved
-    // nothing about the API — `error.message` below only compiles because it is described.
     const unauthorized = {
       statusCode: 401,
       error: 'Unauthorized',

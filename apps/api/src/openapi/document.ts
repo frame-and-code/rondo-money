@@ -5,20 +5,10 @@ import { DocumentBuilder, SwaggerModule, type OpenAPIObject } from '@nestjs/swag
 import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
 import { resolveEnvironment } from '@/environment';
 
-/**
- * The name of the bearer scheme in the spec. Generated clients use it to look the scheme up,
- * so renaming it is a breaking change to the contract, not a cosmetic edit.
- */
 export const SESSION_TOKEN_SCHEME = 'clerkSessionToken';
 
-/** Where the Swagger UI is mounted when it is served at all (see {@link areApiDocsEnabled}). */
 export const API_DOCS_PATH = 'docs';
 
-/**
- * Operations in the OpenAPI spec are addressed by HTTP method, and `PathItemObject` also
- * carries non-operation keys (`parameters`, `servers`, `$ref`). Listing the methods keeps the
- * walk below typed instead of casting whatever `Object.values` hands back.
- */
 export const HTTP_METHODS = [
   'get',
   'put',
@@ -59,19 +49,10 @@ because the contract is published before the first amount travels over it.
 **Request bodies** are validated against the schema published here: a field the schema does
 not declare is an error, not something quietly ignored.`;
 
-/**
- * The OpenAPI document for the whole app, built from the code itself.
- *
- * Shared by the generation script (which writes `openapi.json` for the codegen) and by
- * `main.ts` (which serves the Swagger UI), so the published file and the browsable
- * documentation cannot describe two different APIs.
- */
 export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('Rondo Money API')
     .setDescription(DESCRIPTION)
-    // Tracks apps/api/package.json. The API is not publicly versioned yet — when it is, this
-    // is the number that carries the promise, so it is deliberately not "1.0.0" today.
     .setVersion('0.0.0')
     .addBearerAuth(
       {
@@ -82,36 +63,18 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
       },
       SESSION_TOKEN_SCHEME,
     )
-    // Required globally, mirroring the guard: the app is closed unless a handler says
-    // otherwise, so the spec is too. `openPublicOperations` below then reopens exactly the
-    // handlers that carry `@Public()`.
     .addSecurityRequirements(SESSION_TOKEN_SCHEME)
     .build();
 
   return openPublicOperations(SwaggerModule.createDocument(app, config));
 }
 
-/**
- * Clear the global bearer requirement on the operations `@Public()` marked.
- *
- * Needed because there is no decorator that can do it: `@ApiSecurity` only ever *appends* a
- * requirement, and an empty one cannot survive the scanner either — method metadata passes
- * through `omitBy(…, isEmpty)`, which drops an empty array before it reaches the document
- * (`@nestjs/swagger@11.4.7`, `dist/swagger-explorer.js`). So `@Public()` leaves a vendor
- * extension behind and the document is corrected here, once, instead of every public handler
- * repeating a second decorator that someone will eventually forget.
- *
- * The `x-public` marker is kept in the published spec on purpose: "this endpoint is open" is
- * worth saying out loud to whoever reads the contract.
- */
 function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
   for (const pathItem of Object.values(document.paths)) {
     for (const method of HTTP_METHODS) {
       const operation = pathItem[method];
 
       if (operation && PUBLIC_OPERATION_EXTENSION in operation) {
-        // An empty array is OpenAPI's "no security at all", and it overrides the document-level
-        // requirement — omitting the key would inherit it instead.
         operation.security = [];
       }
     }
@@ -120,15 +83,6 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
   return document;
 }
 
-/**
- * Whether this instance serves the Swagger UI: everywhere except production.
- *
- * The spec itself is public — the repository is (ADR-003) and `openapi.json` is committed —
- * so what production withholds is not the contract but a live, anonymous "Try it out" console
- * against real data. Note that the UI is mounted by the HTTP adapter rather than as a
- * controller, which means the global `ClerkAuthGuard` never sees those routes: wherever it is
- * on, it is on for everyone.
- */
 export function areApiDocsEnabled(config: ConfigService): boolean {
   return resolveEnvironment(config) !== 'production';
 }

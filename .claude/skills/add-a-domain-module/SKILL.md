@@ -52,9 +52,9 @@ pnpm --filter @rondo/db exec prisma migrate dev --name <change>
 pnpm --filter @rondo/db build   # both steps: prisma generate AND tsc → dist
 ```
 
-The build is separate and mandatory — `migrate dev` does not regenerate the client here, and
-skipping it shows up as models typed `never` or a missing delegate at runtime
-(`packages/db/README.md` measured this).
+The build is separate and mandatory, and in a `pnpm dev` session `db:generate` is enough.
+[`packages/db/README.md`](../../../packages/db/README.md) owns both cases and what skipping it
+looks like.
 
 ## 3. The module — `apps/api/src/<feature>/`
 
@@ -67,7 +67,11 @@ without it the client gets `string` instead of a union — and _verify that in
 `packages/api-client/src/generated/types.gen.ts` after regenerating_, rather than trusting it.
 Publish only what a client needs; a field is far harder to withdraw from a contract than to add.
 
-**`<feature>.service.ts`** — injects `SCOPED_PRISMA`, never `PrismaService`. The extension adds
+**`<feature>.service.ts`** — injects `SCOPED_PRISMA`, never `PrismaService`. Get-or-create is
+read first, then `upsert` on the miss: the extension rewrites an upsert's `update` payload, so an
+unconditional upsert would issue a real UPDATE on every read and pin `updatedAt` to the last time
+anyone opened a screen — while the `upsert` on the miss is what keeps two concurrent first
+requests from colliding on the unique index. The extension adds
 `where userId` to reads and stamps it on writes, so the service writes ordinary Prisma calls and
 _cannot_ reach another tenant's rows. Two things it does not cover, both load-bearing:
 
@@ -123,5 +127,5 @@ calls, and an anonymous caller (401).
 Nothing about identity, scoping or the contract — those are settled above. What is still a
 judgement call is the endpoint's own semantics, and it belongs in the ticket: whether a read may
 create, what the fallback is when input says nothing usable, and which fields are published at
-all. `GET /user-settings` answers all three in its controller's doc comment; a new module owes
-the same paragraph.
+all. `GET /user-settings` answers all three in its `@ApiOperation` and `@ApiHeader`
+descriptions; a new module owes the same, in the published contract rather than in a comment.

@@ -39,15 +39,19 @@ is a stack in the browser, and the single write point stays for atomicity).
 
 ## Commands
 
-`pnpm install`; then `pnpm dev | build | lint | typecheck | test | format` (Turborepo, across
-all workspaces). Three more are root scripts rather than turbo tasks, and all three are CI
-gate steps, because a turbo task only reaches workspaces: `pnpm scan:secrets` runs the
-full-history gitleaks scan (`secret-scan.sh`, shared with the pre-commit hook and the CI
-`secrets` job), while `pnpm lint:hooks` and `pnpm test:hooks` lint and test the agent setup in
-`.claude/`, which is not a workspace.
+`pnpm install`; then `pnpm dev | build | lint | typecheck | test`, and `pnpm format` — the
+first five are Turborepo tasks across all workspaces, the last is Prettier at the root.
+`pnpm dev` also watches `@rondo/types` and `@rondo/db`, so a change in a package reaches the
+running app without a manual build ([`apps/api/README.md`](apps/api/README.md)).
+
+`format:check`, `scan:secrets`, `lint:hooks`, `test:hooks` and `lint:docs` are root scripts
+rather than
+turbo tasks, and every one of them is a gate step — a turbo task only reaches a workspace, and
+`.claude/` is not one. The gate's own membership lives in [`docs/ci.md`](docs/ci.md).
 
 In a session: `/dev` brings the local stack up, `/check` runs the gate, `/plan` decomposes a
-ticket, `/grill-me` clarifies a fuzzy one, `/sync-docs` sweeps the documentation,
+ticket, `/grill-me` clarifies a fuzzy one, `/tdd` builds one test-first — scenarios, your
+confirmation, red tests, then the implementation that turns them green — `/sync-docs` sweeps the documentation,
 `/review` runs parallel reviewers with clean context over the branch, `/phase-done` closes a
 ticket out, `/prep-pr` commits, pushes and opens the PR, `/babysit-pr` shepherds it to
 merge-ready and `/close-ticket` records the merged result in the Notion ticket — the PRs that

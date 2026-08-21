@@ -6,12 +6,6 @@ import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { useTranslations } from '@/i18n/locale-context';
 
-// Public sign-in route (F1.1 step 6): Clerk requires the catch-all segment. The path
-// itself lives in SIGN_IN_URL (src/lib/auth.ts) — proxy.ts derives both the public-route
-// matcher and Clerk's redirect target from it. There is no /sign-up page on purpose —
-// users sign in with Google/email and OAuth auto-creates the account. The locale
-// switcher drives Clerk's own strings too: ClerkProviderLocalized re-localizes the
-// widget when the app locale changes.
 export default function SignInPage() {
   const { t } = useTranslations();
 

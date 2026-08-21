@@ -11,20 +11,6 @@ import { UserSettingsService } from '@/user-settings/user-settings.service';
 export class UserSettingsController {
   constructor(private readonly settings: UserSettingsService) {}
 
-  /**
-   * The caller's settings — created on the first request, with the language read from
-   * `Accept-Language`.
-   *
-   * A GET that can write is deliberate, not an oversight. There is nothing for the client to
-   * decide: every user has exactly one settings row, and asking it to POST one first would
-   * add a round-trip whose only possible outcome is the row this call already returns. It
-   * stays idempotent in the way that matters — the first call decides the language, every
-   * later one only reads it, and the row is never duplicated.
-   *
-   * The caller comes from `@CurrentUserId()` alone. `Accept-Language` is a hint about
-   * presentation, never identity: the worst a forged header can do is choose the language of
-   * the sender's own settings row.
-   */
   @Get()
   @ApiOperation({
     summary: "The caller's settings",
@@ -33,12 +19,6 @@ export class UserSettingsController {
       '`Accept-Language`; afterwards it only reads. Never returns another user’s settings — ' +
       'the caller is the verified token’s subject and nothing else.',
   })
-  // The name must match `@Headers('accept-language')` below **character for character**.
-  // `@Headers()` makes the Swagger scanner derive a header parameter of its own, marked
-  // required; `@ApiHeader` merges into it only on an exact name match, and otherwise both are
-  // published — two entries for one case-insensitive header, one of them lying about being
-  // required. `test/openapi.spec.ts` fails the gate on that, because the merge is invisible
-  // here and the client generator hides it by collapsing the pair.
   @ApiHeader({
     name: 'accept-language',
     required: false,

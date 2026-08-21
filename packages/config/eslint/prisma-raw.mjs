@@ -1,13 +1,3 @@
-// @rondo/config/eslint/prisma-raw — raw Prisma SQL stays where it can be reviewed.
-//
-// This is not a style rule. The auto-scoping Client Extension covers the model API only:
-// `$queryRaw` / `$executeRaw` go straight to Postgres with whatever filter the author
-// remembered to write. With no row-level security behind them (ADR-005), that makes raw SQL
-// the one place a forgotten `where user_id` silently returns another user's money — so the
-// decision was to confine it to a single directory and let CI enforce the boundary.
-
-/** Matches `$queryRaw`, `$queryRawUnsafe`, `$executeRaw`, `$executeRawUnsafe` — the four the
- * generated Prisma 7 client exposes — whether tagged (`prisma.$queryRaw\`…\``) or called. */
 const RAW_SQL_MEMBER = 'MemberExpression[property.name=/^\\$(query|execute)Raw(Unsafe)?$/]';
 
 const MESSAGE =
@@ -15,20 +5,10 @@ const MESSAGE =
   'ScopedRawRepository (apps/api/src/raw-sql), which supplies the scope from the request ' +
   'context — see ADR-005 and .claude/rules/security.md.';
 
-/**
- * @param {object} [options]
- * @param {string[]} [options.allow] - flat-config `files` patterns, relative to the consuming
- *   config, whose contents may call the raw methods. Keep this to the directory that owns
- *   scoping; one exception per controller is how the rule stops being read.
- * @returns {import('eslint').Linter.Config[]}
- */
 export default function prismaRaw({ allow = [] } = {}) {
   return [
     {
       files: ['**/*.ts'],
-      // The exception is expressed as `ignores` rather than a later layer switching the rule
-      // off: flat config cannot subtract one selector from `no-restricted-syntax`, so turning
-      // it off would also drop whatever else the base — or a future layer — restricts there.
       ignores: allow,
       rules: {
         'no-restricted-syntax': ['error', { selector: RAW_SQL_MEMBER, message: MESSAGE }],

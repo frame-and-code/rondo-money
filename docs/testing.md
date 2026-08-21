@@ -5,13 +5,13 @@ the feature** — a feature without tests doesn't count as done (no test debt ac
 
 ## Levels
 
-| Level       | What it checks                              | Runner              | Where it lives                                                                 | Naming                     |
-| ----------- | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------ | -------------------------- |
-| Unit        | Domain logic, components — no DB or network | Jest (+ fast-check) | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api` | `*.spec.ts` / `*.test.tsx` |
-| Integration | API ↔ Postgres (from F0.3)                  | Jest + supertest    | `apps/api/test`                                                                | `*.integration.spec.ts`    |
-| E2E         | Browser → web → api → Postgres              | Playwright          | `apps/web/e2e`                                                                 | `*.spec.ts`                |
+| Level       | What it checks                              | Runner              | Where it lives                                                                 | Naming                  |
+| ----------- | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------ | ----------------------- |
+| Unit        | Domain logic, components — no DB or network | Jest (+ fast-check) | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api` | see Naming, below       |
+| Integration | API ↔ Postgres (from F0.3)                  | Jest + supertest    | `apps/api/test`                                                                | `*.integration.spec.ts` |
+| E2E         | Browser → web → api → Postgres              | Playwright          | `apps/web/e2e`                                                                 | `*.spec.ts`             |
 
-Plus one that is not a level of the app at all: **the agent guard hooks**
+Plus one that is not a level of the app at all: **the agent guard hooks and `check-docs.mjs`**
 ([`.claude/hooks/hooks.test.sh`](../.claude/hooks/hooks.test.sh), `pnpm test:hooks`, a step
 of the CI `unit` job). `guard-bash.sh` and `guard-db.sh` are what stop a secret-scan bypass
 or a migration against the dev database, and neither announces a miss: `guard-db.sh` matches
@@ -27,7 +27,7 @@ pnpm test               # all levels in all workspaces (turbo run test)
 pnpm test:unit          # unit only
 pnpm test:integration   # integration only (needs Postgres)
 pnpm test:e2e           # e2e only (needs Postgres; Playwright starts the servers itself)
-pnpm test:hooks         # the agent guard hooks (.claude/hooks) — bash, no DB, no secrets
+pnpm test:hooks         # the guard hooks and the docs checker — bash, no DB, no secrets
 ```
 
 The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
@@ -46,7 +46,11 @@ The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
   (`next build` + `next start`, see below); servers already running locally are reused
   (`reuseExistingServer`). A **dev server on :3001 aborts the run** rather than being
   replaced, so stop `pnpm dev` (and the one [`/dev`](../.claude/commands/dev.md) starts)
-  before running e2e.
+  before running e2e. Stop **all** of it, not only the web half: the api on :3000 is reused
+  with no mode probe at all, so a dev api is silently what the suite tests — and since F1.9 it
+  restarts whenever `packages/*/dist` is rewritten — which a root `pnpm test:e2e` does itself,
+  and so does any `build`, `test` or `/check` started in another terminal. A restart mid-suite
+  reads as an unexplained flake.
 - **E2E needs the Clerk keys** (F1.1) in `apps/web/.env.local` — `pnpm env:setup`. The
   publishable one is needed by the **build**, not at startup: `next build` inlines it into
   the bundle, and `apps/web/check-public-env.mjs` refuses to build without it in CI (locally
@@ -163,6 +167,10 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
 
 ## How to add tests to a new feature
 
+Test-first is the preferred order, and [`/tdd`](../.claude/commands/tdd.md) runs it: it derives
+the scenarios from the ticket, stops for confirmation, writes them red, and only then
+implements. The routing below is what it — or you — picks from.
+
 1. **Domain logic** (money, budget calculations, DTOs) → a unit test next to the package
    where it lives (usually `packages/types/test/*.spec.ts`). Reach for **fast-check** when
    the claim holds over a whole space of inputs — an invariant or a round-trip law —
@@ -178,10 +186,30 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
    api unit tests (no DB) — regular `*.spec.ts` next to the code or in `test/`.
 3. **Component / page** → a jsdom test in `apps/web/test` (Testing Library).
 4. **User scenario** (a whole screen, web + api) → `apps/web/e2e/<feature>.spec.ts` —
-   example: [`apps/web/e2e/home.spec.ts`](../apps/web/e2e/home.spec.ts). E2E is the most
+   example: [`apps/web/e2e/auth.spec.ts`](../apps/web/e2e/auth.spec.ts), which drives a real
+   screen. (`home.spec.ts` is a bare API probe, not a scenario to copy.) E2E is the most
    expensive level: one or two scenarios per feature, cover the rest lower down.
 5. Package has no runner yet? Copy `jest.config.mjs` from `packages/types` (node) or
    `apps/web` (jsdom), add `test` / `test:unit` scripts — turbo picks them up automatically.
+   Drop the `coverageThreshold` you copy along with it unless the new package means to hold
+   that bar.
+
+### Naming is load-bearing in `apps/api`
+
+`apps/api` matches `\.spec\.ts$` only, so a file named `*.test.ts` there **never runs** and
+says nothing about it. `apps/web` takes `*.spec.tsx?` and `*.test.tsx?`, `packages/types` and
+`packages/api-client` take both `.ts` forms. Integration specs are `*.integration.spec.ts` and
+the api's unit config ignores them by name — running them through `test:unit` reports green
+without executing them.
+
+### Coverage thresholds
+
+Two exist, and a run can exit non-zero with every test passing:
+
+- `packages/types` — 100% globally;
+- `apps/api` — 100% over `src/validation/`, on the **unit** config only.
+
+That failure means a missing test, never a lowered threshold.
 
 ## Conventions
 
@@ -196,12 +224,7 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
   Cloud (see [ci.md](ci.md)); the lcov reporter's `projectRoot` option keeps the paths
   repo-root-relative, which the Sonar scanner requires — copy it along when adding a jest
   config to a new package, and list the new lcov in `sonar-project.properties`.
-  **A workspace with two test levels needs two directories and two entries:** `apps/api`
-  writes `coverage/unit/` and `coverage/integration/`, because the levels cover different
-  code — the unit run is the only one that reaches `openapi/` and `environment.ts`, while the
-  guard and the scoping extension are covered far more deeply by the integration run than the
-  unit one reaches on its own. They used to share one path, so the second
-  run erased the first and Sonar measured the app by half its tests (78% reported against 83%
-  actual). Since the quality gate landed,
-  this is not only a report: the Sonar quality gate blocks a pull request whose **new** code
+  **A workspace with two test levels needs two directories and two entries** — `apps/api` writes
+  `coverage/unit/` and `coverage/integration/`, and why that matters is in
+  [ci.md](ci.md#sonar). Since the quality gate landed, this is not only a report: the Sonar quality gate blocks a pull request whose **new** code
   is under-covered, so a red `sonar` is answered with a test, not with a threshold.

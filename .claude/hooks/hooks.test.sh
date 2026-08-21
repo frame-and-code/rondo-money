@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Tests for the guard hooks. Run: pnpm test:hooks (also part of /check and the CI gate).
+# Tests for the guard hooks and for check-docs.mjs. Run: pnpm test:hooks (also part of /check
+# and the CI gate).
 #
 # Why they exist: guard-bash.sh and guard-db.sh are the only mechanical stop between an
 # agent's shortcut and a burned secret or a wiped remote database, and neither announces a
 # miss. guard-db.sh pattern-matches the command string, so a pattern that quietly stops
 # matching still exits 0; guard-bash.sh tokenises the command first, which removes that whole
 # class but not the risk of being wrong about which words matter. Either way the failure is
-# silence — the same reason ADR-005 refused to leave raw SQL to a convention. AI review on
-# PR #40 closed four bypasses in these scripts, so
-# the cases below are adversarial by design: every wrapper, spelling and refspec form the
+# silence — the same reason ADR-005 refused to leave raw SQL to a convention. Review has
+# closed real bypasses in these scripts, so the cases below are adversarial by design: every wrapper, spelling and refspec form the
 # patterns were written against is pinned here, and so is every command that must stay
 # allowed — a guard that blocks ordinary work gets switched off, which is worse than none.
 #
@@ -550,6 +550,102 @@ expect_quiet_about "$(stop_fixture prose-only README.md)" 'stale' \
   'prose alone is not a reason to warn'
 expect_quiet_about "$(stop_fixture untouched)" 'stale' \
   'a clean tree says nothing'
+
+# --- check-docs.mjs -----------------------------------------------------------------
+# Same failure mode as the guards: an owned phrase that stops matching, or a pattern that
+# no longer fires, leaves the check green and the drift shipping. The reflow case is a
+# regression — Prettier rewraps prose, so a phrase is routinely split across two lines.
+
+CHECK_DOCS="$(cd -- "$HOOKS_DIR/../.." && pwd)/check-docs.mjs"
+
+docs_fixture() {
+  local dir="$SANDBOX/docs-$1"
+  mkdir -p "$dir/.claude/config"
+  git init -q "$dir"
+  cat > "$dir/.claude/config/docs-ownership.json" <<'JSON'
+{
+  "owned": [{ "phrase": "top-level operations only", "owner": "owner.md" }],
+  "banned": [{ "pattern": "\\bPR #\\d+", "why": "a war story" }],
+  "githubRelativeLinks": []
+}
+JSON
+  printf '%s' "$dir"
+}
+
+run_check_docs() {
+  local dir="$1"
+  git -C "$dir" add -A >/dev/null 2>&1
+  DOCS_OUT=$(cd "$dir" && node "$CHECK_DOCS" 2>&1)
+  DOCS_EXIT=$?
+}
+
+expect_docs_ok() {
+  run_check_docs "$1"
+  if [ "$DOCS_EXIT" -eq 0 ]; then pass "$2"; else fail "$2" "expected 0, got $DOCS_EXIT: $DOCS_OUT"; fi
+}
+
+expect_docs_fail() {
+  local dir="$1" name="$2" needle="$3"
+  run_check_docs "$dir"
+  if [ "$DOCS_EXIT" -eq 0 ]; then
+    fail "$name" "expected a failure, got a clean run"
+  elif ! printf '%s' "$DOCS_OUT" | grep -q -- "$needle"; then
+    fail "$name" "failed for the wrong reason: $DOCS_OUT"
+  else
+    pass "$name"
+  fi
+}
+
+D=$(docs_fixture clean)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+expect_docs_ok "$D" 'a fact stated once, in its owner, is clean'
+
+D=$(docs_fixture second-home)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Remember it covers top-level operations only.\n' > "$D/other.md"
+expect_docs_fail "$D" 'the same fact in a second document is drift' 'owned by owner.md'
+
+D=$(docs_fixture reflowed)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'It covers top-level\noperations only, so nested writes differ.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a phrase Prettier split across two lines is still found' 'owned by owner.md'
+
+D=$(docs_fixture orphaned)
+printf 'Nothing here states it any more.\n' > "$D/owner.md"
+expect_docs_fail "$D" 'an owner that stopped stating its fact is reported' 'no longer states it'
+
+D=$(docs_fixture dead-link)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'See [the rule](nowhere.md).\n' > "$D/other.md"
+expect_docs_fail "$D" 'a relative link with no target fails' 'link target does not exist'
+
+D=$(docs_fixture live-link)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'See [the rule](owner.md) and [the site](https://example.com).\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link that resolves, and an external URL, both pass'
+
+D=$(docs_fixture capitalised)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Top-level operations only, is the rule.\n' > "$D/other.md"
+expect_docs_fail "$D" 'an owned phrase is caught whatever its capitalisation' 'owned by owner.md'
+
+D=$(docs_fixture allowlisted-link)
+node -e 'const f=process.argv[1];const m=JSON.parse(require("fs").readFileSync(f));m.githubRelativeLinks=["../../security/advisories/new"];require("fs").writeFileSync(f,JSON.stringify(m))' \
+  "$D/.claude/config/docs-ownership.json"
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Report it [privately](../../security/advisories/new).\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link the manifest allowlists is not resolved on disk'
+
+D=$(docs_fixture fenced)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Example:\n\n```md\n[x](made-up.md)\n```\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link inside a fenced block is an example, not a link'
+
+D=$(docs_fixture war-story)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'This was closed by PR #40.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a war story is refused' 'a war story'
+
 
 echo
 if [ "$FAILED" -gt 0 ]; then

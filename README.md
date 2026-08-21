@@ -96,14 +96,15 @@ part that keeps the result consistent.
 
 ```bash
 pnpm install      # install all workspaces
-pnpm dev          # run apps in dev mode
+pnpm dev          # run apps in dev mode (also watches packages/types and packages/db)
 pnpm build        # build all packages
 pnpm lint         # linting
 pnpm test         # tests
 pnpm scan:secrets # scan the whole git history for secrets (gitleaks)
 ```
 
-Commands run through Turborepo and are parallelized across workspaces.
+`dev`, `build`, `lint` and `test` are Turborepo tasks, parallelized across workspaces.
+`scan:secrets` is a root script, because a turbo task only reaches a workspace.
 
 ### Configuration — with your own keys
 
@@ -133,8 +134,8 @@ docker compose up -d   # start PostgreSQL in the background
 docker compose down    # stop (data persists in the volume)
 ```
 
-The image version (`postgres:18`) matches the deployment. Data lives in a Docker volume
-and survives container restarts.
+The image version (`postgres:18`) matches the one CI runs against. Data lives in a Docker
+volume and survives container restarts.
 
 The credentials in `.env.example` are applied by Postgres **only when it initialises an
 empty data directory**. If you ran an earlier version of this project, the volume still
@@ -148,7 +149,7 @@ docker compose down -v && docker compose up -d && pnpm db:migrate
 ```bash
 pnpm db:generate             # generate the Prisma client (also on postinstall)
 pnpm db:migrate              # apply migrations to the local DB (Postgres must be running)
-pnpm --filter @rondo/api dev # start the API; GET http://localhost:3000/health → 200
+pnpm dev --filter=@rondo/api # start the API; GET http://localhost:3000/health → 200
 ```
 
 `/health` is the only endpoint open to an anonymous caller; everything else needs a Clerk

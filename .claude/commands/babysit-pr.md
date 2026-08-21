@@ -13,8 +13,8 @@ Merging itself stays the user's call — `gh pr merge` is denied in
 
 Everything runs on its own on every `pull_request` event; nothing needs to be summoned:
 
-- **`gate`** — the aggregate status check. It needs `secrets`, `static`, `build`, `unit`,
-  `integration`, `e2e` and `sonar`, and it is the only check the branch ruleset requires.
+- **`gate`** — the aggregate status check, and the only one the branch ruleset requires. Which
+  jobs it needs is in [`docs/ci.md`](../../docs/ci.md); do not keep a second list here.
 - **`Sonar analysis`** — part of `gate` since F1.12 was finished, and on a pull request it
   really does block: the job waits for the quality gate verdict
   (`-Dsonar.qualitygate.wait=true`) rather than reporting success as soon as the analysis

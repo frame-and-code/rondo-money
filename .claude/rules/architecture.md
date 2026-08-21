@@ -35,8 +35,8 @@ transaction, arrives in F3.2. What follows holds for both, and is not optional:
 - a handler takes the caller from `@CurrentUserId()`, never from the body, a query parameter
   or a header;
 - everything that reads or writes a domain model injects `SCOPED_PRISMA`, never
-  `PrismaService` — the latter is the unscoped client and belongs to `src/raw-sql` and test
-  fixtures alone;
+  `PrismaService` — where the unscoped client may be imported is a lint rule, listed in
+  [security](security.md);
 - raw SQL only through `ScopedRawRepository`, which supplies `userId` itself; a lint rule
   fails the gate anywhere else;
 - a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts) and gets a
@@ -60,7 +60,9 @@ itself is published with no response shape at all — and the generated client t
   [`@ApiMoneyProperty()`](../../apps/api/src/validation/money.decorator.ts), which publishes it
   as a `string` carrying `MONEY_PATTERN` _and_ refuses anything else at the pipe; the two must
   never be written separately, because with no Swagger CLI plugin here a validation decorator
-  adds nothing to the spec and nothing would catch the drift. The conversion to `bigint` is
+  adds nothing to the spec and nothing would catch the drift. Its options type is deliberately
+  narrow: `required` and `nullable` would reach `@ApiProperty` and not the validator, publishing
+  a field the client may omit while the pipe answers 400. The conversion to `bigint` is
   explicit, at `serializeMoney` / `parseMoney` in the service — **never** a global interceptor,
   which would leave the code and the published schema saying different things. No endpoint
   carries an amount yet, and the convention is stated in the spec's own description until one
@@ -104,6 +106,10 @@ transfer leg without its pair) is the main way to break it, and PRD 6.3 requires
 transfer to be atomic regardless. So a transfer's two legs share a `transferId` and are
 created, edited and deleted together.
 
+`ScopedRawRepository` issues its statements on the top-level client, so a raw statement
+written inside the mutator would land **outside** its transaction. Pass the transactional
+client in instead.
+
 The same transaction carries the idempotency key: `IdempotencyKey` (the F3.1 migration)
 is unique per (user, key) and stores the mutation's result, inserted alongside it, so a
 double submit hits the unique index instead of writing twice — and gets that result back,
@@ -118,22 +124,13 @@ server replays history.
 
 ## Money, dates, schema
 
-- Money is an integer number of minor units in `bigint`
-  ([`packages/types/src/money.ts`](../../packages/types/src/money.ts)). The number of minor
-  digits comes from the budget's currency, never a hardcoded `2` — `minorDigits()` reads it
-  from the runtime's currency data, so JPY is 0 and BHD is 3. That is **not** the ISO 4217
-  exponent, on purpose: sixteen currencies whose minor unit has left circulation (HUF, IDR,
-  IQD, PKR and others) get 0 where ISO still says 2 or 3, which is what a user of that currency
-  expects to see. The divergent set is pinned by a test. Two consequences that outlive this:
-  the digit count must be **frozen on the budget row** when budgets land rather than recomputed
-  per read, and a runtime upgrade that moves this data is a migration, not a bump — an amount
-  written at one scale and read at another is money multiplied by a hundred. Over the wire money is a
-  **string** — JSON has no bigint — via `serializeMoney` / `parseMoney` at the edge.
-  `toDecimalString` / `parseDecimalString` convert the scale only (`1250n` ↔ `"12.50"`), and
-  refuse more precision than the currency has instead of rounding it off someone's money;
-  locale-aware rendering with a symbol and separators belongs to the UI and builds on them.
-  `@rondo/types` emits to `dist` for exactly this reason — the api calls these functions, it
-  does not merely import their types.
+- Money is an integer number of minor units in `bigint`, a string over the wire, and its
+  digit count comes from the currency and never from a hardcoded `2`. The convention and its
+  helpers belong to [`packages/types`](../../packages/types/README.md); never re-derive them.
+  Two consequences the rest of the codebase has to honour: the digit count is **frozen on the
+  budget row** when budgets land rather than recomputed per read, and a runtime upgrade that
+  moves the currency data is a migration rather than a bump — an amount written at one scale
+  and read at another is money multiplied by a hundred.
 - Dates are calendar dates without time. "Today" and `YYYY-MM` bucketing are computed in
   one reference timezone (the budget's) through a single shared helper, never a
   `new Date()` scattered across call sites.
@@ -148,8 +145,8 @@ server replays history.
 - After a migration, run `pnpm --filter @rondo/db build` — it is the only command that does
   both `prisma generate` (the types) and `tsc` (`dist`, the runtime entry consumers load).
   Skip it and you get one of two unrelated-looking failures: models typed as `never`, or a
-  missing delegate at runtime. Details in
-  [`packages/db/README.md`](../../packages/db/README.md).
+  missing delegate at runtime. In a `pnpm dev` session the `tsc` half is automatic and the
+  generate is not. Details in [`packages/db/README.md`](../../packages/db/README.md).
 
 ## Invariant 5.5
 

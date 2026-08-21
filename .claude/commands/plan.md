@@ -24,6 +24,8 @@ deliverable.
    copied from what exists, not designed afresh.
 3. **Sequence the work** in dependency order: `packages/types` (DTOs) → `packages/db`
    (schema + migration) → `apps/api` → `packages/api-client` → `apps/web` → tests → docs.
+   That places the tests last in the _plan_, not in the writing: [`/tdd`](tdd.md) writes them
+   first, per layer, and [testing](../rules/testing.md) prefers that order.
 4. **Name the cross-cutting concerns** the change actually touches: tenant scoping and
    whether raw SQL is involved (ADR-005), the single write point, money as `bigint`,
    calendar dates, i18n strings, invariant 5.5.

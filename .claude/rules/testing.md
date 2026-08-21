@@ -7,7 +7,9 @@ when any of that changes. This file is only the part that governs _when_ and _wh
 ## Written with the feature
 
 A feature without its tests is not done. No test debt is accrued for later, and "I'll add
-the test in a follow-up" is not an option the DoD offers.
+the test in a follow-up" is not an option the DoD offers. Writing them **before** the code is
+stronger still, and [`/tdd`](../commands/tdd.md) drives that order from the ticket: a test
+written after the implementation can only mirror it, misreading included.
 
 ## What each level is for
 

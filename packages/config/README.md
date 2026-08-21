@@ -5,7 +5,7 @@ truth — every app and package inherits from here, no local copies of rules.
 
 ## Exports
 
-- `@rondo/config/eslint` — flat ESLint config (ESLint 9 + typescript-eslint, unified
+- `@rondo/config/eslint` — flat ESLint config (ESLint 10 + typescript-eslint, unified
   import rules, Prettier-compatible). Consume it from a workspace `eslint.config.mjs`:
 
   ```js
@@ -35,5 +35,6 @@ truth — every app and package inherits from here, no local copies of rules.
 
 ## Scripts wired in consumers
 
-Each workspace exposes `lint` (`eslint .`) and `typecheck` (`tsc --noEmit`); the
+Each workspace that ships code exposes `lint` (`eslint .`) and `typecheck` (`tsc --noEmit`);
+this package exposes `lint` but no `typecheck`, being static configuration. The
 Turborepo gate runs them repo-wide as `turbo lint` and `turbo typecheck`.

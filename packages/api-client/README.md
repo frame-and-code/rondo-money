@@ -88,15 +88,8 @@ ADR-002 left the choice of codegen tool "to be decided at implementation". It is
 schemas from a single spec, and it is the one tool in this category keeping up with TypeScript
 (its peer range names 6 explicitly; the alternatives still pin 5).
 
-Measured on 18 Aug 2026, so that the next person can tell how stale this is:
-
-- it releases weekly-ish — 0.97.2 (18 May), 0.98.x (1–8 Jun), 0.99.0 (22 Jun 2026);
-- it **crashes on TypeScript 7** (`ts.SyntaxKind` undefined). The workspace is on `^6.0.3`, so
-  this is a wall we hit only when TypeScript is bumped — check it before that bump;
-- alternatives weighed: `openapi-typescript` + `openapi-fetch` (types only, ~6 kB runtime as a
-  dependency — lighter, but its last release was Feb 2026 and it has no zod or query story),
-  `kubb` (mid-migration: v5 core with the stable plugin line still on 4.x), `orval` (29 direct
-  dependencies), and `ts-rest`, which ADR-002 named and which has not published since Mar 2025.
+It **crashes on TypeScript 7** (`ts.SyntaxKind` undefined); the workspace is on `^6`, so that
+is a wall to check before bumping TypeScript, not a problem today.
 
 Switching away is cheap by construction: `src/index.ts` and `src/react-query.ts` are the only
 hand-written files here, and the screens depend on the generated names rather than on the

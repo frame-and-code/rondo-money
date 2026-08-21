@@ -1,23 +1,3 @@
-# F0.9 — CI gate. Every check that does not depend on another one runs as its own job, so
-# they all start at the same time; `gate` is the single status check that aggregates them
-# and is the one to require for branch protection on main.
-#
-# The jobs are independent by construction — none of them consumes another's output, so
-# there is nothing to order. What used to be one sequential job is now:
-#
-#   secrets            ─┐
-#   static             ─┤
-#   build              ─┤
-#   unit               ─┼─→ gate
-#   integration        ─┤
-#   preflight → e2e    ─┤
-#   preflight → sonar  ─┘
-#
-# `preflight` is the one exception: it exists only to tell e2e and sonar whether the secrets
-# they need are readable from this run, because that cannot be asked from a job `if` directly.
-#
-# Each job reinstalls dependencies (a warm pnpm store cache makes that cheap) — that is the
-# price of running them in parallel, and it is far below the time saved.
 name: CI
 
 on:
@@ -25,51 +5,25 @@ on:
   push:
     branches: [main]
 
-# The gate only reads the repository: the token is needed by checkout alone. Artifacts (upload-artifact)
-# and the Playwright github reporter annotations don't go through GITHUB_TOKEN — no scopes needed.
 permissions:
   contents: read
 
-# A repeated push to a PR cancels the stale run; pushes to main are never cancelled —
-# every main commit must be validated (green main is a precondition of F0.10).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  # Single source of the CI Postgres credentials: it configures the service containers
-  # and DATABASE_URL is assembled from it (the Compose step in each DB-backed job). Not a
-  # secret: the DB lives for minutes inside the runner and is unreachable from outside.
   POSTGRES_USER: rondo
   POSTGRES_PASSWORD: rondo_ci_secret
   POSTGRES_DB: rondo_ci
 
-# The setup steps below (checkout → pnpm → node → install) are repeated verbatim in every
-# job rather than extracted into a local composite action, deliberately: Dependabot's
-# github-actions ecosystem scans .github/workflows, so an action referenced from
-# .github/actions/ would keep its pinned SHA forever without anyone noticing.
 jobs:
   secrets:
-    # The pre-commit hook (.husky/pre-commit) sees only what is staged, and it is trivially
-    # bypassed: `--no-verify`, a commit from a machine without husky, or GitHub's own web
-    # editor. This job is the copy that cannot be walked around. It scans the **whole
-    # history**, not the diff — a rebase or a force push can carry an old secret into a new
-    # commit range, and the diff would show nothing. Cheap either way: the repository is
-    # around a megabyte and the scan finishes in well under a second.
-    #
-    # This is the last line before publication, not the only one: GitHub push protection is
-    # switched on once the repository is public and rejects the push itself, before the
-    # secret ever reaches a commit anyone can clone.
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     env:
-      # Pinned for the same reason actions are pinned by SHA: gitleaks' rule set changes
-      # between releases, so an unpinned scanner makes the gate a moving target — the same
-      # commit could pass today and fail tomorrow without anything in the repository
-      # changing. Bump the two together; the checksum is published in the release's
-      # gitleaks_<version>_checksums.txt.
       GITLEAKS_VERSION: 8.30.1
       GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
 
@@ -77,13 +31,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # The default shallow clone is a single commit — useless to a history scan.
           fetch-depth: 0
 
-      # Deliberately not gitleaks/gitleaks-action: it requires a paid licence key for
-      # repositories owned by an organisation, and this one is owned by frame-and-code.
-      # Putting it on PATH rather than calling it by absolute path is what lets the shared
-      # script below run here exactly as it runs on a laptop — same discovery, same flags.
       - name: Install gitleaks
         run: |
           set -euo pipefail
@@ -93,8 +42,6 @@ jobs:
           tar -xzf "${RUNNER_TEMP}/gitleaks.tar.gz" -C "${RUNNER_TEMP}" gitleaks
           echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
 
-      # The same script the pre-commit hook runs (secret-scan.sh), in its history mode.
-      # gitleaks exits non-zero on any finding, which fails the gate.
       - name: Scan the full history
         run: ./secret-scan.sh history
 
@@ -104,14 +51,10 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      # Actions are pinned by commit SHA (a mutable tag can be retargeted); the comment is
-      # the human-readable version — update both on a bump.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The gate never touches git after cloning — don't leave GITHUB_TOKEN in .git/config
           persist-credentials: false
 
-      # Takes the pnpm version from "packageManager" in package.json
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -125,12 +68,11 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # `pnpm lint` is `turbo run lint`, so it only reaches workspaces — and `.claude` is not
-      # one. The pre-commit hook lints it through lint-staged, but a hook is convenience and a
-      # job is the guarantee: a commit made with --no-verify, from a machine without husky or
-      # through GitHub's web editor lands here instead. Same reasoning as the secret scan.
       - name: Lint the agent setup
         run: pnpm lint:hooks
+
+      - name: Check the documentation for drift
+        run: pnpm lint:docs
 
       - name: Format check
         run: pnpm format:check
@@ -138,22 +80,10 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      # Runs last on purpose: `pnpm typecheck` above already pulls the whole contract chain
-      # (@rondo/api#build → openapi → codegen), so by now turbo replays it from cache and this
-      # step costs a `git status`. The script is the same one the pre-commit hook runs, in the
-      # mode that fails instead of staging — so a commit made without the hook (--no-verify, a
-      # machine without husky, GitHub's web editor) is caught here rather than shipping a
-      # client that no longer matches the API.
       - name: Contract drift check
         run: ./codegen.sh check
 
   build:
-    # Typecheck is not a substitute for this: `tsc --noEmit` only reads the sources, while
-    # `nest build` and `next build` also exercise the toolchain around them. A TypeScript 7
-    # bump passed the whole gate while leaving `apps/api` unbuildable (the Nest CLI needs the
-    # programmatic compiler API, which 7.0 does not ship) — nothing here noticed, because the
-    # only place that built the API was Playwright, and Playwright is skipped whenever the
-    # Clerk secrets are absent, which is exactly the case on every Dependabot pull request.
     name: Build (all packages)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -173,9 +103,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # No Clerk keys are passed on purpose: the production build must not depend on them, and
-      # this is the job that keeps it that way. `next build` prerenders the static routes
-      # without them; only serving a request needs a key (see the E2E job).
       - name: Build
         run: pnpm build
 
@@ -202,10 +129,6 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
-      # The guard hooks (.claude/hooks) belong to no workspace, so `turbo run test:unit`
-      # never sees them. A mistake in either is silent — a refusal that never fires looks
-      # exactly like a command that was fine, the same mode ADR-005 refused to accept for raw
-      # SQL. Needs no database and no secrets, so it rides along here.
       - name: Guard hook tests
         run: pnpm test:hooks
 
@@ -223,8 +146,6 @@ jobs:
           POSTGRES_DB: ${{ env.POSTGRES_DB }}
         ports:
           - 5432:5432
-        # The $-variables in health-cmd are expanded by the shell inside the container (docker CMD-SHELL),
-        # where POSTGRES_* are set via env above — no literals here.
         options: >-
           --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
           --health-interval 5s
@@ -232,10 +153,6 @@ jobs:
           --health-retries 10
 
     steps:
-      # The integration tests hit the Postgres service container (the docker-compose analog from F0.3).
-      # ConfigModule and prisma.config.ts read process.env — there are no .env files in CI.
-      # The env context is unavailable in workflow- and job-level env (see Context availability in the docs),
-      # so the URL is assembled in a step: the shell sees POSTGRES_* as regular environment.
       - name: Compose DATABASE_URL
         run: >-
           echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?schema=public"
@@ -262,13 +179,6 @@ jobs:
         run: pnpm test:integration
 
   preflight:
-    # Answers one question for the e2e and sonar jobs: are the secrets they need readable from
-    # this run? GitHub hides Actions secrets from fork pull requests and from Dependabot-triggered
-    # runs, and the `secrets` context is available in neither a job `if` nor a step `if` — only
-    # in `env`/`with`. So the answer is materialized here, as job outputs those jobs branch on.
-    # The alternative (repeating `if: env.HAS_CLERK_KEYS == 'true'` on every step of e2e) makes
-    # the job report success while silently doing nothing, which is what hid a broken build
-    # from us in the first place.
     name: Preflight
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -282,7 +192,6 @@ jobs:
         env:
           HAS_CLERK_KEYS: ${{ secrets.CLERK_SECRET_KEY != '' && secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY != '' }}
           HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
-          # Empty on a push and on a same-repository pull request; 'true' only for a fork.
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
           echo "has_clerk_keys=${HAS_CLERK_KEYS}" >> "$GITHUB_OUTPUT"
@@ -296,13 +205,6 @@ jobs:
               echo "without them. Every other job in the gate still runs."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
-          # A skipped Sonar is only legitimate when the run genuinely cannot read Actions
-          # secrets, and that is exactly one case: a fork pull request. Everywhere else a
-          # missing token means the secret was renamed, emptied or deleted — and since
-          # `gate` counts a skipped job as a pass, that would leave every later pull
-          # request green with no quality gate at all, announced only in a step summary
-          # nobody opens on a green run. So it fails here instead: the whole point of
-          # F1.12 is a gate that cannot quietly stop gating.
           if [ "${HAS_SONAR_TOKEN}" != 'true' ] && [ "${IS_FORK}" != 'true' ]; then
             echo "::error::SONAR_TOKEN is not readable from this run, and this is not a fork pull request — the Sonar quality gate would be skipped without anyone noticing. Check the secret in Settings → Secrets → Actions (and the Dependabot store)."
             exit 1
@@ -340,8 +242,6 @@ jobs:
           --health-retries 10
 
     steps:
-      # Playwright starts the api and web servers itself (see apps/web/playwright.config.ts),
-      # and the api talks to this Postgres — so this job needs the URL and the schema too.
       - name: Compose DATABASE_URL
         run: >-
           echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?schema=public"
@@ -364,53 +264,20 @@ jobs:
       - name: Apply migrations
         run: pnpm --filter @rondo/db run db:deploy
 
-      # Next's own build cache. Since F1.11 Playwright builds the web app and serves it with
-      # `next start` instead of running `next dev` (apps/web/playwright.config.ts), so this job
-      # pays for a `next build`. It cannot borrow the one from the `build` job: that job
-      # deliberately builds *without* the Clerk keys, and NEXT_PUBLIC_* are inlined into the
-      # bundle, so its output cannot serve a single page. Caching is what keeps the second
-      # build from costing what the first one did.
-      #
-      # Restore and save are separate halves for the same reason as the browser cache below:
-      # `actions/cache`'s post step is skipped when the job fails, and a failing suite is
-      # exactly the run whose build should still end up cached.
       - name: Restore the Next.js build cache
         id: next-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: apps/web/.next/cache
           key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/web/src/**', 'packages/ui/src/**', 'packages/api-client/src/**') }}
-          # An older cache is still worth having: Next reuses it per file, so a partial hit is
-          # a partial build rather than nothing. The lockfile hash stays in the fallback (the
-          # shape Next's own CI guide uses) so a toolchain bump starts from a cold cache
-          # instead of one written by the previous version of the bundler.
           restore-keys: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # This step is the slowest in the job, and measuring it decides what is worth fixing.
-      # On a healthy run (32269953397) it split into: apt index refresh 1m14s, nine genuinely
-      # missing system packages 1m05s, browser download ~17s — 2m44s in total. On the next run
-      # (32270576388) the apt index refresh hung against an unreachable Azure mirror and took
-      # the job's whole 25-minute cap with it.
-      #
-      # So the two halves get different treatment, and the cache is the smaller of the two
-      # wins: it removes the browser download, which was never the expensive part.
-      #
-      # Keyed on the resolved Playwright version rather than on the lockfile — the browser
-      # build is pinned to the driver, so a Playwright bump *must* miss the cache while an
-      # unrelated dependency change must not. Read from the installed binary, because a
-      # hand-written version here would drift from package.json in silence.
       - name: Resolve the Playwright version
         id: playwright
         run: >-
           echo "version=$(pnpm --filter @rondo/web exec playwright --version | awk '{print $2}')"
           >> "$GITHUB_OUTPUT"
 
-      # Restore and save are separate halves on purpose. The all-in-one `actions/cache` saves
-      # from a post step, and a post step is **skipped when the job fails** — observed on this
-      # very job: the run whose install step failed shows "Post Restore … skipped", the run that
-      # passed shows it succeeded. That is backwards for a debugging loop, where the tests fail
-      # repeatedly and every one of those runs would re-download the browser. Saving right after
-      # a successful install stores it regardless of how the suite then goes.
       - name: Restore the Playwright browser cache
         id: playwright-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -418,16 +285,6 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
 
-      # The apt half is what actually hangs, and no cache reaches it: those packages live
-      # outside `~/.cache/ms-playwright` and every run starts on a fresh VM. What helps there is
-      # not waiting forever — `timeout` bounds a single attempt, the loop gives it one more go
-      # against a mirror that is usually only briefly unreachable, and `timeout-minutes` is the
-      # backstop. A stuck mirror now costs about ten minutes and says so, instead of consuming
-      # the job's entire budget and reporting nothing but a cancellation.
-      #
-      # `--with-deps` stays: it is not ceremony. The healthy run above installed nine packages
-      # the runner image does not ship, so dropping it trades a slow step for a browser that
-      # cannot launch.
       - name: Install Playwright Chromium
         timeout-minutes: 12
         run: |
@@ -444,12 +301,6 @@ jobs:
 
             echo "::warning::Playwright install attempt ${attempt} timed out or failed — retrying"
 
-            # `timeout` signals only the process it started, and this one is the head of a chain:
-            # pnpm → node → apt-get. Killing the head leaves apt-get running and still holding
-            # /var/lib/apt/lists/lock, so the retry died in one second with "Could not get lock"
-            # — measured, not guessed. Clearing the orphan is what makes a second attempt mean
-            # anything. `|| true` because finding nothing to kill is the normal case, and the
-            # shell runs under `-e`.
             sudo pkill -KILL -f apt-get || true
             sleep 5
           done
@@ -463,25 +314,6 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
 
-      # The Clerk variables are declared in the test:e2e task env in turbo.json — otherwise
-      # turbo strict env mode strips them. Since F1.11 the publishable one has to reach one
-      # process further: Playwright runs `next build`, which **inlines** it into the browser
-      # bundle rather than reading it at startup, and apps/web/check-public-env.mjs fails the
-      # run here if it is missing instead of letting a keyless bundle be tested.
-      #
-      # CLERK_JWT_KEY is what the api (started by Playwright) verifies with — the same PEM
-      # path production runs, rather than the JWKS one. It is a public key, so the secrets
-      # store is not strictly where it belongs; it lives there because that is where it was
-      # put, and the only cost is that a bad paste shows as *** in the logs.
-      #
-      # CLERK_SECRET_KEY stays: it is **web's** key (clerkMiddleware), and e2e/global-setup
-      # needs it to mint the Clerk Testing Token and create the test user. Removing it does
-      # not move e2e onto the PEM — it makes `preflight` skip e2e entirely.
-      #
-      # WEB_ORIGIN is required since F1.3: the api refuses to boot without it, because it is
-      # also the `azp` a session token must carry, and defaulting it on a deployment would 401
-      # every caller. Locally it comes from .env; here it has to be spelled out. The value is
-      # web's own origin, so it matches the port Playwright serves web on.
       - name: E2E tests
         run: pnpm test:e2e
         env:
@@ -490,11 +322,6 @@ jobs:
           CLERK_JWT_KEY: ${{ secrets.CLERK_JWT_KEY }}
           WEB_ORIGIN: http://localhost:3001
 
-      # `!cancelled()` rather than `always()`: a failing suite still ran the build, and the next
-      # run should not repeat it — but a **cancelled** job (every repeated push to a PR cancels
-      # the previous run, see `concurrency` above) may have died mid-build, and storing that
-      # half-written cache under the exact key would poison it: the next run would restore it,
-      # report a hit, skip this step, and never replace it.
       - name: Save the Next.js build cache
         if: ${{ !cancelled() && steps.next-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -502,7 +329,6 @@ jobs:
           path: apps/web/.next/cache
           key: ${{ steps.next-cache.outputs.cache-primary-key }}
 
-      # CI uses the 'github' reporter (PR annotations); failure artifacts are Playwright traces
       - name: Upload Playwright traces
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -511,25 +337,6 @@ jobs:
           path: apps/web/test-results
 
   sonar:
-    # SonarQube Cloud analysis (F1.12): cognitive complexity, duplication, security
-    # hotspots and test coverage — the signals the linters don't carry. Configuration
-    # lives in sonar-project.properties; the scanner provisions its own JRE, so the job
-    # does not depend on the runner's Java.
-    #
-    # The job re-runs the unit and integration tests to produce the lcov the scanner
-    # imports. That duplicates work the `unit` and `integration` jobs already do, on
-    # purpose — the same trade as reinstalling dependencies everywhere: shipping coverage
-    # between jobs as artifacts couples them and silently flattens single-file artifact
-    # paths, while a re-run keeps every job self-contained.
-    #
-    # In the gate's `needs` since F1.12 was finished: the job stayed green and quiet across
-    # every run from F1.6 through F1.11, which was the switch-on condition. Note what makes
-    # that meaningful — the scanner exits 0 on a *failing* quality gate unless told to wait,
-    # so aggregating the job without `sonar.qualitygate.wait` would only ever have proven
-    # that an analysis was uploaded. The wait is set on the scan step below, and only for
-    # pull requests. Like e2e, it branches on preflight: SONAR_TOKEN is hidden from fork runs
-    # (unlike the Clerk keys it IS configured as a Dependabot secret too, so Dependabot
-    # PRs are analysed), and skipping the job openly beats succeeding while doing nothing.
     name: Sonar analysis
     needs: preflight
     if: needs.preflight.outputs.has_sonar_token == 'true'
@@ -560,7 +367,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Sonar attributes issues to new code via blame — a shallow clone breaks that.
           fetch-depth: 0
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
@@ -576,46 +382,12 @@ jobs:
       - name: Apply migrations
         run: pnpm --filter @rondo/db run db:deploy
 
-      # Coverage is always on in the jest configs, so the plain test commands produce the
-      # lcov files sonar-project.properties points at. The two apps/api levels
-      # write to separate directories and both are reported, so the order of these steps no
-      # longer decides what Sonar sees — it used to, because both wrote one file and the
-      # second run erased the first.
       - name: Unit tests with coverage
         run: pnpm test:unit
 
       - name: Integration tests with coverage
         run: pnpm test:integration
 
-      # `sonar.qualitygate.wait` makes the scanner poll for the quality gate and exit
-      # non-zero when it fails; without it the step reports success as soon as the analysis
-      # is uploaded, whatever the verdict. It defaults to false, and the poll is bounded by
-      # sonar.qualitygate.timeout (300s by default) — well inside this job's timeout.
-      #
-      # Enabled for pull requests only, and that asymmetry is the decision, not an oversight.
-      # On a PR the quality gate is computed over that PR's own new code, so a red gate names
-      # something the author can still fix. On a push to `main` the analysis is post-hoc — its
-      # new-code window is the last 30 days, so a failure there is debt from commits that are
-      # already merged, and nothing about failing the run makes it smaller. It would, however,
-      # hold the dev deployment: both Railway services run with Wait for CI (see
-      # docs/deploy-railway.md), so a red `gate` on main stops delivery over a number that no
-      # single commit can move. The analysis still runs on main and still uploads.
-      #
-      # Read that narrowly: it is the *verdict* that stops being fatal on main, not the job.
-      # `sonar` is in the gate's `needs` unconditionally, so a scanner error, an unreachable
-      # SonarQube Cloud or a failed service still turns main red and — through Wait for CI —
-      # still holds the deployment. That is deliberate and it is the same principle this job
-      # already follows for a missing token: a scanner that could not run is worth saying out
-      # loud, because a gate that quietly stops gating is the failure mode nobody notices.
-      # Coverage debt is the one thing exempted, because no single commit can pay it.
-      #
-      # The cost of the exemption, so nobody is surprised by it: without the wait nothing
-      # polls the compute-engine task, so on main a report that uploads and then fails
-      # server-side leaves the job green and says nothing. Main's verdict lives on the
-      # dashboard, and only there.
-      #
-      # The expression renders the literal `true` or `false`, so the flag is always passed
-      # explicitly rather than sometimes being absent.
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         with:
           args: -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
@@ -623,11 +395,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   gate:
-    # The one check to require on main. `always()` so it still reports when something above
-    # went red — without it a failed dependency would leave the gate skipped, which reads as
-    # "not run" rather than "failed".
-    # Deliberately left without a display name: the status check keeps the exact id "gate"
-    # it has today, so anything already pointing at that name keeps working.
     if: always()
     needs: [secrets, preflight, static, build, unit, integration, e2e, sonar]
     runs-on: ubuntu-latest

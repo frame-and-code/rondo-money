@@ -4,7 +4,7 @@
   or this file's own rendering from .github/.
 -->
 
-**Rondo Money is not accepting contributions yet**, so this pull request will be closed
+**Rondo Money is not accepting contributions yet.** A pull request from a fork is closed
 automatically. Nothing is wrong with your patch — the project has no agreed contribution
 terms yet, and accepting code before those exist would close options that cannot be
 reopened. The reasoning is in

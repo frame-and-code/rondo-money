@@ -4,7 +4,7 @@
     "prisma-client-extensions": {
       "url": "https://www.prisma.io/docs/orm/prisma-client/client-extensions/query",
       "version": "prisma / @prisma/client ^7.9.1",
-      "why": "The auto-scoping extension (ADR-005) is our replacement for RLS, so its exact boundary matters more than its features: query extensions intercept the model API and do NOT intercept $queryRaw / $executeRaw, and they see top-level operations only — a nested write keeps whatever userId the caller put on the nested rows. Confirm the boundary here before claiming anything is scoped automatically. Three things measured in F1.3 that the page does not spell out: a free-standing Prisma.defineExtension loses the schema's type map (every args degrades to never — write it as client.$extends instead); a named per-operation hook and $allOperations both run, the named one outermost, so a catch-all cannot simply throw; and the extension holds inside $transaction, on the transactional client too. Unrelated but measured on the same CLI: `migrate dev --help` claims it triggers generators, and it does not — always run `pnpm --filter @rondo/db build` after a migration.",
+      "why": "The auto-scoping extension (ADR-005) is our replacement for RLS, so its exact boundary matters more than its features: query extensions intercept the model API and do NOT intercept $queryRaw / $executeRaw, and they see top-level operations only — a nested write keeps whatever userId the caller put on the nested rows. Confirm the boundary here before claiming anything is scoped automatically. Three things measured in F1.3 that the page does not spell out: a free-standing Prisma.defineExtension loses the schema's type map (every args degrades to never — write it as client.$extends instead); a named per-operation hook and $allOperations both run, the named one outermost, so a catch-all cannot simply throw; and the extension holds inside $transaction, on the transactional client too. Unrelated but measured on the same CLI: `migrate dev --help` claims it triggers generators, and it does not — a migration is always followed by a generate — packages/db/README.md owns the two cases. Also measured here: findUnique accepts non-unique fields beside the unique one, which is why the scoping extension can add userId to a findUnique without losing the index.",
       "checked": "2026-08-17"
     },
     "node-async-local-storage": {
@@ -34,7 +34,7 @@
     "eslint-no-restricted-imports": {
       "url": "https://eslint.org/docs/latest/rules/no-restricted-imports",
       "version": "eslint ^10.8.1",
-      "why": "Layer boundaries from ADR-002 (web never imports Prisma; DTOs come from packages/types) are enforced as import restrictions rather than left to review.",
+      "why": "Layer boundaries from ADR-002 (web never imports Prisma; DTOs come from packages/types) are a rule rather than a lint rule: nothing today stops apps/web importing the database client, so this one is on review.",
       "checked": "2026-08-16"
     },
     "clerk-manual-jwt-verification": {

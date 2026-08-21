@@ -14,11 +14,14 @@ first step that fails rather than reporting a green stack that isn't.
 2. **Migrations** — `pnpm db:migrate` if `packages/db/prisma/migrations/` has anything the
    local database has not seen. `DATABASE_URL` comes from the root `.env`; if that file is
    missing, tell the user to run `pnpm env:setup` (or copy `.env.example`) and stop.
-3. **API** — `pnpm --filter @rondo/api dev` **started in the background**: it is a watch
-   process that never exits, so in the foreground the run simply hangs and the health check
-   below is never reached. Then poll `GET http://localhost:3000/health` until it answers
-   200, with a bounded wait — if it has not come up in about 30 seconds, read the server
-   output and report the actual error rather than waiting longer.
+3. **API** — `pnpm dev --filter=@rondo/api` **started in the background**: it is a watch
+   process that never exits, so in the foreground the run hangs and the health check below is
+   never reached. Through turbo, never `pnpm --filter @rondo/api dev` — turbo builds the
+   packages first and brings their watchers up alongside the server
+   ([`apps/api/README.md`](../../apps/api/README.md)).
+   Then poll `GET http://localhost:3000/health` until it answers 200, with a bounded wait —
+   if it has not come up in about 30 seconds, read the server output and report the actual
+   error rather than waiting longer.
    Since F1.2 the api also needs a Clerk key in `apps/api/.env.local` and **exits at
    startup** without one (`assertClerkVerificationConfigured`). That death is instant, so
    don't spend the 30 seconds on it: if the health check fails, read the output first —

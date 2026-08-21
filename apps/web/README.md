@@ -44,7 +44,7 @@ src/
 pnpm --filter @rondo/web dev     # next dev on :3001 (API takes :3000)
 pnpm --filter @rondo/web build   # next build (standalone build for Railway)
 pnpm --filter @rondo/web start   # next start on :3001
-pnpm --filter @rondo/web test    # jest — smoke test of the home page render
+pnpm --filter @rondo/web test    # unit, then e2e (see docs/testing.md for prerequisites)
 pnpm test:e2e                   # Playwright — incl. the F1.1 sign-in/out scenarios
 ```
 
@@ -74,6 +74,12 @@ There is no token handling at the call site, and there should never be: each gen
 carries the security its operation declares in the OpenAPI spec, so `GET /me` is sent with a
 bearer token and the public healthcheck without one. Which endpoints are open is decided by
 `@Public()` in `apps/api` — web holds no list of them.
+
+It configures during render, not in an effect: a parent's effects run after its children's, so
+an effect would let the first screen fire against an unconfigured client, and the cache is
+cleared during render for the same reason. The `isLoaded` guard is separate — Clerk reports
+`userId: undefined` until it has a session, and reacting to that would empty the cache on every
+page load for nothing.
 
 The provider configures that client **in the browser only**. It is a single instance per
 process, so configuring it while Next renders on the server would hand one visitor's token to

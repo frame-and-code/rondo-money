@@ -28,7 +28,7 @@ arrangement as `@rondo/db`. That is what lets `apps/api` call `parseMoney` rathe
 import its type — there used to be no build, `main` pointed at a `.ts` file, and an api that
 imported a value from here compiled and then failed to boot.
 
-Two consequences worth knowing before debugging something stranger:
+Consequences worth knowing before debugging something stranger:
 
 - relative imports inside `src` are written with a `.js` extension while the files on disk are
   `.ts`, and the jest config maps that back. Nothing forces this: the package declares no
@@ -37,13 +37,12 @@ Two consequences worth knowing before debugging something stranger:
   package ever becomes ESM, where they would stop being optional;
 - `apps/api` tests resolve this package through `dist`, so they need it built first. Turbo's
   `^build` already does that — a bare `npx jest` in `apps/api` on a fresh clone does not.
-- ⚠️ **`pnpm dev` builds this package once, at startup, and does not watch it.** Edit
-  `src` during a running session and the api keeps loading the previous `dist` — its
-  `nest start --watch` watches `apps/api/src`, not a linked package. Rebuild with
-  `pnpm --filter @rondo/types build`, the same way `@rondo/db` asks after a migration.
-  There is no watch mode here yet.
+- `pnpm dev` watches this package and the api restarts on the re-emitted `dist` — the loop is
+  described in [`apps/api/README.md`](../../apps/api/README.md). Outside a `pnpm dev` session
+  nothing watches, so a one-off rebuild is `pnpm --filter @rondo/types build`.
 
 ```bash
+pnpm --filter @rondo/types dev     # tsc --watch → dist (what `pnpm dev` runs)
 pnpm --filter @rondo/types build   # tsc → dist
 pnpm --filter @rondo/types test    # jest, held at 100% coverage
 ```

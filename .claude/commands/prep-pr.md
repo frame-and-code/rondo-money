@@ -37,8 +37,8 @@ git-ignored `settings.local.json`.
 3. **Prove the code is ready.** Run the gate — [`/check`](check.md) — unless it already
    ran green in this session on the exact current state of the tree; "it passed before my
    last edit" does not count. A red gate stops the command here, before any git action,
-   with the failures reported. A level that could not run (no Postgres, no Clerk keys)
-   is named in the report, not silently skipped.
+   with the failures reported. A level that could not run — its prerequisites are in
+   [`docs/testing.md`](../../docs/testing.md) — is named in the report, not silently skipped.
 4. **Correct the prose this change made false** — [`/sync-docs`](sync-docs.md). This is the
    last moment it is still the same PR, which is what [specs.md](../rules/specs.md) requires;
    a follow-up "docs" task is how drift starts. Cheap when there is nothing to fix, and the

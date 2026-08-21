@@ -10,11 +10,15 @@ that aggregates them and the only one worth requiring on `main`:
 secrets            ─┐
 static             ─┤
 build              ─┤
-unit               ─┼─→ gate
-integration        ─┤
-preflight → e2e    ─┤
-preflight → sonar  ─┘
+unit               ─┤
+integration        ─┼─→ gate
+preflight          ─┤
+       ├─→ e2e     ─┤
+       └─→ sonar   ─┘
 ```
+
+`preflight` is a member of `gate` in its own right, not only a prerequisite of the two jobs it
+feeds: it fails the gate directly when `SONAR_TOKEN` is missing outside a fork.
 
 `gate` runs with `if: always()` and fails unless every job it needs ended in `success` or
 `skipped` — without `always()` a red dependency would leave the gate itself skipped, which
@@ -54,11 +58,16 @@ status check keeps the exact id `gate` that branch rules point at.
   only just started emitting — what a generator bump does — would slip past it untracked and
   unnoticed. The step sits last in `static` on purpose: `pnpm typecheck` above already pulled
   the whole chain, so turbo replays it from cache and the check itself costs a `git status`.
-- **`static` lints one directory that is not a workspace** — `pnpm lint:hooks` (`eslint .claude`).
-  `pnpm lint` is `turbo run lint` and only reaches workspaces, so a lint error in the agent
-  setup passes it. The pre-commit hook catches one through lint-staged, but by the same
-  reasoning as the secret scan the hook is convenience and the job is the guarantee.
-- **`unit` carries one test suite that is not the app's** — `pnpm test:hooks`
+- **`static` runs two checks `turbo` cannot reach.** `pnpm lint:hooks` (`eslint .claude`),
+  because `pnpm lint` is `turbo run lint` and only reaches workspaces, so a lint error in the
+  agent setup passes it. And `pnpm lint:docs`, which fails on an **owned phrase** restated
+  outside the document that owns it, a relative link with no target, or one of the prose
+  spellings listed in `docs-ownership.json`. It matches phrases, not meaning: a reworded
+  restatement is on the author. Both
+  are also caught earlier by the pre-commit hook, but as with the secret scan the hook is
+  convenience and the job is the guarantee.
+- **`unit` carries one test suite that is not the app's** — `pnpm test:hooks`, which covers the
+  guard hooks and `check-docs.mjs`
   (`.claude/hooks/hooks.test.sh`, F1.9). The guard hooks are what stop an agent from skipping
   the secret scan or running a migration against dev, they belong to no workspace, so
   `turbo run test:unit` never sees them, and a mistake in either is silent — the refusal that
@@ -92,13 +101,20 @@ status check keeps the exact id `gate` that branch rules point at.
   does not pull that chain:** the generated files are committed, so the web image builds from
   them instead of compiling the whole API to produce them again. A stale commit of those files
   is what the drift check above is for, not a rebuild.
+- **A Node major moves in five places at once** — `.nvmrc`, `engines` in the root
+  `package.json`, `node-version` in this workflow, and the `node:*-slim` base image in both
+  Dockerfiles. Nothing compares them, so a Dependabot PR that bumps only the images leaves CI
+  testing the old runtime.
+- **`turbo.json` takes no comments.** It is JSON, and a `"//"` key inside `"tasks"` is parsed
+  as a task rather than ignored.
 - **Turborepo strict env mode:** turbo passes a task only the variables declared
   in that task's `env` in `turbo.json` (plus `globalPassThroughEnv`). A new environment
   variable for a test/server → declare it there too, otherwise everything is green
   locally with `.env`, but in CI the variable never reaches the process.
-- **E2E**: Playwright builds and starts api and web itself (`reuseExistingServer` is off
-  in CI). The CI reporter is `github` (annotations right in the PR); on failure, traces
-  (`apps/web/test-results`) are uploaded as the `playwright-traces` artifact.
+- **E2E**: Playwright builds and starts api and web itself; server reuse is off in CI, and the
+  local rules are in [testing.md](testing.md). The CI reporter is `github` (annotations right
+  in the PR); on failure, traces (`apps/web/test-results`) are uploaded as the
+  `playwright-traces` artifact.
 - **E2E run against a production build of web** (F1.11) — `next build` + `next start`, not
   `next dev`, because dev mode is a different application and a green suite against it proved
   nothing about what ships. That means this job pays for a `next build`, and **it cannot

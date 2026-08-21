@@ -1,4 +1,4 @@
-# Agent setup (F1.9)
+# Agent setup
 
 Most of this codebase is written by an agent, so the project's rules have to live in the
 agent's context by default rather than in the author's head. That is what this directory
@@ -71,9 +71,10 @@ as much as a real one.
 | Command                | Does                                                                                                                                                                                                                  |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/dev`                 | brings up Postgres, migrations, api and web, and reports what is actually running                                                                                                                                     |
-| `/check`               | the CI gate locally: lint, typecheck, format, build, tests, secret scan, contract drift                                                                                                                               |
+| `/check`               | the CI gate locally, `.claude/` included — the step list lives in [`check.md`](commands/check.md)                                                                                                                     |
 | `/plan <F1.x>`         | reads the ticket and returns an ordered, file-scoped plan; writes no code                                                                                                                                             |
 | `/grill-me <task>`     | interviews until the scope is shared, then hands off to `/plan`                                                                                                                                                       |
+| `/tdd <F1.x>`          | derives the test scenarios from the ticket, stops for confirmation, writes them red, then implements until green                                                                                                      |
 | `/sync-docs`           | sweeps the documentation the change touched and corrects what went stale                                                                                                                                              |
 | `/review [target]`     | fans parallel `pr-reviewer` subagents over the branch, verifies each finding, reports — changes nothing                                                                                                               |
 | `/phase-done <F1.x>`   | verifies the ticket's Acceptance Criteria one by one, runs the gate, drafts the PR text                                                                                                                               |
@@ -84,8 +85,9 @@ as much as a real one.
 ## Hooks (`hooks/`)
 
 Wired in [`settings.json`](settings.json). Blocking hooks exit 2 and the reason goes back to
-the agent; advisory hooks exit 0 and their output becomes context. They parse their JSON
-input with `node`, which this repository already requires — no extra prerequisite.
+the agent; advisory hooks exit 0 and their output becomes context. The two `PreToolUse`
+guards read the tool call from stdin and parse it with `node`, which this repository already
+requires; the rest take their input from `git`.
 
 | Hook                                                         | Event                  | Behaviour                                                                                                                                                                                                                                                           |
 | ------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -98,34 +100,15 @@ input with `node`, which this repository already requires — no extra prerequis
 ### The guards have tests
 
 [`hooks.test.sh`](hooks/hooks.test.sh) — `pnpm test:hooks`, and a step of the CI `unit` job.
-The two blocking guards decide by pattern-matching a command string, so their failure mode is
-silence: a pattern that stops matching still exits 0 and the command goes through. AI review
-on PR #40 closed four defects across the pair; writing these cases found another, and two
-rounds of [`/review`](commands/review.md) over the cases themselves found four more.
+The two blocking guards decide by inspecting a command, so their failure mode is silence: a
+rule that stops matching still exits 0 and the command goes through. That is why they have
+cases and why a new blocking hook lands with its own.
 
-They all had one shape, and it took six rounds to see it: **the command means one thing to
-bash and another to a pattern.** A quoted flag is still the flag; a wrapper carrying its own
-option pushes the verb along; a grouping paren, a keyword, a line continuation and a nested
-`$(…)` each change where a command begins. Every fix picked a different syntactic tell —
-an anchor, a character class, the presence of quotes — and the next round found a spelling
-that tell did not cover.
-
-So the guard stopped matching text. [`guard-bash.mjs`](hooks/guard-bash.mjs) **tokenises the
-command the way a shell does** — splitting on the operators, resolving quoting and escaping
-exactly once — and the rules then talk about _words_: is this word `--no-verify`, is that word
-an assignment of `HUSKY`, does this refspec name `main`. `git commit "--no-verify"` and
-`git commit --no-verify` become the same list of words, so there is no spelling left to find;
-and `git commit -m "use -n here"` keeps its message as a single word, so text inside it can
-never be read as a flag — a distinction that cost three separate patches to approximate.
-
-"The way a shell does" is a claim worth being precise about, because it is the claim the whole
-design rests on. What it parses: word splitting, single and double quotes, backslash escapes
-and line continuations, the operators `;` `&&` `||` `|` and newline, grouping with `( )` and
-`{ }`, and command substitutions — `$(…)` and backticks — **including inside double quotes**,
-which suppress word splitting but not execution. What it deliberately does not do, and the
-honest boundary: it expands no variables and follows no command into another interpreter, so
-`bash -c "…"`, `$VAR` in place of a literal, `$IFS` games and an encoded string get through,
-as they did before. Those are in the file's own header too.
+[`guard-bash.mjs`](hooks/guard-bash.mjs) **tokenises the command the way a shell does** and
+the rules then talk about _words_ rather than text, so quoting and grouping cannot spell a
+blocked command into an allowed one. What it deliberately does not do — expand variables,
+follow a command into another interpreter — is listed in that file's own header, which owns
+the boundary.
 
 The cases are adversarial on purpose: every wrapper (`sudo`, `env`, `command`, an inline
 assignment), every route round the secret scan, every refspec form that names main, and — just
@@ -162,6 +145,11 @@ agent's shortcuts, not a determined bypass. What they buy is that the obvious wa
 rule fails loudly.
 
 ## Config (`config/`)
+
+[`docs-ownership.json`](config/docs-ownership.json) — which document owns which fact, plus the
+prose patterns that are refused outright. Enforced by `pnpm lint:docs`
+([`check-docs.mjs`](../check-docs.mjs)), a gate step; the rule it serves is
+[`specs.md`](rules/specs.md).
 
 [`external-docs.json`](config/external-docs.json) — the external documentation this
 project's decisions actually depend on (Prisma extension boundaries, the ESLint rules that

@@ -26,8 +26,6 @@ export function LocaleSwitcher() {
         <DropdownMenuRadioGroup
           value={locale}
           onValueChange={(value) => {
-            // Radix types its value as a bare string; narrowed rather than cast, so a locale
-            // removed from `locales` fails here instead of reaching `messages[locale]`.
             if (isLocale(value)) setLocale(value);
           }}
         >

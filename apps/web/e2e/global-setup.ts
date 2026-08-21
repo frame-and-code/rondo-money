@@ -7,21 +7,12 @@ import { WEB_URL } from '../playwright.config';
 import { hasClerkKeys, TEST_EMAILS } from './clerk';
 import { assertProductionWebServer } from './production-server';
 
-// Obtains a Clerk Testing Token for the dev instance (reads NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-// and CLERK_SECRET_KEY) so automated browsers bypass Clerk's bot detection — the official
-// prerequisite for driving sign-in flows from Playwright.
 export default async function globalSetup() {
-  // Playwright doesn't read .env files on its own — load them the same way Next does
-  // (.env.local first), so local runs need no manual exports. In CI the variables come
-  // from the workflow env and .env files don't exist.
   loadEnvConfig(process.cwd());
 
   await assertProductionWebServer(WEB_URL);
 
   if (!hasClerkKeys()) {
-    // In CI the keys are guaranteed (the workflow skips this whole step without them),
-    // so a missing key there is a broken secret — fail instead of quietly skipping half
-    // the suite. Locally, a run without keys still exercises the non-auth scenarios.
     if (process.env.CI) {
       throw new Error(
         'Clerk keys are missing in CI: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY ' +
@@ -36,9 +27,6 @@ export default async function globalSetup() {
   await Promise.all(TEST_EMAILS.map((email) => ensureTestUser(email)));
 }
 
-// clerk.signIn() signs an existing user in — it never registers one, so a fresh dev
-// instance (or a CI instance that was reset) has no account to sign in with. Create it
-// through the Backend API, idempotently: every run reuses the same accounts.
 async function ensureTestUser(email: string) {
   const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
   const { totalCount } = await clerk.users.getUserList({ emailAddress: [email] });

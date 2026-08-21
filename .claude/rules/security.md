@@ -22,9 +22,14 @@ polish:
   `undefined`.
 - Domain code injects the auto-scoped client
   ([`SCOPED_PRISMA`](../../apps/api/src/prisma/scoped-prisma.ts)), never `PrismaService`,
-  which is the unscoped client underneath. Reads of a registered model are filtered, writes
-  are stamped, and an operation with no scoping rule (`groupBy`, `aggregate`) is **refused**
-  rather than run unfiltered. Prisma's types still ask for `userId` on writes — the extension
+  which is the unscoped client underneath. Reads of a registered model are filtered, and
+  writes are stamped on **both** halves: the `where` stops you reading another tenant's row,
+  and stamping `data` stops `update({ data: { userId: <someone else> } })` handing your own row
+  away. An operation with no scoping rule of its own (`groupBy`, `aggregate`) is **refused
+  unless the caller scoped it explicitly** — the catch-all checks the arguments and throws only
+  when the caller's id is absent, so these operations are usable, just never by accident. The
+  client is built once at startup and that is safe: the extension reads the caller at query
+  time, not at construction. Prisma's types still ask for `userId` on writes — the extension
   overwrites whatever is passed, which is what makes passing the wrong one harmless. Also not
   left to memory: the lint rule `@rondo/config/eslint/unscoped-prisma` fails the gate on
   importing `PrismaService` outside `src/prisma`, `src/raw-sql` and the tests.

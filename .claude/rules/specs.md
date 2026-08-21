@@ -50,9 +50,32 @@ starts. Where to look:
 - `SECURITY.md` / `CONTRIBUTING.md` / `NOTICE` when repository settings, the licence or the
   contribution stance change.
 
-`/sync-docs` runs this sweep. Prefer deleting a sentence to leaving it half-true, and when
-a document describes something planned but not yet built, say so in the text instead of
-writing the intent in the present tense.
+`/sync-docs` runs this sweep.
+
+## Write so it cannot drift
+
+Drift is not an accident of carelessness; it is a property of how the sentence was written.
+The test before adding one is not "is this true today" but "what would make it false, and
+would anyone find out". Sentences that fail it cost real reviews — a stale document sends a
+reviewer to argue with the code, and those reviewers are rate-limited.
+
+- **One home per fact.** Each fact is written in exactly one file; every other file links to
+  it. About to explain the same mechanism a second time? Link instead. This one is mechanical:
+  [`docs-ownership.json`](../config/docs-ownership.json) names the owner of each fact that has
+  already drifted once, and `pnpm lint:docs` fails the gate when one of those phrases appears
+  elsewhere, when a relative link has no target, or on the prose spellings it lists. It matches
+  phrases rather than meaning, so it refuses the copy-paste and not the paraphrase — the rest of
+  this section is yours to keep. Add an entry the moment a fact acquires a second home.
+- **State the rule, not the measurement.** "Money is minor units in `bigint`" survives
+  anything. A reproduction transcript, quoted tool output or a version-pinned symptom is
+  false the moment the tool moves — and it was never an instruction.
+- **No war stories.** What was tried, what broke, which PR caught it, how many rounds it took
+  — none of it tells anyone what to do now. The decision lives in its Notion ticket.
+- **Name the mechanism, not today's numbers.** Counts, inventories and line references go
+  stale on the next commit.
+- **Prefer deleting to hedging.** A sentence that cannot be stated plainly is one nobody has
+  understood well enough to write yet.
+- Something planned and not built is written in the future tense or not at all.
 
 ## Patterns belong in `.claude/`
 

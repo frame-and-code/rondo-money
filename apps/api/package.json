@@ -5,7 +5,7 @@
   "private": true,
   "main": "dist/main.js",
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "nest start --watch --exec \"node --watch-path=../../packages/types/dist --watch-path=../../packages/db/dist\"",
     "build": "nest build",
     "start": "node dist/main.js",
     "openapi": "node dist/openapi/generate.js",

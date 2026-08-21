@@ -17,8 +17,9 @@ shepherds it to merge-ready, and once the user has merged,
    user provides). Go through them **one by one** and, for each, state the evidence:
    which test, which file, which manual check. A criterion with no evidence is not met —
    say so plainly rather than ticking it.
-2. **Run the gate** — [`/check`](check.md). Integration and e2e need Postgres running and
-   Clerk keys present; if a level did not run, that goes in the report, not in the silence.
+2. **Run the gate** — [`/check`](check.md). Integration and e2e have prerequisites
+   ([`docs/testing.md`](../../docs/testing.md)); if a level did not run, that goes in the
+   report, not in the silence.
 3. **Check the DoD that belongs to every phase**, not only this ticket:
    - migrations for this phase's tables, applied and reversible in a fresh database;
    - tests at the levels the change touches, written with the feature;

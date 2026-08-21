@@ -151,25 +151,25 @@ is ordinary code here — and code fails silently. Four mechanisms carry it, in 
    holds the caller's `userId` in an `AsyncLocalStorage` for the life of one request. A
    middleware opens the scope before any guard runs; the guard fills it from the verified
    token. Nothing reads the identity from a parameter, so no call site can forget to pass it.
+   It is mounted on `'{*splat}'`: Express 5 parses routes with path-to-regexp v8, where a bare
+   `*` throws and `'*splat'` misses the root, so the braces are what cover `/`.
    Later phases add fields to the same store: the active `budgetId` (F3.1) and the
    inside-the-mutator marker (F3.2).
 2. **The auto-scoped client** — inject `SCOPED_PRISMA`
    ([`scoped-prisma.ts`](src/prisma/scoped-prisma.ts)), not `PrismaService`. Reads of a
    registered model are filtered by the caller, writes are stamped with them, and an operation
-   the extension has no rule for (`groupBy`, `aggregate`) is **refused** rather than run
-   unfiltered — see [`user-scoping.extension.ts`](src/prisma/user-scoping.extension.ts).
-   `PrismaService` itself is the unscoped client underneath: legitimate only for the raw-SQL
-   repository and test fixtures, and the lint rule `@rondo/config/eslint/unscoped-prisma` fails
-   the gate if a domain module imports it anyway.
+   the extension has no rule for (`groupBy`, `aggregate`) is **refused unless the caller scoped
+   it explicitly** — see [`user-scoping.extension.ts`](src/prisma/user-scoping.extension.ts).
+   `PrismaService` itself is the unscoped client underneath; where it may be imported is a lint
+   rule, and the list lives in [security](../../.claude/rules/security.md).
    - Note on types: Prisma still requires `userId` in a write payload, so a caller names an
      owner — the extension overwrites it with the verified caller, which is what makes naming
      the wrong one harmless. On a read a caller passes no `userId` at all; `SCOPED_PRISMA`
      adds the filter. That is a property of _this_ client, not permission to use another one.
-   - It sees **top-level operations only.** A write that nests a relation (a `create` inside
-     another model's `data`) keeps whatever `userId` the caller put on the nested rows.
-     Unreachable today (one model, no relations), but that is the shape a transfer's two legs
-     are written in, so F3.2 either scopes them explicitly or creates them as separate
-     top-level writes inside its transaction.
+   - Its boundary — what the extension does and does not cover, and what a nested write has
+     to do about it — is in [security](../../.claude/rules/security.md). A nested write is
+     unreachable today (one model, no relations); it is the shape a transfer's two legs take in
+     F3.2.
 3. **The registry** — [`scoped-models.ts`](src/prisma/scoped-models.ts) lists the models this
    applies to, and a new table joins it in the same change that creates it. Forgetting is
    caught by [`test/scoped-models.spec.ts`](test/scoped-models.spec.ts), which walks the schema
@@ -189,12 +189,32 @@ that is what the cross-tenant tests are for, on every phase that adds an aggrega
 ## Running
 
 ```bash
-pnpm --filter @rondo/api dev     # nest start --watch (recompilation via SWC)
+pnpm dev --filter=@rondo/api     # the api and the package watchers (see The dev loop, below)
 pnpm --filter @rondo/api build   # nest build → dist/
 pnpm --filter @rondo/api start   # node dist/main.js
 pnpm --filter @rondo/api test    # jest: unit, then integration (needs the local Postgres)
 pnpm openapi                     # regenerate openapi.json via turbo (builds first; no DB)
 ```
+
+### The dev loop
+
+Edit `@rondo/types` or `@rondo/db` and the running api picks it up. Three parts, and none is
+redundant:
+
+- each package's `dev` is `tsc --watch`, so its `dist` is re-emitted on save;
+- this app's `dev` runs the server under `node --watch-path` over those two `dist` directories,
+  because nest restarts only on changes inside `apps/api/dist`;
+- `turbo.json` attaches the two watchers to `@rondo/api#dev` with `with`, so any way of
+  starting the api **through turbo** starts them too.
+
+`--watch-path` names `dist` rather than the package: a package directory also holds `src`, and
+node would restart on the source edit — before the watcher had re-emitted — and again after.
+
+**Start the api through turbo**, never `pnpm --filter @rondo/api dev`: the watch paths must
+exist before the server starts, and the `dev` task's `^build` is what produces them — from the
+cache too, since those two builds declare their `dist` as an output. `prisma
+generate` is watched by nothing, so a migration still ends with a generate — see
+[`packages/db/README.md`](../../packages/db/README.md).
 
 `DATABASE_URL` comes from the root `.env` (see `.env.example`) and the Clerk key from
 `apps/api/.env.local`; on Railway both come from real environment variables, which take

@@ -38,12 +38,15 @@ symptom an unbound `Prisma.defineExtension` produces, so check the build first),
 types and a stale `dist`, integration tests and `nest start` fail on a delegate that is not
 there.
 
-⚠️ **The CLI's own help contradicts this, and the help is wrong.** `prisma migrate dev --help`
-(7.9.1) says it will "apply it to the database, trigger generators (e.g. Prisma Client)", and
-the `--skip-generate` opt-out no longer exists — yet measured twice here, on a real schema
-change, the command applied the migration and left the client untouched: no "Generated Prisma
-Client" line in its output and the new field absent from `src/generated` until `build` ran.
-Don't spend the next hour re-deriving that; run the build.
+**In a `pnpm dev` session the `tsc` half is automatic and the generate is not.** The watcher
+re-emits `dist` whenever `src/generated` changes, but nothing changes it until
+`prisma generate` runs. The loop itself is described in
+[`apps/api/README.md`](../../apps/api/README.md). So with the session up a migration ends with
+`pnpm --filter @rondo/db db:generate` and the rest happens by itself; with them down, it ends
+with the full `build`.
+
+⚠️ **`prisma migrate dev` does not regenerate the client**, whatever its own `--help` claims.
+Run the generate yourself.
 
 ## What it exports
 
@@ -64,6 +67,7 @@ it lives in `prisma.config.ts` and is only needed for Migrate.
 ## Scripts
 
 ```bash
+pnpm --filter @rondo/db dev           # tsc --watch → dist (what `pnpm dev` runs)
 pnpm --filter @rondo/db build         # prisma generate + tsc → dist
 pnpm --filter @rondo/db db:generate   # prisma generate
 pnpm --filter @rondo/db db:migrate    # prisma migrate dev (requires a running Postgres)
