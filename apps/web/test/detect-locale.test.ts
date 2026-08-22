@@ -1,6 +1,5 @@
 import { detectBrowserLocale } from '@/i18n/detect-locale';
 
-// F0.7 DoD: initial language is determined from the browser.
 describe('detectBrowserLocale', () => {
   it('matches a supported primary subtag', () => {
     expect(detectBrowserLocale(['en-US', 'en'])).toBe('en');

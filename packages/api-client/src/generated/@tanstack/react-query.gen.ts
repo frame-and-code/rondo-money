@@ -84,7 +84,7 @@ export const userSettingsControllerReadQueryKey = (options?: Options<UserSetting
 /**
  * The caller's settings
  *
- * Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. Never returns another user’s settings — the caller is the verified token’s subject and nothing else.
+ * Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. It never returns another user's settings. The caller is the verified token's subject and nothing else.
  */
 export const userSettingsControllerReadOptions = (options?: Options<UserSettingsControllerReadData>) => queryOptions<UserSettingsControllerReadResponse, UserSettingsControllerReadError, UserSettingsControllerReadResponse, ReturnType<typeof userSettingsControllerReadQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

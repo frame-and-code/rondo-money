@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/** Who the API thinks is calling, as derived from the verified session token. */
 export class CurrentUserResponse {
   @ApiProperty({
     description:

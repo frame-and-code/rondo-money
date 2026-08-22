@@ -12,13 +12,6 @@ import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
 const USER_ID = 'user_2rondoMeEndpointSubject00';
 
-// Integration level (F0.8) against the real AppModule, so the endpoint answers behind the
-// same global guard it will in production. Needs the local Postgres (`docker compose up -d`),
-// because AppModule connects to it — even though this endpoint touches no table.
-//
-// GET /me is what F1.4 leans on for "web makes an authorized request through the generated
-// client": until F1.6 it is the only protected endpoint, so it is also the only place the
-// full chain (token → guard → @CurrentUserId) can be proven over HTTP.
 describe('GET /me (integration)', () => {
   let app: INestApplication;
   let key: TestSigningKey;
@@ -30,8 +23,6 @@ describe('GET /me (integration)', () => {
   beforeAll(async () => {
     key = createTestSigningKey();
     now = Math.floor(Date.now() / 1000);
-    // Point the guard at a key pair we own, so the suite is networkless and deterministic
-    // even on a machine whose apps/api/.env.local holds a real Clerk key.
     process.env.CLERK_JWT_KEY = key.publicKeyPem;
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -47,7 +38,6 @@ describe('GET /me (integration)', () => {
     if (app) {
       await app.close();
     }
-    // Integration specs share one process (--runInBand) — leave the environment as found.
     if (originalJwtKey === undefined) {
       delete process.env.CLERK_JWT_KEY;
     } else {
@@ -70,10 +60,6 @@ describe('GET /me (integration)', () => {
     const response = await request(app.getHttpServer() as Server).get('/me');
 
     expect(response.status).toBe(401);
-    // `UnauthorizedResponse` is what the contract promises clients, and a generated client
-    // types the error by it — so the promise is checked against the real response rather than
-    // trusted. Asserted verbatim, like the guard's own cases in auth.integration.spec.ts: a
-    // matcher would smuggle an `any` into the expectation and hide a drifting shape.
     expect(response.body).toEqual({
       statusCode: 401,
       error: 'Unauthorized',
@@ -82,8 +68,6 @@ describe('GET /me (integration)', () => {
   });
 
   it('ignores a user id the caller supplies itself', async () => {
-    // The identity comes from the token's `sub` and from nowhere else (ADR-005): a query
-    // parameter or header naming another user must change nothing.
     const token = key.signToken({ sub: USER_ID, iat: now, exp: now + 60, azp: webOrigin });
 
     const response = await request(app.getHttpServer() as Server)

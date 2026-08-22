@@ -18,8 +18,6 @@ export interface ThemeToggleLabels {
   system: string;
 }
 
-// This package has no i18n mechanism of its own (F0.7 lives in `apps/web`), so the
-// consuming app passes already-translated labels in rather than hard-coding them here.
 export function ThemeToggle({ labels }: { labels: ThemeToggleLabels }) {
   const { setTheme } = useTheme();
 

@@ -7,7 +7,7 @@ judgement about your patch.
 
 ## Why
 
-The code is open so it can be read, audited, forked and self-hosted — not because a
+The code is open so it can be read, audited, forked and self-hosted, not because a
 collaboration process exists yet. Two things have to be settled before the first outside
 patch can be merged, and both are much harder to settle afterwards:
 
@@ -27,7 +27,7 @@ This will change. When it does, this file changes first.
   Your fork must stay under the AGPL, including if you offer it to others over a network.
 - **Self-host it.** See the README. Support for self-hosting is community-driven; there
   are no guarantees, and no obligation on the author to help.
-- **Report a security problem.** This is the one channel that is open — see
+- **Report a security problem.** This is the one channel that is open. See
   [SECURITY.md](SECURITY.md). Private vulnerability reporting is watched.
 
 Bug reports and feature requests are not accepted through any channel at the moment.

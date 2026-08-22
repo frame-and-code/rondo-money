@@ -16,12 +16,6 @@ import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 const USER_A = 'user_2rondoRawAaaaaaaaaaaaaaa';
 const USER_B = 'user_2rondoRawBbbbbbbbbbbbbbb';
 
-/**
- * Endpoints that exist only for this suite: the repository has no caller of its own until the
- * raw aggregates of Phase 4. They return the `userId` the repository put into the statement,
- * so the assertion is on the value that reached Postgres as a bound parameter — not on
- * anything the handler could have made up.
- */
 @Controller('test-raw')
 class RawSqlProbeController {
   constructor(private readonly repository: ScopedRawRepository) {}
@@ -33,10 +27,6 @@ class RawSqlProbeController {
     );
   }
 
-  /**
-   * Deliberately public: it is what proves the repository refuses rather than falling back to
-   * an unscoped query when there is no caller.
-   */
   @Public()
   @Get('anonymous')
   async anonymous(): Promise<{ userId: string }[]> {
@@ -46,11 +36,6 @@ class RawSqlProbeController {
   }
 }
 
-/**
- * Integration level (F0.8): the whole chain that replaces RLS for raw SQL — HTTP request →
- * guard → request context → repository → Postgres. Needs the local Postgres
- * (`docker compose up -d`).
- */
 describe('ScopedRawRepository (integration)', () => {
   let app: INestApplication;
   let key: TestSigningKey;
@@ -112,10 +97,7 @@ describe('ScopedRawRepository (integration)', () => {
   it('refuses to run at all on a route with no identity', async () => {
     const response = await get('/test-raw/anonymous');
 
-    // 500, not an unscoped result set: the repository throws before any SQL is sent.
     expect(response.status).toBe(500);
-    // And the response says nothing about why — no SQL, no column names, no internals
-    // (`.claude/rules/security.md`).
     expect(response.body).toEqual({ statusCode: 500, message: 'Internal server error' });
   });
 });

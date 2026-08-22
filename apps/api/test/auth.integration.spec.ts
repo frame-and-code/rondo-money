@@ -14,13 +14,6 @@ import { createTestSigningKey, type SessionTokenClaims, type TestSigningKey } fr
 
 const USER_ID = 'user_2rondoTestSubjectClaim000';
 
-/**
- * Endpoints that exist only for this suite. The app has no protected route of its own yet
- * — the first one arrives with F1.3 — and the guard is precisely what has to be proven
- * before anything is built on top of it. They are declared on the testing module, so the
- * real `APP_GUARD` from `AppModule` is what answers: the wiring is under test too, not
- * just the guard class.
- */
 @Controller('test')
 class GuardProbeController {
   @Get('protected')
@@ -28,11 +21,6 @@ class GuardProbeController {
     return { userId };
   }
 
-  /**
-   * Deliberately without `@CurrentUserId()`: it is what proves the *guard* closes the
-   * route. Every other protected case here would answer 401 from the parameter decorator
-   * alone, so a handler that never reads the identity is where an unprotected app shows.
-   */
   @Get('protected-without-identity')
   routeThatIgnoresIdentity(): { reached: boolean } {
     return { reached: true };
@@ -45,9 +33,6 @@ class GuardProbeController {
   }
 }
 
-// Integration level (F0.8): the real AppModule, so the guard runs exactly as it will in
-// production — same global registration, same verifyToken(). Needs the local Postgres
-// (`docker compose up -d`), because AppModule connects to it.
 describe('Clerk auth guard (integration)', () => {
   let app: INestApplication;
   let key: TestSigningKey;
@@ -57,20 +42,12 @@ describe('Clerk auth guard (integration)', () => {
   const originalJwtKey = process.env.CLERK_JWT_KEY;
   const get = (path: string): request.Test => request(app.getHttpServer() as Server).get(path);
 
-  /**
-   * A token this app should accept. `azp` defaults to the origin the app itself trusts —
-   * resolved from the app rather than hardcoded, because `WEB_ORIGIN` may be set in the
-   * environment — since the guard now checks that claim (F1.3).
-   */
   const signToken = (claims: Partial<SessionTokenClaims> = {}): string =>
     key.signToken({ sub: USER_ID, iat: now, exp: now + 60, azp: webOrigin, ...claims });
 
   beforeAll(async () => {
     key = createTestSigningKey();
     now = Math.floor(Date.now() / 1000);
-    // The guard prefers CLERK_JWT_KEY over CLERK_SECRET_KEY, so pointing it at our own
-    // public key makes the whole suite networkless — and deterministic on a machine whose
-    // apps/api/.env.local holds a real Clerk key.
     process.env.CLERK_JWT_KEY = key.publicKeyPem;
 
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -84,12 +61,9 @@ describe('Clerk auth guard (integration)', () => {
   });
 
   afterAll(async () => {
-    // Guard against a beforeAll failure leaving `app` unassigned, so teardown can't throw
-    // a secondary error that masks the real failure.
     if (app) {
       await app.close();
     }
-    // Integration specs share one process (--runInBand) — leave the environment as found.
     if (originalJwtKey === undefined) {
       delete process.env.CLERK_JWT_KEY;
     } else {
@@ -130,8 +104,6 @@ describe('Clerk auth guard (integration)', () => {
     });
 
     it('answers 401 to a token signed by someone else', async () => {
-      // Correct in every claim, including `azp` — the signature is the only thing wrong,
-      // so a 401 here can only come from the verification we care about.
       const forged = createTestSigningKey().signToken({
         sub: USER_ID,
         iat: now,
@@ -148,8 +120,6 @@ describe('Clerk auth guard (integration)', () => {
       const response = await get('/test/protected').set('Authorization', `Bearer ${expired}`);
 
       expect(response.status).toBe(401);
-      // The verification failure (expiry dates, signature details) stays in the log: it
-      // tells whoever is forging tokens which part to fix next.
       expect(response.body).toEqual({
         message: 'Invalid session token',
         error: 'Unauthorized',
@@ -158,10 +128,6 @@ describe('Clerk auth guard (integration)', () => {
     });
   });
 
-  // F1.3 closed this carry-over from F1.2: `verifyToken()` is configured with
-  // `authorizedParties`, so a token minted for a different origin cannot be replayed here.
-  // These cases are what proves the check is actually on — every other test in this file
-  // would pass with it silently disabled.
   describe('rejects a token that was not minted for this app', () => {
     it('answers 401 when azp names another origin', async () => {
       const token = signToken({ azp: 'https://evil.example.com' });

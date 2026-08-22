@@ -9,26 +9,12 @@ import { RequestContextService } from '@/request-context/request-context.service
 const USER_A = 'user_2rondoScopingAaaaaaaaaaa';
 const USER_B = 'user_2rondoScopingBbbbbbbbbbb';
 
-/**
- * Integration level (F0.8): the real extension against the real Postgres. This is the test
- * ADR-005 calls mandatory for every phase that adds domain tables — "user B sees nothing of
- * user A's" — and the only level that can prove it, because what the extension rewrites is
- * only observable in what the database actually returns.
- *
- * Needs the local Postgres (`docker compose up -d` + `pnpm db:migrate`).
- */
 describe('userId auto-scoping (integration)', () => {
   let app: INestApplication;
-  /** Unscoped on purpose: fixtures and assertions have to see across users. */
   let prisma: PrismaService;
   let scoped: ScopedPrismaClient;
   let context: RequestContextService;
 
-  /**
-   * One request from one caller. The `await` belongs inside the scope: Prisma's promises are
-   * lazy, so a promise handed out of `run()` executes its hooks with no context at all — in
-   * the app the middleware wraps the whole request, awaits included.
-   */
   const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
     context.run(async () => {
       context.setUserId(userId);
@@ -62,9 +48,6 @@ describe('userId auto-scoping (integration)', () => {
     await removeFixtures();
   });
 
-  // Prisma's types still require `userId` on a write, so a caller always names an owner; what
-  // the extension guarantees is that the name it uses is the verified caller's and no one
-  // else's. Passing another user's id here is therefore the case worth testing, not `{}`.
   it('overwrites the owner named in a create with the caller', async () => {
     const created = await asUser(USER_A, () =>
       scoped.userSettings.create({ data: { userId: USER_B } }),
@@ -74,9 +57,6 @@ describe('userId auto-scoping (integration)', () => {
     expect(stored.userId).toBe(USER_A);
   });
 
-  // Regression (F1.3 review): the backstop used to require at least one row, so a batch that a
-  // caller had filtered down to nothing was refused as "no scoping rule" — a 500 pointing at a
-  // hole that was not there. An empty write is a legal no-op.
   it('accepts an empty createMany as the no-op it is', async () => {
     const result = await asUser(USER_A, () => scoped.userSettings.createMany({ data: [] }));
 
@@ -105,8 +85,6 @@ describe('userId auto-scoping (integration)', () => {
         many: await scoped.userSettings.findMany(),
         count: await scoped.userSettings.count(),
         first: await scoped.userSettings.findFirst(),
-        // Asking by primary key, which is the read a scoping bug shows up in first: the id
-        // is enough to find the row, so only the injected userId keeps it hidden.
         byId: await scoped.userSettings.findUnique({ where: { id: rowOfA.id } }),
       }));
 
@@ -133,8 +111,6 @@ describe('userId auto-scoping (integration)', () => {
         deleted: await scoped.userSettings.deleteMany({}),
       }));
 
-      // The bulk operations are the quiet ones: they report zero rows instead of failing,
-      // which is exactly what an unscoped version would not do.
       expect(bulk).toEqual({ updated: { count: 0 }, deleted: { count: 0 } });
       await expect(
         prisma.userSettings.findUnique({ where: { id: rowOfA.id } }),
@@ -167,9 +143,6 @@ describe('userId auto-scoping (integration)', () => {
     });
 
     it('keeps scoping inside a transaction', async () => {
-      // F3.2 puts every mutation inside `$transaction` (ADR-006), so the extension has to
-      // hold on the transactional client too — proving it here means that phase starts from
-      // a known-good base instead of discovering this later.
       const seenInTransaction = await asUser(USER_B, () =>
         scoped.$transaction(async (tx) => {
           await tx.userSettings.create({ data: { userId: USER_A } });

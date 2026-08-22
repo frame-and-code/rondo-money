@@ -20,26 +20,15 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { useTranslations } from '@/i18n/locale-context';
 import { API_BASE_URL } from '@/lib/api';
 
-// Start page (F0.5) + shadcn/ui demo screen (F0.6 DoD): shows the base primitives, the
-// theme toggle, and the locale switcher (F0.7) so all three can be checked in one place.
-// Since F1.4 it also makes the app's first authenticated API call, through the generated
-// client — the one thing on this screen that exercises the whole chain end to end.
-// The app name is a brand, deliberately kept out of the translation dictionaries.
 export default function HomePage() {
   const { t } = useTranslations();
   const { isLoaded, isSignedIn } = useAuth();
 
-  // The request is generated from the spec; the cache, the retry and the loading state come
-  // from TanStack Query. Held back until Clerk has a session, so the first paint doesn't
-  // fire a call that could only come back 401.
   const { data, isError } = useQuery({
     ...meControllerIdentifyOptions(),
     enabled: isLoaded && isSignedIn,
   });
 
-  // Four states, not two: the query is disabled while signed out, so `data` stays undefined
-  // with no error — reusing the loading label there would spin forever on something that is
-  // never going to load.
   let caller = t('home.callerLoading');
   if (isLoaded && !isSignedIn) {
     caller = t('home.callerSignedOut');

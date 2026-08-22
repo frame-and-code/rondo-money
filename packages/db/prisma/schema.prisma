@@ -1,18 +1,4 @@
-// Prisma schema for Rondo Money — grows incrementally, one migration per phase.
-// F0.4 is the skeleton: datasource + generator + an empty baseline migration.
-// The domain core (budgets, accounts, transactions) lands in Phase 3; F1.3 adds the first
-// table, UserSettings. There is no change-log journal and no `deletedAt` anywhere: both were
-// dropped by ADR-006, which keeps undo in the browser.
-//
-// Naming convention, set here by the first table and followed by every later one:
-// models are PascalCase and fields camelCase in Prisma, while tables and columns are
-// snake_case in Postgres via `@@map` / `@map`. The mapping is not cosmetic — the raw
-// aggregates of Phases 4–5 (balance, RTA, Available) are hand-written SQL, and
-// `where user_id = $1` needs no quoting where `where "userId" = $1` does.
-
 generator client {
-  // Prisma 7's Rust-free client: generates TypeScript into the package, compiled to JS
-  // by @rondo/db's build step. CommonJS to match the Nest runtime.
   provider               = "prisma-client"
   output                 = "../src/generated/prisma"
   runtime                = "nodejs"
@@ -22,7 +8,6 @@ generator client {
 }
 
 datasource db {
-  // Prisma 7: the connection URL lives in prisma.config.ts, not here.
   provider = "postgresql"
 }
 

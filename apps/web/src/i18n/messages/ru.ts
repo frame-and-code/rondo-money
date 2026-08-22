@@ -1,11 +1,3 @@
-// Source of truth for the string key set: every other locale file is typed as
-// `Record<MessageKey, string>`, so TS fails the build if it drifts from these keys.
-//
-// Key convention: dot-namespaced by where the string is used — `common.*` for pieces
-// shared across pages/components (e.g. the theme toggle, living in `packages/ui`,
-// which takes its labels as props rather than depending on this module directly),
-// `home.*` / `budget.*` for a single page. Only translations go here — never route
-// segments, aria roles, or other non-visible technical strings.
 export const ru = {
   'common.themeToggle.trigger': 'Переключить тему',
   'common.themeToggle.light': 'Светлая',

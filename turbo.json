@@ -1,10 +1,10 @@
 {
   "$schema": "https://v2-10-7.turborepo.dev/schema.json",
-  "//": "Strict env mode: turbo passes only declared variables to tasks. Locally the config is filled in from .env files, in CI (F0.9) — from the environment only, so the tasks' env contract is declared here. CI is passthrough (doesn't affect the cache hash): Playwright depends on it (forbidOnly, retries, reporter). The contract chain (F1.4) is declared here too: @rondo/api#openapi boots the compiled Nest app in preview mode and writes apps/api/openapi.json (no server, no database), then @rondo/api-client#codegen turns that file into typed sources — both cacheable, with package-relative outputs. Note that a \"//\" key inside \"tasks\" is parsed as a task, not a comment. `dev` depends on ^build because @rondo/db and @rondo/types are loaded at runtime from their compiled dist and nothing else in a fresh clone produces it — postinstall runs prisma generate only — so without it the api compiles and then dies on MODULE_NOT_FOUND (verified by removing both dist directories).",
   "globalPassThroughEnv": ["CI"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
       "env": ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]
     },
     "openapi": {
@@ -57,6 +57,40 @@
       "cache": false,
       "persistent": true,
       "env": ["NODE_ENV"]
+    },
+    "@rondo/types#dev": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@rondo/db#dev": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@rondo/api#dev": {
+      "with": ["@rondo/types#dev", "@rondo/db#dev"],
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true,
+      "env": ["NODE_ENV"]
+    },
+    "@rondo/db#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "src/generated/**"]
+    },
+    "@rondo/web#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]
+    },
+    "@rondo/api-client#build": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@rondo/ui#build": {
+      "dependsOn": ["^build"],
+      "outputs": []
     }
   }
 }

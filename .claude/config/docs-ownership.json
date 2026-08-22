@@ -1,0 +1,81 @@
+{
+  "note": "One home per fact — the rule is .claude/rules/specs.md. A phrase listed under \"owned\" may be stated in its owner and nowhere else; every other document links to the owner. Enforced by `pnpm lint:docs` (check-docs.mjs), a step of the CI static job. Add an entry when a fact starts appearing in a second file, and pick the owner from the layer that would have to change if the fact changed.",
+  "owned": [
+    {
+      "phrase": "top-level operations only",
+      "owner": ".claude/rules/security.md",
+      "note": "the scoping extension's boundary (ADR-005)"
+    },
+    {
+      "phrase": "node --watch-path",
+      "owner": "apps/api/README.md",
+      "note": "the dev loop"
+    },
+    {
+      "phrase": "ISO 4217 exponent",
+      "owner": "packages/types/README.md",
+      "note": "why the digit count is not the ISO exponent"
+    },
+    {
+      "phrase": "coverageThreshold",
+      "owner": "docs/testing.md"
+    },
+    {
+      "phrase": "reuseExistingServer",
+      "owner": "docs/testing.md",
+      "note": "e2e prerequisites"
+    },
+    {
+      "phrase": "does not regenerate the client",
+      "owner": "packages/db/README.md"
+    },
+    {
+      "phrase": "half its tests",
+      "owner": "docs/ci.md",
+      "note": "why apps/api reports two coverage directories"
+    }
+  ],
+  "banned": [
+    {
+      "pattern": "—",
+      "why": "an em dash is the loudest AI tell; end the sentence or use a comma (communication.md)"
+    },
+    {
+      "pattern": "[“”‘’]",
+      "why": "curly quotes; use straight ones (communication.md)"
+    },
+    {
+      "pattern": "\\b(utilize|leverage|facilitate|numerous|delve|showcase|testament|underscore)\\b",
+      "why": "reach for the plain word (communication.md)"
+    },
+    {
+      "pattern": "\\b(in order to|due to the fact that|it is important to note that)\\b",
+      "why": "filler; cut it (communication.md)"
+    },
+    {
+      "pattern": "\\bnot (just|only) [^,.]{1,40}, but\\b",
+      "why": "state the point directly (communication.md)"
+    },
+    {
+      "pattern": "\\b(serves as|stands as|boasts)\\b",
+      "why": "just say is or has (communication.md)"
+    },
+    {
+      "pattern": "\\bPR #\\d+",
+      "why": "a war story, not an instruction — specs.md forbids it; the decision belongs to its Notion ticket"
+    },
+    {
+      "pattern": "measured (on|twice|here)\\b",
+      "why": "state the rule, not the measurement — specs.md"
+    },
+    {
+      "pattern": "verified by (removing|introducing)",
+      "why": "a reproduction transcript goes stale; state what must hold instead — specs.md"
+    },
+    {
+      "pattern": "\\b\\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* 20\\d\\d",
+      "why": "a dated observation is false on the next release — specs.md"
+    }
+  ],
+  "githubRelativeLinks": ["../../security/advisories/new"]
+}

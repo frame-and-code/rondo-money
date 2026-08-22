@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Tests for the guard hooks. Run: pnpm test:hooks (also part of /check and the CI gate).
+# Tests for the guard hooks and for check-docs.mjs. Run: pnpm test:hooks (also part of /check
+# and the CI gate).
 #
 # Why they exist: guard-bash.sh and guard-db.sh are the only mechanical stop between an
 # agent's shortcut and a burned secret or a wiped remote database, and neither announces a
 # miss. guard-db.sh pattern-matches the command string, so a pattern that quietly stops
 # matching still exits 0; guard-bash.sh tokenises the command first, which removes that whole
 # class but not the risk of being wrong about which words matter. Either way the failure is
-# silence — the same reason ADR-005 refused to leave raw SQL to a convention. AI review on
-# PR #40 closed four bypasses in these scripts, so
-# the cases below are adversarial by design: every wrapper, spelling and refspec form the
+# silence — the same reason ADR-005 refused to leave raw SQL to a convention. Review has
+# closed real bypasses in these scripts, so the cases below are adversarial by design: every wrapper, spelling and refspec form the
 # patterns were written against is pinned here, and so is every command that must stay
 # allowed — a guard that blocks ordinary work gets switched off, which is worse than none.
 #
@@ -550,6 +550,219 @@ expect_quiet_about "$(stop_fixture prose-only README.md)" 'stale' \
   'prose alone is not a reason to warn'
 expect_quiet_about "$(stop_fixture untouched)" 'stale' \
   'a clean tree says nothing'
+
+# --- check-docs.mjs -----------------------------------------------------------------
+# Same failure mode as the guards: an owned phrase that stops matching, or a pattern that
+# no longer fires, leaves the check green and the drift shipping. The reflow case is a
+# regression — Prettier rewraps prose, so a phrase is routinely split across two lines.
+
+REPO_ROOT=$(cd -- "$HOOKS_DIR/../.." && pwd)
+CHECK_DOCS="$REPO_ROOT/check-docs.mjs"
+
+docs_fixture() {
+  local dir="$SANDBOX/docs-$1"
+  mkdir -p "$dir/.claude/config"
+  git init -q "$dir"
+  # The banned patterns come from the real manifest, so a typo there fails these cases
+  # rather than passing a copy of itself.
+  node -e 'const real=JSON.parse(require("fs").readFileSync(process.argv[1]));
+    require("fs").writeFileSync(process.argv[2], JSON.stringify({
+      owned: [{ phrase: "top-level operations only", owner: "owner.md" }],
+      banned: real.banned,
+      githubRelativeLinks: [],
+    }))' "$REPO_ROOT/.claude/config/docs-ownership.json" "$dir/.claude/config/docs-ownership.json"
+  printf '%s' "$dir"
+}
+
+run_check_docs() {
+  local dir="$1"
+  [ "${SKIP_ADD-}" = 1 ] || git -C "$dir" add -A >/dev/null 2>&1
+  DOCS_OUT=$(cd "$dir" && node "$CHECK_DOCS" 2>&1)
+  DOCS_EXIT=$?
+}
+
+expect_docs_ok() {
+  run_check_docs "$1"
+  if [ "$DOCS_EXIT" -eq 0 ]; then pass "$2"; else fail "$2" "expected 0, got $DOCS_EXIT: $DOCS_OUT"; fi
+}
+
+expect_docs_fail() {
+  local dir="$1" name="$2" needle="$3"
+  run_check_docs "$dir"
+  if [ "$DOCS_EXIT" -eq 0 ]; then
+    fail "$name" "expected a failure, got a clean run"
+  elif ! printf '%s' "$DOCS_OUT" | grep -q -- "$needle"; then
+    fail "$name" "failed for the wrong reason: $DOCS_OUT"
+  else
+    pass "$name"
+  fi
+}
+
+D=$(docs_fixture clean)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+expect_docs_ok "$D" 'a fact stated once, in its owner, is clean'
+
+D=$(docs_fixture second-home)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Remember it covers top-level operations only.\n' > "$D/other.md"
+expect_docs_fail "$D" 'the same fact in a second document is drift' 'owned by owner.md'
+
+D=$(docs_fixture reflowed)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'It covers top-level\noperations only, so nested writes differ.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a phrase Prettier split across two lines is still found' 'owned by owner.md'
+
+D=$(docs_fixture orphaned)
+printf 'Nothing here states it any more.\n' > "$D/owner.md"
+expect_docs_fail "$D" 'an owner that stopped stating its fact is reported' 'no longer states it'
+
+D=$(docs_fixture dead-link)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'See [the rule](nowhere.md).\n' > "$D/other.md"
+expect_docs_fail "$D" 'a relative link with no target fails' 'link target does not exist'
+
+D=$(docs_fixture live-link)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'See [the rule](owner.md) and [the site](https://example.com).\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link that resolves, and an external URL, both pass'
+
+D=$(docs_fixture capitalised)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Top-level operations only, is the rule.\n' > "$D/other.md"
+expect_docs_fail "$D" 'an owned phrase is caught whatever its capitalisation' 'owned by owner.md'
+
+D=$(docs_fixture allowlisted-link)
+node -e 'const f=process.argv[1];const m=JSON.parse(require("fs").readFileSync(f));m.githubRelativeLinks=["../../security/advisories/new"];require("fs").writeFileSync(f,JSON.stringify(m))' \
+  "$D/.claude/config/docs-ownership.json"
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Report it [privately](../../security/advisories/new).\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link the manifest allowlists is not resolved on disk'
+
+D=$(docs_fixture fenced)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Example:\n\n```md\n[x](made-up.md)\n```\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link inside a fenced block is an example, not a link'
+
+D=$(docs_fixture war-story)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'This was closed by PR #40.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a war story is refused' 'a war story'
+
+# One case per banned pattern: a typo in any of them would otherwise leave the gate green.
+D=$(docs_fixture measurement)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Measured on node v26, the answer is 2.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a measurement is refused' 'not the measurement'
+
+D=$(docs_fixture transcript)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Verified by removing both dist directories.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a reproduction transcript is refused' 'goes stale'
+
+D=$(docs_fixture dated)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Checked 18 Aug 2026 against the release.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a dated observation is refused' 'next release'
+
+D=$(docs_fixture missing-owner)
+node -e 'const f=process.argv[1];const m=JSON.parse(require("fs").readFileSync(f));m.owned=[{phrase:"ghost",owner:"gone.md"}];require("fs").writeFileSync(f,JSON.stringify(m))' \
+  "$D/.claude/config/docs-ownership.json"
+printf 'nothing here\n' > "$D/other.md"
+expect_docs_fail "$D" 'a manifest owner that does not exist is reported' 'does not exist'
+
+D=$(docs_fixture vanished)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'gone soon\n' > "$D/other.md"
+git -C "$D" add -A >/dev/null 2>&1
+rm "$D/other.md"
+SKIP_ADD=1 expect_docs_fail "$D" 'a tracked file missing from the tree is a message, not a stack' 'missing from the working tree'
+
+D=$(docs_fixture dead-anchor)
+printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
+printf 'See [it](owner.md#no-such-heading).\n' > "$D/other.md"
+expect_docs_fail "$D" 'a link to a heading that does not exist fails' 'no heading'
+
+# The two fixes that had no case of their own: fences are blanked for every check, not just
+# links, and the config JSON is part of the corpus. Reverting either must turn this red.
+D=$(docs_fixture fenced-phrase)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Example:\n\n```md\nIt sees top-level operations only, per PR #40.\n```\n' > "$D/other.md"
+expect_docs_ok "$D" 'an owned phrase and a war story inside a fence are examples, not drift'
+
+D=$(docs_fixture config-json)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf '{ "why": "the extension sees top-level operations only" }\n' \
+  > "$D/.claude/config/external-docs.json"
+expect_docs_fail "$D" 'prose in .claude/config JSON is part of the corpus' 'owned by owner.md'
+
+# GitHub replaces each space, so punctuation between words leaves a double hyphen.
+D=$(docs_fixture anchor-slug)
+printf 'It sees top-level operations only.\n\n## Step 1 / Enter the loop\n' > "$D/owner.md"
+printf 'See [it](owner.md#step-1--enter-the-loop).\n' > "$D/other.md"
+expect_docs_ok "$D" 'an anchor slugged the way GitHub slugs it resolves'
+
+D=$(docs_fixture em-dash)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The gate runs first \xe2\x80\x94 then the tests.\n' > "$D/other.md"
+expect_docs_fail "$D" 'an em dash in prose is refused' 'AI tell'
+
+D=$(docs_fixture em-dash-literal)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The note format is `\xe2\x80\x94 done <date>`.\n' > "$D/other.md"
+expect_docs_ok "$D" 'a dash inside a backticked literal is quoted, not written'
+
+D=$(docs_fixture managed-block)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf '<!-- BEGIN:vendor -->\nA tool wrote this \xe2\x80\x94 we did not.\n<!-- END:vendor -->\n' > "$D/other.md"
+expect_docs_ok "$D" 'a block a dependency maintains is not ours to fix'
+
+D=$(docs_fixture vocabulary)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'We utilize, leverage and facilitate numerous delve showcase testament underscore.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a fancy word where a plain one is clearer is refused' 'plain word'
+
+D=$(docs_fixture curly)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The \xe2\x80\x9cclient\xe2\x80\x9d\xe2\x80\x99s \xe2\x80\x98token\xe2\x80\x99 is verified.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a curly quote is refused' 'straight ones'
+
+D=$(docs_fixture filler)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Run it in order to rebuild, due to the fact that it is important to note that.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a filler phrase is refused' 'cut it'
+
+D=$(docs_fixture not-only)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'It gives not only types, but options, and not just zod, but keys.\n' > "$D/other.md"
+expect_docs_fail "$D" 'the not-only frame is refused' 'directly'
+
+D=$(docs_fixture serves-as)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The guard serves as, stands as and boasts the only entry point.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a fancy way to say is or has is refused' 'is or has'
+
+# A marker quoted in prose must not open a blanked region: the fail-open direction is the
+# one that reports "no drift" over arbitrary text.
+D=$(docs_fixture quoted-marker)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Write `<!-- BEGIN:x -->` to open one.\n\nThis restates top-level operations only.\n\n<!-- BEGIN:v -->\nvendor\n<!-- END:v -->\n' > "$D/other.md"
+expect_docs_fail "$D" 'a marker quoted in prose does not blank the rest of the file' 'owned by owner.md'
+
+D=$(docs_fixture unmatched-marker)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf '<!-- BEGIN:a -->\nvendor a\n\nOur prose restates top-level operations only.\n\n<!-- BEGIN:v -->\nvendor v\n<!-- END:v -->\n' > "$D/other.md"
+expect_docs_fail "$D" 'an unclosed marker does not reach another block END' 'owned by owner.md'
+
+D=$(docs_fixture fenced-heading)
+printf 'It sees top-level operations only.\n\n```bash\n# Not a heading\n```\n' > "$D/owner.md"
+printf 'See [it](owner.md#not-a-heading).\n' > "$D/other.md"
+expect_docs_fail "$D" 'a # inside a fence is not a heading' 'no heading'
+
+D=$(docs_fixture live-anchor)
+printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
+printf 'See [it](owner.md#real-heading).\n' > "$D/other.md"
+expect_docs_ok "$D" 'a link to a heading that exists passes'
+
 
 echo
 if [ "$FAILED" -gt 0 ]; then
