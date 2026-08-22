@@ -43,7 +43,7 @@ describe('minorDigits', () => {
   });
 });
 
-describe('minorDigits (pinned against the runtime’s currency data)', () => {
+describe("minorDigits (pinned against the runtime's currency data)", () => {
   it.each(DIVERGES_FROM_ISO_4217)(
     '%s stays at %i digits, where ISO 4217 says %i',
     (code, ours, iso) => {

@@ -71,14 +71,14 @@
     },
     "/user-settings": {
       "get": {
-        "description": "Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. Never returns another user’s settings — the caller is the verified token’s subject and nothing else.",
+        "description": "Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. It never returns another user's settings. The caller is the verified token's subject and nothing else.",
         "operationId": "UserSettingsController_read",
         "parameters": [
           {
             "name": "accept-language",
             "required": false,
             "in": "header",
-            "description": "Standard BCP 47 preference list, q-values included. Read only when the settings row does not exist yet; browsers send it on their own. Anything outside ru/en/pl — or a missing header — settles on `en`.",
+            "description": "Standard BCP 47 preference list, q-values included. Read only when the settings row does not exist yet; browsers send it on their own. Anything outside ru/en/pl, or a missing header, settles on `en`.",
             "schema": {
               "type": "string"
             }
@@ -115,7 +115,7 @@
   },
   "info": {
     "title": "Rondo Money API",
-    "description": "The REST contract of Rondo Money — a zero-based budgeting app. The backend owns every\ndatabase access (ADR-002); this spec is what the typed client in `packages/api-client` is\ngenerated from, so it is the contract itself rather than a description of one.\n\n**Authentication.** Every endpoint requires a Clerk session token as\n`Authorization: Bearer <jwt>`, except the ones marked `x-public: true` — today only the\nplatform healthcheck, which the deployment probes anonymously. The token must also carry an\n`azp` claim equal to this API's configured web origin, so a token minted for another origin\ncannot be replayed here.\n\n**Money.** Amounts are an integer number of **minor units** (cents, kopeks, grosze), and the\nnumber of minor digits comes from the budget's currency rather than a fixed 2 — 0 for JPY,\n3 for BHD.\nJSON has no bigint, so every money field crosses the wire as a base-10 **string**, in its\nshortest form: digits with an optional leading `-`, no leading zeros and no `-0` — `0`,\n`-4500`, `120000`. One amount therefore has exactly one spelling, which is also what lets a\nmoney field publish a `maxLength` alongside its `pattern`. That applies in both directions:\nan amount **sent** to this API is the same string, and one that is a JSON number, carries a\ndecimal point, uses exponent notation or pads itself with zeros is rejected with 400 rather\nthan rounded or quietly normalised into something plausible. So is one that falls outside the\nrange the money column holds — a signed 64-bit integer — which is the only rejection a client\ncannot predict from the schema, because JSON Schema's numeric bounds do not apply to a string. The single definition of the convention, with its\nserializer, its parser and the pattern published on every money field, is\n`packages/types/src/money.ts`. No endpoint carries money yet; the convention is stated here\nbecause the contract is published before the first amount travels over it.\n\n**Request bodies** are validated against the schema published here: a field the schema does\nnot declare is an error, not something quietly ignored.",
+    "description": "The REST contract of Rondo Money, a zero-based budgeting app. The backend owns every\ndatabase access (ADR-002); this spec is what the typed client in `packages/api-client` is\ngenerated from, so it is the contract itself rather than a description of one.\n\n**Authentication.** Every endpoint requires a Clerk session token as\n`Authorization: Bearer <jwt>`, except the ones marked `x-public: true`. Today that is only the\nplatform healthcheck, which the deployment probes anonymously. The token must also carry an\n`azp` claim equal to this API's configured web origin, so a token minted for another origin\ncannot be replayed here.\n\n**Money.** Amounts are an integer number of **minor units** (cents, kopeks, grosze), and the\nnumber of minor digits comes from the budget's currency rather than a fixed 2: 0 for JPY,\n3 for BHD.\nJSON has no bigint, so every money field crosses the wire as a base-10 **string**, in its\nshortest form: digits with an optional leading `-`, no leading zeros and no `-0`. So `0`,\n`-4500`, `120000`. One amount therefore has exactly one spelling, which is also what lets a\nmoney field publish a `maxLength` alongside its `pattern`. That applies in both directions:\nan amount **sent** to this API is the same string, and one that is a JSON number, carries a\ndecimal point, uses exponent notation or pads itself with zeros is rejected with 400 rather\nthan rounded or quietly normalised into something plausible. So is one that falls outside the\nrange the money column holds (a signed 64-bit integer), which is the only rejection a client\ncannot predict from the schema, because JSON Schema's numeric bounds do not apply to a string. The single definition of the convention, with its\nserializer, its parser and the pattern published on every money field, is\n`packages/types/src/money.ts`. No endpoint carries money yet; the convention is stated here\nbecause the contract is published before the first amount travels over it.\n\n**Request bodies** are validated against the schema published here: a field the schema does\nnot declare is an error, not something quietly ignored.",
     "version": "0.0.0",
     "contact": {}
   },
@@ -208,13 +208,13 @@
           "en",
           "pl"
         ],
-        "description": "The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7."
+        "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7."
       },
       "UserSettingsResponse": {
         "type": "object",
         "properties": {
           "language": {
-            "description": "The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.",
+            "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.",
             "example": "en",
             "allOf": [
               {

@@ -19,12 +19,10 @@ const tracked = (...globs) =>
 
 const blank = (m) => m.replace(/[^\n]/g, ' ');
 const FENCE = /```[\s\S]*?```/g;
-const MANAGED = /<!--\s*BEGIN:[\s\S]*?<!--\s*END:[^>]*-->/g;
+const MANAGED = /^[ \t]*<!--\s*BEGIN:(\S+)\s*-->[\s\S]*?^[ \t]*<!--\s*END:\1\s*-->/gm;
 const INLINE_CODE = /`[^`\n]*`/g;
 
-// Prose is what this repository wrote: fences and blocks a dependency maintains are neither.
 const blankFences = (text) => text.replace(FENCE, blank).replace(MANAGED, blank);
-// A backticked literal is quoted, not written, so a style rule has no business inside it.
 const narrativeOf = (prose) => prose.replace(INLINE_CODE, blank);
 
 function load(files) {

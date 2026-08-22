@@ -30,15 +30,15 @@ order. Concretely:
 
 ### Decided
 
-- <decision> — because <reason, citing file:line, a rule or the PRD>
+- <decision>, because <reason, citing file:line, a rule or the PRD>
 
 ### Found in the codebase
 
-- `<file:line>` — <constraint this imposes>
+- `<file:line>`: <constraint this imposes>
 
 ### Still open (the user's call)
 
-- <question> — <your recommendation>
+- <question>: <your recommendation>
 
 ### Out of scope
 

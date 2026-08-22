@@ -108,24 +108,24 @@ cannot, because the code it would mirror does not exist yet.
 The scenario list, at step 3, in this shape:
 
 ```markdown
-## Scenarios — <ticket>
+## Scenarios: <ticket>
 
-### Unit — `<path>`
+### Unit: `<path>`
 
-1. <what it proves> — covers AC <n>
+1. <what it proves>, covers AC <n>
 
-### Integration — `<path>`
+### Integration: `<path>`
 
-1. <what it proves> — covers AC <n>
+1. <what it proves>, covers AC <n>
 
 ### Mandatory here
 
-- Cross-tenant: <required — why / not applicable — why>
-- Invariant 5.5: <required — why / not applicable — why>
+- Cross-tenant: <required, why / not applicable, why>
+- Invariant 5.5: <required, why / not applicable, why>
 
 ### Not covered
 
-- <what> — <why, and the phase or ticket that owns it>
+- <what>: <why, and the phase or ticket that owns it>
 ```
 
 Then, after step 5, a report:

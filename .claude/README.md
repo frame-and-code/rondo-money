@@ -33,15 +33,15 @@ change Next makes shows up in a diff.
 All seven are imported by [`CLAUDE.md`](../CLAUDE.md) and are therefore in context on every
 turn. They stay short deliberately. Detail belongs in `docs/`, and the rule links to it.
 
-| Rule                                             | Holds                                                                                                     |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| [`model-integrity.md`](rules/model-integrity.md) | do not invent version-dependent detail; open questions go to the user; report what actually happened      |
-| [`architecture.md`](rules/architecture.md)       | layer boundaries (ADR-002), no derived state, one write point (ADR-006), money/dates, invariant 5.5       |
-| [`security.md`](rules/security.md)               | tenant isolation without RLS (ADR-005), secrets in a public repository (ADR-003), destructive DB commands |
-| [`code-quality.md`](rules/code-quality.md)       | types, errors, comments, dead code, dependencies                                                          |
-| [`specs.md`](rules/specs.md)                     | Notion as the decision memory; repository docs corrected in the same PR                                   |
-| [`testing.md`](rules/testing.md)                 | tests written with the feature; invariant 5.5 and cross-tenant tests are mandatory                        |
-| [`communication.md`](rules/communication.md)     | English in git, Russian in chat; git is the user's call; branch/commit/PR wording                         |
+| Rule                                             | Holds                                                                                                          |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| [`model-integrity.md`](rules/model-integrity.md) | do not invent version-dependent detail; open questions go to the user; report what actually happened           |
+| [`architecture.md`](rules/architecture.md)       | layer boundaries (ADR-002), no derived state, one write point (ADR-006), money/dates, invariant 5.5            |
+| [`security.md`](rules/security.md)               | tenant isolation without RLS (ADR-005), secrets in a public repository (ADR-003), destructive DB commands      |
+| [`code-quality.md`](rules/code-quality.md)       | types, errors, comments, dead code, dependencies                                                               |
+| [`specs.md`](rules/specs.md)                     | Notion as the decision memory; docs corrected in the same PR; one home per fact, and writing that cannot drift |
+| [`testing.md`](rules/testing.md)                 | tests written with the feature; invariant 5.5 and cross-tenant tests are mandatory                             |
+| [`communication.md`](rules/communication.md)     | English in git, Russian in chat; git is the user's call; branch/commit/PR wording; the writing rule            |
 
 ## Skills (`skills/`)
 

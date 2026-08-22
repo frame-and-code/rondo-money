@@ -59,7 +59,7 @@ describe('resolveClerkVerifyOptions', () => {
     });
   });
 
-  it('checks the authorized party against the deployment’s own web origin', () => {
+  it("checks the authorized party against the deployment's own web origin", () => {
     process.env.CLERK_JWT_KEY = '-----BEGIN PUBLIC KEY-----\nMIIB\n-----END PUBLIC KEY-----';
     process.env.WEB_ORIGIN = 'https://app.rondo.example';
 

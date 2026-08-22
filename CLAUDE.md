@@ -66,8 +66,7 @@ We work feature by feature from "Plan v1", which owns the phase list. Stay insid
 of the ticket you were given. Don't pull in work from later features, and don't widen the
 ticket into cleanups it never opened. If a session starts without a ticket, ask which one
 before writing code. No phase number here on purpose. It belongs to the ticket and the
-branch, which move on their own, and a stale one in this file reads as current. That line
-was wrong twice before it was removed.
+branch, which move on their own, and a stale one in this file reads as current.
 When in doubt, check against the PRD (RU, source of truth) and the ADRs. A green `main`
 ships to the dev environment on Railway; see [`docs/deploy-railway.md`](docs/deploy-railway.md).
 

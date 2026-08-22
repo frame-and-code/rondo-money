@@ -27,15 +27,15 @@ same number.
 ⚠️ **The package emits.** Consumers take types from the sources (`exports.types` →
 `src/index.ts`) and the runtime from `dist` (`exports.default` → `dist/index.js`), the same
 arrangement as `@rondo/db`. That is what lets `apps/api` call `parseMoney` rather than only
-import its type. There used to be no build, `main` pointed at a `.ts` file, and an api that
-imported a value from here compiled and then failed to boot.
+import its type. Without `dist` an api that imports a value rather than a type compiles and
+then fails to boot.
 
 Consequences worth knowing before debugging something stranger:
 
 - relative imports inside `src` are written with a `.js` extension while the files on disk are
   `.ts`, and the jest config maps that back. Nothing forces this. The package declares no
-  `"type": "module"`, so its files are CommonJS and extensionless imports resolve perfectly;
-  that was measured, not assumed. It is a convention, kept by hand, so the specifiers stay valid
+  `"type": "module"`, so its files are CommonJS and extensionless imports resolve perfectly.
+  It is a convention, kept by hand, so the specifiers stay valid
   if this package ever becomes ESM, where they would stop being optional;
 - `apps/api` tests resolve this package through `dist`, so they need it built first. Turbo's
   `^build` already does that. A bare `npx jest` in `apps/api` on a fresh clone does not.

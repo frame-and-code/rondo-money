@@ -36,10 +36,14 @@ comment is a second copy nobody recompiles.
   makes the wrong value unrepresentable, an error message that says what failed.
 - Never a comment that narrates the next line, repeats the file name, records what used to be
   here, or dates itself to a version. Git remembers, and Notion decides.
-- Three places sit outside this, each for a mechanical reason: `///` in `schema.prisma`, which
-  Prisma emits into the generated client; the JSONC in each `tsconfig.json`, the only place a
-  compiler option's trap can be stated; and the headers of `.claude/hooks/*`, because a guard's
-  charter has nowhere else to live: what it refuses, and what it knowingly does not.
+- **A file a tool reads and no document can annotate** keeps its comments, because there is
+  nowhere else to put the constraint. That covers `///` in `schema.prisma`, which Prisma emits
+  into the generated client; the JSONC in each `tsconfig.json`; `.claude/hooks/*`, where a
+  guard's charter lives, meaning what it refuses and what it knowingly does not; and the build
+  and workspace files, `Dockerfile`, `pnpm-workspace.yaml`, `sonar-project.properties`,
+  `.gitignore` and their neighbours. The test is whether any document could carry the
+  constraint instead. Even there the comment states the constraint and not its history: what breaks if
+  you change this line, never what broke once.
 
 ## Dead code
 

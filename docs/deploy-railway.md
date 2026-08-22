@@ -93,8 +93,8 @@ migrate deploy --config packages/db/prisma.config.ts`). That is why `prisma` and
      500s at runtime; without the publishable key the build fast-fails. The build also
      refuses a `NEXT_PUBLIC_API_URL` that is not an exact http(s) origin (`https://host`,
      with no path, query or trailing slash, the same rule the api enforces for `WEB_ORIGIN`).
-     A paste truncated to `https://` or a bare host once passed the empty-check and
-     shipped a dev bundle that could not reach the api (F1.7);
+     An empty-check alone would let a paste truncated to `https://` or a bare host through,
+     and the bundle would not reach the api;
    - Settings → Networking → **Generate Domain**, and check the target port (3001 for
      web) exactly as in step 2; the same drift applies here.
 4. Domains are generated after the services are created, so the cross-referencing

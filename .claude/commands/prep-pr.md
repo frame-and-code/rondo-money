@@ -92,16 +92,16 @@ git-ignored `settings.local.json`.
 ## Report
 
 ```markdown
-## <ticket> — PR opened
+## <ticket>: PR opened
 
 - Branch: <name>
-- Commit: <sha> — <message>
+- Commit: <sha>, <message>
 - PR: <url>
 - Left out: <unstaged files, and why> (omit when none)
 
 ### Changed
 
-- <file or area> — <what it now does differently, one line each>
+- <file or area>: <what it now does differently, one line each>
 
 ### Tidied
 
@@ -109,24 +109,24 @@ git-ignored `settings.local.json`.
 
 ### Review
 
-- Round <n>: <blocking findings: none — or them, and the fact that the command stopped>
+- Round <n>: <blocking findings: none, or them and the fact that the command stopped>
 - Overruled: <a blocking finding the user judged wrong or over-graded, and their reason> (omit when none)
 - Carried into the PR: <NICE TO HAVE left unfixed> (omit when none)
 
 ### Docs
 
-- <document> — <what was corrected>, or "checked, still accurate"
+- <document>: <what was corrected>, or "checked, still accurate"
 
 ### Gate
 
-| Check                     | Result                  |
-| ------------------------- | ----------------------- |
-| lint / typecheck / format | ✅ / ❌ <failure>       |
-| build                     | ✅ / ❌ <failure>       |
-| unit / integration / e2e  | ✅ / ⏭️ skipped — <why> |
-| guard hooks               | ✅ / ❌ <failure>       |
-| secret scan               | ✅ / ❌                 |
-| contract drift            | ✅ / ❌                 |
+| Check                     | Result                 |
+| ------------------------- | ---------------------- |
+| lint / typecheck / format | ✅ / ❌ <failure>      |
+| build                     | ✅ / ❌ <failure>      |
+| unit / integration / e2e  | ✅ / ⏭️ skipped: <why> |
+| guard hooks               | ✅ / ❌ <failure>      |
+| secret scan               | ✅ / ❌                |
+| contract drift            | ✅ / ❌                |
 ```
 
 A skipped level appears as skipped with its reason, never as a silent pass.

@@ -39,7 +39,7 @@ export const meControllerIdentify = <ThrowOnError extends boolean = false>(optio
 /**
  * The caller's settings
  *
- * Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. Never returns another user’s settings — the caller is the verified token’s subject and nothing else.
+ * Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. It never returns another user's settings. The caller is the verified token's subject and nothing else.
  */
 export const userSettingsControllerRead = <ThrowOnError extends boolean = false>(options?: Options<UserSettingsControllerReadData, ThrowOnError>): RequestResult<UserSettingsControllerReadResponses, UserSettingsControllerReadErrors, ThrowOnError> => (options?.client ?? client).get<UserSettingsControllerReadResponses, UserSettingsControllerReadErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

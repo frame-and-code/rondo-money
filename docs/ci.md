@@ -61,10 +61,8 @@ status check keeps the exact id `gate` that branch rules point at.
 - **`static` runs two checks `turbo` cannot reach.** `pnpm lint:hooks`
   (`eslint .claude check-docs.mjs`, over the agent setup and the root scripts),
   because `pnpm lint` is `turbo run lint` and only reaches workspaces, so a lint error in the
-  agent setup passes it. And `pnpm lint:docs`, which fails on an **owned phrase** restated
-  outside the document that owns it, a relative link with no target, or one of the prose
-  spellings listed in `docs-ownership.json`. It matches phrases, not meaning: a reworded
-  restatement is on the author. Both
+  agent setup passes it. And `pnpm lint:docs`, whose refusal conditions
+  belong to [the rule it serves](../.claude/rules/specs.md). Both
   are also caught earlier by the pre-commit hook, but as with the secret scan the hook is
   convenience and the job is the guarantee.
 - **`unit` carries one test suite that is not the app's**, `pnpm test:hooks`, which covers the
@@ -204,8 +202,8 @@ status check keeps the exact id `gate` that branch rules point at.
   rewrites paths to be repo-root-relative (the scanner runs at the repo root and could not
   resolve workspace-relative `src/…` otherwise). `apps/api` emits **two**, one per level
   (`coverage/unit/`, `coverage/integration/`), and `sonar-project.properties` lists both:
-  the levels cover different code, and they used to share one path, so the integration
-  run erased the unit one and Sonar scored the app on half its tests. The `sonar` job re-runs the unit and
+  the levels cover different code, and one shared path lets the integration run erase the
+  unit one, after which Sonar scores the app on half its tests. The `sonar` job re-runs the unit and
   integration tests itself (with its own Postgres service) to produce those files, rather
   than receiving them from the `unit`/`integration` jobs as artifacts. That is the same trade as
   reinstalling dependencies everywhere: a re-run keeps every job self-contained, while

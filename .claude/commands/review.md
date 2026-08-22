@@ -112,11 +112,11 @@ stop**. Never quietly substitute a single-context read and report it as a review
 ## Report
 
 ```markdown
-## Review — <range>, <n> files
+## Review: <range>, <n> files
 
 ### MUST FIX
 
-1. **<claim>** — `file:line`
+1. **<claim>**, `file:line`
    <what happens, and the rule or ADR it breaks>
    Fix: <the smallest change>
 
@@ -131,11 +131,11 @@ commit while one stands>
 
 ### Checked and clean
 
-- <dimension> — <what was examined and found sound>
+- <dimension>: <what was examined and found sound>
 
 ### Not covered
 
-- <anything the reviewers could not verify from the diff — a manual check, a running
+- <anything the reviewers could not verify from the diff: a manual check, a running
   environment, a decision that is the user's>
 ```
 

@@ -67,10 +67,8 @@ which on a clean tree means the committed pair is stale. It runs last because ev
 above has already warmed turbo's cache for it.
 
 `pnpm lint:hooks`, `pnpm test:hooks` and `pnpm lint:docs` are the odd ones out. They cover
-`.claude/` and the prose, not the app. `lint:docs` enforces "one home per fact"
-([specs](../rules/specs.md)) and fails on an owned phrase in a second document, a relative
-link with no target, or one of the prose spellings its manifest lists. It catches the
-copy-paste, not the paraphrase.
+`.claude/` and the prose, not the app. What `lint:docs` refuses, and how far its reach goes,
+is written in [specs](../rules/specs.md).
 
 `pnpm lint` and `pnpm test` are `turbo run …`, so they only reach workspaces, and
 `.claude` is not one. A lint error or a broken guard there is invisible to both. That is

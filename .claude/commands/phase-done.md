@@ -37,12 +37,12 @@ shepherds it to merge-ready, and once the user has merged,
 ## Report
 
 ```markdown
-## <ticket> — readiness
+## <ticket>: readiness
 
 ### Acceptance Criteria
 
-- [x] <criterion> — <evidence: test, file:line, or the manual check performed>
-- [ ] <criterion> — **not met**: <what is missing>
+- [x] <criterion>: <evidence: test, file:line, or the manual check performed>
+- [ ] <criterion>: **not met**, <what is missing>
 
 ### Gate
 
@@ -50,7 +50,7 @@ shepherds it to merge-ready, and once the user has merged,
 
 ### Docs
 
-- <file> — <what was corrected>, or "checked, still accurate"
+- <file>: <what was corrected>, or "checked, still accurate"
 
 ### Left for the user
 

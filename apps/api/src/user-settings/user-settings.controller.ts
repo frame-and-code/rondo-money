@@ -16,16 +16,16 @@ export class UserSettingsController {
     summary: "The caller's settings",
     description:
       'Creates the settings row on first call, taking the interface language from ' +
-      '`Accept-Language`; afterwards it only reads. Never returns another user’s settings — ' +
-      'the caller is the verified token’s subject and nothing else.',
+      "`Accept-Language`; afterwards it only reads. It never returns another user's settings. " +
+      "The caller is the verified token's subject and nothing else.",
   })
   @ApiHeader({
     name: 'accept-language',
     required: false,
     description:
       'Standard BCP 47 preference list, q-values included. Read only when the settings row ' +
-      'does not exist yet; browsers send it on their own. Anything outside ru/en/pl — or a ' +
-      'missing header — settles on `en`.',
+      'does not exist yet; browsers send it on their own. Anything outside ru/en/pl, or a ' +
+      'missing header, settles on `en`.',
   })
   @ApiOkResponse({ description: 'The settings that exist now.', type: UserSettingsResponse })
   @ApiUnauthorizedResponse({

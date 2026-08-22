@@ -39,28 +39,28 @@ has to invent structure. **This command writes no code.** The plan is the delive
 
 ## Steps
 
-1. `<path>` — <what changes, one line>
+1. `<path>`: <what changes, one line>
    - Follows: `<existing file or pattern to copy>`
 2. ...
 
 ## Cross-cutting
 
-- Scoping: <userId/budgetId — auto-scoped, or raw SQL through the context repository>
-- Money / dates: <bigint minor units, calendar dates — or n/a>
+- Scoping: <userId/budgetId: auto-scoped, or raw SQL through the context repository>
+- Money / dates: <bigint minor units, calendar dates, or n/a>
 - Migration: <name, or none>
 
 ## Tests
 
-- `<path>` — <what it proves>
+- `<path>`: <what it proves>
 - Cross-tenant / invariant 5.5: <required here? why>
 
 ## Docs to correct
 
-- `<path>` — <which sentence goes stale>
+- `<path>`: <which sentence goes stale>
 
 ## Open questions
 
-- <question — recommendation — needs the user's decision>
+- <question> / <recommendation> / needs the user's decision
 
 ## Out of scope
 

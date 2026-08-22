@@ -22,7 +22,7 @@ export const zUnauthorizedResponse = z.object({
 });
 
 /**
- * The interface language, as a BCP 47 primary subtag. Set from the caller’s `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
+ * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
  */
 export const zLanguageTag = z.enum([
     'ru',

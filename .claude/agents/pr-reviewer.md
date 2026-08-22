@@ -76,11 +76,11 @@ else of yours survives. No preamble.
 For each finding:
 
 ```markdown
-### <MUST FIX | SHOULD FIX | NICE TO HAVE> — <one-line claim>
+### <MUST FIX | SHOULD FIX | NICE TO HAVE>: <one-line claim>
 
 - Where: <file:line>
 - What happens: <the input or sequence, and the wrong result it produces>
-- Why it matters here: <the rule, ADR or invariant it breaks — or "maintainability" if that is honestly all it is>
+- Why it matters here: <the rule, ADR or invariant it breaks, or "maintainability" if that is honestly all it is>
 - Fix: <the smallest change that resolves it>
 ```
 
@@ -105,7 +105,7 @@ Sometimes the task is not to review but to try to break claims another reviewer 
 each claim gets its own block, and it opens with exactly this line:
 
 ```markdown
-VERDICT: confirmed | refuted | unproven — <one clause saying what settled it>
+VERDICT: confirmed | refuted | unproven, <one clause saying what settled it>
 ```
 
 Then the evidence: what you ran, what you read, what you found instead.

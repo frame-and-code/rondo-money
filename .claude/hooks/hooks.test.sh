@@ -716,6 +716,43 @@ printf 'It sees top-level operations only.\n' > "$D/owner.md"
 printf '<!-- BEGIN:vendor -->\nA tool wrote this \xe2\x80\x94 we did not.\n<!-- END:vendor -->\n' > "$D/other.md"
 expect_docs_ok "$D" 'a block a dependency maintains is not ours to fix'
 
+D=$(docs_fixture vocabulary)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'We utilize, leverage and facilitate numerous delve showcase testament underscore.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a fancy word where a plain one is clearer is refused' 'plain word'
+
+D=$(docs_fixture curly)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The \xe2\x80\x9cclient\xe2\x80\x9d\xe2\x80\x99s \xe2\x80\x98token\xe2\x80\x99 is verified.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a curly quote is refused' 'straight ones'
+
+D=$(docs_fixture filler)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Run it in order to rebuild, due to the fact that it is important to note that.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a filler phrase is refused' 'cut it'
+
+D=$(docs_fixture not-only)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'It gives not only types, but options, and not just zod, but keys.\n' > "$D/other.md"
+expect_docs_fail "$D" 'the not-only frame is refused' 'directly'
+
+D=$(docs_fixture serves-as)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'The guard serves as, stands as and boasts the only entry point.\n' > "$D/other.md"
+expect_docs_fail "$D" 'a fancy way to say is or has is refused' 'is or has'
+
+# A marker quoted in prose must not open a blanked region: the fail-open direction is the
+# one that reports "no drift" over arbitrary text.
+D=$(docs_fixture quoted-marker)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Write `<!-- BEGIN:x -->` to open one.\n\nThis restates top-level operations only.\n\n<!-- BEGIN:v -->\nvendor\n<!-- END:v -->\n' > "$D/other.md"
+expect_docs_fail "$D" 'a marker quoted in prose does not blank the rest of the file' 'owned by owner.md'
+
+D=$(docs_fixture unmatched-marker)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf '<!-- BEGIN:a -->\nvendor a\n\nOur prose restates top-level operations only.\n\n<!-- BEGIN:v -->\nvendor v\n<!-- END:v -->\n' > "$D/other.md"
+expect_docs_fail "$D" 'an unclosed marker does not reach another block END' 'owned by owner.md'
+
 D=$(docs_fixture fenced-heading)
 printf 'It sees top-level operations only.\n\n```bash\n# Not a heading\n```\n' > "$D/owner.md"
 printf 'See [it](owner.md#not-a-heading).\n' > "$D/other.md"

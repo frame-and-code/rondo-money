@@ -61,7 +61,7 @@ user has merged, never to make an unmerged ticket look finished.
 3. **Tick with evidence, not optimism.** For each unchecked item, name the evidence in the
    merged work: a test, a file, a CI run, a manual check the user reported. Then:
    - evidence exists → tick it (`- [ ]` → `- [x]`) and append a short note in the style
-     the ticket already uses: `— **done <date>**, PR #<N>` plus one clause saying what the
+     the ticket already uses: `- **done <date>**, PR #<N>` plus one clause saying what the
      evidence is;
    - no evidence → leave it unticked and put it in the report with what is missing. A
      half-done ticket keeps an honest checklist; the ✅ in the title then waits.
@@ -101,7 +101,7 @@ user has merged, never to make an unmerged ticket look finished.
 
    ```bash
    git fetch origin
-   git merge-base --is-ancestor main origin/main   # no local main yet? skip — switch creates it
+   git merge-base --is-ancestor main origin/main   # no local main yet? skip, switch creates it
    git switch main && git pull --ff-only
    ```
 
@@ -174,16 +174,16 @@ user has merged, never to make an unmerged ticket look finished.
 ## Report
 
 ```markdown
-## <ticket> — closed / left open
+## <ticket>: closed / left open
 
-- PRs: #<N> (merged <date>, <sha>), … — and whether the merged content matches the branch
-- [x] <criterion> — <evidence>
-- [ ] <criterion> — left open: <what is missing>
+- PRs: #<N> (merged <date>, <sha>), …, and whether the merged content matches the branch
+- [x] <criterion>: <evidence>
+- [ ] <criterion>: left open, <what is missing>
 - Corrected: <a criterion's note the merged work made false> (omit when none)
 - Recorded: <the decisions written into the ticket, and the comment linking the PRs>
-- Title: ✅ set / already set / withheld — <open items>
+- Title: ✅ set / already set / withheld: <open items>
 - Branch: on `main`, up to date / left on `<branch>` because <what is uncommitted, or that
-  `main` has diverged> — and which local branches were deleted, or why any were left standing;
+  `main` has diverged>, and which local branches were deleted, or why any were left standing;
   name any branch still on the server and offer to remove it
 ```
 
