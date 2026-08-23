@@ -46,9 +46,12 @@ diff and takes the site down during the rollout window, or on any rollback.
 
 - **Blocking DDL on a populated table.** A plain `CREATE INDEX` takes a `SHARE` lock, which
   blocks every write to the table until the build finishes while leaving reads working; use
-  `CREATE INDEX CONCURRENTLY`. `ALTER TABLE` takes `ACCESS EXCLUSIVE` and blocks reads as
-  well, so a volatile default or a type change that rewrites the table is the worse case. Say
-  which lock you mean and why, because the two have different consequences for a running app.
+  `CREATE INDEX CONCURRENTLY`. `ALTER TABLE` defaults to `ACCESS EXCLUSIVE`, which blocks reads
+  as well, so a volatile default or a type change that rewrites the table is the worse case.
+  Some of its subforms take a weaker lock, and a statement combining several takes the
+  strictest of them, so look the exact form up rather than grading every `ALTER TABLE` the
+  same. Say which lock you mean and why, because they have different consequences for a
+  running app.
   On an empty table none of this applies, so say which case you are in rather than reporting
   the pattern. The lock each statement takes is in the Postgres documentation listed in
   [`external-docs.json`](../config/external-docs.json); read it rather than recalling it.

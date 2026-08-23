@@ -51,7 +51,10 @@ stop**. Never quietly substitute a single-context read and report it as a review
    because they are independent; a second message would serialise them for nothing. One
    exception to the type: when the change touches `packages/db/prisma/migrations/`, one of the
    four is [`migration-reviewer`](../agents/migration-reviewer.md) instead, taking the place of
-   a dimension the change does not reach. Give each
+   a dimension the change does not reach. Name which dimension it displaced, and when the
+   change reaches all four, send five agents rather than dropping one. Coverage is what the
+   count exists to buy, so a change big enough to need all of them is not the one to trim.
+   Give each
    its dimension and, because it cannot see this conversation, everything it needs to start:
    the diff range or PR number, the branch, the ticket if the branch names one, and any
    finding the user has already overruled, so it is not raised a second time.

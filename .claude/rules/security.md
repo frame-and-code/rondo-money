@@ -37,8 +37,8 @@ polish:
 - **A model a budget owns is filtered by `budgetId` as well, on reads only.** The active
   budget is resolved once per request as the caller's one `active` budget row, and a **read**
   issued with none in the context is refused rather than answered across every budget the
-  caller owns. A write is not, because it takes its budget from the payload. A write takes its budget from the payload and the extension never stamps it,
-  because the request that creates a budget carries the id of a budget that did not exist
+  caller owns. A write is not. It takes its budget from the payload and the extension never
+  stamps it, because the request that creates a budget carries the id of a budget that did not exist
   when the request started, and so does every group and category written beside it. Asking
   the context for the budget therefore returns nothing instead of throwing, unlike asking for
   the caller: a user who is still creating their first budget has none.

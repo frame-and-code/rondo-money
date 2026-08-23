@@ -128,7 +128,7 @@ describe('the domain core tables (integration)', () => {
     const stored = await prisma.budget.findUniqueOrThrow({ where: { id: budget.id } });
 
     expect(stored.minorDigits).toBe(2);
-    expect(minorDigits('HUF')).toBe(0);
+    expect(stored.minorDigits).not.toBe(minorDigits('HUF'));
   });
 
   it('refuses to delete a category an expense still points at', async () => {

@@ -1,5 +1,5 @@
 {
-  "note": "One home per fact — the rule is .claude/rules/specs.md. A phrase listed under \"owned\" may be stated in its owner and nowhere else; every other document links to the owner. Enforced by `pnpm lint:docs` (check-docs.mjs), a step of the CI static job. Add an entry when a fact starts appearing in a second file, and pick the owner from the layer that would have to change if the fact changed. \"forbidden\" holds the words that may not appear anywhere in the repository, prose and code alike; this file is the only place they are written.",
+  "note": "One home per fact — the rule is .claude/rules/specs.md. A phrase listed under \"owned\" may be stated in its owner and nowhere else; every other document links to the owner. Enforced by `pnpm lint:docs` (check-docs.mjs), a step of the CI static job. Add an entry when a fact starts appearing in a second file, and pick the owner from the layer that would have to change if the fact changed. \"forbidden\" holds the words that may not appear in any tracked file, prose and code alike; this file is the only place they are written. Two paths are outside that scan and are exceptions on purpose: generated output, which is rewritten from its source rather than edited, and pnpm-lock.yaml, whose integrity hashes are not prose.",
   "owned": [
     {
       "phrase": "top-level operations only",
