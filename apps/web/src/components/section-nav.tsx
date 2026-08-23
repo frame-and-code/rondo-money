@@ -69,7 +69,7 @@ export function SectionNav({ variant, collapsed = false }: SectionNavProps) {
                 'flex h-8 items-center gap-2 rounded-md text-sm transition-colors',
                 iconOnly ? 'w-8 justify-center' : 'w-full px-2',
                 isCurrent
-                  ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
+                  ? 'bg-sidebar-foreground/10 font-medium text-sidebar-accent-foreground'
                   : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
               )}
             >
