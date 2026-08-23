@@ -19,6 +19,7 @@
     "@clerk/themes": "^2.4.57",
     "@rondo/api-client": "workspace:*",
     "@rondo/ui": "workspace:*",
+    "@tabler/icons-react": "^3.46.0",
     "@tanstack/react-query": "^5.101.4",
     "next": "^16.3.0",
     "react": "^19.2.8",
@@ -28,9 +29,9 @@
   "devDependencies": {
     "@clerk/backend": "^3.16.4",
     "@clerk/testing": "^2.2.21",
-    "@rondo/config": "workspace:*",
     "@next/env": "^16.3.0",
     "@playwright/test": "^1.62.1",
+    "@rondo/config": "workspace:*",
     "@swc/core": "^1.15.47",
     "@swc/jest": "^0.2.39",
     "@tailwindcss/postcss": "^4.3.3",

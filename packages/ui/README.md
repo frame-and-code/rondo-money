@@ -1,6 +1,9 @@
 # @rondo/ui
 
-Shared UI components: the **shadcn/ui** base and the Ocean Breeze theme (F0.6).
+Shared UI components: the **shadcn/ui** base, generated in the `base-rhea` style over a zinc
+palette with a blue accent. The tokens live in `apps/web/src/app/globals.css`, because the app
+owns the Tailwind entry point. `components.json` holds the rest of what the generator needs to
+reproduce this look: the style, the base colour, the icon set and the two menu settings.
 
 The package ships **source, not a build**. `@rondo/web` compiles it through Next's
 `transpilePackages`, so the `build` script is a no-op on purpose. Components are imported
@@ -12,14 +15,14 @@ avoids a barrel file that pulls every primitive into every bundle.
 ```text
 src/
   components/
-    ui/                 # shadcn/ui primitives, generated — button, card, dropdown-menu,
-                        # input, label, separator
+    ui/                 # shadcn/ui primitives, generated: button, card, dropdown-menu,
+                        # input, label, separator, skeleton, tooltip
     theme-provider.tsx  # next-themes provider (light/dark)
     theme-toggle.tsx    # theme switch used in the app header
   lib/utils.ts          # `cn` — the clsx + tailwind-merge helper every primitive uses
 ```
 
-Icons come from `lucide-react`; the primitives are built on `radix-ui`.
+Icons come from `@tabler/icons-react`; the primitives are built on `@base-ui/react`.
 
 ## Adding a primitive
 
@@ -29,10 +32,21 @@ Generate it, never hand-write it:
 pnpm dlx shadcn@latest add <component>   # run inside packages/ui
 ```
 
+There are two `components.json`, one here and one in `apps/web`, and the generator settings in
+them have to match. The CLI searches upward from the working directory, so a run started inside
+the app picks the app's file; a stale one there would emit components of a design system this
+package no longer uses.
+
 `components.json` points the generator at this package (`@rondo/ui/components`,
 `@rondo/ui/lib`, `@rondo/ui/hooks`) and at the theme's CSS variables, which live in
 `apps/web/src/app/globals.css`. The app owns the Tailwind entry point, so the tokens are
 defined there and consumed here.
+
+### What the generator owns
+
+Every file under `components/ui` stays exactly as the generator writes it, and a regeneration
+overwrites the whole file. A colour or a cursor that feels wrong is a
+theme question, and the theme lives in `apps/web/src/app/globals.css`.
 
 ## Tests
 

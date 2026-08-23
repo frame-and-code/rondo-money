@@ -17,11 +17,13 @@ export function LocaleSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" aria-label={t('common.localeSwitcher.ariaLabel')}>
-          <span className="text-xs font-medium">{locale.toUpperCase()}</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="outline" size="icon" aria-label={t('common.localeSwitcher.ariaLabel')}>
+            <span className="text-xs font-medium">{locale.toUpperCase()}</span>
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end">
         <DropdownMenuRadioGroup
           value={locale}
@@ -30,7 +32,7 @@ export function LocaleSwitcher() {
           }}
         >
           {locales.map((code) => (
-            <DropdownMenuRadioItem key={code} value={code}>
+            <DropdownMenuRadioItem key={code} value={code} closeOnClick>
               {localeLabels[code]}
             </DropdownMenuRadioItem>
           ))}

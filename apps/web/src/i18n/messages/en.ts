@@ -2,14 +2,20 @@ import type { MessageKey } from './ru';
 
 export const en: Record<MessageKey, string> = {
   'common.themeToggle.trigger': 'Toggle theme',
-  'common.themeToggle.light': 'Light',
-  'common.themeToggle.dark': 'Dark',
-  'common.themeToggle.system': 'System',
   'common.localeSwitcher.ariaLabel': 'Change language',
+  'common.loading': 'Loading…',
 
-  'home.subtitle': 'Application shell · Phase 0 (F0.6).',
+  'nav.sections': 'Sections',
+  'nav.toggleSidebar': 'Collapse menu',
+  'nav.expandSidebar': 'Expand menu',
+  'nav.categories': 'Categories',
+  'nav.accounts': 'Accounts',
+  'nav.netWorth': 'Net worth',
+  'nav.settings': 'Settings',
+
+  'home.subtitle': 'Primitives and an API check, outside the application shell.',
   'home.demoTitle': 'Component demo',
-  'home.demoDescription': 'shadcn/ui + Ocean Breeze theme',
+  'home.demoDescription': 'shadcn/ui, the stock theme',
   'home.buttons.default': 'Default',
   'home.buttons.secondary': 'Secondary',
   'home.buttons.outline': 'Outline',
@@ -23,6 +29,12 @@ export const en: Record<MessageKey, string> = {
   'home.callerSignedOut': 'you are not signed in',
   'home.callerUnavailable': 'the API did not answer',
 
-  'budget.title': 'Budget',
-  'budget.comingSoon': 'The budget screen arrives in Phase 3.',
+  'categories.slotTitle': 'The "Categories" slot',
+  'categories.slotBody': 'The budget table lands here.',
+  'accounts.slotTitle': 'The "Accounts" slot',
+  'accounts.slotBody': 'The account list with balances lands here.',
+  'netWorth.slotTitle': 'The "Net worth" slot',
+  'netWorth.slotBody': 'The net worth chart lands here.',
+  'settings.slotTitle': 'The "Settings" slot',
+  'settings.slotBody': 'Currency, timezone and budget language land here.',
 };

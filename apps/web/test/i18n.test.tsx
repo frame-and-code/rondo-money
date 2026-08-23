@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
 
@@ -58,6 +58,22 @@ describe('locale detection and switching', () => {
     await user.click(await screen.findByText(localeLabels.ru));
 
     expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+  });
+
+  it('closes the menu once a language is picked', async () => {
+    const user = userEvent.setup();
+    render(
+      <LocaleProvider>
+        <LocaleSwitcher />
+      </LocaleProvider>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }),
+    );
+    await user.click(await screen.findByText(localeLabels.ru));
+
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
   });
 
   it('remembers the chosen locale across a remount, over what the browser asks for', async () => {

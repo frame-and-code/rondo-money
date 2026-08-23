@@ -47,14 +47,7 @@ export default function HomePage() {
         </div>
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
-          <ThemeToggle
-            labels={{
-              trigger: t('common.themeToggle.trigger'),
-              light: t('common.themeToggle.light'),
-              dark: t('common.themeToggle.dark'),
-              system: t('common.themeToggle.system'),
-            }}
-          />
+          <ThemeToggle label={t('common.themeToggle.trigger')} />
           <UserButton />
         </div>
       </header>
@@ -72,7 +65,7 @@ export default function HomePage() {
             <Button variant="ghost">{t('home.buttons.ghost')}</Button>
             <Button variant="destructive">{t('home.buttons.destructive')}</Button>
           </div>
-          <Separator />
+          <Separator aria-hidden />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="budget-name">{t('home.budgetNameLabel')}</Label>
             <Input id="budget-name" placeholder={t('home.budgetNamePlaceholder')} />

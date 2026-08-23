@@ -34,7 +34,8 @@ really do ship inside the package (`node_modules/next/dist/docs/`).
   that needs the API builds its own client per request from `await auth()` and passes it
   explicitly, never with a bare `fetch`.
 - **No hand-written CSS files and no inline `style`.** Screens are Tailwind utilities plus
-  shadcn/ui components from `@rondo/ui` (theme Ocean Breeze). Missing a primitive? Add it with
+  shadcn/ui components from `@rondo/ui`, whose README describes the theme. Missing a primitive?
+  Add it with
   `pnpm dlx shadcn@latest add <component>` into `packages/ui`, not here.
 - **No hardcoded UI strings.** They go through `src/i18n` (ru, en and pl; en is the fallback
   since F1.6) from the first line, not "once the screen works". The active locale is not a

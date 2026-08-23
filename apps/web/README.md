@@ -1,12 +1,12 @@
 # @rondo/web
 
-Rondo Money frontend on **Next.js (App Router)**. Skeleton F0.5.
+Rondo Money frontend on **Next.js (App Router)**.
 
-The app shell is in place: sign-in and route protection (F1.1), the shadcn/ui base from
-`@rondo/ui` (F0.6), the locale switcher (F0.7) and the typed API client `@rondo/api-client`
-(F1.4, ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack Query. Server
-state lives in that cache, not in component state. Still ahead: the full navigation skeleton
-and the real screens (Phase 3).
+The app shell is in place: a persistent navigation over its sections, sign-in and route
+protection, the shadcn/ui base from `@rondo/ui`, the locale switcher and the typed API client
+`@rondo/api-client` (ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack
+Query. Server state lives in that cache, not in component state. Each section is a slot: the
+real screens behind them are still ahead.
 
 ## Structure
 
@@ -17,21 +17,31 @@ src/
     page.tsx                  # home page — also the F0.6/F0.7 demo screen: primitives,
                               # theme toggle, locale switcher, the API address, and the
                               # first authenticated API call (GET /me, F1.4)
-    globals.css               # Tailwind entry point + the theme's CSS variables
+    globals.css               # Tailwind entry point + the theme's CSS variables. `--font-sans`
+                              # points at the variable `next/font` sets in layout.tsx, so a
+                              # font name written back into that line silently drops the font
     sign-in/[[...sign-in]]/   # the only public screen (Clerk catch-all route)
     api/health/route.ts       # liveness probe for Railway — public, answers 200 flat; also
                               # reports the mode the bundle was built in, which is what e2e
                               # read to refuse a dev server (F1.11)
-    (app)/                    # route group for the future app shell (Phase 3)
-      layout.tsx
-      budget/page.tsx         # budget screen placeholder (/budget)
-  components/                 # app-level components (Clerk provider wrapper, locale switcher)
+    (app)/                    # the app shell: a sidebar on desktop, a bottom tab bar on a
+                              # phone, and the sections it navigates
+      layout.tsx              # renders AppShell around every section
+      categories/             # each section is page.tsx (the slot) + loading.tsx (skeletons)
+      accounts/
+      net-worth/
+      settings/
+  components/                 # app-level components: the shell and its navigation, the
+                              # section slot, the loading region, the Clerk provider wrapper
+                              # and the locale switcher
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language
                               # from GET /user-settings back into the locale context
   lib/api/                    # the only way to reach @rondo/api: ApiProvider wires the
                               # generated client (@rondo/api-client) to the address, the
                               # Clerk token and the TanStack Query cache
+  lib/sections.ts             # the sections in one place: route, message key, icon.
+                              # The navigation and the header title both read it
   lib/auth.ts                 # SIGN_IN_URL and HEALTH_URL — the paths proxy.ts,
                               # railway.json and the routes must agree on
   proxy.ts                    # clerkMiddleware: everything is protected except the

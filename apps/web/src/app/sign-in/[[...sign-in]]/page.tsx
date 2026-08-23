@@ -13,14 +13,7 @@ export default function SignInPage() {
     <main className="relative flex min-h-svh items-center justify-center p-8">
       <div className="absolute right-4 top-4 flex items-center gap-3">
         <LocaleSwitcher />
-        <ThemeToggle
-          labels={{
-            trigger: t('common.themeToggle.trigger'),
-            light: t('common.themeToggle.light'),
-            dark: t('common.themeToggle.dark'),
-            system: t('common.themeToggle.system'),
-          }}
-        />
+        <ThemeToggle label={t('common.themeToggle.trigger')} />
       </div>
       <SignIn />
     </main>
