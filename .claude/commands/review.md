@@ -48,7 +48,10 @@ stop**. Never quietly substitute a single-context read and report it as a review
    that path. Print `--stat` so the size of what is being reviewed is visible, and stop only
    when the sources for the target you were given are genuinely empty.
 2. **Fan out: one message, four `Agent` calls, `subagent_type: pr-reviewer`.** Parallel
-   because they are independent; a second message would serialise them for nothing. Give each
+   because they are independent; a second message would serialise them for nothing. One
+   exception to the type: when the change touches `packages/db/prisma/migrations/`, one of the
+   four is [`migration-reviewer`](../agents/migration-reviewer.md) instead, taking the place of
+   a dimension the change does not reach. Give each
    its dimension and, because it cannot see this conversation, everything it needs to start:
    the diff range or PR number, the branch, the ticket if the branch names one, and any
    finding the user has already overruled, so it is not raised a second time.

@@ -5,6 +5,10 @@ generator client {
   moduleFormat           = "cjs"
   generatedFileExtension = "ts"
   importFileExtension    = "js"
+
+  // Preview feature, for Budget's one-active-row index. What it buys and what a Prisma
+  // upgrade has to check: packages/db/README.md.
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -47,4 +51,194 @@ model UserSettings {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("user_settings")
+}
+
+/// What a money account is. `CASH` and `DEBIT` are the two v1 supports; credit accounts
+/// change how RTA is computed and are not part of it.
+enum AccountType {
+  CASH
+  DEBIT
+
+  @@map("account_type")
+}
+
+/// `ADJUSTMENT` records a correction against a real-world balance.
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+  ADJUSTMENT
+
+  @@map("transaction_type")
+}
+
+/// One user's budget. A user may hold several and at most one of them is `active`; the rest
+/// are deactivated rather than deleted. A user part way through onboarding has none.
+///
+/// The index below publishes `userId_active` as a unique key, and the generated types carry
+/// no trace of its predicate. Only `active: true` is really unique, and the key gives no sign
+/// of that. A read naming `active: false` answers with an arbitrary matching row. An `update`
+/// or a `delete` is worse: it writes or removes every row that matches and throws afterwards,
+/// so the caller is handed a failure over data that already changed. An `upsert` names a
+/// conflict target Postgres cannot match to an index carrying a predicate, and fails there.
+/// So read with `active: true`, and create or activate a budget with an explicit read and
+/// then a write.
+model Budget {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId String @map("user_id")
+
+  name     String
+  currency String @db.VarChar(3)
+
+  /// The currency's minor digit count, frozen when the budget is created. Reads take it from
+  /// here and never recompute it.
+  minorDigits Int @map("minor_digits")
+
+  /// The IANA zone that decides what "today" is and which month an amount falls into.
+  timezone String
+
+  active Boolean
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  categoryGroups CategoryGroup[]
+  categories     Category[]
+  accounts       Account[]
+  transactions   Transaction[]
+
+  @@unique([userId, active], map: "budget_one_active_per_user", where: { active: true })
+  @@index([userId])
+  @@map("budget")
+}
+
+model CategoryGroup {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  name      String
+  sortOrder Int    @map("sort_order")
+
+  /// Set when the group is hidden from the screens. It is not a soft-delete: the row stays
+  /// in every aggregate, and hiding is never applied as an automatic filter.
+  hiddenAt DateTime? @map("hidden_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget     Budget     @relation(fields: [budgetId], references: [id], onDelete: Restrict)
+  categories Category[]
+
+  @@index([userId, budgetId])
+  @@map("category_group")
+}
+
+model Category {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+  groupId  String @map("group_id") @db.Uuid
+
+  name      String
+  sortOrder Int    @map("sort_order")
+
+  /// A category is hidden, never deleted, so its past Activity keeps counting and no
+  /// expense is left without one.
+  hiddenAt DateTime? @map("hidden_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget       Budget        @relation(fields: [budgetId], references: [id], onDelete: Restrict)
+  group        CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@index([userId, budgetId])
+  @@index([groupId])
+  @@map("category")
+}
+
+model Account {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  name String
+  type AccountType
+
+  /// Set when the account is archived. Deleting an account is not supported in v1, because
+  /// its transactions carry balances that other numbers are derived from.
+  archivedAt DateTime? @map("archived_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget       Budget        @relation(fields: [budgetId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@index([userId, budgetId])
+  @@map("account")
+}
+
+model Transaction {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  accountId String @map("account_id") @db.Uuid
+
+  /// Absent on an income, a transfer leg and an adjustment. An expense without a category
+  /// is refused by the domain, not by this column.
+  categoryId String? @map("category_id") @db.Uuid
+
+  /// A calendar date without a time. What "today" means comes from the budget's timezone.
+  date   DateTime        @db.Date
+  /// Minor units of the budget's currency, signed. Never a floating point number.
+  amount BigInt
+  type   TransactionType
+
+  /// Shared by the two legs of one transfer, which are created, edited and deleted together.
+  transferId String? @map("transfer_id") @db.Uuid
+
+  payee String?
+
+  /// True for a transaction the app wrote itself, such as an account's opening balance.
+  isSystem Boolean @default(false) @map("is_system")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget   Budget    @relation(fields: [budgetId], references: [id], onDelete: Restrict)
+  account  Account   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([userId, budgetId, date])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([transferId])
+  @@map("transaction")
+}
+
+/// One user's idempotency keys. Unique per user and key rather than globally: a global
+/// index would let someone else's key collide with your mutation, and would leak that
+/// their key exists.
+model IdempotencyKey {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId String @map("user_id")
+  key    String
+
+  /// The stored result of the mutation the key carried, returned as-is on a repeat.
+  result Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, key])
+  @@map("idempotency_key")
 }

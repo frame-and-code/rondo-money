@@ -21,8 +21,17 @@ describe('userId auto-scoping (integration)', () => {
       return await query();
     });
 
-  const removeFixtures = (): Promise<unknown> =>
-    prisma.userSettings.deleteMany({ where: { userId: { in: [USER_A, USER_B] } } });
+  const owners = { userId: { in: [USER_A, USER_B] } };
+
+  const removeFixtures = async (): Promise<void> => {
+    await prisma.transaction.deleteMany({ where: owners });
+    await prisma.category.deleteMany({ where: owners });
+    await prisma.categoryGroup.deleteMany({ where: owners });
+    await prisma.account.deleteMany({ where: owners });
+    await prisma.idempotencyKey.deleteMany({ where: owners });
+    await prisma.budget.deleteMany({ where: owners });
+    await prisma.userSettings.deleteMany({ where: owners });
+  };
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -151,6 +160,169 @@ describe('userId auto-scoping (integration)', () => {
       );
 
       expect(seenInTransaction.map((row) => row.userId)).toEqual([USER_B]);
+    });
+  });
+  describe('across the domain core', () => {
+    let budgetOfA: { id: string };
+    let budgetOfB: { id: string };
+    let categoryOfA: { id: string };
+    let groupOfA: { id: string };
+
+    const asOwner = <T>(userId: string, budgetId: string, query: () => Promise<T>): Promise<T> =>
+      context.run(async () => {
+        context.setUserId(userId);
+        context.setBudgetId(budgetId);
+        return await query();
+      });
+
+    const createBudget = (userId: string) =>
+      prisma.budget.create({
+        data: {
+          userId,
+          name: 'Main',
+          currency: 'USD',
+          minorDigits: 2,
+          timezone: 'Europe/Warsaw',
+          active: true,
+        },
+      });
+
+    beforeEach(async () => {
+      budgetOfA = await createBudget(USER_A);
+      budgetOfB = await createBudget(USER_B);
+
+      groupOfA = await prisma.categoryGroup.create({
+        data: { userId: USER_A, budgetId: budgetOfA.id, name: 'Living', sortOrder: 0 },
+      });
+      categoryOfA = await prisma.category.create({
+        data: {
+          userId: USER_A,
+          budgetId: budgetOfA.id,
+          groupId: groupOfA.id,
+          name: 'Food',
+          sortOrder: 0,
+        },
+      });
+      const accountOfA = await prisma.account.create({
+        data: { userId: USER_A, budgetId: budgetOfA.id, name: 'Wallet', type: 'CASH' },
+      });
+      await prisma.transaction.create({
+        data: {
+          userId: USER_A,
+          budgetId: budgetOfA.id,
+          accountId: accountOfA.id,
+          categoryId: categoryOfA.id,
+          date: new Date('2026-03-05T00:00:00Z'),
+          amount: -500n,
+          type: 'EXPENSE',
+        },
+      });
+      await prisma.idempotencyKey.create({ data: { userId: USER_A, key: 'intent-of-a' } });
+    });
+
+    it('shows B nothing of A, on every model the phase adds', async () => {
+      const seen = await asOwner(USER_B, budgetOfB.id, async () => ({
+        budgets: await scoped.budget.findMany(),
+        groups: await scoped.categoryGroup.findMany(),
+        categories: await scoped.category.findMany(),
+        accounts: await scoped.account.findMany(),
+        transactions: await scoped.transaction.findMany(),
+        keys: await scoped.idempotencyKey.findMany(),
+      }));
+
+      expect(seen).toEqual({
+        budgets: [expect.objectContaining({ id: budgetOfB.id })],
+        groups: [],
+        categories: [],
+        accounts: [],
+        transactions: [],
+        keys: [],
+      });
+    });
+
+    it('counts none of A`s rows for B either', async () => {
+      const counted = await asOwner(USER_B, budgetOfB.id, async () => ({
+        transactions: await scoped.transaction.count(),
+        categories: await scoped.category.count(),
+      }));
+
+      expect(counted).toEqual({ transactions: 0, categories: 0 });
+    });
+
+    it('stamps a domain write with the caller, whoever the payload names', async () => {
+      const created = await asOwner(USER_B, budgetOfB.id, () =>
+        scoped.account.create({
+          data: { userId: USER_A, budgetId: budgetOfB.id, name: 'Claimed', type: 'DEBIT' },
+        }),
+      );
+
+      const stored = await prisma.account.findUniqueOrThrow({ where: { id: created.id } });
+      expect(stored.userId).toBe(USER_B);
+    });
+
+    it('shows B nothing of A even when B`s request carries A`s budget', async () => {
+      const seen = await asOwner(USER_B, budgetOfA.id, async () => ({
+        groups: await scoped.categoryGroup.findMany(),
+        categories: await scoped.category.findMany(),
+        accounts: await scoped.account.findMany(),
+        transactions: await scoped.transaction.findMany(),
+      }));
+
+      expect(seen).toEqual({ groups: [], categories: [], accounts: [], transactions: [] });
+    });
+
+    it('refuses to let B change or remove a row of A', async () => {
+      await expect(
+        asOwner(USER_B, budgetOfA.id, () =>
+          scoped.category.update({ where: { id: categoryOfA.id }, data: { name: 'taken' } }),
+        ),
+      ).rejects.toThrow();
+
+      await expect(
+        asOwner(USER_B, budgetOfA.id, () =>
+          scoped.category.delete({ where: { id: categoryOfA.id } }),
+        ),
+      ).rejects.toThrow();
+
+      const bulk = await asOwner(USER_B, budgetOfA.id, async () => ({
+        updated: await scoped.category.updateMany({ data: { name: 'taken' } }),
+        deleted: await scoped.transaction.deleteMany({}),
+      }));
+
+      expect(bulk).toEqual({ updated: { count: 0 }, deleted: { count: 0 } });
+
+      const stored = await prisma.category.findUniqueOrThrow({ where: { id: categoryOfA.id } });
+      expect(stored.name).toBe('Food');
+    });
+
+    it("turns an upsert aimed at A's row into B's own row", async () => {
+      const created = await asOwner(USER_B, budgetOfB.id, () =>
+        scoped.categoryGroup.upsert({
+          where: { id: groupOfA.id },
+          create: { userId: USER_A, budgetId: budgetOfB.id, name: 'Claimed', sortOrder: 1 },
+          update: { name: 'Claimed' },
+        }),
+      );
+
+      const stored = await prisma.categoryGroup.findUniqueOrThrow({ where: { id: groupOfA.id } });
+
+      expect(created.userId).toBe(USER_B);
+      expect(created.id).not.toBe(groupOfA.id);
+      expect(stored.name).toBe('Living');
+    });
+
+    it('lets two users hold the same idempotency key without colliding', async () => {
+      const forB = await asOwner(USER_B, budgetOfB.id, () =>
+        scoped.idempotencyKey.create({ data: { userId: USER_B, key: 'intent-of-a' } }),
+      );
+
+      const stored = await prisma.idempotencyKey.findMany({
+        where: { key: 'intent-of-a' },
+        orderBy: { userId: 'asc' },
+      });
+
+      expect(stored.map((row) => row.userId)).toEqual([USER_A, USER_B]);
+      expect(forB.key).toBe('intent-of-a');
     });
   });
 });

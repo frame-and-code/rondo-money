@@ -1,18 +1,50 @@
 # @rondo/db
 
-Data layer: Prisma schema, migrations and the generated client. Skeleton F0.4 (Prisma 7).
+Data layer: Prisma schema, migrations and the generated client (Prisma 7).
 
-The schema grows incrementally. Each phase brings its own migration. F0.4 is the base
-skeleton (datasource + generator + an empty initial `0_init` migration); F1.3 adds the first
-table, `UserSettings`, F1.6 its `language` column, and the domain core arrives in Phase 3 as
-six tables in one migration (`Budget`, `CategoryGroup`, `Category`, `Account`, `Transaction`,
-`IdempotencyKey`). No table carries `deletedAt`. ADR-006 dropped soft-delete and the
-change-log journal alike.
+The schema grows incrementally, one migration per phase. It starts as a datasource, a
+generator and an empty `0_init`. `UserSettings` is the first table, and the domain core is
+six more in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
+`Transaction`, `IdempotencyKey`. No table carries `deletedAt`. ADR-006 dropped soft-delete
+and the change-log journal alike.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum with
 `RU` / `EN` / `PL`, defaulting to `EN`). It exists this early because the `userId` auto-scoping
-extension in `apps/api` cannot be typed against a schema with no models at all. Currency is
-not here. It belongs to `Budget` (F3.1).
+extension in `apps/api` cannot be typed against a schema with no models at all.
+
+`Budget` owns the money settings the rest of the schema reads: the ISO 4217 `currency`, the
+`minorDigits` frozen when the budget is created, and the IANA `timezone` that decides what
+today is. A user may hold several budgets and **at most one** of them is `active`. A partial
+unique index on `(user_id, active) where active` holds that, so a second activation fails on
+the index. It cannot require a first one, and it is not meant to: a user part-way through
+onboarding has no active budget, and every reader handles that.
+
+That index is why the schema turns on the `partialIndexes` preview feature, and three things
+follow.
+
+A Prisma release that **removes** the name is a hard stop: the schema fails to parse, and
+`migrate deploy` goes down with it, because the whole schema is validated before any
+connection is opened. A release that graduates the feature to general availability is the
+opposite, a `warn` line and an exit code of zero, which nothing in CI turns into a failure.
+So a Prisma upgrade checks for the warning, not only for the error, and deletes the flag when
+it appears.
+
+The index publishes `userId_active` as a compound unique key on `Budget`, and the generated
+types carry no trace of the predicate. Only `active: true` is really unique, and the key gives
+no sign of that. Each operation loses the guarantee differently. A read naming `active: false`
+answers with an arbitrary matching row. An `update` or a `delete` is the dangerous one: it
+writes or removes **every** row that matches and raises the error afterwards, so the caller
+gets a failure over data that has already changed. An `upsert` names a conflict target
+Postgres cannot match to an index carrying a predicate, and fails there. So read with
+`active: true`, and create or activate a budget with an explicit read and then a write inside
+the mutation's own transaction. `budget-core.integration.spec.ts` pins all four, because this
+paragraph is the only warning a caller gets.
+
+Three fields mean three different kinds of disappearance and they are not interchangeable.
+An account is archived (`archivedAt`), a category and its group are hidden (`hiddenAt`), a
+budget is deactivated (`active`). A transaction is deleted outright. Hiding is never applied
+as an automatic filter; what that means for the aggregates is in
+[architecture](../../.claude/rules/architecture.md).
 
 ## Conventions
 
@@ -25,7 +57,12 @@ Set by the first table and followed by every later one:
 - ids are `String @id @default(uuid(7)) @db.Uuid`, time-ordered, and a real `uuid` column
   rather than `text`, which is what `@db.Uuid` buys;
 - every table carrying user data has `userId`, and joins the scoped-model registry in
-  `apps/api/src/prisma/scoped-models.ts` **in the same change** (ADR-005).
+  `apps/api/src/prisma/scoped-models.ts` **in the same change** (ADR-005). A table that
+  belongs to one budget carries `budgetId` too, and joins the budget registry beside it;
+- a field is **named** so that the column the rule above produces is not a reserved word in
+  Postgres. The order of a category is `sortOrder`, not `order`, because `order` would have
+  to be quoted in exactly the hand-written SQL the snake_case convention exists to keep
+  unquoted.
 
 ⚠️ **After a migration, run `pnpm --filter @rondo/db build`.** It does both things the api
 needs and nothing else does: `prisma generate` (consumers read types from `src/`, per

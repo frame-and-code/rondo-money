@@ -84,6 +84,24 @@
       "version": "node >=26 (ICU bundled with the runtime)",
       "why": "Where `minorDigits()` gets a currency's minor-digit count from, instead of a table we would have to maintain. This is CLDR display data rather than the ISO exponent, and the two differ for a set of currencies that packages/types/README.md owns and a test pins. Three traps the spec does not put in one place. First, an unknown-but-well-formed code does NOT throw. `ZZZ` resolves to 2. So this can never be the gate on whether a currency exists; the allowed-currency list still has to be written where budgets are created, and shape (`/^[A-Z]{3}$/`) is all `minorDigits` checks. A two-letter code does throw RangeError, and a lower-case one is accepted and normalised, which is why we refuse it ourselves. Second, `resolvedOptions().maximumFractionDigits` is typed `number | undefined` by TypeScript's lib, so reading it needs either a cast or a fallback digit count. Both forbidden here; count the `fraction` part of `formatToParts(0)` instead, which is honestly typed and returns nothing at all for a currency with no minor unit. Third, and the reason this entry matters most: the number decides the scale money is STORED at, and it travels with the runtime. So a Node upgrade is a data-migration question, and the divergent codes are pinned by a test to make that failure loud.",
       "checked": "2026-08-21"
+    },
+    "postgres-explicit-locking": {
+      "url": "https://www.postgresql.org/docs/current/explicit-locking.html",
+      "version": "postgres 18 (docker-compose.yml)",
+      "why": "A migration's cost to a running app is the lock its statements take, and the two that matter here differ: a plain CREATE INDEX takes SHARE and blocks writes, ALTER TABLE takes ACCESS EXCLUSIVE and blocks reads too. The migration-reviewer agent grades findings on that difference, so confirm the mode here rather than recalling it.",
+      "checked": "2026-08-22"
+    },
+    "prisma-indexes": {
+      "url": "https://www.prisma.io/docs/orm/prisma-schema/data-model/indexes",
+      "version": "prisma / @prisma/client ^7.9.1",
+      "why": "Budget holds \"one active budget per user\" as an index the database enforces, which is the schema's only preview feature (`partialIndexes`); packages/db/README.md says what that buys and costs. Come here before a Prisma upgrade to check the feature's status, and before writing another `@@index(..., where:)`, since the generator takes either an object literal or a `raw()` predicate and this page says which the connector supports.",
+      "checked": "2026-08-23"
+    },
+    "postgres-insert-on-conflict": {
+      "url": "https://www.postgresql.org/docs/current/sql-insert.html",
+      "why": "Postgres refuses to infer a partial index as an ON CONFLICT arbiter unless the statement repeats the predicate, and Prisma emits a bare column list. That is the failure behind the warning on Budget's `userId_active` key, and the reason a create-or-activate is an explicit read and write. Confirm the inference rules here before relying on any upsert against an index with a predicate.",
+      "version": "postgres 18 (docker-compose.yml)",
+      "checked": "2026-08-23"
     }
   }
 }

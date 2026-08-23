@@ -79,6 +79,13 @@ reviewer to argue with the code, and those reviewers are rate-limited.
   stale on the next commit.
 - **Prefer deleting to hedging.** A sentence that cannot be stated plainly is one nobody has
   understood well enough to write yet.
+- **No phase or ticket numbers.** A document says what is true, not which ticket made it true.
+  `F3.1`, `Phase 3` and `arrives in F4.2` go stale on their own: a phase gets renumbered while
+  nothing in the repository notices, and the marker is a second home for a fact the Notion
+  ticket already owns. When a change makes a sentence stale, rewrite the sentence and drop the
+  marker rather than updating it. Older files still carry them, so strip them from every
+  sentence you rewrite, leave the ones you do not touch, and do not imitate either. Nothing
+  checks this, so it rests on this rule.
 - Something planned and not built is written in the future tense or not at all.
 
 ## Patterns belong in `.claude/`

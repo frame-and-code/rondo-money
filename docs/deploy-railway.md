@@ -109,9 +109,10 @@ migrate deploy --config packages/db/prisma.config.ts`). That is why `prisma` and
 Both images build from the **repository root**: after the manifest layer each Dockerfile does
 `COPY . .`, so a change in any workspace, in the lockfile or in `turbo.json` changes what ends
 up in the image. Watch paths narrowed to `/apps/<service>/**` therefore hid a whole class of
-commits from dev. F1.9 merged and nothing deployed. The expensive case is migrations: F3.1
-and F4.1 are almost entirely `packages/db`, and without `/packages/**` dev would keep
-running the old schema under fresh code, with nothing in the application logs to explain it.
+commits from dev. The expensive case is a migration: it lands in `packages/db` and may touch
+nothing under `/apps/**` at all, so without `/packages/**` it never reaches dev and sits
+unapplied until some unrelated commit triggers an api deploy, with nothing in the application
+logs to explain the wait.
 
 The patterns live in `build.watchPatterns` of each `railway.json`:
 

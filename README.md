@@ -20,12 +20,14 @@ every query is scoped to the user who made it, the typed API client is generated
 API's own contract, and money is an integer number of minor units whose digit count comes from
 the currency. The boundary that rejects a request body carrying an undeclared field is in
 place before the first endpoint takes one. Nothing accepts a body yet.
-What does not exist yet is the product: budgets, accounts, categories and transactions.
-Storing a budget is the next thing to land.
+The tables the product is built from exist, budgets, category groups, categories, accounts
+and transactions, and a read of what a budget owns is scoped to the caller's active budget.
+What does not exist yet is a way in: no endpoint writes to any of them. Storing a budget is
+the next thing to land.
 
 ## What it is
 
-A personal budgeting app in the YNAB tradition: money is distributed into category
+A personal budgeting app: money is distributed into category
 envelopes for the month _before_ it is spent, unspent remainders roll forward, and
 balances, "available" amounts and net worth are never stored. They are computed from
 transactions and assignments on demand.

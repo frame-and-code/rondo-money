@@ -148,6 +148,12 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
   });
 ```
 
+- **A read of a model a budget owns needs a budget in the scope too**, via
+  `context.setBudgetId(...)`, or the extension refuses it. In the running app an interceptor
+  fills that in; a spec calling the scoped client directly does it by hand. Over HTTP the
+  interceptor runs, so a spec that signs a token and calls a route only needs the caller to
+  have an `active` budget row. Pattern to copy:
+  [`apps/api/test/budget-scoping.integration.spec.ts`](../apps/api/test/budget-scoping.integration.spec.ts).
 - ⚠️ **Await inside the scope.** Prisma's promises are lazy: the hooks run when the promise is
   awaited, not when `findMany()` is called. Returning an un-awaited promise out of `run()`
   executes the query with no context, so a test expecting a rejection passes for the wrong
@@ -192,7 +198,9 @@ implements. The routing below is what it picks from, and what you pick from by h
 5. Package has no runner yet? Copy `jest.config.mjs` from `packages/types` (node) or
    `apps/web` (jsdom), add `test` / `test:unit` scripts, and turbo picks them up automatically.
    Drop the `coverageThreshold` you copy along with it unless the new package means to hold
-   that bar.
+   that bar, and drop the `process.env.TZ` line too. It is there so the calendar specs run in
+   a zone that is not UTC, which is what makes them fail against code that reads the host's
+   zone; a suite that does not touch dates only inherits a surprise.
 
 ### Naming is load-bearing in `apps/api`
 

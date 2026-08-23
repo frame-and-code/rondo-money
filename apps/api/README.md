@@ -142,7 +142,7 @@ instance is rate-limited and genuine users get 401s. The api logs a warning at s
 whenever it is running that way; keeping every environment on the PEM key is what keeps
 that warning worth reading.
 
-## Tenant isolation (F1.3)
+## Tenant isolation
 
 There is no row-level security in Postgres (ADR-005), so everything RLS would have guaranteed
 is ordinary code here, and code fails silently. Four mechanisms carry it, in order:
@@ -153,8 +153,13 @@ is ordinary code here, and code fails silently. Four mechanisms carry it, in ord
    token. Nothing reads the identity from a parameter, so no call site can forget to pass it.
    It is mounted on `'{*splat}'`. Express 5 parses routes with path-to-regexp v8, where a bare
    `*` throws and `'*splat'` misses the root, so the braces are what cover `/`.
-   Later phases add fields to the same store: the active `budgetId` (F3.1) and the
-   inside-the-mutator marker (F3.2).
+   The same store carries the caller's active `budgetId`.
+   [`ActiveBudgetInterceptor`](src/prisma/active-budget.interceptor.ts) resolves it once per
+   request and puts it there before any handler runs. Reading it returns `undefined` instead of
+   throwing, because a user creating their first budget has none yet, and the request that
+   creates it must still work. It asks for a single unique row rather than choosing among
+   several. The schema is what makes that safe; see
+   [`packages/db`](../../packages/db/README.md).
 2. **The auto-scoped client.** Inject `SCOPED_PRISMA`
    ([`scoped-prisma.ts`](src/prisma/scoped-prisma.ts)), not `PrismaService`. The extension
    filters reads of a registered model by the caller and stamps writes with the same id, and an
@@ -162,18 +167,23 @@ is ordinary code here, and code fails silently. Four mechanisms carry it, in ord
    it explicitly**; see [`user-scoping.extension.ts`](src/prisma/user-scoping.extension.ts).
    `PrismaService` itself is the unscoped client underneath; where it may be imported is a lint
    rule, and the list lives in [security](../../.claude/rules/security.md).
+   - A model a budget owns is filtered by `budgetId` too, on reads only. What that covers, and
+     why a write takes its budget from the payload instead, is in
+     [security](../../.claude/rules/security.md).
    - Note on types: Prisma still requires `userId` in a write payload, so a caller names an
      owner. The extension overwrites it with the verified caller, which is what makes naming
      the wrong one harmless. On a read a caller passes no `userId` at all; `SCOPED_PRISMA`
      adds the filter. That is a property of _this_ client, not permission to use another one.
-   - Its boundary is in [security](../../.claude/rules/security.md): what the extension does
-     and does not cover, and what a nested write has to do about it. A nested write is
-     unreachable today (one model, no relations); it is the shape a transfer's two legs take in
-     F3.2.
+   - Its boundary is in [security](../../.claude/rules/security.md) too: what the extension
+     does and does not cover, and what a nested write has to do about it. The domain models
+     carry relations, so a nested write is reachable now. It keeps whatever owner the caller
+     put on the nested rows, and it is the shape a transfer's two legs take.
 3. **The registry.** [`scoped-models.ts`](src/prisma/scoped-models.ts) lists the models this
-   applies to, and a new table joins it in the same change that creates it.
+   applies to, in two sets: everything scoped to a user, and the subset a budget owns. A new
+   table joins them in the same change that creates it.
    [`test/scoped-models.spec.ts`](test/scoped-models.spec.ts) catches a forgotten one by
-   walking the schema and failing when a model with a `userId` column is missing (the CI gate).
+   walking the schema and failing when a model with a `userId` or `budgetId` column is missing
+   (the CI gate).
    `.claude/hooks/stop-scoping-drift.sh` flags it earlier (a reminder, in Claude Code sessions
    only).
 4. **Raw SQL in one place.** The extension covers the model API only; `$queryRaw` /
@@ -235,7 +245,7 @@ knowing before a deploy:
 - the `http://localhost:3001` fallback exists for specs, which build the app through
   `Test.createTestingModule` and never pass through `main.ts`.
 
-## Tooling (carry-overs closed from F0.2)
+## Tooling
 
 - **tsconfig:** on top of `@rondo/config/tsconfig/base.json` we add `experimentalDecorators`
   / `emitDecoratorMetadata` and `module: nodenext` (resolves as CommonJS, since the package has
