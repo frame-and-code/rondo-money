@@ -28,6 +28,7 @@
     "db:generate": "pnpm --filter @rondo/db run db:generate",
     "db:migrate": "pnpm --filter @rondo/db run db:migrate",
     "db:deploy": "pnpm --filter @rondo/db run db:deploy",
+    "db:reset": "pnpm --filter @rondo/db run db:reset",
     "prepare": "husky",
     "postinstall": "pnpm --filter @rondo/db run db:generate"
   },

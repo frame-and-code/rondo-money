@@ -41,6 +41,63 @@ export type UserSettingsResponse = {
     language: LanguageTag;
 };
 
+export type CreateBudgetDto = {
+    /**
+     * The interface language the user picked on this screen. It is a property of the user rather than of the budget, and it is stored in their settings. It travels with the budget because the default categories are written in it, and because there is no endpoint to change a language on its own yet.
+     */
+    language: LanguageTag;
+    /**
+     * What the user calls this budget.
+     */
+    name: string;
+    /**
+     * Chosen once. No endpoint changes a budget's currency afterwards.
+     */
+    currency: string;
+    /**
+     * The zone the budget counts days in. The browser reads it from the device; there is no field for it on the screen.
+     */
+    timezone: string;
+    /**
+     * Whether to create the starter groups and categories alongside the budget. Required: a default here would mean the server decided what the user wanted.
+     */
+    withDefaultCategories: boolean;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two budgets again.
+     */
+    idempotencyKey: string;
+};
+
+export type BudgetResponse = {
+    id: string;
+    /**
+     * What the user calls this budget.
+     */
+    name: string;
+    /**
+     * The currency this budget holds. It is chosen once and never changes.
+     */
+    currency: string;
+    /**
+     * The currency's minor digit count, frozen when the budget was created. Read the scale from here rather than recomputing it, or an amount written at one scale is read at another.
+     */
+    minorDigits: number;
+    /**
+     * The zone that decides what "today" is and which month an amount falls into.
+     */
+    timezone: string;
+    /**
+     * A user holds at most one active budget, and the screens follow that one.
+     */
+    active: boolean;
+};
+
+export type ConflictResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -121,3 +178,57 @@ export type UserSettingsControllerReadResponses = {
 };
 
 export type UserSettingsControllerReadResponse = UserSettingsControllerReadResponses[keyof UserSettingsControllerReadResponses];
+
+export type BudgetsControllerListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/budgets';
+};
+
+export type BudgetsControllerListErrors = {
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type BudgetsControllerListError = BudgetsControllerListErrors[keyof BudgetsControllerListErrors];
+
+export type BudgetsControllerListResponses = {
+    /**
+     * The budgets that exist now.
+     */
+    200: Array<BudgetResponse>;
+};
+
+export type BudgetsControllerListResponse = BudgetsControllerListResponses[keyof BudgetsControllerListResponses];
+
+export type BudgetsControllerCreateData = {
+    body: CreateBudgetDto;
+    path?: never;
+    query?: never;
+    url: '/budgets';
+};
+
+export type BudgetsControllerCreateErrors = {
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type BudgetsControllerCreateError = BudgetsControllerCreateErrors[keyof BudgetsControllerCreateErrors];
+
+export type BudgetsControllerCreateResponses = {
+    /**
+     * The budget that now exists.
+     */
+    201: BudgetResponse;
+};
+
+export type BudgetsControllerCreateResponse = BudgetsControllerCreateResponses[keyof BudgetsControllerCreateResponses];

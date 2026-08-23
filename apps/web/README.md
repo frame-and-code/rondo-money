@@ -24,6 +24,11 @@ src/
     api/health/route.ts       # liveness probe for Railway — public, answers 200 flat; also
                               # reports the mode the bundle was built in, which is what e2e
                               # read to refuse a dev server (F1.11)
+    new/page.tsx              # creating a budget, deliberately outside (app): the shell would
+                              # navigate to sections a user without a budget cannot use.
+                              # Rendered per request (`force-dynamic`) because it picks the
+                              # name example shown in the field; built once, every visitor for
+                              # the life of the deployment would see the same one
     (app)/                    # the app shell: a sidebar on desktop, a bottom tab bar on a
                               # phone, and the sections it navigates
       layout.tsx              # renders AppShell around every section
@@ -32,14 +37,16 @@ src/
       net-worth/
       settings/
   components/                 # app-level components: the shell and its navigation, the
-                              # section slot, the loading region, the Clerk provider wrapper
-                              # and the locale switcher
+                              # section slot, the loading region, the Clerk provider wrapper,
+                              # the locale switcher and the new-budget form
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language
                               # from GET /user-settings back into the locale context
   lib/api/                    # the only way to reach @rondo/api: ApiProvider wires the
                               # generated client (@rondo/api-client) to the address, the
                               # Clerk token and the TanStack Query cache
+  lib/currencies.ts           # the currency list for a locale: codes from @rondo/types,
+                              # names from Intl.DisplayNames, memoised per locale
   lib/sections.ts             # the sections in one place: route, message key, icon.
                               # The navigation and the header title both read it
   lib/auth.ts                 # SIGN_IN_URL and HEALTH_URL — the paths proxy.ts,

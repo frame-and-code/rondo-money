@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -45,4 +45,30 @@ export const userSettingsControllerRead = <ThrowOnError extends boolean = false>
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/user-settings',
     ...options
+});
+
+/**
+ * The caller's budgets
+ *
+ * Every budget the caller owns, oldest first, with the active one marked. A caller part way through onboarding has none, which is an empty list rather than an error.
+ */
+export const budgetsControllerList = <ThrowOnError extends boolean = false>(options?: Options<BudgetsControllerListData, ThrowOnError>): RequestResult<BudgetsControllerListResponses, BudgetsControllerListErrors, ThrowOnError> => (options?.client ?? client).get<BudgetsControllerListResponses, BudgetsControllerListErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budgets',
+    ...options
+});
+
+/**
+ * Create a budget
+ *
+ * Creates the budget and, when asked for, the starter groups and categories, in one database transaction. The chosen language is stored in the caller's settings by the same transaction, because the category names are written in it. A user holds at most one active budget, so a previous one stops being active here.
+ */
+export const budgetsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<BudgetsControllerCreateData, ThrowOnError>): RequestResult<BudgetsControllerCreateResponses, BudgetsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<BudgetsControllerCreateResponses, BudgetsControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budgets',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });

@@ -18,6 +18,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "echo \"@rondo/db: no tests yet — Prisma ↔ Postgres is covered by @rondo/api integration tests (see docs/testing.md)\""

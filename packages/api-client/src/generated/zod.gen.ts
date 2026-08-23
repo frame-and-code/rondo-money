@@ -34,6 +34,30 @@ export const zUserSettingsResponse = z.object({
     language: zLanguageTag
 });
 
+export const zCreateBudgetDto = z.object({
+    language: zLanguageTag,
+    name: z.string().min(1).max(60),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+    timezone: z.string(),
+    withDefaultCategories: z.boolean(),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zBudgetResponse = z.object({
+    id: z.uuid(),
+    name: z.string().max(60),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+    minorDigits: z.number(),
+    timezone: z.string(),
+    active: z.boolean()
+});
+
+export const zConflictResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string()
+});
+
 /**
  * The database answered.
  */
@@ -52,3 +76,15 @@ export const zUserSettingsControllerReadHeaders = z.object({
  * The settings that exist now.
  */
 export const zUserSettingsControllerReadResponse = zUserSettingsResponse;
+
+/**
+ * The budgets that exist now.
+ */
+export const zBudgetsControllerListResponse = z.array(zBudgetResponse);
+
+export const zBudgetsControllerCreateBody = zCreateBudgetDto;
+
+/**
+ * The budget that now exists.
+ */
+export const zBudgetsControllerCreateResponse = zBudgetResponse;

@@ -57,9 +57,13 @@ The OpenAPI document is built from the code (F1.4), so an endpoint that says not
 itself is published with no response shape at all, and the generated client types it
 `unknown` without failing anything.
 
-- The response is a **class** carrying `@ApiProperty` on every field, named by the handler's
-  `@ApiOkResponse`. A TypeScript interface leaves no metadata after compilation, which is
-  exactly the silent version of this mistake.
+- The response is a **class** carrying `@ApiProperty` on every field, named by whichever
+  success decorator the handler carries: `@ApiOkResponse` for a read, `@ApiCreatedResponse`
+  for a create. A TypeScript interface leaves no metadata after compilation, which is exactly
+  the silent version of this mistake. A handler that takes an idempotency key also names
+  [`ConflictResponse`](../../apps/api/src/mutations/conflict.response.ts) on
+  `@ApiConflictResponse`, because every one of them can answer with it, and an undocumented
+  status collapses the whole error type of that operation to `unknown` in the client.
 - `@Public()` carries one decision to both readers. It opens the handler to the guard _and_
   stamps `x-public`, which is what clears the global bearer requirement in the spec. Never add
   a second decorator saying the same thing. The two would eventually disagree.
@@ -76,6 +80,15 @@ itself is published with no response shape at all, and the generated client type
   global interceptor, which would leave the code and the published schema saying different
   things. No endpoint carries an amount yet, and the convention is stated in the spec's own
   description until one does.
+- **A value the app must recognise, and not merely parse, gets one decorator that does both.**
+  A currency is [`@ApiCurrencyProperty()`](../../apps/api/src/validation/currency.decorator.ts)
+  and a zone is [`@ApiTimeZoneProperty()`](../../apps/api/src/validation/timezone.decorator.ts),
+  each publishing the field and refusing an unusable value together, for the reason money's
+  does. What a currency publishes is the shape of a code and never the list of them: the codes
+  come from the runtime's own data, so an enum in the schema would let a runtime upgrade
+  rewrite the committed contract and fail the gate on a change that touches no currency.
+  [`create-budget.dto.ts`](../../apps/api/src/budgets/create-budget.dto.ts) is a request DTO
+  using both.
 - Every request body **declared as a DTO class** is validated by the global pipe
   ([`validation.options.ts`](../../apps/api/src/validation/validation.options.ts)):
   `class-validator` + `class-transformer`, whitelisted, and a field the DTO never declared is
@@ -183,6 +196,27 @@ reconciliation will not balance. That is expected. A test asserting per-month eq
 a wrong test, not a found bug.
 
 ## Frontend
+
+### Where a screen's look comes from
+
+A screen is not designed twice. When the ticket carries a design, that design is the
+specification, and prose describing it is a summary rather than a replacement.
+
+1. **A design link in the ticket is read before the screen is written**, not after it is
+   reviewed. Open every artboard, take the copy, the order of the fields, the states and the
+   responsive behaviour from it. A plan that paraphrases the design is still second-hand; the
+   artboards win wherever the two differ. When the design and a recorded decision genuinely
+   conflict, the user decides, the same way an open question does.
+2. **Icons come from `@tabler/icons-react`.** Never paste a raw `<svg>` out of a mock. Match
+   the path data to the icon it is and import that one by name, so the set stays consistent and
+   a mock's snapshot never becomes a second icon library.
+3. **Look for the component before inventing one**, in this order: `packages/ui`, then the
+   shadcn registry (the paragraph below has the command), then a composition of primitives
+   rather than bare markup. What
+   the ladder buys is that radii, icons and spacing arrive right instead of being tuned by
+   hand, and a hand-written trigger beside a generated one is how a design system stops being
+   one. Reuse the tokens the neighbouring primitive carries rather than values that look
+   close.
 
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in

@@ -37,4 +37,46 @@ export const en: Record<MessageKey, string> = {
   'netWorth.slotBody': 'The net worth chart lands here.',
   'settings.slotTitle': 'The "Settings" slot',
   'settings.slotBody': 'Currency, timezone and budget language land here.',
+
+  'newBudget.heading': 'Let us set up your first budget',
+  'newBudget.lead':
+    'Every amount sitting in your accounts has a job. You are not guessing at future income, you are handing out the money that is already there.',
+  'newBudget.point1Title': 'Groups and categories',
+  'newBudget.point1Body': 'The starter set is created if you ask for it, in the language you pick.',
+  'newBudget.point2Title': 'Account balances',
+  'newBudget.point2Body': 'Next step: how much money each account holds right now.',
+  'newBudget.point3Title': 'Assigning',
+  'newBudget.point3Body':
+    'After that you hand money to categories until Ready to Assign reaches zero.',
+  'newBudget.cardTitle': 'New budget',
+  'newBudget.cardDescription':
+    'Language, name and currency. Everything else comes in the next steps.',
+  'newBudget.languageLabel': 'Language',
+  'newBudget.languageHint':
+    'Category names and the app labels will be in it. You can switch later, the category names stay as they are.',
+  'newBudget.nameLabel': 'Name',
+  'newBudget.namePlaceholder.0': 'Family budget',
+  'newBudget.namePlaceholder.1': 'Personal budget',
+  'newBudget.namePlaceholder.2': 'Household finances',
+  'newBudget.namePlaceholder.3': 'My money',
+  'newBudget.namePlaceholder.4': 'Business',
+  'newBudget.currencyLabel': 'Currency',
+  'newBudget.currencyPlaceholder': 'Choose a currency',
+  'newBudget.searchPlaceholder': 'Code or name',
+  'newBudget.nothingFound': 'Nothing found',
+  'newBudget.currencyLocked': 'The currency cannot be changed after this',
+  'newBudget.currencyCount': '{{shown}} of {{total}} currencies',
+  'newBudget.currencyCountLimited': 'Showing the first {{limit}} of {{total}}',
+  'newBudget.defaultsLabel': 'Create the starter categories',
+  'newBudget.defaultsOn':
+    'Groups and categories arrive with the budget. You can rename and hide them later.',
+  'newBudget.defaultsOff': 'The budget starts with an empty list, you add categories yourself.',
+  'newBudget.submit': 'Create budget',
+  'newBudget.submitting': 'Creating…',
+  'newBudget.submitFailed': 'The budget was not created. Try again.',
+  'newBudget.doneTitle': 'Budget “{{name}}” created',
+  'newBudget.doneWithDefaults':
+    'Currency {{currency}}. The starter categories are in place. Next step: your accounts and their balances.',
+  'newBudget.doneWithoutDefaults':
+    'Currency {{currency}}. No categories yet, you will add your own. Next step: your accounts and their balances.',
 };

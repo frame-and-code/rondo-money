@@ -1,9 +1,26 @@
 export type CurrencyCode = string;
 
-const CURRENCY_CODE = /^[A-Z]{3}$/;
+/// The shape of a currency code, published in the OpenAPI schema. The codes themselves are
+/// not: they come from the runtime's ICU data, and a Node upgrade would rewrite the committed
+/// contract on a change that touches no currency.
+export const CURRENCY_PATTERN = /^[A-Z]{3}$/;
 
 export function isCurrencyCode(value: string): boolean {
-  return CURRENCY_CODE.test(value);
+  return CURRENCY_PATTERN.test(value);
+}
+
+const SUPPORTED: readonly CurrencyCode[] = Object.freeze(
+  Intl.supportedValuesOf('currency').filter(isCurrencyCode),
+);
+
+const SUPPORTED_INDEX: ReadonlySet<CurrencyCode> = new Set(SUPPORTED);
+
+export function supportedCurrencyCodes(): readonly CurrencyCode[] {
+  return SUPPORTED;
+}
+
+export function isSupportedCurrency(value: string): boolean {
+  return SUPPORTED_INDEX.has(value);
 }
 
 export function minorDigits(code: CurrencyCode): number {

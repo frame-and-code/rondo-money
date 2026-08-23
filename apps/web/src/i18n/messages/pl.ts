@@ -37,4 +37,45 @@ export const pl: Record<MessageKey, string> = {
   'netWorth.slotBody': 'Tu pojawi się wykres kapitału.',
   'settings.slotTitle': 'Slot sekcji „Ustawienia”',
   'settings.slotBody': 'Tu pojawią się waluta, strefa czasowa i język budżetu.',
+
+  'newBudget.heading': 'Zbudujmy twój pierwszy budżet',
+  'newBudget.lead':
+    'Każda kwota na twoich kontach ma swoje zadanie. Nie zgadujesz przyszłych przychodów, rozdzielasz pieniądze, które już masz.',
+  'newBudget.point1Title': 'Grupy i kategorie',
+  'newBudget.point1Body': 'Zestaw startowy powstaje na twoje życzenie, w wybranym języku.',
+  'newBudget.point2Title': 'Salda kont',
+  'newBudget.point2Body': 'Następny krok: ile pieniędzy jest teraz na każdym koncie.',
+  'newBudget.point3Title': 'Rozdzielanie',
+  'newBudget.point3Body':
+    'Potem rozdzielasz pieniądze na kategorie, aż zostanie zero do rozdysponowania.',
+  'newBudget.cardTitle': 'Nowy budżet',
+  'newBudget.cardDescription': 'Język, nazwa i waluta. Resztę ustawimy w kolejnych krokach.',
+  'newBudget.languageLabel': 'Język',
+  'newBudget.languageHint':
+    'W nim będą nazwy kategorii i etykiety w aplikacji. Język można zmienić później, nazwy kategorii zostaną.',
+  'newBudget.nameLabel': 'Nazwa',
+  'newBudget.namePlaceholder.0': 'Budżet rodzinny',
+  'newBudget.namePlaceholder.1': 'Budżet osobisty',
+  'newBudget.namePlaceholder.2': 'Finanse domowe',
+  'newBudget.namePlaceholder.3': 'Moje pieniądze',
+  'newBudget.namePlaceholder.4': 'Firma',
+  'newBudget.currencyLabel': 'Waluta',
+  'newBudget.currencyPlaceholder': 'Wybierz walutę',
+  'newBudget.searchPlaceholder': 'Kod lub nazwa',
+  'newBudget.nothingFound': 'Nic nie znaleziono',
+  'newBudget.currencyLocked': 'Waluty nie da się zmienić po utworzeniu',
+  'newBudget.currencyCount': '{{shown}} z {{total}} walut',
+  'newBudget.currencyCountLimited': 'Pokazano pierwsze {{limit}} z {{total}}',
+  'newBudget.defaultsLabel': 'Utwórz startowe kategorie',
+  'newBudget.defaultsOn':
+    'Grupy i kategorie powstaną razem z budżetem. Później można je zmienić i ukryć.',
+  'newBudget.defaultsOff': 'Budżet powstanie z pustą listą, kategorie dodasz sam.',
+  'newBudget.submit': 'Utwórz budżet',
+  'newBudget.submitting': 'Tworzymy…',
+  'newBudget.submitFailed': 'Nie udało się utworzyć budżetu. Spróbuj ponownie.',
+  'newBudget.doneTitle': 'Budżet „{{name}}” utworzony',
+  'newBudget.doneWithDefaults':
+    'Waluta {{currency}}. Startowe kategorie są gotowe. Następny krok: konta i ich salda.',
+  'newBudget.doneWithoutDefaults':
+    'Waluta {{currency}}. Na razie brak kategorii, dodasz własne. Następny krok: konta i ich salda.',
 };
