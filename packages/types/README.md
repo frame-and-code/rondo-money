@@ -22,6 +22,19 @@ count this package owns. Parsing refuses more precision than the currency has ra
 rounding it away. The amount someone typed and the amount that gets stored have to be the
 same number.
 
+**Calendar dates** are `YYYY-MM-DD` strings with no time attached, and the month bucket is
+`YYYY-MM`. `todayIn` and `calendarDateIn` take the IANA zone to answer in, which is the
+budget's; `monthOf` buckets a date; `parseCalendarDate` refuses anything that is not a real
+day, so `2026-02-30` throws instead of rolling over into March the way `new Date` does.
+Nothing here reads the host's zone, and `new Date()` outside this module is how a
+transaction lands in the wrong month for anyone east or west of the server.
+
+A date that came **out of the database** takes the other pair. `calendarDateOf` reads the day
+a `date` column stores and `toDbDate` writes one back; neither takes a zone, because a stored
+calendar date is not an instant and converting it through one shifts the day. Passing such a
+value to `calendarDateIn` is that mistake, so `calendarDateOf` refuses anything carrying a
+time rather than picking a day for you.
+
 ## Build
 
 ⚠️ **The package emits.** Consumers take types from the sources (`exports.types` →

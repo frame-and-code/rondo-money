@@ -47,4 +47,45 @@ describe('RequestContextService', () => {
 
     expect([slow, fast]).toEqual(['user_a', 'user_b']);
   });
+
+  it('hands out no budget outside a request, and does not throw about it', () => {
+    const context = new RequestContextService();
+
+    expect(context.readBudgetId()).toBeUndefined();
+  });
+
+  it('hands out no budget inside a scope that has none', () => {
+    const context = new RequestContextService();
+
+    context.run(() => {
+      expect(context.readBudgetId()).toBeUndefined();
+    });
+  });
+
+  it('refuses to change the active budget once the scope carries one', () => {
+    const context = new RequestContextService();
+
+    context.run(() => {
+      context.setBudgetId('budget_a');
+
+      expect(() => context.setBudgetId('budget_a')).not.toThrow();
+      expect(() => context.setBudgetId('budget_b')).toThrow(/already carries a different budgetId/);
+      expect(context.readBudgetId()).toBe('budget_a');
+    });
+  });
+
+  it('keeps the active budget of two requests in flight apart', async () => {
+    const context = new RequestContextService();
+
+    const handle = (budgetId: string, delayMs: number): Promise<string | undefined> =>
+      context.run(async () => {
+        context.setBudgetId(budgetId);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        return context.readBudgetId();
+      });
+
+    const [slow, fast] = await Promise.all([handle('budget_a', 20), handle('budget_b', 0)]);
+
+    expect([slow, fast]).toEqual(['budget_a', 'budget_b']);
+  });
 });

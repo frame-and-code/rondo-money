@@ -1,35 +1,101 @@
-import { type PrismaClient } from '@rondo/db';
+import { type Prisma, type PrismaClient } from '@rondo/db';
 
-import { SCOPED_MODELS } from '@/prisma/scoped-models';
+import { BUDGET_SCOPED_MODELS, SCOPED_MODELS } from '@/prisma/scoped-models';
 import { type RequestContextService } from '@/request-context/request-context.service';
 
-function scopedWhere<W extends object | undefined>(where: W, userId: string) {
-  return { ...where, userId };
+interface RequestScope {
+  userId: string;
+  budgetId?: string;
 }
 
-function scopedData<D extends object | undefined>(data: D, userId: string) {
-  return { ...data, userId };
+function scopedWhere<A extends { where?: object }>(args: A, scope: RequestScope): A {
+  return Object.assign({}, args, { where: Object.assign({}, args.where, scope) });
+}
+
+function scopedData<A extends { data: object }>(args: A, userId: string): A {
+  return Object.assign({}, args, { data: Object.assign({}, args.data, { userId }) });
+}
+
+function isRowList(data: object | readonly object[]): data is readonly object[] {
+  return Array.isArray(data);
+}
+
+function scopedRows<A extends { data: object | readonly object[] }>(args: A, userId: string): A {
+  const { data } = args;
+
+  return Object.assign({}, args, {
+    data: isRowList(data)
+      ? data.map((row) => Object.assign({}, row, { userId }))
+      : Object.assign({}, data, { userId }),
+  });
+}
+
+function scopedUpsert<A extends { where: object; create: object; update: object }>(
+  args: A,
+  userId: string,
+): A {
+  return Object.assign({}, args, {
+    where: Object.assign({}, args.where, { userId }),
+    create: Object.assign({}, args.create, { userId }),
+    update: Object.assign({}, args.update, { userId }),
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function carriesScope(args: unknown, userId: string): boolean {
+function scopeFor(
+  model: Prisma.ModelName,
+  operation: string,
+  context: RequestContextService,
+): RequestScope {
+  const userId = context.requireUserId();
+  if (!BUDGET_SCOPED_MODELS.has(model)) {
+    return { userId };
+  }
+
+  const budgetId = context.readBudgetId();
+  if (!budgetId) {
+    throw new Error(
+      `Refusing "${operation}" on ${model}: the request carries no active budget, so the ` +
+        'operation would reach every budget the caller owns.',
+    );
+  }
+
+  return { userId, budgetId };
+}
+
+const HANDLED_OPERATIONS: ReadonlySet<string> = new Set([
+  'findMany',
+  'findFirst',
+  'findFirstOrThrow',
+  'findUnique',
+  'findUniqueOrThrow',
+  'count',
+  'create',
+  'createMany',
+  'createManyAndReturn',
+  'update',
+  'updateMany',
+  'updateManyAndReturn',
+  'upsert',
+  'delete',
+  'deleteMany',
+]);
+
+function carriesScope(args: unknown, scope: RequestScope): boolean {
   if (!isRecord(args)) {
     return false;
   }
 
-  if (isRecord(args.where) && args.where.userId === userId) {
-    return true;
-  }
+  const { where } = args;
 
-  const { data } = args;
-  if (Array.isArray(data)) {
-    return data.every((row) => isRecord(row) && row.userId === userId);
-  }
-
-  return isRecord(data) && data.userId === userId;
+  return (
+    isRecord(where) &&
+    where.userId === scope.userId &&
+    (scope.budgetId === undefined || where.budgetId === scope.budgetId)
+  );
 }
 
 export function withUserScoping(client: PrismaClient, context: RequestContextService) {
@@ -37,102 +103,92 @@ export function withUserScoping(client: PrismaClient, context: RequestContextSer
     name: 'user-scoping',
     query: {
       $allModels: {
-        async findMany({ model, args, query }) {
+        async findMany({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
-        async findFirst({ model, args, query }) {
+        async findFirst({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
-        async findFirstOrThrow({ model, args, query }) {
+        async findFirstOrThrow({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
-        async findUnique({ model, args, query }) {
+        async findUnique({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
-        async findUniqueOrThrow({ model, args, query }) {
+        async findUniqueOrThrow({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
-        async count({ model, args, query }) {
+        async count({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
         async create({ model, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, data: scopedData(args.data, context.requireUserId()) });
+          return query(scopedData(args, context.requireUserId()));
         },
 
         async createMany({ model, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          const userId = context.requireUserId();
-          const { data } = args;
-          return query({
-            ...args,
-            data: Array.isArray(data)
-              ? data.map((row) => scopedData(row, userId))
-              : scopedData(data, userId),
-          });
+          return query(scopedRows(args, context.requireUserId()));
         },
 
-        async update({ model, args, query }) {
+        async createManyAndReturn({ model, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          const userId = context.requireUserId();
-          return query({
-            ...args,
-            where: scopedWhere(args.where, userId),
-            data: scopedData(args.data, userId),
-          });
+          return query(scopedRows(args, context.requireUserId()));
         },
 
-        async updateMany({ model, args, query }) {
+        async update({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          const userId = context.requireUserId();
-          return query({
-            ...args,
-            where: scopedWhere(args.where, userId),
-            data: scopedData(args.data, userId),
-          });
+          const scope = scopeFor(model, operation, context);
+          return query(scopedData(scopedWhere(args, scope), scope.userId));
+        },
+
+        async updateMany({ model, operation, args, query }) {
+          if (!SCOPED_MODELS.has(model)) return query(args);
+          const scope = scopeFor(model, operation, context);
+          return query(scopedData(scopedWhere(args, scope), scope.userId));
+        },
+
+        async updateManyAndReturn({ model, operation, args, query }) {
+          if (!SCOPED_MODELS.has(model)) return query(args);
+          const scope = scopeFor(model, operation, context);
+          return query(scopedData(scopedWhere(args, scope), scope.userId));
         },
 
         async upsert({ model, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          const userId = context.requireUserId();
-          return query({
-            ...args,
-            where: scopedWhere(args.where, userId),
-            create: scopedData(args.create, userId),
-            update: scopedData(args.update, userId),
-          });
+          return query(scopedUpsert(args, context.requireUserId()));
         },
 
-        async delete({ model, args, query }) {
+        async delete({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
-        async deleteMany({ model, args, query }) {
+        async deleteMany({ model, operation, args, query }) {
           if (!SCOPED_MODELS.has(model)) return query(args);
-          return query({ ...args, where: scopedWhere(args.where, context.requireUserId()) });
+          return query(scopedWhere(args, scopeFor(model, operation, context)));
         },
 
         async $allOperations({ model, operation, args, query }) {
-          if (!SCOPED_MODELS.has(model)) return query(args);
+          if (!SCOPED_MODELS.has(model) || HANDLED_OPERATIONS.has(operation)) return query(args);
 
-          const userId = context.requireUserId();
-          if (!carriesScope(args, userId)) {
+          if (!carriesScope(args, scopeFor(model, operation, context))) {
             throw new Error(
               `Refusing "${operation}" on ${model}: the operation has no scoping rule in ` +
-                'user-scoping.extension.ts, so it would run without a userId filter.',
+                'user-scoping.extension.ts, so it would run without the caller and, on a ' +
+                'model a budget owns, without the active budget.',
             );
           }
 

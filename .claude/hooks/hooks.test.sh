@@ -569,6 +569,7 @@ docs_fixture() {
     require("fs").writeFileSync(process.argv[2], JSON.stringify({
       owned: [{ phrase: "top-level operations only", owner: "owner.md" }],
       banned: real.banned,
+      forbidden: real.forbidden,
       githubRelativeLinks: [],
     }))' "$REPO_ROOT/.claude/config/docs-ownership.json" "$dir/.claude/config/docs-ownership.json"
   printf '%s' "$dir"
@@ -663,6 +664,33 @@ D=$(docs_fixture dated)
 printf 'It sees top-level operations only.\n' > "$D/owner.md"
 printf 'Checked 18 Aug 2026 against the release.\n' > "$D/other.md"
 expect_docs_fail "$D" 'a dated observation is refused' 'next release'
+
+# A forbidden word is refused wherever it is written, which is what separates this check from
+# the banned prose patterns: those read the narrative of a markdown file, this one reads every
+# tracked file raw, code and fenced blocks included.
+FORBIDDEN_WORD=$(node -e 'const m=JSON.parse(require("fs").readFileSync(process.argv[1]));process.stdout.write(m.forbidden[0].word)' \
+  "$REPO_ROOT/.claude/config/docs-ownership.json")
+
+D=$(docs_fixture forbidden-prose)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'We are like %s, only better.\n' "$FORBIDDEN_WORD" > "$D/other.md"
+expect_docs_fail "$D" 'a forbidden word in prose is refused' 'never written here'
+
+D=$(docs_fixture forbidden-code)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+mkdir -p "$D/src"
+printf '// modelled on %s\nexport const x = 1;\n' "$FORBIDDEN_WORD" > "$D/src/thing.ts"
+expect_docs_fail "$D" 'a forbidden word in source is refused, not only in prose' 'never written here'
+
+D=$(docs_fixture forbidden-fenced)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'Example:\n\n```md\nlike %s\n```\n' "$FORBIDDEN_WORD" > "$D/other.md"
+expect_docs_fail "$D" 'a forbidden word inside a fence is still refused' 'never written here'
+
+D=$(docs_fixture forbidden-substring)
+printf 'It sees top-level operations only.\n' > "$D/owner.md"
+printf 'integrity: sha512-dy%sbr6QSj00\n' "$FORBIDDEN_WORD" > "$D/other.md"
+expect_docs_ok "$D" 'the word inside a longer token does not fire'
 
 D=$(docs_fixture missing-owner)
 node -e 'const f=process.argv[1];const m=JSON.parse(require("fs").readFileSync(f));m.owned=[{phrase:"ghost",owner:"gone.md"}];require("fs").writeFileSync(f,JSON.stringify(m))' \

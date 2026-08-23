@@ -1,3 +1,5 @@
+process.env.TZ = 'America/New_York';
+
 /** @type {import('jest').Config} */
 export default {
   testEnvironment: 'node',

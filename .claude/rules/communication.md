@@ -30,6 +30,10 @@ carrying one reads as pasted from a model whatever the language.
   and no cycling through synonyms for the same thing. Repeat the noun.
 - **A bold lead-in must add something.** `**Performance:** performance improved` is the tell.
 - Sentence case in headings. No decorative emoji. Straight quotes.
+- **No competitor's name.** This project is described by what it does, not by which product it
+  resembles. The names that may not appear anywhere in the repository, prose and code alike,
+  are listed in [`docs-ownership.json`](../config/docs-ownership.json), which is the only file
+  allowed to write them; `pnpm lint:docs` fails the gate on any other occurrence.
 - **No chatbot filler.** No "Great question", no "I hope this helps", no apology opener. Answer.
 - Have a position, vary sentence length, and write "I" when the sentence is about your own call.
 

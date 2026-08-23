@@ -54,9 +54,10 @@ cannot drift into describing an API nobody wrote.
 
 ## Agents (`agents/`)
 
-| Agent                                     | Use when                                                                                                       |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [`pr-reviewer.md`](agents/pr-reviewer.md) | reviewing a change against this project's invariants, spawned per dimension by [`/review`](commands/review.md) |
+| Agent                                                   | Use when                                                                                                                            |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [`pr-reviewer.md`](agents/pr-reviewer.md)               | reviewing a change against this project's invariants, spawned per dimension by [`/review`](commands/review.md)                      |
+| [`migration-reviewer.md`](agents/migration-reviewer.md) | the change touches `packages/db/prisma/migrations/`; [`/review`](commands/review.md) sends it in place of one of its four reviewers |
 
 An agent exists here for one reason: **a subagent starts with no conversation history.** It
 receives `CLAUDE.md` and the rules, and nothing of the session that spawned it. So it reads
@@ -76,7 +77,7 @@ as much as a real one.
 | `/grill-me <task>`     | interviews until the scope is shared, then hands off to `/plan`                                                                                                                                                       |
 | `/tdd <F1.x>`          | derives the test scenarios from the ticket, stops for confirmation, writes them red, then implements until green                                                                                                      |
 | `/sync-docs`           | sweeps the documentation the change touched and corrects what went stale                                                                                                                                              |
-| `/review [target]`     | fans parallel `pr-reviewer` subagents over the branch, verifies each finding, reports; changes nothing                                                                                                                |
+| `/review [target]`     | fans four parallel reviewer subagents over the branch, verifies each finding, reports; changes nothing                                                                                                                |
 | `/phase-done <F1.x>`   | verifies the ticket's Acceptance Criteria one by one, runs the gate, drafts the PR text                                                                                                                               |
 | `/prep-pr <F1.x>`      | tidies, gates, sweeps the docs, runs a review round, then commits, pushes and opens the PR                                                                                                                            |
 | `/babysit-pr [#N]`     | polls CI, Sonar and the AI reviewers on an open PR, fixes what they find, stops at merge-ready                                                                                                                        |
@@ -161,9 +162,9 @@ a link list nobody can justify becomes a link list nobody opens.
 Deliberate, not missing. Each arrives with the phase that gives it something true to
 describe. A skill grounded in code that does not exist yet would be fiction:
 
-- more `skills/`: `add-a-mutation`, `testing-patterns` (F3.2); `aggregate-query`,
-  `budget-invariant` (F4.2);
-- more `agents/`: `migration-reviewer` (F3.1), `invariant-debugger` (F4.2).
+- more `skills/`: `add-a-mutation`, `testing-patterns` (the single write point);
+  `aggregate-query`, `budget-invariant` (the budget aggregates);
+- more `agents/`: `invariant-debugger` (invariant 5.5).
 
 Every phase carries the same DoD item: a repeatable pattern it introduced is captured here
 in the same PR.

@@ -13,3 +13,13 @@ export {
 export type { CurrencyCode } from './currency.js';
 export { isCurrencyCode, minorDigits } from './currency.js';
 export type { LanguageTag, UserSettingsDto } from './user-settings.js';
+export type { CalendarDate, CalendarMonth } from './calendar.js';
+export {
+  isTimeZone,
+  calendarDateIn,
+  calendarDateOf,
+  toDbDate,
+  todayIn,
+  parseCalendarDate,
+  monthOf,
+} from './calendar.js';

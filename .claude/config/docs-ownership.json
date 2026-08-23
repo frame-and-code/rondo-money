@@ -1,5 +1,5 @@
 {
-  "note": "One home per fact — the rule is .claude/rules/specs.md. A phrase listed under \"owned\" may be stated in its owner and nowhere else; every other document links to the owner. Enforced by `pnpm lint:docs` (check-docs.mjs), a step of the CI static job. Add an entry when a fact starts appearing in a second file, and pick the owner from the layer that would have to change if the fact changed.",
+  "note": "One home per fact — the rule is .claude/rules/specs.md. A phrase listed under \"owned\" may be stated in its owner and nowhere else; every other document links to the owner. Enforced by `pnpm lint:docs` (check-docs.mjs), a step of the CI static job. Add an entry when a fact starts appearing in a second file, and pick the owner from the layer that would have to change if the fact changed. \"forbidden\" holds the words that may not appear in any tracked file, prose and code alike; this file is the only place they are written. Two paths are outside that scan and are exceptions on purpose: generated output, which is rewritten from its source rather than edited, and pnpm-lock.yaml, whose integrity hashes are not prose.",
   "owned": [
     {
       "phrase": "top-level operations only",
@@ -33,6 +33,16 @@
       "phrase": "half its tests",
       "owner": "docs/ci.md",
       "note": "why apps/api reports two coverage directories"
+    },
+    {
+      "phrase": "reaching every budget the caller owns",
+      "owner": ".claude/rules/security.md",
+      "note": "which operations the budget filter covers, and which take their budget from the payload"
+    },
+    {
+      "phrase": "partial unique index",
+      "owner": "packages/db/README.md",
+      "note": "one active budget per user, and the preview feature the index costs"
     }
   ],
   "banned": [
@@ -77,5 +87,11 @@
       "why": "a dated observation is false on the next release — specs.md"
     }
   ],
-  "githubRelativeLinks": ["../../security/advisories/new"]
+  "githubRelativeLinks": ["../../security/advisories/new"],
+  "forbidden": [
+    {
+      "word": "YNAB",
+      "why": "a competitor's name and trademark. This project is described by what it does, not by which product it resembles (communication.md)"
+    }
+  ]
 }

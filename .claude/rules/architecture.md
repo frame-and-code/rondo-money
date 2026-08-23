@@ -40,8 +40,9 @@ transaction, arrives in F3.2. What follows holds for both, and is not optional:
   [security](security.md);
 - raw SQL only through `ScopedRawRepository`, which supplies `userId` itself; a lint rule
   fails the gate anywhere else;
-- a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts) and gets a
-  cross-tenant test in the same change (see [security](security.md)).
+- a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), both
+  registries where it belongs to a budget, and gets a cross-tenant test in the same change
+  (see [security](security.md)).
 
 ## How an endpoint reaches the contract
 
@@ -111,9 +112,9 @@ created, edited and deleted together.
 written inside the mutator would land **outside** its transaction. Pass the transactional
 client in instead.
 
-The same transaction carries the idempotency key. `IdempotencyKey` (the F3.1 migration)
-is unique per (user, key) and stores the mutation's result, inserted alongside it, so a
-double submit hits the unique index instead of writing twice. It gets that result back,
+The same transaction carries the idempotency key. `IdempotencyKey` is unique per (user, key)
+and stores the mutation's result, inserted alongside it, so a double submit hits the unique
+index instead of writing twice. It gets that result back,
 as if it had just run.
 
 There is no server-side change log and no soft-delete. Deletion is physical, and undo
@@ -129,14 +130,15 @@ server replays history.
   digit count comes from the currency and never from a hardcoded `2`. The convention and its
   helpers belong to [`packages/types`](../../packages/types/README.md); never re-derive them.
   Two consequences the rest of the codebase has to honour: the digit count is **frozen on the
-  budget row** when budgets land rather than recomputed per read, and a runtime upgrade that
+  budget row** rather than recomputed per read, and a runtime upgrade that
   moves the currency data is a migration rather than a bump. An amount written at one scale
   and read at another is money multiplied by a hundred.
 - Dates are calendar dates without time. "Today" and `YYYY-MM` bucketing are computed in
-  one reference timezone (the budget's) through a single shared helper, never a
-  `new Date()` scattered across call sites.
+  one reference timezone, the budget's `timezone` column, through
+  [`calendar.ts`](../../packages/types/src/calendar.ts) and never a `new Date()` scattered
+  across call sites.
 - The schema grows one migration per phase. A category is never deleted, only hidden
-  (`hiddenAt`, from the F3.1 migration). That is a visibility marker, not a soft-delete. The
+  (`hiddenAt`). That is a visibility marker, not a soft-delete. The
   row stays in every aggregate, so its past Activity keeps counting and an expense is
   never orphaned.
 - Naming, set by the first table in F1.3: PascalCase models and camelCase fields in Prisma,

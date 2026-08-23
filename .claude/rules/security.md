@@ -26,20 +26,44 @@ polish:
   writes are stamped on **both** halves: the `where` stops you reading another tenant's row,
   and stamping `data` stops `update({ data: { userId: <someone else> } })` handing your own row
   away. An operation with no scoping rule of its own (`groupBy`, `aggregate`) is **refused
-  unless the caller scoped it explicitly**. The catch-all checks the arguments and throws only
-  when the caller's id is absent, so these operations are usable, just never by accident. The
+  unless the caller scoped it explicitly**. The catch-all reads the operation's `where` and
+  lets it run when that `where` names the caller, and the active budget too on a model a budget
+  owns; anything else throws. So these operations are usable, just never by accident. The
   client is built once at startup, and that is safe, because the extension reads the caller at
   query time, not at construction. Prisma's types still ask for `userId` on writes. The
   extension overwrites whatever is passed, which is what makes passing the wrong one harmless.
   Also not left to memory: the lint rule `@rondo/config/eslint/unscoped-prisma` fails the gate
   on importing `PrismaService` outside `src/prisma`, `src/raw-sql` and the tests.
+- **A model a budget owns is filtered by `budgetId` as well.** The active budget is resolved
+  once per request as the caller's one `active` budget row, and an operation issued with none
+  in the context is refused rather than reaching every budget the caller owns. The filter
+  covers reads and the writes that pick out existing rows: `update`, `updateMany`,
+  `updateManyAndReturn`, `delete` and `deleteMany`, none of which names a budget anywhere, so
+  without it the rows a caller may change are wider than the rows they may see. The writes
+  that create rows do not get it and must not. `create`, `createMany`, `createManyAndReturn`
+  and `upsert` take their budget from the payload, because the request that creates a budget
+  carries the id of a budget that did not exist when the request started, and so does every
+  group and category written beside it. The extension never stamps a budget onto a payload.
+  Asking the context for the budget returns nothing instead of throwing, unlike asking for
+  the caller: a user who is still creating their first budget has none.
+  **A user has at most one active budget and the schema holds that**
+  ([`packages/db`](../../packages/db/README.md)), which is what lets the resolver ask for one
+  row instead of choosing among several. Activating a second one is a failed write, not a
+  state a reader has to handle.
+  Two things the extension does not do, both of which land on the caller. It never checks
+  that a `budgetId`, `accountId` or `categoryId` in a payload belongs to the caller, so the
+  single write point verifies every id it is handed before writing. And it does not reach raw
+  SQL at all: `ScopedRawRepository` supplies `userId` and nothing else, so a hand-written
+  aggregate adds the budget itself.
 - The extension covers **top-level operations only**. A nested write keeps whatever `userId`
   the caller put on the nested rows, so a relation written that way (a transfer's two legs,
   F3.2) is scoped explicitly or split into separate top-level writes inside the transaction.
 - A model that carries user data joins the registry
   ([`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts)) in the same change that
-  creates it, never "in a follow-up". Not left to memory: `apps/api/test/scoped-models.spec.ts`
-  walks the schema and fails the gate when a model with a `userId` column is missing, and
+  creates it, never "in a follow-up", and a model one budget owns joins the second registry in
+  that file beside it. Not left to memory: `apps/api/test/scoped-models.spec.ts`
+  walks the schema and fails the gate when a model carrying `userId` or `budgetId` is missing
+  from the registry that covers it, and
   [`stop-scoping-drift.sh`](../hooks/stop-scoping-drift.sh) reminds before the commit. The test
   is the guarantee; the hook only fires inside a Claude Code session.
 - **The extension does not cover `$queryRaw` / `$executeRaw`.** Raw SQL lives in

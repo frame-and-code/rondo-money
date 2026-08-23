@@ -32,7 +32,8 @@ cat <<'EOF'
 `apps/api/src/prisma/scoped-models.ts` is untouched. If this change added a table that
 carries `userId`, four things belong in the same PR (ADR-005):
 
-1. the model in `SCOPED_MODELS` — otherwise every query against it is unfiltered;
+1. the model in `SCOPED_MODELS`, otherwise every query against it is unfiltered, and in
+   `BUDGET_SCOPED_MODELS` too when one budget owns it;
 2. its migration, generated locally (`pnpm --filter @rondo/db exec prisma migrate dev`),
    then `pnpm --filter @rondo/db build` so the client types include the model;
 3. a cross-tenant test ("user B sees nothing of user A's") — required by the DoD of every

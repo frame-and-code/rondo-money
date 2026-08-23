@@ -44,7 +44,8 @@ genuinely api-only still belongs in `apps/api`, the way
   tables and columns via `@@map` / `@map`, ids as `String @id @default(uuid(7)) @db.Uuid`.
 - A user-owned model carries `userId` and **joins
   [`scoped-models.ts`](../../../apps/api/src/prisma/scoped-models.ts) in the same change**
-  (ADR-005). `apps/api/test/scoped-models.spec.ts` fails the gate if it does not.
+  (ADR-005). A model one budget owns carries `budgetId` and joins `BUDGET_SCOPED_MODELS` in
+  the same file. `apps/api/test/scoped-models.spec.ts` fails the gate on either omission.
 - A new NOT NULL column on an existing table needs a default, or the migration will not apply.
 
 ```bash
@@ -79,6 +80,14 @@ _cannot_ reach another tenant's rows. Two things it does not cover, both load-be
   a lint rule fails the gate anywhere else;
 - **nested writes**: only top-level operations are rewritten, so a relation written inside
   another model's `data` keeps whatever `userId` the caller put there.
+
+A model a budget owns gets a second filter, taken from the active budget an interceptor puts
+in the request context. It covers reads and the writes that pick out existing rows; a write
+that creates them carries its own budget in the payload instead. Which operations fall on
+which side, and why, is in [security](../../rules/security.md). An operation issued when the
+context carries no active budget is **refused**, so an endpoint reached during onboarding, or
+a unit test calling the scoped client by hand, sets the budget itself. The pattern is in
+[`budget-scoping.integration.spec.ts`](../../../apps/api/test/budget-scoping.integration.spec.ts).
 
 Prisma's types still ask for `userId` on a write; pass the verified caller's and let the
 extension overwrite it. That the wrong value is harmless is the property being relied on, not

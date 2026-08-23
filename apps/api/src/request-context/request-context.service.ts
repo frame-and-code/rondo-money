@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 
 interface RequestScope {
   userId?: string;
+  budgetId?: string;
 }
 
 @Injectable()
@@ -43,5 +44,28 @@ export class RequestContextService {
     }
 
     return userId;
+  }
+
+  setBudgetId(budgetId: string): void {
+    const scope = this.storage.getStore();
+    if (!scope) {
+      throw new Error(
+        'No request context: RequestContextMiddleware is not mounted, so the active ' +
+          'budget cannot be recorded',
+      );
+    }
+
+    if (scope.budgetId !== undefined && scope.budgetId !== budgetId) {
+      throw new Error(
+        'The request context already carries a different budgetId: the active budget is ' +
+          'resolved once per request',
+      );
+    }
+
+    scope.budgetId = budgetId;
+  }
+
+  readBudgetId(): string | undefined {
+    return this.storage.getStore()?.budgetId;
   }
 }

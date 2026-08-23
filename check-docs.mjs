@@ -111,6 +111,29 @@ function checkLinks(corpus) {
   }
 }
 
+const SKIP_SCAN = /(^|\/)pnpm-lock\.yaml$/;
+
+function checkForbidden(files, forbidden) {
+  const patterns = forbidden.map(({ word, why }) => ({
+    re: new RegExp(`\\b${escape(word)}\\b`, 'gi'),
+    why,
+  }));
+  for (const file of files) {
+    if (file === MANIFEST || SKIP_SCAN.test(file)) continue;
+    let raw;
+    try {
+      raw = readFileSync(path.join(ROOT, file), 'utf8');
+    } catch {
+      continue;
+    }
+    for (const { re, why } of patterns) {
+      for (const match of raw.matchAll(re)) {
+        fail(file, lineOf(raw, match.index), `"${match[0]}" is never written here: ${why}`);
+      }
+    }
+  }
+}
+
 function checkDriftProse(corpus, banned) {
   const patterns = banned.map(({ pattern, why }) => ({ re: new RegExp(pattern, 'gi'), why }));
   for (const [file, { narrative }] of corpus) {
@@ -129,6 +152,7 @@ const corpus = load(
 checkOwnership(corpus, manifest.owned);
 checkLinks(corpus);
 checkDriftProse(corpus, manifest.banned);
+checkForbidden(tracked(), manifest.forbidden);
 
 if (failures.length === 0) {
   console.log(`check-docs: ${corpus.size} files, no drift.`);

@@ -13,8 +13,8 @@ hooks and permissions.
 
 ## Project
 
-Rondo Money is a zero-based budgeting app (YNAB-style). Monorepo on **Turborepo + pnpm**,
-public under AGPL-3.0-only.
+Rondo Money is a zero-based budgeting app: every unit of money you hold is assigned a job
+before it is spent. Monorepo on **Turborepo + pnpm**, public under AGPL-3.0-only.
 
 The canonical documents live in Notion. The **PRD (RU)** is the source of truth, PRD (EN)
 mirrors it, the **Development Plan v1 (High-Level)** owns the phases and their DoD, and the
@@ -29,9 +29,9 @@ is a stack in the browser, and the single write point stays for atomicity).
 - `apps/web` is Next.js (App Router). Skeleton F0.5.
 - `apps/api` is NestJS (REST). Skeleton F0.4.
 - `packages/db` holds the Prisma schema and migrations (F0.4); it grows incrementally per phase.
-- `packages/types` holds the shared DTOs, with money as `bigint` in minor units and the
-  currency's digit count. It emits to `dist`, so `apps/api` can call its functions and not
-  merely name their types.
+- `packages/types` holds the shared DTOs, money as `bigint` in minor units with the
+  currency's digit count, and calendar dates. It emits to `dist`, so `apps/api` can call its
+  functions and not merely name their types.
 - `packages/api-client` is the typed API client generated from the NestJS OpenAPI spec
   (F1.4, ADR-002); `apps/web` consumes it instead of hand-written fetch.
 - `packages/config` holds the shared configs: eslint / tsconfig / prettier (F0.2).
