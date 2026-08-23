@@ -1,13 +1,19 @@
 export const ru = {
   'common.themeToggle.trigger': 'Переключить тему',
-  'common.themeToggle.light': 'Светлая',
-  'common.themeToggle.dark': 'Тёмная',
-  'common.themeToggle.system': 'Системная',
   'common.localeSwitcher.ariaLabel': 'Сменить язык',
+  'common.loading': 'Загрузка…',
 
-  'home.subtitle': 'Каркас приложения · Фаза 0 (F0.6).',
+  'nav.sections': 'Разделы',
+  'nav.toggleSidebar': 'Свернуть меню',
+  'nav.expandSidebar': 'Развернуть меню',
+  'nav.categories': 'Категории',
+  'nav.accounts': 'Счета',
+  'nav.netWorth': 'Капитал',
+  'nav.settings': 'Настройки',
+
+  'home.subtitle': 'Примитивы и проверка API, вне оболочки приложения.',
   'home.demoTitle': 'Демо компонентов',
-  'home.demoDescription': 'shadcn/ui + тема Ocean Breeze',
+  'home.demoDescription': 'shadcn/ui, стоковая тема',
   'home.buttons.default': 'По умолчанию',
   'home.buttons.secondary': 'Вторичная',
   'home.buttons.outline': 'Контур',
@@ -21,8 +27,14 @@ export const ru = {
   'home.callerSignedOut': 'вы не вошли',
   'home.callerUnavailable': 'API не ответил',
 
-  'budget.title': 'Бюджет',
-  'budget.comingSoon': 'Экран бюджета появится в Фазе 3.',
+  'categories.slotTitle': 'Слот раздела «Категории»',
+  'categories.slotBody': 'Сюда встанет таблица бюджета.',
+  'accounts.slotTitle': 'Слот раздела «Счета»',
+  'accounts.slotBody': 'Сюда встанет список счетов с балансами.',
+  'netWorth.slotTitle': 'Слот раздела «Капитал»',
+  'netWorth.slotBody': 'Сюда встанет график капитала.',
+  'settings.slotTitle': 'Слот раздела «Настройки»',
+  'settings.slotBody': 'Сюда встанут валюта, таймзона и язык бюджета.',
 } as const;
 
 export type MessageKey = keyof typeof ru;

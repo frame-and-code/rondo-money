@@ -2,14 +2,20 @@ import type { MessageKey } from './ru';
 
 export const pl: Record<MessageKey, string> = {
   'common.themeToggle.trigger': 'Przełącz motyw',
-  'common.themeToggle.light': 'Jasny',
-  'common.themeToggle.dark': 'Ciemny',
-  'common.themeToggle.system': 'Systemowy',
   'common.localeSwitcher.ariaLabel': 'Zmień język',
+  'common.loading': 'Ładowanie…',
 
-  'home.subtitle': 'Szkielet aplikacji · Faza 0 (F0.6).',
+  'nav.sections': 'Sekcje',
+  'nav.toggleSidebar': 'Zwiń menu',
+  'nav.expandSidebar': 'Rozwiń menu',
+  'nav.categories': 'Kategorie',
+  'nav.accounts': 'Konta',
+  'nav.netWorth': 'Kapitał',
+  'nav.settings': 'Ustawienia',
+
+  'home.subtitle': 'Prymitywy i sprawdzenie API, poza powłoką aplikacji.',
   'home.demoTitle': 'Demo komponentów',
-  'home.demoDescription': 'shadcn/ui + motyw Ocean Breeze',
+  'home.demoDescription': 'shadcn/ui, motyw domyślny',
   'home.buttons.default': 'Domyślny',
   'home.buttons.secondary': 'Drugorzędny',
   'home.buttons.outline': 'Kontur',
@@ -23,6 +29,12 @@ export const pl: Record<MessageKey, string> = {
   'home.callerSignedOut': 'nie zalogowano',
   'home.callerUnavailable': 'API nie odpowiedziało',
 
-  'budget.title': 'Budżet',
-  'budget.comingSoon': 'Ekran budżetu pojawi się w Fazie 3.',
+  'categories.slotTitle': 'Slot sekcji „Kategorie”',
+  'categories.slotBody': 'Tu pojawi się tabela budżetu.',
+  'accounts.slotTitle': 'Slot sekcji „Konta”',
+  'accounts.slotBody': 'Tu pojawi się lista kont z saldami.',
+  'netWorth.slotTitle': 'Slot sekcji „Kapitał”',
+  'netWorth.slotBody': 'Tu pojawi się wykres kapitału.',
+  'settings.slotTitle': 'Slot sekcji „Ustawienia”',
+  'settings.slotBody': 'Tu pojawią się waluta, strefa czasowa i język budżetu.',
 };

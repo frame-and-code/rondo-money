@@ -16,11 +16,11 @@
     "test": "echo \"@rondo/ui: no tests yet — components are covered by @rondo/web unit tests (see docs/testing.md)\""
   },
   "dependencies": {
+    "@base-ui/react": "^1.7.0",
+    "@tabler/icons-react": "^3.46.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.30.0",
     "next-themes": "^0.4.6",
-    "radix-ui": "^1.6.7",
     "tailwind-merge": "^3.6.0"
   },
   "peerDependencies": {

@@ -14,6 +14,13 @@ test('an anonymous visit to a private route lands on the sign-in page', async ({
   await expect(page.locator('input[name=identifier]')).toBeVisible();
 });
 
+test('an anonymous visit to any section lands on the sign-in page', async ({ page }) => {
+  for (const route of ['/categories', '/accounts', '/net-worth', '/settings']) {
+    await page.goto(route);
+    await page.waitForURL('**/sign-in**');
+  }
+});
+
 test('signing in shows the app shell; signing out returns to sign-in', async ({ page }) => {
   await setupClerkTestingToken({ page });
 
