@@ -46,6 +46,20 @@ describe('budget scoping', () => {
       ).rejects.toThrow(/no active budget/);
     });
 
+    it('refuses a write that selects existing rows, since it names no budget itself', async () => {
+      await expect(
+        asUser(() => scoped.category.updateMany({ data: { name: 'x' } })),
+      ).rejects.toThrow(/no active budget/);
+
+      await expect(asUser(() => scoped.transaction.deleteMany({}))).rejects.toThrow(
+        /no active budget/,
+      );
+
+      await expect(asUser(() => scoped.account.delete({ where: { id: 'a1' } }))).rejects.toThrow(
+        /no active budget/,
+      );
+    });
+
     it('leaves the user-level models alone: they belong to no budget', async () => {
       await expect(asUser(() => scoped.budget.findMany())).rejects.toThrow(
         /reach database server|ECONNREFUSED/i,

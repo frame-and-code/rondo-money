@@ -81,12 +81,12 @@ _cannot_ reach another tenant's rows. Two things it does not cover, both load-be
 - **nested writes**: only top-level operations are rewritten, so a relation written inside
   another model's `data` keeps whatever `userId` the caller put there.
 
-A model a budget owns gets a second filter. Its reads carry `budgetId` as well, taken from
-the active budget an interceptor puts in the request context, and its writes do not: those
-take the budget from the payload. A read issued when the context carries no active budget is
-**refused**, for the reason [security](../../rules/security.md) gives, so an endpoint reached
-during onboarding, or a unit test calling the scoped client by hand, sets the budget itself.
-The pattern is in
+A model a budget owns gets a second filter, taken from the active budget an interceptor puts
+in the request context. It covers reads and the writes that pick out existing rows; a write
+that creates them carries its own budget in the payload instead. Which operations fall on
+which side, and why, is in [security](../../rules/security.md). An operation issued when the
+context carries no active budget is **refused**, so an endpoint reached during onboarding, or
+a unit test calling the scoped client by hand, sets the budget itself. The pattern is in
 [`budget-scoping.integration.spec.ts`](../../../apps/api/test/budget-scoping.integration.spec.ts).
 
 Prisma's types still ask for `userId` on a write; pass the verified caller's and let the

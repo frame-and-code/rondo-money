@@ -143,6 +143,30 @@ describe('budget scoping (integration)', () => {
       expect(response.body).toEqual({ names: ['Food'] });
     });
 
+    it('confines a bulk write to the active budget, leaving the other one alone', async () => {
+      const renamed = await inRequest(WITH_ACTIVE, active.id, () =>
+        scoped.category.updateMany({ data: { name: 'renamed' } }),
+      );
+
+      const names = await prisma.category
+        .findMany({ where: { userId: WITH_ACTIVE }, orderBy: { name: 'asc' } })
+        .then((rows) => rows.map((row) => row.name));
+
+      expect(renamed).toEqual({ count: 1 });
+      expect(names).toEqual(['Old food', 'renamed']);
+    });
+
+    it('confines a bulk delete the same way', async () => {
+      const removed = await inRequest(WITH_ACTIVE, active.id, () => scoped.category.deleteMany({}));
+
+      const left = await prisma.category
+        .findMany({ where: { userId: WITH_ACTIVE } })
+        .then((rows) => rows.map((row) => row.name));
+
+      expect(removed).toEqual({ count: 1 });
+      expect(left).toEqual(['Old food']);
+    });
+
     it('takes the budget of a write from the payload, not from the context', async () => {
       const group = await prisma.categoryGroup.create({
         data: { userId: WITH_ACTIVE, budgetId: archived.id, name: 'Old', sortOrder: 1 },

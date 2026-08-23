@@ -96,11 +96,10 @@ describe('every operation the extension claims to handle', () => {
     'count',
   ];
 
-  const SELECTIVE_WRITES = [
+  const BUDGET_CONFINED_WRITES = [
     'update',
     'updateMany',
     'updateManyAndReturn',
-    'upsert',
     'delete',
     'deleteMany',
   ];
@@ -109,8 +108,15 @@ describe('every operation the extension claims to handle', () => {
     expect(reaching(operation).where).toMatchObject({ userId: USER, budgetId: BUDGET });
   });
 
-  it.each(SELECTIVE_WRITES)('filters %s by the caller, and not by the budget', (operation) => {
-    const { where } = reaching(operation);
+  it.each(BUDGET_CONFINED_WRITES)(
+    'confines %s to the caller and to the active budget, since it names no budget itself',
+    (operation) => {
+      expect(reaching(operation).where).toMatchObject({ userId: USER, budgetId: BUDGET });
+    },
+  );
+
+  it('leaves an upsert to the caller alone, because its create half names a budget', () => {
+    const { where } = reaching('upsert');
 
     expect(where).toMatchObject({ userId: USER });
     expect(where).not.toHaveProperty('budgetId');

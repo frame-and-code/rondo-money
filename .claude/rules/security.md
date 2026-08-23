@@ -34,13 +34,17 @@ polish:
   extension overwrites whatever is passed, which is what makes passing the wrong one harmless.
   Also not left to memory: the lint rule `@rondo/config/eslint/unscoped-prisma` fails the gate
   on importing `PrismaService` outside `src/prisma`, `src/raw-sql` and the tests.
-- **A model a budget owns is filtered by `budgetId` as well, on reads only.** The active
-  budget is resolved once per request as the caller's one `active` budget row, and a **read**
-  issued with none in the context is refused rather than answered across every budget the
-  caller owns. A write is not. It takes its budget from the payload and the extension never
-  stamps it, because the request that creates a budget carries the id of a budget that did not exist
-  when the request started, and so does every group and category written beside it. Asking
-  the context for the budget therefore returns nothing instead of throwing, unlike asking for
+- **A model a budget owns is filtered by `budgetId` as well.** The active budget is resolved
+  once per request as the caller's one `active` budget row, and an operation issued with none
+  in the context is refused rather than reaching every budget the caller owns. The filter
+  covers reads and the writes that pick out existing rows: `update`, `updateMany`,
+  `updateManyAndReturn`, `delete` and `deleteMany`, none of which names a budget anywhere, so
+  without it the rows a caller may change are wider than the rows they may see. The writes
+  that create rows do not get it and must not. `create`, `createMany`, `createManyAndReturn`
+  and `upsert` take their budget from the payload, because the request that creates a budget
+  carries the id of a budget that did not exist when the request started, and so does every
+  group and category written beside it. The extension never stamps a budget onto a payload.
+  Asking the context for the budget returns nothing instead of throwing, unlike asking for
   the caller: a user who is still creating their first budget has none.
   **A user has at most one active budget and the schema holds that**
   ([`packages/db`](../../packages/db/README.md)), which is what lets the resolver ask for one

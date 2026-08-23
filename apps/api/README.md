@@ -167,8 +167,9 @@ is ordinary code here, and code fails silently. Four mechanisms carry it, in ord
    it explicitly**; see [`user-scoping.extension.ts`](src/prisma/user-scoping.extension.ts).
    `PrismaService` itself is the unscoped client underneath; where it may be imported is a lint
    rule, and the list lives in [security](../../.claude/rules/security.md).
-   - A model a budget owns is filtered by `budgetId` too, on reads only. What that covers, and
-     why a write takes its budget from the payload instead, is in
+   - A model a budget owns is filtered by `budgetId` too, on reads and on the writes that pick
+     out existing rows. Which operations those are, and why the ones that create rows take
+     their budget from the payload instead, is in
      [security](../../.claude/rules/security.md).
    - Note on types: Prisma still requires `userId` in a write payload, so a caller names an
      owner. The extension overwrites it with the verified caller, which is what makes naming

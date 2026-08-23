@@ -35,9 +35,9 @@
       "note": "why apps/api reports two coverage directories"
     },
     {
-      "phrase": "answered across every budget",
+      "phrase": "reaching every budget the caller owns",
       "owner": ".claude/rules/security.md",
-      "note": "budget scoping filters reads only, and refuses a read with no active budget"
+      "note": "which operations the budget filter covers, and which take their budget from the payload"
     },
     {
       "phrase": "partial unique index",
