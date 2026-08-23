@@ -7,12 +7,14 @@ import { RequestContextService } from '@/request-context/request-context.service
 const USER = 'user_a';
 const BUDGET = 'budget_a';
 
+const noActiveBudget = (): Promise<undefined> => Promise.resolve(undefined);
+
 describe('budget scoping', () => {
   const context = new RequestContextService();
   const client = new PrismaClient({
     adapter: new PrismaPg({ connectionString: 'postgresql://unused:unused@127.0.0.1:1/unused' }),
   });
-  const scoped = withUserScoping(client, context);
+  const scoped = withUserScoping(client, context, noActiveBudget);
 
   afterAll(async () => {
     await client.$disconnect();
@@ -31,6 +33,12 @@ describe('budget scoping', () => {
       return await query();
     });
 
+  const mutatingAsUser = <T>(query: () => Promise<T>): Promise<T> =>
+    asUser(() => context.runInMutation(query));
+
+  const mutatingAsUserOfBudget = <T>(query: () => Promise<T>): Promise<T> =>
+    asUserOfBudget(() => context.runInMutation(query));
+
   describe('with no active budget in the request', () => {
     it('refuses to read a budget-scoped model, naming it', async () => {
       await expect(asUser(() => scoped.category.findMany())).rejects.toThrow(
@@ -48,16 +56,16 @@ describe('budget scoping', () => {
 
     it('refuses a write that selects existing rows, since it names no budget itself', async () => {
       await expect(
-        asUser(() => scoped.category.updateMany({ data: { name: 'x' } })),
+        mutatingAsUser(() => scoped.category.updateMany({ data: { name: 'x' } })),
       ).rejects.toThrow(/no active budget/);
 
-      await expect(asUser(() => scoped.transaction.deleteMany({}))).rejects.toThrow(
+      await expect(mutatingAsUser(() => scoped.transaction.deleteMany({}))).rejects.toThrow(
         /no active budget/,
       );
 
-      await expect(asUser(() => scoped.account.delete({ where: { id: 'a1' } }))).rejects.toThrow(
-        /no active budget/,
-      );
+      await expect(
+        mutatingAsUser(() => scoped.account.delete({ where: { id: 'a1' } })),
+      ).rejects.toThrow(/no active budget/);
     });
 
     it('leaves the user-level models alone: they belong to no budget', async () => {
@@ -96,23 +104,25 @@ describe('budget scoping', () => {
       const reachesTheDriver = /reach database server|ECONNREFUSED/i;
 
       await expect(
-        asUserOfBudget(() => scoped.category.update({ where: { id: 'c1' }, data: { name: 'x' } })),
+        mutatingAsUserOfBudget(() =>
+          scoped.category.update({ where: { id: 'c1' }, data: { name: 'x' } }),
+        ),
       ).rejects.toThrow(reachesTheDriver);
 
       await expect(
-        asUserOfBudget(() => scoped.category.delete({ where: { id: 'c1' } })),
+        mutatingAsUserOfBudget(() => scoped.category.delete({ where: { id: 'c1' } })),
       ).rejects.toThrow(reachesTheDriver);
 
       await expect(
-        asUserOfBudget(() => scoped.transaction.updateMany({ data: { payee: 'x' } })),
+        mutatingAsUserOfBudget(() => scoped.transaction.updateMany({ data: { payee: 'x' } })),
       ).rejects.toThrow(reachesTheDriver);
 
-      await expect(asUserOfBudget(() => scoped.account.deleteMany({}))).rejects.toThrow(
+      await expect(mutatingAsUserOfBudget(() => scoped.account.deleteMany({}))).rejects.toThrow(
         reachesTheDriver,
       );
 
       await expect(
-        asUserOfBudget(() =>
+        mutatingAsUserOfBudget(() =>
           scoped.categoryGroup.upsert({
             where: { id: 'g1' },
             create: { budgetId: BUDGET, name: 'Living', sortOrder: 0, userId: USER },

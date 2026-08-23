@@ -45,9 +45,11 @@ turn. They stay short deliberately. Detail belongs in `docs/`, and the rule link
 
 ## Skills (`skills/`)
 
-| Skill                                                         | Use when                                                                                             |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that **reads** a domain table (the F1.6 `user-settings` shape); writes are F3.2 |
+| Skill                                                         | Use when                                                                                            |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that **reads** a domain table (the `user-settings` shape)                      |
+| [`add-a-mutation/`](skills/add-a-mutation/SKILL.md)           | writing a domain mutation: one transaction, one idempotency key, the tests that are not optional    |
+| [`testing-patterns/`](skills/testing-patterns/SKILL.md)       | writing a test in this repository: the harnesses, the fixtures, the traps that make a green run lie |
 
 A skill is grounded in code that exists. Every step names a real file to copy from, so it
 cannot drift into describing an API nobody wrote.
@@ -162,8 +164,7 @@ a link list nobody can justify becomes a link list nobody opens.
 Deliberate, not missing. Each arrives with the phase that gives it something true to
 describe. A skill grounded in code that does not exist yet would be fiction:
 
-- more `skills/`: `add-a-mutation`, `testing-patterns` (the single write point);
-  `aggregate-query`, `budget-invariant` (the budget aggregates);
+- more `skills/`: `aggregate-query`, `budget-invariant` (the budget aggregates);
 - more `agents/`: `invariant-debugger` (invariant 5.5).
 
 Every phase carries the same DoD item: a repeatable pattern it introduced is captured here

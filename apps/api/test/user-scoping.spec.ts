@@ -4,12 +4,14 @@ import { PrismaClient } from '@rondo/db';
 import { withUserScoping } from '@/prisma/user-scoping.extension';
 import { RequestContextService } from '@/request-context/request-context.service';
 
+const noActiveBudget = (): Promise<undefined> => Promise.resolve(undefined);
+
 describe('user-scoping extension', () => {
   const context = new RequestContextService();
   const client = new PrismaClient({
     adapter: new PrismaPg({ connectionString: 'postgresql://unused:unused@127.0.0.1:1/unused' }),
   });
-  const scoped = withUserScoping(client, context);
+  const scoped = withUserScoping(client, context, noActiveBudget);
 
   afterAll(async () => {
     await client.$disconnect();

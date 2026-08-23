@@ -20,6 +20,17 @@ polish:
   the plan's wording). Everything downstream reads the caller from there, so no call site can
   forget to pass it. Asking for a `userId` that is not there **throws**; it never returns
   `undefined`.
+- **Inside a mutation, the client the mutation hands out is the only one that may be used.**
+  Domain code holds `SCOPED_PRISMA`, which refuses **any** operation on a scoped model while a
+  mutation is open: issued on the pooled connection, a write would commit on its own and
+  survive the rollback, and a read would answer from before the transaction started. The
+  refusal is by operation rather than by a list of the writes, so an operation a later Prisma
+  release adds is refused rather than missed. `MutationService` opens its transaction from
+  `MUTATOR_PRISMA`, the same scoping without that refusal, so the client it hands to a
+  mutation's work accepts what the boundary refuses. A spec that exercises scoping on a write
+  holds the lower client for the same reason. Not left to memory either: the lint rule
+  `@rondo/config/eslint/mutator-prisma` fails the gate on importing `MUTATOR_PRISMA` outside
+  `src/prisma`, `src/mutations` and the tests.
 - Domain code injects the auto-scoped client
   ([`SCOPED_PRISMA`](../../apps/api/src/prisma/scoped-prisma.ts)), never `PrismaService`,
   which is the unscoped client underneath. Reads of a registered model are filtered, and
@@ -30,18 +41,24 @@ polish:
   lets it run when that `where` names the caller, and the active budget too on a model a budget
   owns; anything else throws. So these operations are usable, just never by accident. The
   client is built once at startup, and that is safe, because the extension reads the caller at
-  query time, not at construction. Prisma's types still ask for `userId` on writes. The
+  query time, not at construction. Prisma's unchecked write input still asks for `userId`. The
   extension overwrites whatever is passed, which is what makes passing the wrong one harmless.
+  Its checked input is the one to stay away from: on a model whose budget relation carries
+  `userId`, that input drops the field, so a payload naming parents with `connect` and a
+  stamped `userId` matches neither form and Prisma refuses it at runtime. Pass the ids flat.
   Also not left to memory: the lint rule `@rondo/config/eslint/unscoped-prisma` fails the gate
   on importing `PrismaService` outside `src/prisma`, `src/raw-sql` and the tests.
-- **A model a budget owns is filtered by `budgetId` as well.** The active budget is resolved
-  once per request as the caller's one `active` budget row, and an operation issued with none
-  in the context is refused rather than reaching every budget the caller owns. The filter
+- **A model a budget owns is filtered by `budgetId` as well.** The active budget is the
+  caller's one `active` budget row, looked up by the extension itself on the first query that
+  needs it and remembered for the rest of the request, so a request that reads nothing a budget
+  owns makes no such query at all. An operation issued when the caller has none is refused
+  rather than reaching every budget the caller owns. The filter
   covers reads and the writes that pick out existing rows: `update`, `updateMany`,
-  `updateManyAndReturn`, `delete` and `deleteMany`, none of which names a budget anywhere, so
-  without it the rows a caller may change are wider than the rows they may see. The writes
-  that create rows do not get it and must not. `create`, `createMany`, `createManyAndReturn`
-  and `upsert` take their budget from the payload, because the request that creates a budget
+  `updateManyAndReturn`, `delete`, `deleteMany` and the `where` half of an `upsert`, none of
+  which names a budget anywhere, so without it the rows a caller may change are wider than the
+  rows they may see. The writes that create rows do not get it and must not. `create`,
+  `createMany`, `createManyAndReturn` and an `upsert`'s `create` half take their budget from
+  the payload, because the request that creates a budget
   carries the id of a budget that did not exist when the request started, and so does every
   group and category written beside it. The extension never stamps a budget onto a payload.
   Asking the context for the budget returns nothing instead of throwing, unlike asking for
@@ -50,14 +67,21 @@ polish:
   ([`packages/db`](../../packages/db/README.md)), which is what lets the resolver ask for one
   row instead of choosing among several. Activating a second one is a failed write, not a
   state a reader has to handle.
-  Two things the extension does not do, both of which land on the caller. It never checks
-  that a `budgetId`, `accountId` or `categoryId` in a payload belongs to the caller, so the
-  single write point verifies every id it is handed before writing. And it does not reach raw
-  SQL at all: `ScopedRawRepository` supplies `userId` and nothing else, so a hand-written
-  aggregate adds the budget itself.
+  Two things the extension does not do. It never checks that a `budgetId`, `accountId` or
+  `categoryId` in a payload belongs to the caller, and what closes that is the schema rather
+  than the caller: every child names its parent through a composite foreign key, so a row
+  cannot reach a parent from another budget or another owner
+  ([`packages/db`](../../packages/db/README.md)). And it does not reach raw SQL at all:
+  `ScopedRawRepository` supplies `userId` and nothing else, so a hand-written aggregate adds
+  the budget itself. Its `execute` is the raw write path: it refuses outside a mutation and takes that
+  mutation's client as a required argument. `query` reads, and inside a mutation it refuses
+  the pooled client the same way. What neither can catch is a write spelled as a `$queryRaw`,
+  since Postgres runs one happily, so that one rests on review.
 - The extension covers **top-level operations only**. A nested write keeps whatever `userId`
-  the caller put on the nested rows, so a relation written that way (a transfer's two legs,
-  F3.2) is scoped explicitly or split into separate top-level writes inside the transaction.
+  the caller put on the nested rows, so a relation written that way (a transfer's two legs) is
+  scoped explicitly or split into separate top-level writes inside the transaction. The
+  composite foreign keys refuse the row that names another owner, which makes this a failed
+  write rather than a leak, but the payload is still the caller's to get right.
 - A model that carries user data joins the registry
   ([`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts)) in the same change that
   creates it, never "in a follow-up", and a model one budget owns joins the second registry in

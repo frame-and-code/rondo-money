@@ -5,11 +5,12 @@ F1.2, scoping every query for domain data to the caller since F1.3. The one deli
 exception is the healthcheck's `SELECT 1`, which touches no tenant data and is named as such
 below.
 
-F1.6 adds the first endpoint that touches a table, [`src/user-settings`](src/user-settings),
-the read path in full: controller → service → `SCOPED_PRISMA`. The single mutation point, where
-one user operation and its idempotency key are written in one transaction, arrives in F3.2. The
-machinery both are built on is already here: the request context, the auto-scoped Prisma client
-and the raw-SQL repository below, plus the contract they are published through (F1.4).
+[`src/user-settings`](src/user-settings) is the read path in full: controller → service →
+`SCOPED_PRISMA`. [`src/mutations`](src/mutations) is the write path, the single point where one
+user operation and its idempotency key are written in one transaction. Both stand on the
+request context, the auto-scoped Prisma client and the raw-SQL repository below. The read path
+is published through the contract; the write path has no endpoint yet, so nothing of it appears
+in `openapi.json`.
 
 ## Endpoints
 
@@ -145,7 +146,7 @@ that warning worth reading.
 ## Tenant isolation
 
 There is no row-level security in Postgres (ADR-005), so everything RLS would have guaranteed
-is ordinary code here, and code fails silently. Four mechanisms carry it, in order:
+is ordinary code here, and code fails silently. The mechanisms that carry it, in order:
 
 1. **The request context.** [`RequestContextService`](src/request-context/request-context.service.ts)
    holds the caller's `userId` in an `AsyncLocalStorage` for the life of one request. A
@@ -153,13 +154,20 @@ is ordinary code here, and code fails silently. Four mechanisms carry it, in ord
    token. Nothing reads the identity from a parameter, so no call site can forget to pass it.
    It is mounted on `'{*splat}'`. Express 5 parses routes with path-to-regexp v8, where a bare
    `*` throws and `'*splat'` misses the root, so the braces are what cover `/`.
-   The same store carries the caller's active `budgetId`.
-   [`ActiveBudgetInterceptor`](src/prisma/active-budget.interceptor.ts) resolves it once per
-   request and puts it there before any handler runs. Reading it returns `undefined` instead of
-   throwing, because a user creating their first budget has none yet, and the request that
-   creates it must still work. It asks for a single unique row rather than choosing among
-   several. The schema is what makes that safe; see
-   [`packages/db`](../../packages/db/README.md).
+   The same store carries the caller's active `budgetId`, and it is
+   [`activeBudgetResolver`](src/prisma/active-budget.resolver.ts) that fills it in, on the
+   first query that needs a budget rather than on every request. A request that reads nothing a
+   budget owns therefore issues no budget query, which is why `GET /me` answers without
+   touching the database. What is memoised is the promise rather than its value, so two reads
+   running side by side ask once. And what is memoised is the **answer**, never the absence: a
+   caller who has no budget yet is looked up again by the next query that needs one, which is
+   what lets a request create its first budget and then read something that budget owns. Inside
+   a mutation the lookup runs on that mutation's own transaction, so it sees what the
+   transaction has written, and a budget it resolved there is forgotten again if the
+   transaction rolls back. Reading it returns `undefined` instead of throwing, because a user
+   creating their first budget has none yet, and the request that creates it must still work. It asks for a
+   single unique row rather than choosing among several. The schema is what makes that safe;
+   see [`packages/db`](../../packages/db/README.md).
 2. **The auto-scoped client.** Inject `SCOPED_PRISMA`
    ([`scoped-prisma.ts`](src/prisma/scoped-prisma.ts)), not `PrismaService`. The extension
    filters reads of a registered model by the caller and stamps writes with the same id, and an
@@ -171,10 +179,12 @@ is ordinary code here, and code fails silently. Four mechanisms carry it, in ord
      out existing rows. Which operations those are, and why the ones that create rows take
      their budget from the payload instead, is in
      [security](../../.claude/rules/security.md).
-   - Note on types: Prisma still requires `userId` in a write payload, so a caller names an
-     owner. The extension overwrites it with the verified caller, which is what makes naming
-     the wrong one harmless. On a read a caller passes no `userId` at all; `SCOPED_PRISMA`
-     adds the filter. That is a property of _this_ client, not permission to use another one.
+   - Note on types: a write payload names an owner, and the extension overwrites it with the
+     verified caller, which is what makes naming the wrong one harmless. Which of Prisma's two
+     write inputs still asks for `userId`, and why the other one must be left alone, is in
+     [security](../../.claude/rules/security.md). On a read a caller passes no `userId` at all;
+     `SCOPED_PRISMA` adds the filter. That is a property of _this_ client, not permission to
+     use another one.
    - Its boundary is in [security](../../.claude/rules/security.md) too: what the extension
      does and does not cover, and what a nested write has to do about it. The domain models
      carry relations, so a nested write is reachable now. It keeps whatever owner the caller
@@ -194,6 +204,20 @@ is ordinary code here, and code fails silently. Four mechanisms carry it, in ord
    [`DatabaseProbe`](src/raw-sql/database-probe.ts) holds the one deliberately unscoped query,
    the healthcheck's `SELECT 1`. Everywhere else the lint rule
    (`@rondo/config/eslint/prisma-raw`) fails the gate, and there are no inline exemptions.
+
+5. **The single write point.** A write to a guarded model is refused unless it is inside
+   [`MutationService.run`](src/mutations/mutation.service.ts), which puts the whole user
+   operation and its idempotency key in one transaction. The marker lives in the request
+   context and the extension checks it, so the rule holds against a caller who never read it.
+   Being inside the call is not enough: the work also has to use the client the mutation handed
+   out. `SCOPED_PRISMA` is what domain code injects and `MUTATOR_PRISMA` is what the mutation
+   opens its transaction from; which operations the first one refuses, and the lint rule that
+   keeps the second out of domain code, are in
+   [security](../../.claude/rules/security.md).
+   `MUTATION_GUARDED_MODELS` in [`scoped-models.ts`](src/prisma/scoped-models.ts) says which
+   models it covers, and the exemption list beside it says which are written without one, so a
+   new model has to be classified before its tests pass. What the raw path may do inside a
+   mutation, and what it refuses, is in [security](../../.claude/rules/security.md).
 
 What none of this can prove is that a raw statement actually _uses_ the scope it was given;
 that is what the cross-tenant tests are for, on every phase that adds an aggregate.

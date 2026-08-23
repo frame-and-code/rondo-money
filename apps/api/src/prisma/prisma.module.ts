@@ -1,9 +1,17 @@
 import { Global, Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
 
-import { ActiveBudgetInterceptor } from '@/prisma/active-budget.interceptor';
+import {
+  ACTIVE_BUDGET_RESOLVER,
+  activeBudgetResolver,
+  type ActiveBudgetResolver,
+} from '@/prisma/active-budget.resolver';
 import { PrismaService } from '@/prisma/prisma.service';
-import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import {
+  MUTATOR_PRISMA,
+  SCOPED_PRISMA,
+  type MutatorPrismaClient,
+  type ScopedPrismaClient,
+} from '@/prisma/scoped-prisma';
 import { withUserScoping } from '@/prisma/user-scoping.extension';
 import { RequestContextService } from '@/request-context/request-context.service';
 
@@ -11,14 +19,31 @@ import { RequestContextService } from '@/request-context/request-context.service
 @Module({
   providers: [
     PrismaService,
-    { provide: APP_INTERCEPTOR, useClass: ActiveBudgetInterceptor },
+    {
+      provide: ACTIVE_BUDGET_RESOLVER,
+      inject: [PrismaService, RequestContextService],
+      useFactory: activeBudgetResolver,
+    },
+    {
+      provide: MUTATOR_PRISMA,
+      inject: [PrismaService, RequestContextService, ACTIVE_BUDGET_RESOLVER],
+      useFactory: (
+        prisma: PrismaService,
+        context: RequestContextService,
+        resolveActiveBudget: ActiveBudgetResolver,
+      ): MutatorPrismaClient => withUserScoping(prisma, context, resolveActiveBudget),
+    },
     {
       provide: SCOPED_PRISMA,
-      inject: [PrismaService, RequestContextService],
-      useFactory: (prisma: PrismaService, context: RequestContextService): ScopedPrismaClient =>
-        withUserScoping(prisma, context),
+      inject: [PrismaService, RequestContextService, ACTIVE_BUDGET_RESOLVER],
+      useFactory: (
+        prisma: PrismaService,
+        context: RequestContextService,
+        resolveActiveBudget: ActiveBudgetResolver,
+      ): ScopedPrismaClient =>
+        withUserScoping(prisma, context, resolveActiveBudget, { boundary: true }),
     },
   ],
-  exports: [PrismaService, SCOPED_PRISMA],
+  exports: [PrismaService, SCOPED_PRISMA, MUTATOR_PRISMA],
 })
 export class PrismaModule {}

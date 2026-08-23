@@ -26,18 +26,23 @@ up.
 
 ## How a module reaches the database
 
-The read path exists since F1.6.
-[`apps/api/src/user-settings`](../../apps/api/src/user-settings) is controller → service →
-`SCOPED_PRISMA` in full, and
-[`.claude/skills/add-a-domain-module`](../skills/add-a-domain-module/SKILL.md) walks a new module
-through it file by file. The write path, where one user operation is one database
-transaction, arrives in F3.2. What follows holds for both, and is not optional:
+[`apps/api/src/user-settings`](../../apps/api/src/user-settings) is the read path in full,
+controller → service → `SCOPED_PRISMA`, and
+[`add-a-domain-module`](../skills/add-a-domain-module/SKILL.md) walks a new module through it
+file by file. The write path is [`apps/api/src/mutations`](../../apps/api/src/mutations), and
+[`add-a-mutation`](../skills/add-a-mutation/SKILL.md) walks that one. What follows holds for
+both, and is not optional:
 
 - a handler takes the caller from `@CurrentUserId()`, never from the body, a query parameter
   or a header;
 - everything that reads or writes a domain model injects `SCOPED_PRISMA`, never
   `PrismaService`. Where the unscoped client may be imported is a lint rule, listed in
   [security](security.md);
+- a write to a **guarded** model happens inside `MutationService.run`, and the scoping
+  extension **throws** on one that is not, so the single write point is a mechanism rather than
+  a convention. Which models are guarded, and which two are written without a mutation, is
+  `MUTATION_GUARDED_MODELS` and the exemption list beside it in
+  [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts);
 - raw SQL only through `ScopedRawRepository`, which supplies `userId` itself; a lint rule
   fails the gate anywhere else;
 - a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), both
@@ -101,25 +106,42 @@ second source of truth that will disagree with the first.
 
 ## One write point
 
-Every domain mutation goes through the single mutation service (F3.2), and what it buys is
+Every domain mutation goes through
+[`MutationService`](../../apps/api/src/mutations/mutation.service.ts), and what it buys is
 atomicity, not a journal (ADR-006). One user operation is one database transaction, or
 nothing at all. The invariant it protects is 5.5. A composite write torn in half (a
 transfer leg without its pair) is the main way to break it, and PRD 6.3 requires a
 transfer to be atomic regardless. So a transfer's two legs share a `transferId` and are
 created, edited and deleted together.
 
-`ScopedRawRepository` issues its statements on the top-level client, so a raw statement
-written inside the mutator would land **outside** its transaction. Pass the transactional
-client in instead.
+Which models it owns is a registry, `MUTATION_GUARDED_MODELS` in
+[`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), and every model in the schema
+is either in it or in the exemption list beside it. Being under the mutator is not a claim that
+an operation is undoable. The undo scope is ADR-006's and lives in the browser; a rename and an
+archive go through the same point for atomicity and nothing else.
 
-The same transaction carries the idempotency key. `IdempotencyKey` is unique per (user, key)
-and stores the mutation's result, inserted alongside it, so a double submit hits the unique
-index instead of writing twice. It gets that result back,
-as if it had just run.
+A mutation opened inside another one is refused. Postgres has no nested interactive
+transaction, so the inner one would commit on its own and claim a second key. Compose the whole
+operation in a single `run` instead.
+
+A raw statement issued on the pooled client would land **outside** the mutator's transaction:
+a write would survive its rollback, and a read would not see what it has written. So inside a
+mutation the raw repository takes that transaction, and what each half refuses is in
+[security](security.md).
+
+The same transaction carries the idempotency key. `IdempotencyKey` is unique per (user, key).
+The row is claimed first, so a concurrent duplicate waits on that index instead of doing the
+work twice, and the mutation's result is written onto it before the transaction commits. A
+repeat therefore hits the index and is answered with the stored result, as if it had just run.
+Two consequences of the index doing the work. The conflict takes the **whole** transaction
+down, so the stored result is read afterwards, on a separate query, never inside. And the row
+carries a fingerprint of the request it was claimed for: a second, different intent wearing the
+first one's key is refused rather than answered with a result that describes a write it never
+made.
 
 There is no server-side change log and no soft-delete. Deletion is physical, and undo
 lives in the browser as a stack of money operations, each inverted through the same API
-(Phase 8). Its scope is the part that cannot be re-derived: transactions and moves between
+(ADR-006). Its scope is the part that cannot be re-derived: transactions and moves between
 envelopes. RTA is an envelope too, so setting an Assigned amount **is** a move and
 undoes like one; a rename, an archive and a hide are not undoable at all. Nothing on the
 server replays history.

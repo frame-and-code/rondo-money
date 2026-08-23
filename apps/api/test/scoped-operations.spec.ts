@@ -19,6 +19,8 @@ interface Captured {
   };
 }
 
+const noActiveBudget = (): Promise<undefined> => Promise.resolve(undefined);
+
 describe('every operation the extension claims to handle', () => {
   const context = new RequestContextService();
   const client = new PrismaClient({
@@ -26,7 +28,7 @@ describe('every operation the extension claims to handle', () => {
   });
 
   const captured: Captured[] = [];
-  const scoped = withUserScoping(client, context).$extends({
+  const scoped = withUserScoping(client, context, noActiveBudget).$extends({
     query: {
       $allModels: {
         $allOperations({ operation, args }) {
@@ -72,18 +74,24 @@ describe('every operation the extension claims to handle', () => {
       await scoped.category.findUnique({ where: { id: 'c1' } });
       await scoped.category.findUniqueOrThrow({ where: { id: 'c1' } });
       await scoped.category.count({});
-      await scoped.category.create({ data: row });
-      await scoped.category.createMany({ data: [row] });
-      await scoped.category.createManyAndReturn({ data: [row] });
-      await scoped.category.update({ where: { id: 'c1' }, data: { userId: OTHER } });
-      await scoped.category.updateMany({ where: { name: 'Food' }, data: { userId: OTHER } });
-      await scoped.category.updateManyAndReturn({
-        where: { name: 'Food' },
-        data: { userId: OTHER },
+      await context.runInMutation(async () => {
+        await scoped.category.create({ data: row });
+        await scoped.category.createMany({ data: [row] });
+        await scoped.category.createManyAndReturn({ data: [row] });
+        await scoped.category.update({ where: { id: 'c1' }, data: { userId: OTHER } });
+        await scoped.category.updateMany({ where: { name: 'Food' }, data: { userId: OTHER } });
+        await scoped.category.updateManyAndReturn({
+          where: { name: 'Food' },
+          data: { userId: OTHER },
+        });
+        await scoped.category.upsert({
+          where: { id: 'c1' },
+          create: row,
+          update: { userId: OTHER },
+        });
+        await scoped.category.delete({ where: { id: 'c1' } });
+        await scoped.category.deleteMany({});
       });
-      await scoped.category.upsert({ where: { id: 'c1' }, create: row, update: { userId: OTHER } });
-      await scoped.category.delete({ where: { id: 'c1' } });
-      await scoped.category.deleteMany({});
     });
   });
 
@@ -115,11 +123,11 @@ describe('every operation the extension claims to handle', () => {
     },
   );
 
-  it('leaves an upsert to the caller alone, because its create half names a budget', () => {
-    const { where } = reaching('upsert');
+  it('confines the row an upsert picks out to the active budget', () => {
+    const { where, create } = reaching('upsert');
 
-    expect(where).toMatchObject({ userId: USER });
-    expect(where).not.toHaveProperty('budgetId');
+    expect(where).toMatchObject({ userId: USER, budgetId: BUDGET });
+    expect(create).toMatchObject({ userId: USER, budgetId: PAYLOAD_BUDGET });
   });
 
   it.each(['create', 'update', 'updateMany', 'updateManyAndReturn'])(

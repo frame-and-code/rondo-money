@@ -5,6 +5,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { AuthModule } from '@/auth/auth.module';
 import { HealthModule } from '@/health/health.module';
 import { MeModule } from '@/me/me.module';
+import { MutationsModule } from '@/mutations/mutations.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { RawSqlModule } from '@/raw-sql/raw-sql.module';
 import { RequestContextModule } from '@/request-context/request-context.module';
@@ -18,6 +19,7 @@ import { VALIDATION_PIPE } from '@/validation/validation.options';
     AuthModule,
     PrismaModule,
     RawSqlModule,
+    MutationsModule,
     HealthModule,
     MeModule,
     UserSettingsModule,

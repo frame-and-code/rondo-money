@@ -3,7 +3,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/prisma/prisma.service';
-import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import { MUTATOR_PRISMA, type MutatorPrismaClient } from '@/prisma/scoped-prisma';
 import { RequestContextService } from '@/request-context/request-context.service';
 
 const USER_A = 'user_2rondoScopingAaaaaaaaaaa';
@@ -12,7 +12,7 @@ const USER_B = 'user_2rondoScopingBbbbbbbbbbb';
 describe('userId auto-scoping (integration)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let scoped: ScopedPrismaClient;
+  let scoped: MutatorPrismaClient;
   let context: RequestContextService;
 
   const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
@@ -42,7 +42,7 @@ describe('userId auto-scoping (integration)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
-    scoped = app.get<ScopedPrismaClient>(SCOPED_PRISMA);
+    scoped = app.get<MutatorPrismaClient>(MUTATOR_PRISMA);
     context = app.get(RequestContextService);
   });
 
@@ -175,6 +175,12 @@ describe('userId auto-scoping (integration)', () => {
         return await query();
       });
 
+    const mutatingAsOwner = <T>(
+      userId: string,
+      budgetId: string,
+      query: () => Promise<T>,
+    ): Promise<T> => asOwner(userId, budgetId, () => context.runInMutation(query));
+
     const createBudget = (userId: string) =>
       prisma.budget.create({
         data: {
@@ -217,7 +223,9 @@ describe('userId auto-scoping (integration)', () => {
           type: 'EXPENSE',
         },
       });
-      await prisma.idempotencyKey.create({ data: { userId: USER_A, key: 'intent-of-a' } });
+      await prisma.idempotencyKey.create({
+        data: { userId: USER_A, key: 'intent-of-a', requestFingerprint: 'f' },
+      });
     });
 
     it('shows B nothing of A, on every model the phase adds', async () => {
@@ -250,7 +258,7 @@ describe('userId auto-scoping (integration)', () => {
     });
 
     it('stamps a domain write with the caller, whoever the payload names', async () => {
-      const created = await asOwner(USER_B, budgetOfB.id, () =>
+      const created = await mutatingAsOwner(USER_B, budgetOfB.id, () =>
         scoped.account.create({
           data: { userId: USER_A, budgetId: budgetOfB.id, name: 'Claimed', type: 'DEBIT' },
         }),
@@ -273,18 +281,18 @@ describe('userId auto-scoping (integration)', () => {
 
     it('refuses to let B change or remove a row of A', async () => {
       await expect(
-        asOwner(USER_B, budgetOfA.id, () =>
+        mutatingAsOwner(USER_B, budgetOfA.id, () =>
           scoped.category.update({ where: { id: categoryOfA.id }, data: { name: 'taken' } }),
         ),
       ).rejects.toThrow();
 
       await expect(
-        asOwner(USER_B, budgetOfA.id, () =>
+        mutatingAsOwner(USER_B, budgetOfA.id, () =>
           scoped.category.delete({ where: { id: categoryOfA.id } }),
         ),
       ).rejects.toThrow();
 
-      const bulk = await asOwner(USER_B, budgetOfA.id, async () => ({
+      const bulk = await mutatingAsOwner(USER_B, budgetOfA.id, async () => ({
         updated: await scoped.category.updateMany({ data: { name: 'taken' } }),
         deleted: await scoped.transaction.deleteMany({}),
       }));
@@ -296,7 +304,7 @@ describe('userId auto-scoping (integration)', () => {
     });
 
     it("turns an upsert aimed at A's row into B's own row", async () => {
-      const created = await asOwner(USER_B, budgetOfB.id, () =>
+      const created = await mutatingAsOwner(USER_B, budgetOfB.id, () =>
         scoped.categoryGroup.upsert({
           where: { id: groupOfA.id },
           create: { userId: USER_A, budgetId: budgetOfB.id, name: 'Claimed', sortOrder: 1 },
@@ -313,7 +321,9 @@ describe('userId auto-scoping (integration)', () => {
 
     it('lets two users hold the same idempotency key without colliding', async () => {
       const forB = await asOwner(USER_B, budgetOfB.id, () =>
-        scoped.idempotencyKey.create({ data: { userId: USER_B, key: 'intent-of-a' } }),
+        scoped.idempotencyKey.create({
+          data: { userId: USER_B, key: 'intent-of-a', requestFingerprint: 'f' },
+        }),
       );
 
       const stored = await prisma.idempotencyKey.findMany({
