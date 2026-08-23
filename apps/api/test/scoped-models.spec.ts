@@ -1,7 +1,12 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@rondo/db';
 
-import { BUDGET_SCOPED_MODELS, SCOPED_MODELS } from '@/prisma/scoped-models';
+import {
+  BUDGET_SCOPED_MODELS,
+  MUTATION_EXEMPT_MODELS,
+  MUTATION_GUARDED_MODELS,
+  SCOPED_MODELS,
+} from '@/prisma/scoped-models';
 
 import { fieldsOf, modelsCarrying } from './model-fields';
 
@@ -63,5 +68,38 @@ describe('the budget-scoped-model registry', () => {
     ]);
     expect(BUDGET_SCOPED_MODELS.has(Prisma.ModelName.Budget)).toBe(false);
     expect(BUDGET_SCOPED_MODELS.has(Prisma.ModelName.IdempotencyKey)).toBe(false);
+  });
+});
+
+describe('the mutation-guarded-model registry', () => {
+  it('classifies every model in the schema, so a new one has to be decided about', () => {
+    const unclassified = Object.values(Prisma.ModelName).filter(
+      (model) => !MUTATION_GUARDED_MODELS.has(model) && !MUTATION_EXEMPT_MODELS.has(model),
+    );
+
+    expect(unclassified).toEqual([]);
+  });
+
+  it('guards nothing the scoping extension does not reach', () => {
+    const unreachable = [...MUTATION_GUARDED_MODELS].filter((model) => !SCOPED_MODELS.has(model));
+
+    expect(unreachable).toEqual([]);
+  });
+
+  it('never calls a model both guarded and exempt', () => {
+    const both = [...MUTATION_GUARDED_MODELS].filter((model) => MUTATION_EXEMPT_MODELS.has(model));
+
+    expect(both).toEqual([]);
+  });
+
+  it('guards the domain models and exempts the two no mutation owns', () => {
+    expect([...MUTATION_GUARDED_MODELS].sort()).toEqual([
+      'Account',
+      'Budget',
+      'Category',
+      'CategoryGroup',
+      'Transaction',
+    ]);
+    expect([...MUTATION_EXEMPT_MODELS].sort()).toEqual(['IdempotencyKey', 'UserSettings']);
   });
 });

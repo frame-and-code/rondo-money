@@ -109,6 +109,9 @@ model Budget {
   transactions   Transaction[]
 
   @@unique([userId, active], map: "budget_one_active_per_user", where: { active: true })
+  /// The target of every child's `(budgetId, userId)` foreign key. Two independent keys would
+  /// let a row name this budget and a parent owned by somebody else.
+  @@unique([id, userId])
   @@index([userId])
   @@map("budget")
 }
@@ -129,9 +132,11 @@ model CategoryGroup {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  budget     Budget     @relation(fields: [budgetId], references: [id], onDelete: Restrict)
+  budget     Budget     @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
   categories Category[]
 
+  /// The target of `Category`'s `(groupId, budgetId)` foreign key.
+  @@unique([id, budgetId])
   @@index([userId, budgetId])
   @@map("category_group")
 }
@@ -153,10 +158,12 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  budget       Budget        @relation(fields: [budgetId], references: [id], onDelete: Restrict)
-  group        CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  budget       Budget        @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+  group        CategoryGroup @relation(fields: [groupId, budgetId], references: [id, budgetId], onDelete: Restrict)
   transactions Transaction[]
 
+  /// The target of `Transaction`'s `(categoryId, budgetId)` foreign key.
+  @@unique([id, budgetId])
   @@index([userId, budgetId])
   @@index([groupId])
   @@map("category")
@@ -178,9 +185,11 @@ model Account {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  budget       Budget        @relation(fields: [budgetId], references: [id], onDelete: Restrict)
+  budget       Budget        @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
   transactions Transaction[]
 
+  /// The target of `Transaction`'s `(accountId, budgetId)` foreign key.
+  @@unique([id, budgetId])
   @@index([userId, budgetId])
   @@map("account")
 }
@@ -214,9 +223,9 @@ model Transaction {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  budget   Budget    @relation(fields: [budgetId], references: [id], onDelete: Restrict)
-  account  Account   @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  budget   Budget    @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+  account  Account   @relation(fields: [accountId, budgetId], references: [id, budgetId], onDelete: Restrict)
+  category Category? @relation(fields: [categoryId, budgetId], references: [id, budgetId], onDelete: Restrict)
 
   @@index([userId, budgetId, date])
   @@index([accountId])
@@ -233,6 +242,10 @@ model IdempotencyKey {
 
   userId String @map("user_id")
   key    String
+
+  /// A fingerprint of the request the key was claimed for. A repeat carrying a different one
+  /// is a second intent wearing the first one's key, and is refused rather than replayed.
+  requestFingerprint String @map("request_fingerprint") @db.VarChar(64)
 
   /// The stored result of the mutation the key carried, returned as-is on a repeat.
   result Json?

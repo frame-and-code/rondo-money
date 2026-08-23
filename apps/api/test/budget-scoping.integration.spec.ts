@@ -7,8 +7,18 @@ import request from 'supertest';
 
 import { AppModule } from '@/app.module';
 import { resolveWebOrigin } from '@/cors';
+import {
+  ACTIVE_BUDGET_RESOLVER,
+  activeBudgetResolver,
+  type ActiveBudgetResolver,
+} from '@/prisma/active-budget.resolver';
 import { PrismaService } from '@/prisma/prisma.service';
-import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import {
+  MUTATOR_PRISMA,
+  SCOPED_PRISMA,
+  type MutatorPrismaClient,
+  type ScopedPrismaClient,
+} from '@/prisma/scoped-prisma';
 import { RequestContextService } from '@/request-context/request-context.service';
 
 import { createTestSigningKey, type TestSigningKey } from './clerk-token';
@@ -34,18 +44,25 @@ class BudgetProbeController {
     const rows = await this.prisma.category.findMany({ orderBy: { name: 'asc' } });
     return { names: rows.map((row) => row.name) };
   }
+
+  @Get('after-read')
+  async afterRead(): Promise<{ budgetId: string | null }> {
+    await this.prisma.category.findMany();
+    return { budgetId: this.context.readBudgetId() ?? null };
+  }
 }
 
 describe('budget scoping (integration)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let scoped: ScopedPrismaClient;
+  let scoped: MutatorPrismaClient;
   let context: RequestContextService;
   let key: TestSigningKey;
   let now: number;
   let webOrigin: string;
 
   const originalJwtKey = process.env.CLERK_JWT_KEY;
+  const asked: string[] = [];
 
   const tokenFor = (sub: string): string =>
     key.signToken({ sub, iat: now, exp: now + 60, azp: webOrigin });
@@ -61,6 +78,9 @@ describe('budget scoping (integration)', () => {
       context.setBudgetId(budgetId);
       return await query();
     });
+
+  const inMutation = <T>(userId: string, budgetId: string, query: () => Promise<T>): Promise<T> =>
+    inRequest(userId, budgetId, () => context.runInMutation(query));
 
   const removeFixtures = async (): Promise<void> => {
     await prisma.category.deleteMany({ where: { userId: { in: USERS } } });
@@ -97,13 +117,25 @@ describe('budget scoping (integration)', () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
       controllers: [BudgetProbeController],
-    }).compile();
+    })
+      .overrideProvider(ACTIVE_BUDGET_RESOLVER)
+      .useFactory({
+        inject: [PrismaService, RequestContextService],
+        factory: (unscoped: PrismaService, scope: RequestContextService): ActiveBudgetResolver => {
+          const resolve = activeBudgetResolver(unscoped, scope);
+          return (userId) => {
+            asked.push(userId);
+            return resolve(userId);
+          };
+        },
+      })
+      .compile();
 
     app = moduleRef.createNestApplication();
     await app.init();
 
     prisma = app.get(PrismaService);
-    scoped = app.get<ScopedPrismaClient>(SCOPED_PRISMA);
+    scoped = app.get<MutatorPrismaClient>(MUTATOR_PRISMA);
     context = app.get(RequestContextService);
     webOrigin = resolveWebOrigin(app.get(ConfigService));
   });
@@ -117,6 +149,7 @@ describe('budget scoping (integration)', () => {
   });
 
   beforeEach(async () => {
+    asked.length = 0;
     await removeFixtures();
   });
 
@@ -131,10 +164,18 @@ describe('budget scoping (integration)', () => {
       await createCategory(WITH_ACTIVE, archived.id, 'Old food');
     });
 
-    it('puts the active budget into the request context', async () => {
-      const response = await get('/test-budget/active', WITH_ACTIVE).expect(200);
+    it('resolves the budget on the first read that needs one', async () => {
+      const response = await get('/test-budget/after-read', WITH_ACTIVE).expect(200);
 
       expect(response.body).toEqual({ budgetId: active.id });
+      expect(asked).toEqual([WITH_ACTIVE]);
+    });
+
+    it('resolves nothing at all on a request that reads no budget-owned model', async () => {
+      const response = await get('/test-budget/active', WITH_ACTIVE).expect(200);
+
+      expect(response.body).toEqual({ budgetId: null });
+      expect(asked).toEqual([]);
     });
 
     it('reads only the rows of that budget, not the caller`s other one', async () => {
@@ -144,7 +185,7 @@ describe('budget scoping (integration)', () => {
     });
 
     it('confines a bulk write to the active budget, leaving the other one alone', async () => {
-      const renamed = await inRequest(WITH_ACTIVE, active.id, () =>
+      const renamed = await inMutation(WITH_ACTIVE, active.id, () =>
         scoped.category.updateMany({ data: { name: 'renamed' } }),
       );
 
@@ -157,7 +198,9 @@ describe('budget scoping (integration)', () => {
     });
 
     it('confines a bulk delete the same way', async () => {
-      const removed = await inRequest(WITH_ACTIVE, active.id, () => scoped.category.deleteMany({}));
+      const removed = await inMutation(WITH_ACTIVE, active.id, () =>
+        scoped.category.deleteMany({}),
+      );
 
       const left = await prisma.category
         .findMany({ where: { userId: WITH_ACTIVE } })
@@ -172,7 +215,7 @@ describe('budget scoping (integration)', () => {
         data: { userId: WITH_ACTIVE, budgetId: archived.id, name: 'Old', sortOrder: 1 },
       });
 
-      const created = await inRequest(WITH_ACTIVE, active.id, () =>
+      const created = await inMutation(WITH_ACTIVE, active.id, () =>
         scoped.category.create({
           data: {
             userId: WITH_ACTIVE,
@@ -217,11 +260,38 @@ describe('budget scoping (integration)', () => {
       const mine = await createBudget(WITH_ACTIVE, 'Mine', true);
       const theirs = await createBudget(WITHOUT_ACTIVE, 'Theirs', true);
 
-      const forMine = await get('/test-budget/active', WITH_ACTIVE).expect(200);
-      const forTheirs = await get('/test-budget/active', WITHOUT_ACTIVE).expect(200);
+      const forMine = await get('/test-budget/after-read', WITH_ACTIVE).expect(200);
+      const forTheirs = await get('/test-budget/after-read', WITHOUT_ACTIVE).expect(200);
 
       expect(forMine.body).toEqual({ budgetId: mine.id });
       expect(forTheirs.body).toEqual({ budgetId: theirs.id });
+    });
+
+    it('gives two requests running side by side their own budget, not one another`s', async () => {
+      const mine = await createBudget(WITH_ACTIVE, 'Mine', true);
+      const theirs = await createBudget(WITHOUT_ACTIVE, 'Theirs', true);
+      await createCategory(WITH_ACTIVE, mine.id, 'Mine only');
+      await createCategory(WITHOUT_ACTIVE, theirs.id, 'Theirs only');
+
+      const [forMine, forTheirs] = await Promise.all([
+        get('/test-budget/categories', WITH_ACTIVE),
+        get('/test-budget/categories', WITHOUT_ACTIVE),
+      ]);
+
+      expect(forMine.body).toEqual({ names: ['Mine only'] });
+      expect(forTheirs.body).toEqual({ names: ['Theirs only'] });
+    });
+
+    it('asks the database for no budget on a route that touches no table', async () => {
+      const lookups = jest.spyOn(prisma.budget, 'findUnique');
+
+      try {
+        await get('/me', WITH_ACTIVE).expect(200);
+
+        expect(lookups).not.toHaveBeenCalled();
+      } finally {
+        lookups.mockRestore();
+      }
     });
   });
 

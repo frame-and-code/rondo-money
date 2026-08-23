@@ -149,11 +149,23 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
 ```
 
 - **A read of a model a budget owns needs a budget in the scope too**, via
-  `context.setBudgetId(...)`, or the extension refuses it. In the running app an interceptor
-  fills that in; a spec calling the scoped client directly does it by hand. Over HTTP the
-  interceptor runs, so a spec that signs a token and calls a route only needs the caller to
-  have an `active` budget row. Pattern to copy:
-  [`apps/api/test/budget-scoping.integration.spec.ts`](../apps/api/test/budget-scoping.integration.spec.ts).
+  `context.setBudgetId(...)`, or the extension refuses it. In the running app the extension
+  looks the budget up itself on the first such query; a spec that builds the scoped client by
+  hand passes a resolver of its own, and one that only wants a fixed budget sets it directly.
+  Over HTTP nothing is needed beyond the caller having an `active` budget row. Patterns to
+  copy: [`apps/api/test/budget-scoping.integration.spec.ts`](../apps/api/test/budget-scoping.integration.spec.ts)
+  over HTTP, [`apps/api/test/active-budget.spec.ts`](../apps/api/test/active-budget.spec.ts)
+  for the resolver.
+- **A write to a guarded model needs the mutation marker**, via `context.runInMutation(...)`,
+  or the extension refuses it whatever the scope says. Which models those are is
+  `MUTATION_GUARDED_MODELS` in
+  [`scoped-models.ts`](../apps/api/src/prisma/scoped-models.ts); a write to a model on the
+  exemption list beside it needs no marker. And the write goes through `MUTATOR_PRISMA`, the client a
+  mutation's transaction comes from, rather than the `SCOPED_PRISMA` a handler injects. Why the
+  two are separate is in [security](../.claude/rules/security.md). A spec that asserts something about
+  scoping on a write enters the marker first, so that the refusal it is testing is the one it
+  means. [`apps/api/test/mutation.integration.spec.ts`](../apps/api/test/mutation.integration.spec.ts)
+  drives the real service instead, which is what an endpoint will do.
 - ⚠️ **Await inside the scope.** Prisma's promises are lazy: the hooks run when the promise is
   awaited, not when `findMany()` is called. Returning an un-awaited promise out of `run()`
   executes the query with no context, so a test expecting a rejection passes for the wrong

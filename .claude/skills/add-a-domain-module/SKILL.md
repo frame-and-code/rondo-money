@@ -1,6 +1,6 @@
 ---
 name: add-a-domain-module
-description: Add an API module in apps/api that reads a domain table, with the controller, service, response class, registration and the tests that are not optional. Use when a feature needs a read endpoint backed by Postgres. The write path (one mutation point, one transaction per user operation) is F3.2 and is deliberately not covered here.
+description: Add an API module in apps/api that reads a domain table, with the controller, service, response class, registration and the tests that are not optional. Use when a feature needs a read endpoint backed by Postgres. A module that writes a guarded model goes through the mutation service instead, which the add-a-mutation skill covers.
 ---
 
 # Add a domain module
@@ -10,10 +10,10 @@ The shape every module that touches a table follows. It is not a template to fil
 describes, so read it alongside. It is five small files, and every decision below is visible in
 one of them.
 
-Scope: the **read** path (F1.6). A mutation also goes through the single mutation
-service, which puts the whole user operation and its idempotency key in one transaction
-(F3.2, ADR-006). That is a separate skill, and until it exists a write is a design
-conversation, not a copy.
+Scope: the **read** path. A mutation goes through the single mutation service, which puts the
+whole user operation and its idempotency key in one transaction (ADR-006); that is
+[`add-a-mutation`](../add-a-mutation/SKILL.md), and a module that does both follows one skill
+per path.
 
 ## Before writing anything
 
@@ -69,7 +69,9 @@ well. Without it the client gets `string` instead of a union, so _verify that in
 Publish only what a client needs; a field is far harder to withdraw from a contract than to add.
 
 **`<feature>.service.ts`** injects `SCOPED_PRISMA`, never `PrismaService`. Get-or-create is
-read first, then `upsert` on the miss. The extension rewrites an upsert's `update` payload, so an
+read first, then `upsert` on the miss. That write is legal outside a mutation only because
+`UserSettings` is on the exemption list; the same shape on a guarded model belongs in
+[`add-a-mutation`](../add-a-mutation/SKILL.md). The extension rewrites an upsert's `update` payload, so an
 unconditional upsert would issue a real UPDATE on every read and pin `updatedAt` to the last time
 anyone opened a screen. The `upsert` on the miss is what keeps two concurrent first
 requests from colliding on the unique index. The extension adds
@@ -81,17 +83,22 @@ _cannot_ reach another tenant's rows. Two things it does not cover, both load-be
 - **nested writes**: only top-level operations are rewritten, so a relation written inside
   another model's `data` keeps whatever `userId` the caller put there.
 
-A model a budget owns gets a second filter, taken from the active budget an interceptor puts
-in the request context. It covers reads and the writes that pick out existing rows; a write
-that creates them carries its own budget in the payload instead. Which operations fall on
+A model a budget owns gets a second filter, taken from the caller's active budget, which the
+extension looks up on the first query that needs it and remembers for the rest of the request.
+It covers reads and the writes that pick out existing rows; a write that creates them carries
+its own budget in the payload instead. Which operations fall on
 which side, and why, is in [security](../../rules/security.md). An operation issued when the
-context carries no active budget is **refused**, so an endpoint reached during onboarding, or
-a unit test calling the scoped client by hand, sets the budget itself. The pattern is in
+caller has no active budget is **refused**, and nothing sets one by hand: the lookup does not
+remember an absence, so the request that creates the first budget is answered by the next query
+that needs one. A unit test calling the scoped client by hand supplies its own resolver, or
+sets the budget itself. The pattern is in
 [`budget-scoping.integration.spec.ts`](../../../apps/api/test/budget-scoping.integration.spec.ts).
 
-Prisma's types still ask for `userId` on a write; pass the verified caller's and let the
-extension overwrite it. That the wrong value is harmless is the property being relied on, not
-an invitation to be careless.
+Pass the verified caller's `userId` on a write and let the extension overwrite it. That the
+wrong value is harmless is the property being relied on, not an invitation to be careless.
+Which of Prisma's two write inputs carries the field at all is in
+[security](../../rules/security.md), and taking the wrong one is a runtime failure the types
+do not catch.
 
 **`<feature>.controller.ts`** takes its identity from `@CurrentUserId()` and nothing else.
 Never the body, a query parameter or a header, however convenient. With no RLS behind us

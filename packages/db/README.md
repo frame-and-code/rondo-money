@@ -46,6 +46,28 @@ budget is deactivated (`active`). A transaction is deleted outright. Hiding is n
 as an automatic filter; what that means for the aggregates is in
 [architecture](../../.claude/rules/architecture.md).
 
+## A child cannot leave its parent's budget
+
+Every child names its parent through a **composite** foreign key rather than two independent
+ones: `(budget_id, user_id)` to the budget, and `(group_id, budget_id)`,
+`(account_id, budget_id)` or `(category_id, budget_id)` to the row inside it. Two separate keys
+would each pass on their own while the pair made no sense: a category naming this budget and a
+group from another one, and a read confined to the first budget then pulling the second one's
+group in over the relation. The target of each is a `@@unique` on the parent, which is what
+`Budget @@unique([id, userId])` and the `@@unique([id, budgetId])` on the three others exist
+for. An `UPDATE` moving a row into another budget while its parent stays behind fails the same
+way an `INSERT` does.
+
+One hole this shape does not cover, and it is the standard SQL one: a composite key over a
+nullable column is `MATCH SIMPLE`, so `Transaction`'s `(category_id, budget_id)` is not checked
+at all when `category_id` is null. That is the wanted behaviour, since an income carries no
+category, but it means the key says nothing about a row without one.
+
+`IdempotencyKey` carries a `request_fingerprint` beside the key. A repeat is answered with the
+stored `result`; a repeat whose fingerprint differs is a second intent wearing the first one's
+key, and the api refuses it. Why it refuses rather than replaying is in
+[architecture](../../.claude/rules/architecture.md).
+
 ## Conventions
 
 Set by the first table and followed by every later one:

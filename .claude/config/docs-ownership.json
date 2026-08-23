@@ -43,6 +43,21 @@
       "phrase": "partial unique index",
       "owner": "packages/db/README.md",
       "note": "one active budget per user, and the preview feature the index costs"
+    },
+    {
+      "phrase": "refuses outside a mutation",
+      "owner": ".claude/rules/security.md",
+      "note": "what the raw repository refuses inside a mutation and outside one"
+    },
+    {
+      "phrase": "while a mutation is open",
+      "owner": ".claude/rules/security.md",
+      "note": "which client a mutation's work may use, and what the other one refuses"
+    },
+    {
+      "phrase": "a result that describes a write it never made",
+      "owner": ".claude/rules/architecture.md",
+      "note": "why a repeat carrying a different request is refused rather than replayed"
     }
   ],
   "banned": [
