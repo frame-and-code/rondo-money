@@ -16,7 +16,8 @@ export function activeBudgetResolver(
   context: RequestContextService,
 ): ActiveBudgetResolver {
   return async (userId) => {
-    const source: BudgetSource = context.readBudgetSource() ?? prisma;
+    const source: BudgetSource =
+      (context.isInMutation() ? context.readBudgetSource() : undefined) ?? prisma;
     const active = await source.budget.findUnique({
       where: { userId_active: { userId, active: true } },
       select: { id: true },

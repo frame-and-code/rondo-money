@@ -28,8 +28,8 @@ polish:
   release adds is refused rather than missed. `MutationService` opens its transaction from
   `MUTATOR_PRISMA`, the same scoping without that refusal, so the client it hands to a
   mutation's work accepts what the boundary refuses. A spec that exercises scoping on a write
-  holds the lower client for the same reason. Not left to memory either: the lint rule
-  `@rondo/config/eslint/mutator-prisma` fails the gate on importing `MUTATOR_PRISMA` outside
+  holds the lower client for the same reason. Not left to memory either: the restriction `mutator-prisma`, composed into
+  `@rondo/config/eslint/tenant-isolation`, fails the gate on importing `MUTATOR_PRISMA` outside
   `src/prisma`, `src/mutations` and the tests.
 - Domain code injects the auto-scoped client
   ([`SCOPED_PRISMA`](../../apps/api/src/prisma/scoped-prisma.ts)), never `PrismaService`,
@@ -46,8 +46,11 @@ polish:
   Its checked input is the one to stay away from: on a model whose budget relation carries
   `userId`, that input drops the field, so a payload naming parents with `connect` and a
   stamped `userId` matches neither form and Prisma refuses it at runtime. Pass the ids flat.
-  Also not left to memory: the lint rule `@rondo/config/eslint/unscoped-prisma` fails the gate
-  on importing `PrismaService` outside `src/prisma`, `src/raw-sql` and the tests.
+  Also not left to memory: the restriction `unscoped-prisma`, composed into
+  `@rondo/config/eslint/tenant-isolation`, fails the gate on importing `PrismaService` outside
+  `src/prisma`, `src/raw-sql` and the tests. Both restrictions reach a file through one rule,
+  because flat config replaces a rule's options rather than merging them, and two blocks would
+  leave only the last standing.
 - **A model a budget owns is filtered by `budgetId` as well.** The active budget is the
   caller's one `active` budget row, looked up by the extension itself on the first query that
   needs it and remembered for the rest of the request, so a request that reads nothing a budget

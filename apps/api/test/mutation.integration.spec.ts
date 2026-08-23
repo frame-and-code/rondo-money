@@ -308,6 +308,27 @@ describe('the single write point (integration)', () => {
       expect(names).toEqual(['Living']);
     });
 
+    it('refuses a read running beside the mutation rather than inside it', async () => {
+      await asUser(USER_A, async () => {
+        let beside: Promise<unknown> = Promise.resolve();
+
+        await mutations.run(
+          { key: 'sibling-read', request: {}, decode: decodeName },
+          async (tx) => {
+            beside = scoped.categoryGroup.findMany();
+            beside.catch(() => undefined);
+            await tx.categoryGroup.create({
+              data: { userId: USER_A, budgetId: budgetOfA.id, name: 'Living', sortOrder: 0 },
+            });
+
+            return { name: 'Living' };
+          },
+        );
+
+        await expect(beside).rejects.toThrow(/outside the transaction/);
+      });
+    });
+
     it('refuses a mutation opened inside another one, and rolls the outer one back', async () => {
       await expect(
         asUser(USER_A, () =>
@@ -449,7 +470,7 @@ describe('the single write point (integration)', () => {
       expect(await rowsOf(USER_A)).toMatchObject({ groups: 0 });
     });
 
-    it('refuses raw SQL handed a client that is not the mutation`s', async () => {
+    it("refuses raw SQL handed a client that is not the mutation's", async () => {
       await expect(
         asUser(USER_A, () =>
           mutations.run(
@@ -499,7 +520,12 @@ describe('the single write point (integration)', () => {
       const untouched = await prisma.categoryGroup.findUniqueOrThrow({
         where: { id: elsewhere.id },
       });
+      const created = await prisma.categoryGroup.findFirstOrThrow({
+        where: { userId: USER_A, name: 'Living' },
+      });
+
       expect(untouched.name).toBe('Old');
+      expect(created.budgetId).toBe(active.id);
     });
 
     it('runs raw SQL of the mutation inside its transaction, and refuses it outside one', async () => {
@@ -589,7 +615,7 @@ describe('the single write point (integration)', () => {
       expect(await rowsOf(USER_A)).toMatchObject({ groups: 1, keys: 1 });
     });
 
-    it('refuses a second intent sent under the first one`s key', async () => {
+    it("refuses a second intent sent under the first one's key", async () => {
       await asUser(USER_A, () =>
         mutations.run(
           { key: 'corrected', request: { name: 'Living' }, decode: decodeName },
@@ -604,11 +630,7 @@ describe('the single write point (integration)', () => {
             groupNamed('Bills')(USER_A, budgetOfA.id),
           ),
         ),
-      )
-        .rejects.toThrow(/idempotency key/i)
-        .catch((failure: unknown) => {
-          throw failure;
-        });
+      ).rejects.toThrow(/idempotency key/i);
 
       await expect(
         asUser(USER_A, () =>
@@ -749,6 +771,33 @@ describe('the single write point (integration)', () => {
 
       expect(forA).toEqual({ name: 'Living' });
       expect(forB).toEqual({ name: 'Bills' });
+      expect(await rowsOf(USER_A)).toMatchObject({ groups: 1, keys: 1 });
+      expect(await rowsOf(USER_B)).toMatchObject({ groups: 1, keys: 1 });
+    });
+
+    it("answers a repeat with the caller's own result, not the other holder's", async () => {
+      const forA = await asUser(USER_A, () =>
+        mutations.run(
+          { key: 'shared', request: { name: 'Living' }, decode: decodeName },
+          groupNamed('Living')(USER_A, budgetOfA.id),
+        ),
+      );
+      await asUser(USER_B, () =>
+        mutations.run(
+          { key: 'shared', request: { name: 'Bills' }, decode: decodeName },
+          groupNamed('Bills')(USER_B, budgetOfB.id),
+        ),
+      );
+
+      const replayedByB = await asUser(USER_B, () =>
+        mutations.run(
+          { key: 'shared', request: { name: 'Bills' }, decode: decodeName },
+          groupNamed('Bills')(USER_B, budgetOfB.id),
+        ),
+      );
+
+      expect(forA).toEqual({ name: 'Living' });
+      expect(replayedByB).toEqual({ name: 'Bills' });
       expect(await rowsOf(USER_A)).toMatchObject({ groups: 1, keys: 1 });
       expect(await rowsOf(USER_B)).toMatchObject({ groups: 1, keys: 1 });
     });

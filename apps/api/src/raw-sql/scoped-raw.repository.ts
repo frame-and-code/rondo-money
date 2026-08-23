@@ -24,8 +24,13 @@ export class ScopedRawRepository {
   ) {}
 
   async query<T>(build: (scope: RawQueryScope) => Prisma.Sql, on?: RawReader): Promise<T[]> {
-    if (this.context.isInMutation()) {
+    if (this.context.isMutationOpen()) {
       this.requireTheMutationsClient(on, 'read');
+    } else if (on) {
+      throw new Error(
+        'Refusing a raw read on a client handed in with no mutation open: the only client this ' +
+          'takes is the one a mutation hands out, so outside one there is nothing to pass.',
+      );
     }
 
     const statement = build(this.currentScope());
@@ -34,7 +39,7 @@ export class ScopedRawRepository {
   }
 
   async execute(build: (scope: RawQueryScope) => Prisma.Sql, on: RawExecutor): Promise<number> {
-    if (!this.context.isInMutation()) {
+    if (!this.context.isMutationOpen()) {
       throw new Error(
         'Refusing a raw write outside a mutation: a statement that changes rows belongs to the ' +
           'single mutation service, and has to run on that transaction to roll back with it.',

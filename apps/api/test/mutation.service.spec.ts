@@ -6,7 +6,6 @@ import { withUserScoping } from '@/prisma/user-scoping.extension';
 import { RequestContextService } from '@/request-context/request-context.service';
 
 const USER = 'user_a';
-const REACHES_THE_DRIVER = /reach database server|ECONNREFUSED/i;
 
 const noActiveBudget = (): Promise<undefined> => Promise.resolve(undefined);
 
@@ -15,7 +14,8 @@ describe('the key a mutation is claimed with', () => {
   const client = new PrismaClient({
     adapter: new PrismaPg({ connectionString: 'postgresql://unused:unused@127.0.0.1:1/unused' }),
   });
-  const mutations = new MutationService(withUserScoping(client, context, noActiveBudget), context);
+  const scoped = withUserScoping(client, context, noActiveBudget);
+  const mutations = new MutationService(scoped, context);
 
   afterAll(async () => {
     await client.$disconnect();
@@ -31,11 +31,19 @@ describe('the key a mutation is claimed with', () => {
     });
 
   it.each(['', '   '])('refuses a blank key (%p) before opening a transaction', async (key) => {
-    const failure: unknown = await write(key).catch((error: unknown) => error);
-    const message = failure instanceof Error ? failure.message : String(failure);
+    // The mechanism rather than the driver's wording: a connection error would satisfy any
+    // assertion about the message, and would mean the transaction had been opened after all.
+    const opened = jest.spyOn(scoped, '$transaction');
 
-    expect(failure).toBeInstanceOf(Error);
-    expect(message).toMatch(/idempotency key/i);
-    expect(message).not.toMatch(REACHES_THE_DRIVER);
+    try {
+      const failure: unknown = await write(key).catch((error: unknown) => error);
+      const message = failure instanceof Error ? failure.message : String(failure);
+
+      expect(failure).toBeInstanceOf(Error);
+      expect(message).toMatch(/idempotency key/i);
+      expect(opened).not.toHaveBeenCalled();
+    } finally {
+      opened.mockRestore();
+    }
   });
 });

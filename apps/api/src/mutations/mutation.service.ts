@@ -123,18 +123,26 @@ export class MutationService {
         throw error;
       }
 
-      return intent.decode(await this.resultOfTheFirstAttempt(key, requestFingerprint, error));
+      return intent.decode(
+        await this.resultOfTheFirstAttempt(userId, key, requestFingerprint, error),
+      );
     }
   }
 
   /// Read after the rollback, never inside the transaction: the conflict that sent us here
   /// took the whole transaction down with it, so nothing can be read on it any more.
   private async resultOfTheFirstAttempt(
+    userId: string,
     key: string,
     requestFingerprint: string,
     conflict: unknown,
   ): Promise<Prisma.JsonValue> {
-    const claimed = await this.prisma.idempotencyKey.findFirst({ where: { key } });
+    // Named by the key it was claimed with rather than by `key` alone. The extension would add
+    // the caller either way, and the unique index makes another user's row unreachable, but a
+    // read that says which row it wants does not rest on either.
+    const claimed = await this.prisma.idempotencyKey.findUnique({
+      where: { userId_key: { userId, key } },
+    });
     if (!claimed) {
       throw conflict;
     }

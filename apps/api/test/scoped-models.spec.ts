@@ -92,7 +92,7 @@ describe('the mutation-guarded-model registry', () => {
     expect(both).toEqual([]);
   });
 
-  it('guards the domain models and exempts the two that are written outside a mutation', () => {
+  it('guards the domain models and exempts the two no mutation owns', () => {
     expect([...MUTATION_GUARDED_MODELS].sort()).toEqual([
       'Account',
       'Budget',

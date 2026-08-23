@@ -95,6 +95,47 @@ describe('resolving the active budget only when a query needs it', () => {
     expect(captured[0]?.args.where).toEqual({ userId: USER, budgetId: BUDGET });
   });
 
+  it('drops a lookup that rejects, so the next query asks again', async () => {
+    resolveActiveBudget.mockRejectedValueOnce(new Error('the database went away'));
+
+    await asUser(async () => {
+      const [first, second] = await Promise.allSettled([
+        scoped.category.findMany(),
+        scoped.account.findMany(),
+      ]);
+
+      expect(first.status).toBe('rejected');
+      expect(second.status).toBe('rejected');
+
+      await scoped.category.findMany();
+    });
+
+    expect(resolveActiveBudget).toHaveBeenCalledTimes(2);
+    expect(captured[0]?.args.where).toEqual({ userId: USER, budgetId: BUDGET });
+  });
+
+  it('does not write back a lookup a mutation dropped while it was in flight', async () => {
+    let release: (budgetId: string) => void = () => undefined;
+    resolveActiveBudget.mockReturnValueOnce(
+      new Promise<string>((settle) => {
+        release = settle;
+      }),
+    );
+
+    await asUser(async () => {
+      const dropped = scoped.category.findMany();
+      dropped.catch(() => undefined);
+
+      await expect(
+        context.runInMutation(() => Promise.reject(new Error('rolled back'))),
+      ).rejects.toThrow('rolled back');
+
+      release(BUDGET);
+      await expect(dropped).rejects.toThrow(/no active budget/);
+      expect(context.readBudgetId()).toBeUndefined();
+    });
+  });
+
   it('never asks for a budget on a model the user owns directly', async () => {
     await asUser(() => scoped.userSettings.findUnique({ where: { userId: USER } }));
 

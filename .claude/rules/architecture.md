@@ -35,14 +35,16 @@ both, and is not optional:
 
 - a handler takes the caller from `@CurrentUserId()`, never from the body, a query parameter
   or a header;
-- everything that reads or writes a domain model injects `SCOPED_PRISMA`, never
-  `PrismaService`. Where the unscoped client may be imported is a lint rule, listed in
-  [security](security.md);
+- outside a mutation, everything that reads or writes a domain model injects `SCOPED_PRISMA`,
+  never `PrismaService`. Inside one, the work uses the client the mutation handed it and
+  nothing else, which is a refusal rather than a convention. Where each client may be imported
+  is a lint rule, listed in [security](security.md);
 - a write to a **guarded** model happens inside `MutationService.run`, and the scoping
   extension **throws** on one that is not, so the single write point is a mechanism rather than
-  a convention. Which models are guarded, and which two are written without a mutation, is
-  `MUTATION_GUARDED_MODELS` and the exemption list beside it in
-  [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts);
+  a convention. Which models are guarded is `MUTATION_GUARDED_MODELS` in
+  [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), and the exemption list
+  beside it holds the two that are not: a user's settings, which their own first read creates,
+  and the idempotency key, which the mutation service writes on its own transaction;
 - raw SQL only through `ScopedRawRepository`, which supplies `userId` itself; a lint rule
   fails the gate anywhere else;
 - a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), both

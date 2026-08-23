@@ -7,11 +7,10 @@ description: Write a domain mutation in apps/api, with its transaction, its idem
 
 Every write to a model in `MUTATION_GUARDED_MODELS`
 ([`scoped-models.ts`](../../../apps/api/src/prisma/scoped-models.ts)) goes through
-[`MutationService`](../../../apps/api/src/mutations/mutation.service.ts), which is every model
-the domain owns. This is not advice. The scoping extension throws on a write that is not inside
+[`MutationService`](../../../apps/api/src/mutations/mutation.service.ts). This is not advice. The scoping extension throws on a write that is not inside
 one, so a service that reaches for `SCOPED_PRISMA` directly fails its first test rather than
-shipping. The two models beside that list, user settings and the idempotency key itself, are
-written without a mutation on purpose.
+shipping. Two models sit beside that list on purpose: a user's settings, which their own first
+read creates, and the idempotency key, which this service writes on its own transaction.
 
 Read [`mutation.service.ts`](../../../apps/api/src/mutations/mutation.service.ts) alongside
 this file. It is one method, and every rule below is visible in it.

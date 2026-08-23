@@ -139,7 +139,9 @@ export function withUserScoping(
   { boundary = false }: { boundary?: boolean } = {},
 ) {
   function requireTheMutationsClient(model: Prisma.ModelName, operation: string): void {
-    if (!boundary || !context.isInMutation()) {
+    // The request-wide flag rather than the per-store one: a branch running beside the mutation
+    // is outside its transaction too, and would otherwise be handed the pooled connection.
+    if (!boundary || !context.isMutationOpen()) {
       return;
     }
 

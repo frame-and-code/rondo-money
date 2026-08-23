@@ -215,8 +215,10 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    keeps the second out of domain code, are in
    [security](../../.claude/rules/security.md).
    `MUTATION_GUARDED_MODELS` in [`scoped-models.ts`](src/prisma/scoped-models.ts) says which
-   models it covers, and the exemption list beside it says which are written without one, so a
-   new model has to be classified before its tests pass. What the raw path may do inside a
+   models it covers, and the exemption list beside it holds the two that answer to nobody's
+   mutation: a user's settings, created by their own first read, and the idempotency key, which
+   the mutation service writes on its own transaction. A new model has to be classified before
+   its tests pass. What the raw path may do inside a
    mutation, and what it refuses, is in [security](../../.claude/rules/security.md).
 
 What none of this can prove is that a raw statement actually _uses_ the scope it was given;

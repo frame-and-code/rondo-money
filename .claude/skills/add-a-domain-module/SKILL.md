@@ -1,6 +1,6 @@
 ---
 name: add-a-domain-module
-description: Add an API module in apps/api that reads a domain table, with the controller, service, response class, registration and the tests that are not optional. Use when a feature needs a read endpoint backed by Postgres. A module that writes goes through the mutation service instead, which the add-a-mutation skill covers.
+description: Add an API module in apps/api that reads a domain table, with the controller, service, response class, registration and the tests that are not optional. Use when a feature needs a read endpoint backed by Postgres. A module that writes a guarded model goes through the mutation service instead, which the add-a-mutation skill covers.
 ---
 
 # Add a domain module
@@ -69,7 +69,9 @@ well. Without it the client gets `string` instead of a union, so _verify that in
 Publish only what a client needs; a field is far harder to withdraw from a contract than to add.
 
 **`<feature>.service.ts`** injects `SCOPED_PRISMA`, never `PrismaService`. Get-or-create is
-read first, then `upsert` on the miss. The extension rewrites an upsert's `update` payload, so an
+read first, then `upsert` on the miss. That write is legal outside a mutation only because
+`UserSettings` is on the exemption list; the same shape on a guarded model belongs in
+[`add-a-mutation`](../add-a-mutation/SKILL.md). The extension rewrites an upsert's `update` payload, so an
 unconditional upsert would issue a real UPDATE on every read and pin `updatedAt` to the last time
 anyone opened a screen. The `upsert` on the miss is what keeps two concurrent first
 requests from colliding on the unique index. The extension adds
@@ -86,8 +88,10 @@ extension looks up on the first query that needs it and remembers for the rest o
 It covers reads and the writes that pick out existing rows; a write that creates them carries
 its own budget in the payload instead. Which operations fall on
 which side, and why, is in [security](../../rules/security.md). An operation issued when the
-context carries no active budget is **refused**, so an endpoint reached during onboarding, or
-a unit test calling the scoped client by hand, sets the budget itself. The pattern is in
+caller has no active budget is **refused**, and nothing sets one by hand: the lookup does not
+remember an absence, so the request that creates the first budget is answered by the next query
+that needs one. A unit test calling the scoped client by hand supplies its own resolver, or
+sets the budget itself. The pattern is in
 [`budget-scoping.integration.spec.ts`](../../../apps/api/test/budget-scoping.integration.spec.ts).
 
 Pass the verified caller's `userId` on a write and let the extension overwrite it. That the

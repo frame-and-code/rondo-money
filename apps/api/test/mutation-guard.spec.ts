@@ -144,7 +144,7 @@ describe('the marker that keeps a domain write inside the mutation service', () 
           delete: () => scoped.account.delete({ where }),
           deleteMany: () => scoped.account.deleteMany({}),
         };
-      default:
+      case Prisma.ModelName.Transaction:
         return {
           create: () => scoped.transaction.create({ data: transactionRow }),
           createMany: () => scoped.transaction.createMany({ data: [transactionRow] }),
@@ -159,6 +159,11 @@ describe('the marker that keeps a domain write inside the mutation service', () 
           delete: () => scoped.transaction.delete({ where }),
           deleteMany: () => scoped.transaction.deleteMany({}),
         };
+      default:
+        throw new Error(
+          `No writes are spelled out for ${model}, so this spec would silently test another ` +
+            'model instead. Add its case beside the others.',
+        );
     }
   };
 
@@ -196,7 +201,9 @@ describe('the marker that keeps a domain write inside the mutation service', () 
     it.each(WRITES)('lets "%s" through inside a mutation', async (operation) => {
       await inMutation(writesOf(model)[operation]);
 
-      expect(captured.map((entry) => entry.operation)).toEqual([operation]);
+      expect(captured.map((entry) => ({ model: entry.model, operation: entry.operation }))).toEqual(
+        [{ model, operation }],
+      );
     });
   });
 
