@@ -1,7 +1,8 @@
 # CI gate (F0.9, GitHub Actions)
 
 Mandatory gate on every PR: **secret scan · lint · format:check · typecheck · contract
-drift · build · unit · integration · e2e · Sonar quality gate (pull requests only)**. Workflow:
+drift · build · image boot · unit · integration · e2e · Sonar quality gate (pull requests
+only)**. Workflow:
 [.github/workflows/ci.yml](../.github/workflows/ci.yml). Every check that consumes no other
 check's output is its own job, so they all start at once; `gate` is the single status check
 that aggregates them and the only one worth requiring on `main`:
@@ -10,6 +11,7 @@ that aggregates them and the only one worth requiring on `main`:
 secrets            ─┐
 static             ─┤
 build              ─┤
+image              ─┤
 unit               ─┤
 integration        ─┼─→ gate
 preflight          ─┤
@@ -130,6 +132,21 @@ status check keeps the exact id `gate` that branch rules point at.
   reason as the browser cache. The publishable Clerk key therefore has to reach the build, and
   `apps/web/check-public-env.mjs` fails the job when it does not, rather than letting a bundle
   nobody can sign in to be tested.
+- **`image` runs the artefact, which nothing else in the gate does.** Every other job
+  exercises the workspace tree: `next start` reads the full `node_modules`, so a standalone
+  bundle missing a traced file passes `build`, `unit` and `e2e` alike and fails first at the
+  Railway healthcheck. This job builds `apps/web/Dockerfile`, starts the container and probes
+  the path `apps/web/railway.json` probes, without following redirects, for the reason the
+  `HEALTHCHECK` in that Dockerfile spells out. What it proves is that the image boots and
+  serves, not that anyone can sign in; `e2e` owns authentication.
+- **The `image` job reads no secret at all, and that is what makes it unskippable.** Neither
+  build arg is one: `NEXT_PUBLIC_*` is inlined into the browser bundle by design, and
+  `CLERK_SECRET_KEY` reaches the container at run time and never the build. What they have to
+  satisfy is `apps/web/check-public-env.mjs`, an exact origin and a non-empty key, so
+  placeholders satisfy it and real values would buy nothing. Needing no secret puts the job
+  outside `preflight`'s reach: it cannot be skipped when one is missing, and a fork pull
+  request runs it exactly as the branch does. That matters most on the dependency bumps that
+  auto-merge on a green gate.
 - **Installing the browser is the slowest step in that job, and it has two halves.** The
   browser binaries are cached on the resolved Playwright version, so a hit skips the CDN
   download. The cache is saved by an explicit step rather than by `actions/cache`'s post step,

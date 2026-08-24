@@ -106,6 +106,59 @@ jobs:
       - name: Build
         run: pnpm build
 
+  image:
+    name: Web image boots and answers its healthcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the image Railway deploys
+        run: |
+          set -euo pipefail
+
+          # Assembled rather than written out: a literal of this shape is a secret to
+          # gitleaks, and an allowlist entry would teach the scanner to skip real ones.
+          key="pk_test_$(printf 'ci-placeholder.clerk.accounts.dev$' | base64 | tr -d '\n')"
+
+          docker build \
+            --file apps/web/Dockerfile \
+            --tag rondo-web:ci \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.example.invalid \
+            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${key}" \
+            .
+
+      - name: Start the container
+        run: >-
+          docker run --detach --name rondo-web-ci --publish 3001:3001
+          --env CLERK_SECRET_KEY=sk_test_ci_placeholder
+          rondo-web:ci
+
+      - name: Probe the path railway.json probes
+        run: |
+          set -euo pipefail
+
+          code=000
+          for attempt in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+              http://127.0.0.1:3001/api/health || true)
+            if [ "${code}" = '200' ]; then
+              echo "answered 200 on attempt ${attempt}"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "::error::the image never answered 200 on /api/health (last status: ${code})"
+          exit 1
+
+      - name: Container logs
+        if: always()
+        run: docker logs rondo-web-ci || true
+
   unit:
     name: Unit tests
     runs-on: ubuntu-latest
@@ -200,9 +253,10 @@ jobs:
             {
               echo "### E2E will be skipped"
               echo
-              echo "The Clerk dev-instance keys are not exposed to this run (a fork pull request,"
-              echo "or a Dependabot-triggered one), and the web app cannot serve a single request"
-              echo "without them. Every other job in the gate still runs."
+              echo "The Clerk dev-instance keys are not exposed to this run (a fork pull request;"
+              echo "Dependabot reads its own copy from the Dependabot secrets store), and in CI the"
+              echo "e2e build refuses to start without them. Every other job in the gate still runs,"
+              echo "the image one included: it boots the app on placeholders."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ "${HAS_SONAR_TOKEN}" != 'true' ] && [ "${IS_FORK}" != 'true' ]; then
@@ -396,7 +450,7 @@ jobs:
 
   gate:
     if: always()
-    needs: [secrets, preflight, static, build, unit, integration, e2e, sonar]
+    needs: [secrets, preflight, static, build, image, unit, integration, e2e, sonar]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
