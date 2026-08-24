@@ -58,11 +58,9 @@ user has merged, never to make an unmerged ticket look finished.
 2. **Fetch the ticket** from Notion (MCP server; the link the user provides, or search by
    the ticket code). Collect every checkbox: Acceptance Criteria, DoD, and any inline
    checklists in the scope sections.
-3. **Tick with evidence, not optimism.** For each unchecked item, name the evidence in the
+3. **Tick with evidence, not optimism.** For each unchecked item, check the evidence in the
    merged work: a test, a file, a CI run, a manual check the user reported. Then:
-   - evidence exists → tick it (`- [ ]` → `- [x]`) and append a short note in the style
-     the ticket already uses: `- **done <date>**, PR #<N>` plus one clause saying what the
-     evidence is;
+   - evidence exists → tick it (`- [ ]` → `- [x]`)
    - no evidence → leave it unticked and put it in the report with what is missing. A
      half-done ticket keeps an honest checklist; the ✅ in the title then waits.
 4. **Correct what the merged work made false.** A criterion's own note goes stale like any
@@ -83,7 +81,7 @@ user has merged, never to make an unmerged ticket look finished.
      cannot show: the option that was rejected and why, the boundary that was drawn, the rule
      that changed. That is what [specs.md](../rules/specs.md) means by the ticket being the
      decision memory, and it is the difference between a ticket that stops the next agent from
-     re-deciding and one that only says the work is done.
+     re-deciding and one that only says the work is done. Keep it concise - 2-3 sentences max.
 6. **Tick the title** once every item is either ticked or explicitly declared out of scope
    by the user: prefix the page title with `✅ ` (the phase page lists child titles, so
    nothing else needs editing). It is idempotent, and a title already carrying ✅ is left
