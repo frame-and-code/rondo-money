@@ -434,6 +434,7 @@ echo "guard-db.sh — destructive commands away from the local database"
 DB_URL="postgresql://rondo:local@localhost:5432/rondo"
 expect_allow guard-db.sh 'pnpm db:migrate' 'migrate against localhost'
 expect_allow guard-db.sh 'pnpm db:deploy' 'deploy against localhost'
+expect_allow guard-db.sh 'pnpm db:reset' 'reset against localhost'
 expect_allow guard-db.sh 'pnpm --filter @rondo/db exec prisma migrate reset' 'reset against localhost'
 expect_allow guard-db.sh 'pnpm test' 'a command that destroys nothing'
 
@@ -447,6 +448,8 @@ expect_allow guard-db.sh 'pnpm db:migrate' 'migrate against the Docker host alia
 DB_URL="postgresql://rondo:not-a-real-password@db.railway.internal:5432/railway"
 expect_block guard-db.sh 'pnpm db:deploy' 'deploy against a remote database'
 expect_block guard-db.sh 'pnpm db:migrate' 'migrate against a remote database'
+expect_block guard-db.sh 'pnpm db:reset' 'reset against a remote database'
+expect_block guard-db.sh 'pnpm --filter @rondo/db db:reset' 'reset through the workspace filter'
 expect_block guard-db.sh 'pnpm --filter @rondo/db exec prisma migrate reset' 'prisma migrate reset against a remote database'
 expect_block guard-db.sh 'pnpm --filter @rondo/db exec prisma migrate deploy' 'prisma migrate deploy against a remote database'
 expect_block guard-db.sh 'pnpm --filter @rondo/db exec prisma db push' 'prisma db push against a remote database'

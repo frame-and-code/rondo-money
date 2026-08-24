@@ -15,10 +15,13 @@ avoids a barrel file that pulls every primitive into every bundle.
 ```text
 src/
   components/
-    ui/                 # shadcn/ui primitives, generated: button, card, dropdown-menu,
-                        # input, label, separator, skeleton, tooltip
+    ui/                 # shadcn/ui primitives, generated: button, card, checkbox, combobox,
+                        # command, dialog, drawer, dropdown-menu, input, input-group, label,
+                        # select, separator, skeleton, textarea, tooltip
     theme-provider.tsx  # next-themes provider (light/dark)
     theme-toggle.tsx    # theme switch used in the app header
+  hooks/use-mobile.ts   # `useIsMobile`: the breakpoint a component branches on when the
+                        # phone needs a different container, not just different classes
   lib/utils.ts          # `cn` — the clsx + tailwind-merge helper every primitive uses
 ```
 
@@ -44,9 +47,18 @@ defined there and consumed here.
 
 ### What the generator owns
 
-Every file under `components/ui` stays exactly as the generator writes it, and a regeneration
+Every file under `components/ui` keeps the generator's markup and classes, and a regeneration
 overwrites the whole file. A colour or a cursor that feels wrong is a
 theme question, and the theme lives in `apps/web/src/app/globals.css`.
+
+The one thing a new file gets afterwards is `eslint --fix` and Prettier. The generator writes
+double quotes, no semicolons and its own import order, all of which the gate refuses. That
+pass changes no markup, and a regeneration simply needs it again.
+
+A primitive may arrive with company. Asking for `command` also writes `dialog`, `input-group`
+and `textarea`, because it is built on them. Keep those; a later `add` would fetch them anyway.
+One nobody imports is a different matter: generate it when a screen needs it rather than
+leaving it lying about, since `add` takes a second.
 
 ## Tests
 

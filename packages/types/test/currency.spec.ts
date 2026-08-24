@@ -1,4 +1,10 @@
-import { isCurrencyCode, minorDigits } from '@rondo/types';
+import {
+  CURRENCY_PATTERN,
+  isCurrencyCode,
+  isSupportedCurrency,
+  minorDigits,
+  supportedCurrencyCodes,
+} from '@rondo/types';
 
 const DIVERGES_FROM_ISO_4217: ReadonlyArray<readonly [string, number, number]> = [
   ['AFN', 0, 2],
@@ -80,5 +86,57 @@ describe('isCurrencyCode', () => {
   it('says nothing about whether the currency exists', () => {
     expect(isCurrencyCode('ZZZ')).toBe(true);
     expect(minorDigits('ZZZ')).toBe(2);
+  });
+});
+
+describe('supportedCurrencyCodes', () => {
+  it('answers with the codes the runtime actually knows', () => {
+    const codes = supportedCurrencyCodes();
+
+    expect(codes.length).toBeGreaterThan(100);
+    expect(codes).toContain('USD');
+    expect(codes).toContain('JPY');
+    expect(codes).toContain('PLN');
+    expect(codes).not.toContain('ZZZ');
+  });
+
+  it('hands out a list no caller can rewrite for everyone else', () => {
+    expect(Object.isFrozen(supportedCurrencyCodes())).toBe(true);
+    expect(supportedCurrencyCodes()).toBe(supportedCurrencyCodes());
+  });
+
+  it('holds only codes a budget row can be created from', () => {
+    for (const code of supportedCurrencyCodes()) {
+      expect(isCurrencyCode(code)).toBe(true);
+      expect(Number.isInteger(minorDigits(code))).toBe(true);
+    }
+  });
+});
+
+describe('isSupportedCurrency', () => {
+  it('accepts a currency that exists', () => {
+    expect(isSupportedCurrency('USD')).toBe(true);
+    expect(isSupportedCurrency('PLN')).toBe(true);
+  });
+
+  it('refuses a well-formed code that no currency answers to', () => {
+    expect(isSupportedCurrency('ZZZ')).toBe(false);
+    expect(isCurrencyCode('ZZZ')).toBe(true);
+  });
+
+  it('refuses a malformed code without asking the runtime', () => {
+    expect(isSupportedCurrency('usd')).toBe(false);
+    expect(isSupportedCurrency('US')).toBe(false);
+    expect(isSupportedCurrency('')).toBe(false);
+  });
+});
+
+describe('CURRENCY_PATTERN', () => {
+  it('is what the API publishes, so it matches exactly the codes the validator accepts', () => {
+    expect(CURRENCY_PATTERN.test('USD')).toBe(true);
+    expect(CURRENCY_PATTERN.test('usd')).toBe(false);
+    expect(CURRENCY_PATTERN.test('US')).toBe(false);
+    expect(CURRENCY_PATTERN.test('USDD')).toBe(false);
+    expect(CURRENCY_PATTERN.test('U5D')).toBe(false);
   });
 });

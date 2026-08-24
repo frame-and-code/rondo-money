@@ -4,9 +4,11 @@ import { useEffect } from 'react';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { interpolate, LocaleProvider, useTranslations } from '@/i18n/locale-context';
-import { localeLabels } from '@/i18n/locales';
+import { localeLabels, locales } from '@/i18n/locales';
+import { messages } from '@/i18n/messages';
 import { pl } from '@/i18n/messages/pl';
 import { ru } from '@/i18n/messages/ru';
+import { NAME_PLACEHOLDER_COUNT, namePlaceholderKey } from '@/i18n/name-placeholders';
 
 function DemoText() {
   const { t } = useTranslations();
@@ -137,6 +139,34 @@ describe('when the browser refuses access to storage', () => {
     await user.click(await screen.findByText(localeLabels.ru));
 
     expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+  });
+});
+
+describe('the dictionaries', () => {
+  it('carries every name example in every language, none of them blank', () => {
+    for (const locale of locales) {
+      const examples = Array.from(
+        { length: NAME_PLACEHOLDER_COUNT },
+        (_, index) => messages[locale][namePlaceholderKey(index)],
+      );
+
+      expect(examples).toHaveLength(NAME_PLACEHOLDER_COUNT);
+      expect(new Set(examples).size).toBe(NAME_PLACEHOLDER_COUNT);
+      for (const example of examples) {
+        expect(example.trim()).not.toBe('');
+      }
+    }
+  });
+
+  it('answers every key in every language, so a switch never shows a raw key', () => {
+    const expected = Object.keys(messages.ru).sort();
+
+    for (const locale of locales) {
+      expect(Object.keys(messages[locale]).sort()).toEqual(expected);
+      for (const value of Object.values(messages[locale])) {
+        expect(value.trim()).not.toBe('');
+      }
+    }
   });
 });
 

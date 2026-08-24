@@ -13,6 +13,10 @@ export default defineConfig({
   use: {
     baseURL: WEB_URL,
     trace: 'on-first-retry',
+    // Pinned rather than left to the runner's own locale, which a spec asserting a specific
+    // starting language (new-budget.spec.ts) would otherwise depend on silently. A test that
+    // wants a different one opens its own context, the way locale.spec.ts already does.
+    locale: 'en-US',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [

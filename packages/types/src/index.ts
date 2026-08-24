@@ -11,7 +11,14 @@ export {
   parseDecimalString,
 } from './money.js';
 export type { CurrencyCode } from './currency.js';
-export { isCurrencyCode, minorDigits } from './currency.js';
+export {
+  CURRENCY_PATTERN,
+  isCurrencyCode,
+  isSupportedCurrency,
+  minorDigits,
+  supportedCurrencyCodes,
+} from './currency.js';
+export type { BudgetDto } from './budget.js';
 export type { LanguageTag, UserSettingsDto } from './user-settings.js';
 export type { CalendarDate, CalendarMonth } from './calendar.js';
 export {

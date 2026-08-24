@@ -8,9 +8,10 @@ below.
 [`src/user-settings`](src/user-settings) is the read path in full: controller → service →
 `SCOPED_PRISMA`. [`src/mutations`](src/mutations) is the write path, the single point where one
 user operation and its idempotency key are written in one transaction. Both stand on the
-request context, the auto-scoped Prisma client and the raw-SQL repository below. The read path
-is published through the contract; the write path has no endpoint yet, so nothing of it appears
-in `openapi.json`.
+request context, the auto-scoped Prisma client and the raw-SQL repository below.
+[`src/budgets`](src/budgets) uses both: `GET /budgets` reads through the scoped client, and
+`POST /budgets` writes the budget, the caller's language and the starter categories in one
+transaction.
 
 ## Endpoints
 
@@ -24,7 +25,16 @@ in `openapi.json`.
   anything else → `en`), every later one only reads. A GET that can write is deliberate.
   There is exactly one settings row per user and nothing for a client to decide, so a
   create-then-read handshake would add a round-trip with one possible outcome (F1.6).
-  Changing the language is Phase 7.
+  Changing the language on its own has no endpoint yet.
+- `GET /budgets` returns the caller's budgets, oldest first, with the active one marked. A
+  caller who has not created one yet gets an empty list rather than an error.
+- `POST /budgets` creates a budget and, when asked for, the starter groups and categories. One
+  transaction covers all of it, the caller's interface language included: the category names
+  are written in that language, and a second request to store it would leave a window where
+  the two disagree. The language stays a property of the user rather than of the budget. The
+  currency is chosen here and nowhere else, so no operation in the contract accepts one
+  afterwards, and its minor digit count is frozen on the row. A user holds at most one active
+  budget, so creating one deactivates the previous.
 
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
@@ -58,6 +68,16 @@ and never a global interceptor, which would make the code say one thing and the 
 schema another. No endpoint carries an amount yet; the boundary is settled before anything puts
 money through it, and `test/money-boundary.spec.ts` is what proves it works.
 
+**A currency and a time zone are declared the same way**, with
+[`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts) and
+[`@ApiTimeZoneProperty()`](src/validation/timezone.decorator.ts). Each publishes the field and
+refuses a value the app cannot use, in one decorator, for the reason above. What a currency
+publishes is the **shape** of a code and not the list of them: the codes come from the
+runtime's own currency data, so publishing them would let a runtime upgrade rewrite the
+committed contract and fail the gate on a change that touches no currency. The codes are owned
+by [`@rondo/types`](../../packages/types/README.md) and enforced at the validator. Keeping them
+out of the published contract is what leaves them free to move with the runtime.
+
 ## The contract (F1.4)
 
 The API describes itself, and everything downstream is generated from that description
@@ -81,9 +101,10 @@ definition both callers share.
   demanded, and the CI step that regenerates the contract needs no connection string. Dropping
   preview mode quietly reintroduces all three; `test/openapi.spec.ts` lives in the **unit**
   suite for that reason.
-- **A handler gets into the spec** through a response class with `@ApiProperty`, named in
-  `@ApiOkResponse`; see [`.claude/rules/architecture.md`](../../.claude/rules/architecture.md).
-  An interface produces an endpoint with no documented shape at all.
+- **A handler gets into the spec** through a response class with `@ApiProperty`, named in the
+  handler's success decorator; see
+  [`.claude/rules/architecture.md`](../../.claude/rules/architecture.md), which owns which
+  decorator that is. An interface produces an endpoint with no documented shape at all.
 - **`@Public()` also opens the endpoint in the spec.** It stamps the `x-public` extension, and
   [`buildOpenApiDocument`](src/openapi/document.ts) clears the document-wide bearer requirement
   wherever it finds one. There is no decorator that can express "no security" directly.

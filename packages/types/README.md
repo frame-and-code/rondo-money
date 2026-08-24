@@ -14,6 +14,15 @@ runtime. Over the wire money is a base-10 **string**, because JSON has no bigint
 definition of that shape, shared with the API's validator and the `pattern` published in the
 OpenAPI schema.
 
+**The list of currencies** lives here too, and it comes from the runtime rather than from a
+table of our own: `supportedCurrencyCodes()` reads the codes the platform knows and
+`isSupportedCurrency` answers whether one exists. That is a different question from
+`isCurrencyCode`, which only says whether a string is three uppercase letters, so `ZZZ` passes
+the second and fails the first. Both ends use these: the API refuses an unknown code at the
+boundary, and the screen searches the same list. `CURRENCY_PATTERN` is the shape, and it is
+what the OpenAPI schema publishes; the codes themselves are not published, because they move
+when the runtime does.
+
 `toDecimalString` / `parseDecimalString` convert between minor units and the decimal form a
 person reads and types (`1250n` ↔ `"12.50"` in USD). They convert the **scale** and nothing
 else. No currency symbol, no grouping separator, no locale-specific decimal mark. Rendering

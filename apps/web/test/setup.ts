@@ -24,6 +24,26 @@ if (typeof window !== 'undefined') {
     }),
   });
 
+  if (typeof window.PointerEvent === 'undefined') {
+    class JsdomPointerEvent extends MouseEvent {
+      readonly pointerId: number;
+      readonly pointerType: string;
+      readonly isPrimary: boolean;
+
+      constructor(type: string, options: PointerEventInit = {}) {
+        super(type, options);
+        this.pointerId = options.pointerId ?? 0;
+        this.pointerType = options.pointerType ?? 'mouse';
+        this.isPrimary = options.isPrimary ?? true;
+      }
+    }
+
+    Object.defineProperty(window, 'PointerEvent', {
+      writable: true,
+      value: JsdomPointerEvent,
+    });
+  }
+
   if (!Element.prototype.hasPointerCapture) {
     Element.prototype.hasPointerCapture = () => false;
   }

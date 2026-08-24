@@ -12,13 +12,19 @@ describe('OpenAPI document', () => {
   });
 
   it('describes the endpoints the app actually serves', () => {
-    expect(Object.keys(document.paths).sort()).toEqual(['/health', '/me', '/user-settings']);
+    expect(Object.keys(document.paths).sort()).toEqual([
+      '/budgets',
+      '/health',
+      '/me',
+      '/user-settings',
+    ]);
   });
 
   it('gives every response a schema, so a client is typed rather than guessing', () => {
     expect(document.components?.schemas).toHaveProperty('CurrentUserResponse');
     expect(document.components?.schemas).toHaveProperty('HealthResponse');
     expect(document.components?.schemas).toHaveProperty('UserSettingsResponse');
+    expect(document.components?.schemas).toHaveProperty('BudgetResponse');
     expect(document.paths['/me']?.get?.responses['200']).toBeDefined();
   });
 
@@ -73,6 +79,37 @@ describe('OpenAPI document', () => {
 
       expect(health?.security).toEqual([]);
       expect(health && PUBLIC_OPERATION_EXTENSION in health).toBe(true);
+    });
+  });
+
+  describe('currency', () => {
+    it('publishes the shape of a code rather than the list of them', () => {
+      const body = document.components?.schemas?.['CreateBudgetDto'];
+      const currency = body && 'properties' in body ? body.properties?.['currency'] : undefined;
+
+      expect(currency).toMatchObject({ type: 'string', pattern: '^[A-Z]{3}$' });
+      expect(currency).not.toHaveProperty('enum');
+    });
+
+    it('is accepted by no operation other than creating a budget, because it never changes', () => {
+      const accepting = Object.entries(document.paths).flatMap(([path, pathItem]) =>
+        HTTP_METHODS.filter((method) => {
+          const requestBody = pathItem[method]?.requestBody;
+          if (!requestBody || !('content' in requestBody)) return false;
+
+          return Object.values(requestBody.content ?? {}).some((media) => {
+            const schema = media.schema;
+            const name = schema && '$ref' in schema ? schema.$ref?.split('/').pop() : undefined;
+            const resolved = name ? document.components?.schemas?.[name] : schema;
+
+            return Boolean(
+              resolved && 'properties' in resolved && resolved.properties?.['currency'],
+            );
+          });
+        }).map((method) => `${method.toUpperCase()} ${path}`),
+      );
+
+      expect(accepting).toEqual(['POST /budgets']);
     });
   });
 

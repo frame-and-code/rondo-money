@@ -35,6 +35,46 @@ export const ru = {
   'netWorth.slotBody': 'Сюда встанет график капитала.',
   'settings.slotTitle': 'Слот раздела «Настройки»',
   'settings.slotBody': 'Сюда встанут валюта, таймзона и язык бюджета.',
+
+  'newBudget.heading': 'Соберём ваш первый бюджет',
+  'newBudget.lead':
+    'У каждой суммы на счетах есть задача. Вы не гадаете про будущие доходы, вы распределяете деньги, которые уже лежат на счетах.',
+  'newBudget.point1Title': 'Группы и категории',
+  'newBudget.point1Body': 'Стартовый набор создаётся по вашему выбору, на выбранном языке.',
+  'newBudget.point2Title': 'Остатки по счетам',
+  'newBudget.point2Body': 'Следующий шаг: сколько денег сейчас лежит на каждом счёте.',
+  'newBudget.point3Title': 'Распределение',
+  'newBudget.point3Body': 'Дальше вы раздаёте деньги категориям, пока «Свободно» не станет нулём.',
+  'newBudget.cardTitle': 'Новый бюджет',
+  'newBudget.cardDescription': 'Язык, имя и валюта. Всё остальное настроим на следующих шагах.',
+  'newBudget.languageLabel': 'Язык',
+  'newBudget.languageHint':
+    'На нём будут названия категорий и подписи в приложении. Поменять язык можно потом, названия категорий останутся.',
+  'newBudget.nameLabel': 'Название',
+  'newBudget.namePlaceholder.0': 'Семейный бюджет',
+  'newBudget.namePlaceholder.1': 'Личный бюджет',
+  'newBudget.namePlaceholder.2': 'Домашние финансы',
+  'newBudget.namePlaceholder.3': 'Мои деньги',
+  'newBudget.namePlaceholder.4': 'Бизнес',
+  'newBudget.currencyLabel': 'Валюта',
+  'newBudget.currencyPlaceholder': 'Выберите валюту',
+  'newBudget.searchPlaceholder': 'Код или название',
+  'newBudget.nothingFound': 'Ничего не нашлось',
+  'newBudget.currencyLocked': 'После создания валюту изменить нельзя',
+  'newBudget.currencyCount': '{{shown}} из {{total}} валют',
+  'newBudget.currencyCountLimited': 'Показаны первые {{limit}} из {{total}}',
+  'newBudget.defaultsLabel': 'Создать стартовый набор категорий',
+  'newBudget.defaultsOn':
+    'Группы и категории появятся вместе с бюджетом. Переименовать и скрыть можно потом.',
+  'newBudget.defaultsOff': 'Бюджет создастся с пустым списком, категории добавите сами.',
+  'newBudget.submit': 'Создать бюджет',
+  'newBudget.submitting': 'Создаём…',
+  'newBudget.submitFailed': 'Не получилось создать бюджет. Попробуйте ещё раз.',
+  'newBudget.doneTitle': 'Бюджет «{{name}}» создан',
+  'newBudget.doneWithDefaults':
+    'Валюта {{currency}}. Стартовый набор категорий создан. Следующий шаг: счета и остатки на них.',
+  'newBudget.doneWithoutDefaults':
+    'Валюта {{currency}}. Категорий пока нет, добавите свои. Следующий шаг: счета и остатки на них.',
 } as const;
 
 export type MessageKey = keyof typeof ru;

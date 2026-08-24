@@ -131,9 +131,11 @@ pnpm --filter @rondo/db build         # prisma generate + tsc → dist
 pnpm --filter @rondo/db db:generate   # prisma generate
 pnpm --filter @rondo/db db:migrate    # prisma migrate dev (requires a running Postgres)
 pnpm --filter @rondo/db db:deploy     # prisma migrate deploy (prod)
+pnpm --filter @rondo/db db:reset      # prisma migrate reset, drops the local database
 pnpm --filter @rondo/db db:studio     # prisma studio
 ```
 
 `DATABASE_URL` is loaded from the root `.env` directly in `prisma.config.ts` (see
 `.env.example` and `docker-compose.yml`); on Railway it comes from real environment variables.
-Short aliases are available from the repo root: `pnpm db:generate` and `pnpm db:migrate`.
+Short aliases are available from the repo root: `pnpm db:generate`, `pnpm db:migrate` and
+`pnpm db:reset`.

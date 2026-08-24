@@ -34,8 +34,9 @@ COMMAND=$(node -e '
 [ -z "$COMMAND" ] && exit 0
 
 # Commands that can drop or overwrite data, plus the pnpm aliases that wrap them
-# (db:migrate -> prisma migrate dev, db:deploy -> prisma migrate deploy).
-DESTRUCTIVE='prisma[[:space:]]+migrate[[:space:]]+(reset|deploy|dev)|prisma[[:space:]]+db[[:space:]]+(push|execute)|(^|[[:space:]])db:(migrate|deploy)([[:space:]]|$)|dropdb|DROP[[:space:]]+(DATABASE|SCHEMA|TABLE)|TRUNCATE[[:space:]]'
+# (db:migrate -> prisma migrate dev, db:deploy -> prisma migrate deploy,
+# db:reset -> prisma migrate reset).
+DESTRUCTIVE='prisma[[:space:]]+migrate[[:space:]]+(reset|deploy|dev)|prisma[[:space:]]+db[[:space:]]+(push|execute)|(^|[[:space:]])db:(migrate|deploy|reset)([[:space:]]|$)|dropdb|DROP[[:space:]]+(DATABASE|SCHEMA|TABLE)|TRUNCATE[[:space:]]'
 
 printf '%s' "$COMMAND" | grep -qiE "$DESTRUCTIVE" || exit 0
 
