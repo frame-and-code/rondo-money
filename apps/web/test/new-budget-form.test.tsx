@@ -449,4 +449,22 @@ describe('the new budget form on a phone', () => {
       'PLN',
     );
   });
+
+  it('picks a language from the drawer', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await user.click(screen.getByRole('combobox', { name: ru['newBudget.languageLabel'] }));
+
+    const drawer = await screen.findByRole('dialog');
+    expect(
+      within(drawer).getByRole('heading', { name: ru['newBudget.languageLabel'] }),
+    ).toBeInTheDocument();
+
+    await user.click(await screen.findByRole('option', { name: localeLabels.en }));
+
+    expect(
+      await screen.findByRole('combobox', { name: en['newBudget.languageLabel'] }),
+    ).toHaveTextContent(localeLabels.en);
+  });
 });
