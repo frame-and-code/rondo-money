@@ -462,7 +462,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
                 <div className="bg-secondary flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3.5">
                   <span className="text-sm">{t('newBudget.doneCurrency')}</span>
-                  <span className="text-end text-lg font-semibold tracking-tight text-balance">
+                  <span className="text-end text-base font-semibold tracking-tight text-balance">
                     {currencyName(locale, created.currency)}
                   </span>
                 </div>
