@@ -279,6 +279,10 @@ describe('the single write point (integration)', () => {
 
     it('refuses a write from a promise that outlived the mutation that started it', async () => {
       let escaped: Promise<unknown> = Promise.resolve();
+      let release: () => void = () => undefined;
+      const mutationHasClosed = new Promise<void>((settle) => {
+        release = settle;
+      });
 
       await asUser(USER_A, () =>
         mutations.run(
@@ -287,7 +291,7 @@ describe('the single write point (integration)', () => {
             await tx.categoryGroup.create({
               data: { userId: USER_A, budgetId: budgetOfA.id, name: 'Living', sortOrder: 0 },
             });
-            escaped = new Promise((settle) => setTimeout(settle, 5)).then(() =>
+            escaped = mutationHasClosed.then(() =>
               scoped.categoryGroup.create({
                 data: { userId: USER_A, budgetId: budgetOfA.id, name: 'Late', sortOrder: 1 },
               }),
@@ -298,6 +302,8 @@ describe('the single write point (integration)', () => {
           },
         ),
       );
+
+      release();
 
       await expect(escaped).rejects.toThrow(/single mutation service/);
 
