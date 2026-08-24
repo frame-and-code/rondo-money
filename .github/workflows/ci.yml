@@ -254,9 +254,9 @@ jobs:
               echo "### E2E will be skipped"
               echo
               echo "The Clerk dev-instance keys are not exposed to this run (a fork pull request;"
-              echo "Dependabot reads its own copy from the Dependabot secrets store), and the web"
-              echo "app cannot serve a single request without them. Every other job in the gate"
-              echo "still runs."
+              echo "Dependabot reads its own copy from the Dependabot secrets store), and in CI the"
+              echo "e2e build refuses to start without them. Every other job in the gate still runs,"
+              echo "the image one included: it boots the app on placeholders."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ "${HAS_SONAR_TOKEN}" != 'true' ] && [ "${IS_FORK}" != 'true' ]; then

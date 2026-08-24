@@ -139,13 +139,14 @@ status check keeps the exact id `gate` that branch rules point at.
   the path `apps/web/railway.json` probes, without following redirects, for the reason the
   `HEALTHCHECK` in that Dockerfile spells out. What it proves is that the image boots and
   serves, not that anyone can sign in; `e2e` owns authentication.
-- **The `image` job builds on placeholders and takes no secret.** The public build args only
-  have to satisfy `apps/web/check-public-env.mjs`, which asks for an exact origin and a
-  non-empty key, so real values would buy nothing and would put a secret in an image layer.
-  Placeholders also keep the job out of reach of `preflight`: it cannot be skipped for want of
-  a secret, and it runs the same on a fork pull request as on the branch. That matters most on
-  the dependency bumps that auto-merge on a green gate, which is how a broken bundle reached
-  `main` once already.
+- **The `image` job reads no secret at all, and that is what makes it unskippable.** Neither
+  build arg is one: `NEXT_PUBLIC_*` is inlined into the browser bundle by design, and
+  `CLERK_SECRET_KEY` reaches the container at run time and never the build. What they have to
+  satisfy is `apps/web/check-public-env.mjs`, an exact origin and a non-empty key, so
+  placeholders satisfy it and real values would buy nothing. Needing no secret puts the job
+  outside `preflight`'s reach: it cannot be skipped when one is missing, and a fork pull
+  request runs it exactly as the branch does. That matters most on the dependency bumps that
+  auto-merge on a green gate.
 - **Installing the browser is the slowest step in that job, and it has two halves.** The
   browser binaries are cached on the resolved Playwright version, so a hit skips the CDN
   download. The cache is saved by an explicit step rather than by `actions/cache`'s post step,
