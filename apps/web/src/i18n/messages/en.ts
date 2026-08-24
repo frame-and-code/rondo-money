@@ -78,7 +78,7 @@ export const en: Record<MessageKey, string> = {
   'newBudget.doneWithDefaults': 'The starter categories are in place',
   'newBudget.doneWithoutDefaults': 'No categories yet, you will add your own',
   'newBudget.doneCurrency': 'Currency',
-  'newBudget.doneOpening': 'Opening the next step',
+  'newBudget.continue': 'Create an account',
 
   'newAccount.heading': 'Now add your first account',
   'newAccount.lead':

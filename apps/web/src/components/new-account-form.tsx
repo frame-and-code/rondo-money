@@ -36,7 +36,6 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
 import { accountNamePlaceholderKey } from '@/i18n/name-placeholders';
-import { CONFIRMATION_MS } from '@/lib/onboarding';
 
 /// A tap target on a phone, the design system's own height from the medium breakpoint up.
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
@@ -73,6 +72,10 @@ const TYPES: ReadonlyArray<{
   },
   { id: 'CASH', icon: IconCash, title: 'newAccount.typeCash', body: 'newAccount.typeCashHint' },
 ];
+
+/// Long enough to read the line under the check, short enough that nobody waits for it. This
+/// is the last step, so nothing follows it to read the confirmation on.
+const CONFIRMATION_MS = 2200;
 
 /// The kind most first accounts are. Cash sits beside it rather than under it, so choosing the
 /// other one is one tap and not a discovery.

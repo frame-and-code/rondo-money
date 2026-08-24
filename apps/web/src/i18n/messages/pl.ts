@@ -77,7 +77,7 @@ export const pl: Record<MessageKey, string> = {
   'newBudget.doneWithDefaults': 'Startowe kategorie są gotowe',
   'newBudget.doneWithoutDefaults': 'Na razie brak kategorii, dodasz własne',
   'newBudget.doneCurrency': 'Waluta',
-  'newBudget.doneOpening': 'Otwieramy następny krok',
+  'newBudget.continue': 'Utwórz konto',
 
   'newAccount.heading': 'Teraz dodaj pierwsze konto',
   'newAccount.lead':

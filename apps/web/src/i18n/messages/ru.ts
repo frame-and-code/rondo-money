@@ -74,7 +74,7 @@ export const ru = {
   'newBudget.doneWithDefaults': 'Стартовый набор категорий создан',
   'newBudget.doneWithoutDefaults': 'Категорий пока нет, добавите свои',
   'newBudget.doneCurrency': 'Валюта',
-  'newBudget.doneOpening': 'Открываем следующий шаг',
+  'newBudget.continue': 'Создать счёт',
 
   'newAccount.heading': 'Теперь заведём первый счёт',
   'newAccount.lead':

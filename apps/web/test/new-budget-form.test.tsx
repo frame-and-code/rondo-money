@@ -1,6 +1,6 @@
 import { supportedCurrencyCodes } from '@rondo/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { NewBudgetForm } from '@/components/new-budget-form';
@@ -95,10 +95,6 @@ const fillOut = async (user: ReturnType<typeof userEvent.setup>, name = 'Сем�
 describe('the new budget form', () => {
   beforeEach(() => {
     replace.mockReset();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   beforeEach(() => {
@@ -440,24 +436,31 @@ describe('the new budget form', () => {
     expect(screen.getByText('PLN')).toBeInTheDocument();
   });
 
-  it('carries the user on to the second step rather than parking them on a button', async () => {
-    jest.useFakeTimers();
-    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+  it('offers the way on to the accounts step, and goes nowhere on its own', async () => {
+    const user = userEvent.setup();
     draw();
 
     await fillOut(user);
     await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
-    await screen.findByText(interpolate(ru['newBudget.doneTitle'], { name: 'Семейный' }));
 
-    // The confirmation is the only place the screen says the budget exists, so it is read
-    // before the wizard moves, not skipped past.
+    const onwards = await screen.findByRole('link', { name: ru['newBudget.continue'] });
+    expect(onwards).toHaveAttribute('href', '/new/account');
     expect(replace).not.toHaveBeenCalled();
+  });
 
-    await act(async () => {
-      jest.advanceTimersByTime(5_000);
-    });
+  it('renders that way on as a real anchor, with no complaint from the primitive', async () => {
+    // A button primitive told to render a link claims native button semantics it does not have,
+    // and says so on the console rather than failing anything.
+    const user = userEvent.setup();
+    const complaints = jest.spyOn(console, 'error').mockImplementation(() => {});
+    draw();
 
-    expect(replace).toHaveBeenCalledWith('/new/account');
+    await fillOut(user);
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+    await screen.findByRole('link', { name: ru['newBudget.continue'] });
+
+    expect(complaints).not.toHaveBeenCalled();
+    complaints.mockRestore();
   });
 
   it('reports a failure instead of pretending the budget exists', async () => {
