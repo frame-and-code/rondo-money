@@ -81,7 +81,7 @@ as much as a real one.
 | `/sync-docs`           | sweeps the documentation the change touched and corrects what went stale                                                                                                                                              |
 | `/review [target]`     | fans four parallel reviewer subagents over the branch, verifies each finding, reports; changes nothing                                                                                                                |
 | `/phase-done <F1.x>`   | verifies the ticket's Acceptance Criteria one by one, runs the gate, drafts the PR text                                                                                                                               |
-| `/prep-pr <F1.x>`      | tidies, gates, sweeps the docs, runs a review round, then commits, pushes and opens the PR                                                                                                                            |
+| `/prep-pr <F1.x>`      | tidies, gates, sweeps the docs, reviews in rounds and fixes what blocks, then commits, pushes and opens the PR                                                                                                        |
 | `/babysit-pr [#N]`     | polls CI, Sonar and the AI reviewers on an open PR, fixes what they find, stops at merge-ready                                                                                                                        |
 | `/close-ticket <F1.x>` | after the merge: ticks the ticket's AC/DoD with evidence, corrects what the work made false, records the PRs and the decisions, puts ✅ in the title, returns to a fresh `main` and deletes the merged local branches |
 

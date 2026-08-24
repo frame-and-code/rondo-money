@@ -13,6 +13,7 @@ describe('OpenAPI document', () => {
 
   it('describes the endpoints the app actually serves', () => {
     expect(Object.keys(document.paths).sort()).toEqual([
+      '/accounts',
       '/budgets',
       '/health',
       '/me',
@@ -25,6 +26,8 @@ describe('OpenAPI document', () => {
     expect(document.components?.schemas).toHaveProperty('HealthResponse');
     expect(document.components?.schemas).toHaveProperty('UserSettingsResponse');
     expect(document.components?.schemas).toHaveProperty('BudgetResponse');
+    expect(document.components?.schemas).toHaveProperty('AccountResponse');
+    expect(document.components?.schemas).toHaveProperty('BadRequestResponse');
     expect(document.paths['/me']?.get?.responses['200']).toBeDefined();
   });
 
@@ -33,6 +36,47 @@ describe('OpenAPI document', () => {
     expect(document.components?.schemas?.['LanguageTag']).toMatchObject({
       enum: ['ru', 'en', 'pl'],
     });
+  });
+
+  it('names the account type enum, so clients get a union type instead of a bare string', () => {
+    expect(document.components?.schemas).toHaveProperty('AccountType');
+    expect(document.components?.schemas?.['AccountType']).toMatchObject({
+      enum: ['CASH', 'DEBIT'],
+    });
+  });
+
+  it('publishes a bad request body that covers both the pipe and the domain', () => {
+    expect(document.components?.schemas?.['BadRequestResponse']).toMatchObject({
+      properties: {
+        message: {
+          oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
+        },
+      },
+    });
+  });
+
+  it('publishes a bad request shape wherever the pipe can answer with one', () => {
+    // Every operation taking a body is validated by the global pipe, so 400 is answerable
+    // whatever the handler itself does, and an undocumented status collapses that operation's
+    // whole error type to `unknown` in the generated client.
+    const typed = (response: unknown): boolean => {
+      const schema =
+        response && typeof response === 'object' && 'content' in response
+          ? ((response.content as Record<string, { schema?: { $ref?: string } }> | undefined)?.[
+              'application/json'
+            ]?.schema?.$ref ?? '')
+          : '';
+
+      return schema.endsWith('/BadRequestResponse');
+    };
+
+    const undocumented = Object.entries(document.paths).flatMap(([path, item]) =>
+      HTTP_METHODS.filter(
+        (method) => item[method]?.requestBody && !typed(item[method]?.responses['400']),
+      ).map((method) => `${method.toUpperCase()} ${path}`),
+    );
+
+    expect(undocumented).toEqual([]);
   });
 
   it('describes each parameter once, whatever the case it is written in', () => {

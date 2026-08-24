@@ -109,8 +109,9 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
   language from `Accept-Language`, so whichever scenario signs in first decides it for every
   later one. `locale.spec.ts` therefore owns `LOCALE_TEST_EMAIL` and no other spec touches it;
   a scenario that needs a language of its own adds an account rather than sharing one. The
-  budget scenario needs more than that: it picks a language **and** leaves a budget behind, so
-  its account is deleted and created again on every run. A fresh Clerk user id owns nothing the
+  budget scenario needs more than that: it picks a language **and** leaves a budget, an
+  account and a transaction behind, so its Clerk user is deleted and created again on every
+  run. A fresh Clerk user id owns nothing the
   last run wrote, which is what keeps "this user has no budget" true a second time.
 - [`e2e/global-setup.ts`](../apps/web/e2e/global-setup.ts) issues the Clerk **Testing
   Token** (`@clerk/testing`, which bypasses bot detection for automated browsers) and creates

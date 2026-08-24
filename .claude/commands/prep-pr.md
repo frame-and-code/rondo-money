@@ -44,34 +44,47 @@ git-ignored `settings.local.json`.
    a follow-up "docs" task is how drift starts. Cheap when there is nothing to fix, and the
    report says which documents were checked and found accurate. A sweep that reports nothing
    cannot be told apart from a sweep nobody ran.
-5. **One review round** with [`/review`](review.md), unless the change is of a kind that rule
+5. **Review rounds** with [`/review`](review.md), unless the change is of a kind that rule
    says does not earn one (a copy edit, a dependency bump, a one-line fix that cannot fail
    silently). That command fans out to `pr-reviewer` subagents, and **reaching this step is
    the explicit request to spawn them**, exactly as typing `/prep-pr` is the request for the
    three git actions. A standing "no subagents unless asked" is satisfied here; doing the
-   round single-context instead is a weaker pass reported under the same name. Print what it found, then:
-   - a **MUST FIX** or **SHOULD FIX** that survived verification **stops this command here**,
-     before any git action. Report it and hand back. Fixing is the user's call, and so is
-     deciding that the finding is wrong or that its severity was inflated. An overruled
-     finding is recorded in the report, not silently dropped. Once it is resolved, running
-     `/prep-pr` again reviews the new state. That is where the second round comes from, and
-     why the loop needs no machinery of its own. The fix is where the next bug lives
-     (`review.md` records the chain that proved it), so the round after a fix is the one worth
-     having;
-   - **NICE TO HAVE** is reported and does not block. Say plainly that it is being carried
-     into the PR, so the choice is visible rather than implied.
+   round single-context instead is a weaker pass reported under the same name. Print what each
+   round found, then:
+   - a **MUST FIX** or **SHOULD FIX** that survived verification **is fixed here, in this run,
+     without asking**. Print it first, so the user sees what was found and at what grade,
+     then fix it and run the next round on the new state. **The fix is where the next bug
+     lives** (`review.md` records the chain that proved it), so the round after a fix is the
+     one worth having, and it is the reason this loop exists rather than a single pass;
+   - **the loop runs at most three rounds.** Stop at the first round that finds nothing
+     blocking. A blocking finding in the third round is fixed like any other, and then the run
+     **stops before the commit**, reaching no git action at all: that fix goes unreviewed, and
+     needing a fourth round is the signal the change is too large to review, which no further
+     round solves. Report which round stopped it and what went in unread;
+   - **NICE TO HAVE is not part of the loop.** Fix only the quick wins, the ones whose change
+     is small, local and obviously right. Everything else is carried into the PR and named in
+     the report, so the choice is visible rather than implied. A NICE TO HAVE is never a
+     reason to run another round;
+   - a finding the **user** overrules is recorded in the report, not silently dropped.
+     Deciding a finding is wrong or over-graded stays theirs; deciding to fix a blocking one
+     does not, because the grade already carries that decision.
+
+   Fixing inside the run is what keeps a blocking finding from becoming a follow-up nobody
+   files. A round that changed files therefore re-runs **step 3 and step 4** before the next
+   one: a fix that breaks a level must not reach the commit, and a fix that makes a sentence
+   false is exactly what the sweep is for. Both are cheap next to another fan-out.
 
    Convention findings block on purpose. This repository is written by an agent, so "we'll
    tidy it next time" has no one to fall to. What is genuinely deferrable is a NICE TO HAVE,
    and grading it honestly is what keeps the gate from turning into a formality.
 
-   **Last of everything that changes the tree, and that ordering is load-bearing.** After the
-   gate, because there is no sense spending four agents on a tree that does not compile; after
-   the tidy-up and the sweep, because a reviewer must read what is about to be committed. The
-   other order was tried and is worse in both directions. The prose reviewer would find the
+   **After the gate and the sweep, and that ordering is load-bearing.** After the gate, because
+   there is no sense spending four agents on a tree that does not compile; after the tidy-up
+   and the sweep, because the first round must read a tree whose prose is already corrected.
+   The other order was tried and is worse in both directions. The prose reviewer would find the
    sentences the sweep had not corrected yet and block on them, so the run never reached the
-   step written to fix exactly that, while the prose the sweep then wrote went into the
-   commit unread by anyone.
+   step written to fix exactly that. This step does change the tree, which is why a round that
+   fixed something is followed by another one rather than by the commit.
 
 6. **Stage what is about to ship.** `git status` and the diff: stage what belongs to the
    ticket, and name anything deliberately left behind. No `git add -A` reflex. Unrelated
@@ -92,11 +105,11 @@ git-ignored `settings.local.json`.
 ## Report
 
 ```markdown
-## <ticket>: PR opened
+## <ticket>: PR opened, or stopped at round <n>
 
 - Branch: <name>
-- Commit: <sha>, <message>
-- PR: <url>
+- Commit: <sha>, <message> (omit when the run stopped before committing)
+- PR: <url> (omit when the run stopped before committing)
 - Left out: <unstaged files, and why> (omit when none)
 
 ### Changed
@@ -109,7 +122,8 @@ git-ignored `settings.local.json`.
 
 ### Review
 
-- Round <n>: <blocking findings: none, or them and the fact that the command stopped>
+- Round <n>: <what it found, and what was fixed in response>
+- Stopped at: <the round that found nothing blocking, or the third with what still stands>
 - Overruled: <a blocking finding the user judged wrong or over-graded, and their reason> (omit when none)
 - Carried into the PR: <NICE TO HAVE left unfixed> (omit when none)
 

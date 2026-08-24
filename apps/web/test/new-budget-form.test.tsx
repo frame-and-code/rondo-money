@@ -426,7 +426,30 @@ describe('the new budget form', () => {
     expect(
       screen.getByText(interpolate(ru['newBudget.doneWithDefaults'], { currency: 'PLN' })),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('renders the way on as a real anchor, with no complaint from the primitive', async () => {
+    const user = userEvent.setup();
+    const complaints = jest.spyOn(console, 'error').mockImplementation(() => {});
+    draw();
+
+    await fillOut(user);
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+    await screen.findByRole('link', { name: ru['newBudget.continue'] });
+
+    expect(complaints).not.toHaveBeenCalled();
+    complaints.mockRestore();
+  });
+
+  it('offers the way on to the accounts step', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await fillOut(user);
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+
+    const onwards = await screen.findByRole('link', { name: ru['newBudget.continue'] });
+    expect(onwards).toHaveAttribute('href', '/new/account');
   });
 
   it('reports a failure instead of pretending the budget exists', async () => {

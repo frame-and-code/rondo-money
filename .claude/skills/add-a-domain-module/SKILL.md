@@ -88,7 +88,12 @@ extension looks up on the first query that needs it and remembers for the rest o
 It covers reads and the writes that pick out existing rows; a write that creates them carries
 its own budget in the payload instead. Which operations fall on
 which side, and why, is in [security](../../rules/security.md). An operation issued when the
-caller has no active budget is **refused**, and nothing sets one by hand: the lookup does not
+caller has no active budget is **refused**, and what that refusal is depends on who asks first.
+The extension raises a plain `Error`, which reaches the caller as a 500 for an ordinary state,
+a user part way through onboarding. So a service reading a budget-owned model asks for the
+active budget itself and answers 400 when there is none, the way
+[`AccountsService`](../../../apps/api/src/accounts/accounts.service.ts) does. Nothing sets one
+by hand: the lookup does not
 remember an absence, so the request that creates the first budget is answered by the next query
 that needs one. A unit test calling the scoped client by hand supplies its own resolver, or
 sets the budget itself. The pattern is in
@@ -104,6 +109,10 @@ do not catch.
 Never the body, a query parameter or a header, however convenient. With no RLS behind us
 nothing further down would catch it. Document the handler with `@ApiOperation`,
 `@ApiOkResponse({ type })` and `@ApiUnauthorizedResponse`, because the spec _is_ the client.
+A handler that can answer 400 adds `@ApiBadRequestResponse` with
+[`BadRequestResponse`](../../../apps/api/src/openapi/bad-request.response.ts), and one taking a
+DTO body always can, because the global pipe answers before it. An undocumented status leaves
+the client's whole error type `unknown`.
 `@Public()` opens an endpoint to both the guard and the spec at once; never add a second
 decorator saying the same thing.
 

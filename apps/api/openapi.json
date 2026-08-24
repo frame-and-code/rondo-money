@@ -138,6 +138,16 @@
               }
             }
           },
+          "400": {
+            "description": "The body was refused: a field is missing, malformed or not declared at all.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "The token was missing, malformed, expired or not minted for this app.",
             "content": {
@@ -198,11 +208,118 @@
           "Budgets"
         ]
       }
+    },
+    "/accounts": {
+      "post": {
+        "description": "Creates the account and its opening balance in one database transaction. The balance is an income transaction dated today in the budget timezone, carrying no category, so the money lands in Ready to Assign. It is written even when the balance is zero.",
+        "operationId": "AccountsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The account that now exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the caller has no active budget to add it to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create an account",
+        "tags": [
+          "Accounts"
+        ]
+      },
+      "get": {
+        "description": "The accounts of the budget the caller is working in, oldest first. Balances are not here: they are computed from transactions rather than stored.",
+        "operationId": "AccountsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The accounts that exist now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The caller has no active budget, so there are no accounts to scope to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The active budget's accounts",
+        "tags": [
+          "Accounts"
+        ]
+      }
     }
   },
   "info": {
     "title": "Rondo Money API",
-    "description": "The REST contract of Rondo Money, a zero-based budgeting app. The backend owns every\ndatabase access (ADR-002); this spec is what the typed client in `packages/api-client` is\ngenerated from, so it is the contract itself rather than a description of one.\n\n**Authentication.** Every endpoint requires a Clerk session token as\n`Authorization: Bearer <jwt>`, except the ones marked `x-public: true`. Today that is only the\nplatform healthcheck, which the deployment probes anonymously. The token must also carry an\n`azp` claim equal to this API's configured web origin, so a token minted for another origin\ncannot be replayed here.\n\n**Money.** Amounts are an integer number of **minor units** (cents, kopeks, grosze), and the\nnumber of minor digits comes from the budget's currency rather than a fixed 2: 0 for JPY,\n3 for BHD.\nJSON has no bigint, so every money field crosses the wire as a base-10 **string**, in its\nshortest form: digits with an optional leading `-`, no leading zeros and no `-0`. So `0`,\n`-4500`, `120000`. One amount therefore has exactly one spelling, which is also what lets a\nmoney field publish a `maxLength` alongside its `pattern`. That applies in both directions:\nan amount **sent** to this API is the same string, and one that is a JSON number, carries a\ndecimal point, uses exponent notation or pads itself with zeros is rejected with 400 rather\nthan rounded or quietly normalised into something plausible. So is one that falls outside the\nrange the money column holds (a signed 64-bit integer), which is the only rejection a client\ncannot predict from the schema, because JSON Schema's numeric bounds do not apply to a string. The single definition of the convention, with its\nserializer, its parser and the pattern published on every money field, is\n`packages/types/src/money.ts`. No endpoint carries money yet; the convention is stated here\nbecause the contract is published before the first amount travels over it.\n\n**Request bodies** are validated against the schema published here: a field the schema does\nnot declare is an error, not something quietly ignored.",
+    "description": "The REST contract of Rondo Money, a zero-based budgeting app. The backend owns every\ndatabase access (ADR-002); this spec is what the typed client in `packages/api-client` is\ngenerated from, so it is the contract itself rather than a description of one.\n\n**Authentication.** Every endpoint requires a Clerk session token as\n`Authorization: Bearer <jwt>`, except the ones marked `x-public: true`. Today that is only the\nplatform healthcheck, which the deployment probes anonymously. The token must also carry an\n`azp` claim equal to this API's configured web origin, so a token minted for another origin\ncannot be replayed here.\n\n**Money.** Amounts are an integer number of **minor units** (cents, kopeks, grosze), and the\nnumber of minor digits comes from the budget's currency rather than a fixed 2: 0 for JPY,\n3 for BHD.\nJSON has no bigint, so every money field crosses the wire as a base-10 **string**, in its\nshortest form: digits with an optional leading `-`, no leading zeros and no `-0`. So `0`,\n`-4500`, `120000`. One amount therefore has exactly one spelling, which is also what lets a\nmoney field publish a `maxLength` alongside its `pattern`. That applies in both directions:\nan amount **sent** to this API is the same string, and one that is a JSON number, carries a\ndecimal point, uses exponent notation or pads itself with zeros is rejected with 400 rather\nthan rounded or quietly normalised into something plausible. So is one that falls outside the\nrange the money column holds (a signed 64-bit integer), which is the only rejection a client\ncannot predict from the schema, because JSON Schema's numeric bounds do not apply to a string. The single definition of the convention, with its\nserializer, its parser and the pattern published on every money field, is\n`packages/types/src/money.ts`. A field that cannot hold less than nothing publishes the\nnon-negative form of the same pattern, so the bound is in the schema a client reads rather\nthan in prose beside it.\n\n**Request bodies** are validated against the schema published here: a field the schema does\nnot declare is an error, not something quietly ignored.",
     "version": "0.0.0",
     "contact": {}
   },
@@ -405,6 +522,40 @@
           "active"
         ]
       },
+      "BadRequestResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "ConflictResponse": {
         "type": "object",
         "properties": {
@@ -425,6 +576,81 @@
           "statusCode",
           "error",
           "message"
+        ]
+      },
+      "AccountType": {
+        "type": "string",
+        "enum": [
+          "CASH",
+          "DEBIT"
+        ],
+        "description": "Cash or a debit account. A credit card changes how Ready to Assign is counted and is not one of them."
+      },
+      "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What the user calls this account.",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "type": {
+            "description": "Cash or a debit account. A credit card changes how Ready to Assign is counted and is not one of them.",
+            "example": "CASH",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountType"
+              }
+            ]
+          },
+          "initialBalance": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the account holds right now, in minor units of the budget currency. It is stored as an income transaction dated today, never as a column on the account, so it stays correctable afterwards. Zero is a valid amount and still writes that transaction."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two accounts again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "initialBalance",
+          "idempotencyKey"
+        ]
+      },
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this account.",
+            "maxLength": 60
+          },
+          "type": {
+            "description": "Cash or a debit account.",
+            "example": "CASH",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountType"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type"
         ]
       }
     }

@@ -79,4 +79,46 @@ export const en: Record<MessageKey, string> = {
     'Currency {{currency}}. The starter categories are in place. Next step: your accounts and their balances.',
   'newBudget.doneWithoutDefaults':
     'Currency {{currency}}. No categories yet, you will add your own. Next step: your accounts and their balances.',
+
+  'newBudget.continue': 'Add your first account',
+
+  'newAccount.heading': 'Now add your first account',
+  'newAccount.lead':
+    'An account is where the money actually sits: a wallet, a card, a bank account. What is in it today becomes the money you get to hand out.',
+  'newAccount.point1Title': 'Cash or a card',
+  'newAccount.point1Body':
+    'Two kinds for now. A credit card changes how Ready to Assign is counted, so it comes later.',
+  'newAccount.point2Title': 'The balance is income',
+  'newAccount.point2Body':
+    'The starting amount is written as a transaction, not stored on the account, so you can correct it like any other.',
+  'newAccount.point3Title': 'Then you assign',
+  'newAccount.point3Body':
+    'The money lands in Ready to Assign. From there you hand it to categories until nothing is left over.',
+  'newAccount.cardTitle': 'First account',
+  'newAccount.cardDescription': 'Its name, what kind it is, and what is in it right now.',
+  'newAccount.nameLabel': 'Name',
+  'newAccount.namePlaceholder.0': 'Main card',
+  'newAccount.namePlaceholder.1': 'Everyday account',
+  'newAccount.namePlaceholder.2': 'Cash',
+  'newAccount.namePlaceholder.3': 'Savings',
+  'newAccount.namePlaceholder.4': 'Second card',
+  'newAccount.typeLabel': 'Type',
+  'newAccount.typeCash': 'Cash',
+  'newAccount.typeCashHint': 'Notes and coins you hold.',
+  'newAccount.typeDebit': 'Debit card',
+  'newAccount.typeDebitHint': 'A bank account you spend from.',
+  'newAccount.balanceLabel': 'Starting balance',
+  'newAccount.balanceHint': 'Zero is fine. The amount is dated today and can be corrected later.',
+  'newAccount.balancePreview': '{{amount}} lands in Ready to Assign',
+  'newAccount.balanceNegative': 'The starting balance cannot be negative.',
+  'newAccount.balanceDigitsOnly': 'The amount is digits only.',
+  'newAccount.balanceNoDecimals': '{{currency}} has no decimal places.',
+  'newAccount.balanceDecimals': '{{currency}} has {{digits}} decimal places.',
+  'newAccount.submit': 'Finish setup',
+  'newAccount.submitting': 'Saving…',
+  'newAccount.budgetUnavailable': 'Your budget could not be read. Reload the page.',
+  'newAccount.submitFailed': 'The account was not created. Try again.',
+  'newAccount.doneTitle': 'Account “{{name}}” created',
+  'newAccount.doneBody': '{{amount}} is in Ready to Assign. Opening your budget…',
+  'newAccount.footnote': 'This is the last step. Your budget opens on Categories.',
 };

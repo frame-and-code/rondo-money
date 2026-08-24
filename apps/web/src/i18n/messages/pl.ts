@@ -78,4 +78,47 @@ export const pl: Record<MessageKey, string> = {
     'Waluta {{currency}}. Startowe kategorie są gotowe. Następny krok: konta i ich salda.',
   'newBudget.doneWithoutDefaults':
     'Waluta {{currency}}. Na razie brak kategorii, dodasz własne. Następny krok: konta i ich salda.',
+
+  'newBudget.continue': 'Dodaj pierwsze konto',
+
+  'newAccount.heading': 'Teraz dodaj pierwsze konto',
+  'newAccount.lead':
+    'Konto to miejsce, gdzie pieniądze naprawdę leżą: portfel, karta, rachunek bankowy. To, co jest na nim dzisiaj, staje się pieniędzmi do rozdania.',
+  'newAccount.point1Title': 'Gotówka albo karta',
+  'newAccount.point1Body':
+    'Na razie dwa rodzaje. Karta kredytowa zmienia sposób liczenia „Do rozdania”, więc pojawi się później.',
+  'newAccount.point2Title': 'Saldo to przychód',
+  'newAccount.point2Body':
+    'Kwota początkowa zapisuje się jako transakcja, a nie pole konta, więc można ją poprawić jak każdą inną.',
+  'newAccount.point3Title': 'Potem rozdajesz',
+  'newAccount.point3Body':
+    'Pieniądze trafiają do „Do rozdania”. Stamtąd rozdajesz je kategoriom, aż nic nie zostanie.',
+  'newAccount.cardTitle': 'Pierwsze konto',
+  'newAccount.cardDescription': 'Nazwa, rodzaj i to, ile jest na nim teraz.',
+  'newAccount.nameLabel': 'Nazwa',
+  'newAccount.namePlaceholder.0': 'Główna karta',
+  'newAccount.namePlaceholder.1': 'Konto codzienne',
+  'newAccount.namePlaceholder.2': 'Gotówka',
+  'newAccount.namePlaceholder.3': 'Oszczędności',
+  'newAccount.namePlaceholder.4': 'Druga karta',
+  'newAccount.typeLabel': 'Rodzaj',
+  'newAccount.typeCash': 'Gotówka',
+  'newAccount.typeCashHint': 'Banknoty i monety, które masz przy sobie.',
+  'newAccount.typeDebit': 'Karta debetowa',
+  'newAccount.typeDebitHint': 'Rachunek bankowy, z którego wydajesz.',
+  'newAccount.balanceLabel': 'Saldo początkowe',
+  'newAccount.balanceHint':
+    'Zero jest w porządku. Kwota ma dzisiejszą datę i można ją później poprawić.',
+  'newAccount.balancePreview': '{{amount}} trafi do „Do rozdania”',
+  'newAccount.balanceNegative': 'Saldo początkowe nie może być ujemne.',
+  'newAccount.balanceDigitsOnly': 'Kwotę zapisuje się cyframi.',
+  'newAccount.balanceNoDecimals': '{{currency}} nie ma części dziesiętnej.',
+  'newAccount.balanceDecimals': '{{currency}} ma {{digits}} miejsca po przecinku.',
+  'newAccount.submit': 'Zakończ konfigurację',
+  'newAccount.submitting': 'Zapisujemy…',
+  'newAccount.budgetUnavailable': 'Nie udało się odczytać budżetu. Odśwież stronę.',
+  'newAccount.submitFailed': 'Nie udało się utworzyć konta. Spróbuj ponownie.',
+  'newAccount.doneTitle': 'Konto „{{name}}” utworzone',
+  'newAccount.doneBody': '{{amount}} jest już w „Do rozdania”. Otwieramy budżet…',
+  'newAccount.footnote': 'To ostatni krok. Dalej otworzy się sekcja „Kategorie”.',
 };

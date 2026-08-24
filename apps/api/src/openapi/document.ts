@@ -43,8 +43,9 @@ than rounded or quietly normalised into something plausible. So is one that fall
 range the money column holds (a signed 64-bit integer), which is the only rejection a client
 cannot predict from the schema, because JSON Schema's numeric bounds do not apply to a string. The single definition of the convention, with its
 serializer, its parser and the pattern published on every money field, is
-\`packages/types/src/money.ts\`. No endpoint carries money yet; the convention is stated here
-because the contract is published before the first amount travels over it.
+\`packages/types/src/money.ts\`. A field that cannot hold less than nothing publishes the
+non-negative form of the same pattern, so the bound is in the schema a client reads rather
+than in prose beside it.
 
 **Request bodies** are validated against the schema published here: a field the schema does
 not declare is an error, not something quietly ignored.`;

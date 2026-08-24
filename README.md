@@ -24,8 +24,9 @@ and transactions, and a read of what a budget owns is scoped to the caller's act
 A budget can now be created: it is named, it takes a currency from the list the runtime
 knows and keeps it, and it can start with a set of categories. That write and everything after it goes
 through one point, so a user operation lands whole or not at all and a double submit writes
-once. What does not exist yet is anything to put in a budget: accounts, transactions and the
-screens that distribute money are next.
+once. The first account can be created too, and its opening balance is written as a transaction
+rather than stored on the account, so it stays correctable. What does not exist yet is
+entering transactions by hand and the screens that distribute money.
 
 ## What it is
 

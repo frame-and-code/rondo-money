@@ -92,10 +92,52 @@ export type BudgetResponse = {
     active: boolean;
 };
 
+export type BadRequestResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+};
+
 export type ConflictResponse = {
     statusCode: number;
     error: string;
     message: string;
+};
+
+/**
+ * Cash or a debit account. A credit card changes how Ready to Assign is counted and is not one of them.
+ */
+export type AccountType = 'CASH' | 'DEBIT';
+
+export type CreateAccountDto = {
+    /**
+     * What the user calls this account.
+     */
+    name: string;
+    /**
+     * Cash or a debit account. A credit card changes how Ready to Assign is counted and is not one of them.
+     */
+    type: AccountType;
+    /**
+     * What the account holds right now, in minor units of the budget currency. It is stored as an income transaction dated today, never as a column on the account, so it stays correctable afterwards. Zero is a valid amount and still writes that transaction.
+     */
+    initialBalance: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two accounts again.
+     */
+    idempotencyKey: string;
+};
+
+export type AccountResponse = {
+    id: string;
+    /**
+     * What the user calls this account.
+     */
+    name: string;
+    /**
+     * Cash or a debit account.
+     */
+    type: AccountType;
 };
 
 export type HealthControllerCheckData = {
@@ -213,6 +255,10 @@ export type BudgetsControllerCreateData = {
 
 export type BudgetsControllerCreateErrors = {
     /**
+     * The body was refused: a field is missing, malformed or not declared at all.
+     */
+    400: BadRequestResponse;
+    /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
@@ -232,3 +278,65 @@ export type BudgetsControllerCreateResponses = {
 };
 
 export type BudgetsControllerCreateResponse = BudgetsControllerCreateResponses[keyof BudgetsControllerCreateResponses];
+
+export type AccountsControllerListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/accounts';
+};
+
+export type AccountsControllerListErrors = {
+    /**
+     * The caller has no active budget, so there are no accounts to scope to.
+     */
+    400: BadRequestResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type AccountsControllerListError = AccountsControllerListErrors[keyof AccountsControllerListErrors];
+
+export type AccountsControllerListResponses = {
+    /**
+     * The accounts that exist now.
+     */
+    200: Array<AccountResponse>;
+};
+
+export type AccountsControllerListResponse = AccountsControllerListResponses[keyof AccountsControllerListResponses];
+
+export type AccountsControllerCreateData = {
+    body: CreateAccountDto;
+    path?: never;
+    query?: never;
+    url: '/accounts';
+};
+
+export type AccountsControllerCreateErrors = {
+    /**
+     * The body was refused, or the caller has no active budget to add it to.
+     */
+    400: BadRequestResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AccountsControllerCreateError = AccountsControllerCreateErrors[keyof AccountsControllerCreateErrors];
+
+export type AccountsControllerCreateResponses = {
+    /**
+     * The account that now exists.
+     */
+    201: AccountResponse;
+};
+
+export type AccountsControllerCreateResponse = AccountsControllerCreateResponses[keyof AccountsControllerCreateResponses];

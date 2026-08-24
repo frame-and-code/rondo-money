@@ -20,15 +20,21 @@ src/
     globals.css               # Tailwind entry point + the theme's CSS variables. `--font-sans`
                               # points at the variable `next/font` sets in layout.tsx, so a
                               # font name written back into that line silently drops the font
+    icon.svg                  # the app icon Next wires into every page; the same mark the
+                              # onboarding screens draw, with the primary tokens written out
+                              # because an asset cannot read a CSS variable
     sign-in/[[...sign-in]]/   # the only public screen (Clerk catch-all route)
     api/health/route.ts       # liveness probe for Railway — public, answers 200 flat; also
                               # reports the mode the bundle was built in, which is what e2e
                               # read to refuse a dev server (F1.11)
-    new/page.tsx              # creating a budget, deliberately outside (app): the shell would
-                              # navigate to sections a user without a budget cannot use.
-                              # Rendered per request (`force-dynamic`) because it picks the
-                              # name example shown in the field; built once, every visitor for
-                              # the life of the deployment would see the same one
+    new/page.tsx              # onboarding step 1, creating a budget, deliberately outside
+                              # (app): the shell would navigate to sections a user without a
+                              # budget cannot use. Rendered per request (`force-dynamic`)
+                              # because it picks the name example shown in the field; built
+                              # once, every visitor for the life of the deployment would see
+                              # the same one
+    new/account/page.tsx      # onboarding step 2, the first account and its opening balance.
+                              # Ends the flow by opening the app on Categories
     (app)/                    # the app shell: a sidebar on desktop, a bottom tab bar on a
                               # phone, and the sections it navigates
       layout.tsx              # renders AppShell around every section
@@ -38,7 +44,7 @@ src/
       settings/
   components/                 # app-level components: the shell and its navigation, the
                               # section slot, the loading region, the Clerk provider wrapper,
-                              # the locale switcher and the new-budget form
+                              # the locale switcher and the two onboarding forms
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language
                               # from GET /user-settings back into the locale context

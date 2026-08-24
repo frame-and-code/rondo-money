@@ -52,10 +52,37 @@ export const zBudgetResponse = z.object({
     active: z.boolean()
 });
 
+export const zBadRequestResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ])
+});
+
 export const zConflictResponse = z.object({
     statusCode: z.number(),
     error: z.string(),
     message: z.string()
+});
+
+/**
+ * Cash or a debit account. A credit card changes how Ready to Assign is counted and is not one of them.
+ */
+export const zAccountType = z.enum(['CASH', 'DEBIT']);
+
+export const zCreateAccountDto = z.object({
+    name: z.string().min(1).max(60),
+    type: zAccountType,
+    initialBalance: z.string().max(20).regex(/^(0|[1-9]\d*)$/),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zAccountResponse = z.object({
+    id: z.uuid(),
+    name: z.string().max(60),
+    type: zAccountType
 });
 
 /**
@@ -88,3 +115,15 @@ export const zBudgetsControllerCreateBody = zCreateBudgetDto;
  * The budget that now exists.
  */
 export const zBudgetsControllerCreateResponse = zBudgetResponse;
+
+/**
+ * The accounts that exist now.
+ */
+export const zAccountsControllerListResponse = z.array(zAccountResponse);
+
+export const zAccountsControllerCreateBody = zCreateAccountDto;
+
+/**
+ * The account that now exists.
+ */
+export const zAccountsControllerCreateResponse = zAccountResponse;

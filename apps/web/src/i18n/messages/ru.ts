@@ -75,6 +75,49 @@ export const ru = {
     'Валюта {{currency}}. Стартовый набор категорий создан. Следующий шаг: счета и остатки на них.',
   'newBudget.doneWithoutDefaults':
     'Валюта {{currency}}. Категорий пока нет, добавите свои. Следующий шаг: счета и остатки на них.',
+
+  'newBudget.continue': 'Добавить первый счёт',
+
+  'newAccount.heading': 'Теперь заведём первый счёт',
+  'newAccount.lead':
+    'Счёт это место, где деньги лежат на самом деле: кошелёк, карта, банковский счёт. То, что на нём сегодня, и станет деньгами, которые вы раздаёте.',
+  'newAccount.point1Title': 'Наличные или карта',
+  'newAccount.point1Body':
+    'Пока два вида. Кредитная карта меняет то, как считается «Свободно», поэтому появится позже.',
+  'newAccount.point2Title': 'Остаток это доход',
+  'newAccount.point2Body':
+    'Начальная сумма записывается транзакцией, а не полем счёта, поэтому её можно поправить как любую другую.',
+  'newAccount.point3Title': 'Дальше распределение',
+  'newAccount.point3Body':
+    'Деньги попадают в «Свободно». Оттуда вы раздаёте их категориям, пока ничего не останется.',
+  'newAccount.cardTitle': 'Первый счёт',
+  'newAccount.cardDescription': 'Название, вид и то, сколько на нём сейчас.',
+  'newAccount.nameLabel': 'Название',
+  'newAccount.namePlaceholder.0': 'Основная карта',
+  'newAccount.namePlaceholder.1': 'Повседневный счёт',
+  'newAccount.namePlaceholder.2': 'Наличные',
+  'newAccount.namePlaceholder.3': 'Накопления',
+  'newAccount.namePlaceholder.4': 'Вторая карта',
+  'newAccount.typeLabel': 'Вид',
+  'newAccount.typeCash': 'Наличные',
+  'newAccount.typeCashHint': 'Купюры и монеты на руках.',
+  'newAccount.typeDebit': 'Дебетовая карта',
+  'newAccount.typeDebitHint': 'Банковский счёт, с которого вы тратите.',
+  'newAccount.balanceLabel': 'Начальный остаток',
+  'newAccount.balanceHint':
+    'Ноль это нормально. Сумма датируется сегодняшним днём, её можно поправить позже.',
+  'newAccount.balancePreview': '{{amount}} попадёт в «Свободно»',
+  'newAccount.balanceNegative': 'Начальный остаток не может быть отрицательным.',
+  'newAccount.balanceDigitsOnly': 'Сумма записывается цифрами.',
+  'newAccount.balanceNoDecimals': 'У {{currency}} нет дробной части.',
+  'newAccount.balanceDecimals': 'У {{currency}} {{digits}} знака после запятой.',
+  'newAccount.submit': 'Завершить настройку',
+  'newAccount.submitting': 'Сохраняем…',
+  'newAccount.budgetUnavailable': 'Не удалось прочитать ваш бюджет. Обновите страницу.',
+  'newAccount.submitFailed': 'Не получилось создать счёт. Попробуйте ещё раз.',
+  'newAccount.doneTitle': 'Счёт «{{name}}» создан',
+  'newAccount.doneBody': '{{amount}} уже в «Свободно». Открываем бюджет…',
+  'newAccount.footnote': 'Это последний шаг. Дальше откроется раздел «Категории».',
 } as const;
 
 export type MessageKey = keyof typeof ru;

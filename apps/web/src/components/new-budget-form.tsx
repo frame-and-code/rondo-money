@@ -5,7 +5,7 @@ import {
   budgetsControllerListQueryKey,
 } from '@rondo/api-client/react-query';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
-import { Button } from '@rondo/ui/components/ui/button';
+import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
 import {
   Card,
   CardContent,
@@ -60,6 +60,7 @@ import {
   IconWallet,
 } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
@@ -440,13 +441,23 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                 <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-full">
                   <IconCheck className="size-5" />
                 </span>
-                <div className="flex flex-col gap-1">
-                  <p className="font-medium">{t('newBudget.doneTitle', { name: created.name })}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {withDefaultCategories
-                      ? t('newBudget.doneWithDefaults', { currency: created.currency })
-                      : t('newBudget.doneWithoutDefaults', { currency: created.currency })}
-                  </p>
+                <div className="flex flex-col items-start gap-4">
+                  <div className="flex flex-col gap-1">
+                    <p className="font-medium">
+                      {t('newBudget.doneTitle', { name: created.name })}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {withDefaultCategories
+                        ? t('newBudget.doneWithDefaults', { currency: created.currency })
+                        : t('newBudget.doneWithoutDefaults', { currency: created.currency })}
+                    </p>
+                  </div>
+                  <Link
+                    href="/new/account"
+                    className={cn(buttonVariants(), CONTROL, 'max-md:w-full')}
+                  >
+                    {t('newBudget.continue')}
+                  </Link>
                 </div>
               </div>
             ) : (

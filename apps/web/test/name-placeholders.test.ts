@@ -1,19 +1,32 @@
 import { locales } from '@/i18n/locales';
 import { messages } from '@/i18n/messages';
 import {
-  NAME_PLACEHOLDER_COUNT,
+  ACCOUNT_PLACEHOLDER_COUNT,
+  accountNamePlaceholderKey,
+  BUDGET_PLACEHOLDER_COUNT,
   namePlaceholderKey,
   pickNamePlaceholderIndex,
 } from '@/i18n/name-placeholders';
 
-describe('the budget name placeholder', () => {
+const SETS = [
+  ['the budget name', namePlaceholderKey, BUDGET_PLACEHOLDER_COUNT],
+  ['the account name', accountNamePlaceholderKey, ACCOUNT_PLACEHOLDER_COUNT],
+] as const;
+
+describe.each(SETS)('%s placeholder', (_set, keyAt, count) => {
   it('offers more than one example, so the field does not read as a required format', () => {
-    expect(NAME_PLACEHOLDER_COUNT).toBeGreaterThan(1);
+    expect(count).toBeGreaterThan(1);
+  });
+
+  it('names a key of its own set, so the two never hand out each other examples', () => {
+    expect(keyAt(0)).not.toBe(
+      keyAt === namePlaceholderKey ? accountNamePlaceholderKey(0) : namePlaceholderKey(0),
+    );
   });
 
   it('names a key every dictionary answers, for every index in range', () => {
-    for (let index = 0; index < NAME_PLACEHOLDER_COUNT; index += 1) {
-      const key = namePlaceholderKey(index);
+    for (let index = 0; index < count; index += 1) {
+      const key = keyAt(index);
 
       for (const locale of locales) {
         expect(messages[locale][key]).toBeTruthy();
@@ -22,25 +35,28 @@ describe('the budget name placeholder', () => {
   });
 
   it('folds an index out of range instead of naming a key nobody wrote', () => {
-    expect(namePlaceholderKey(NAME_PLACEHOLDER_COUNT)).toBe(namePlaceholderKey(0));
-    expect(namePlaceholderKey(NAME_PLACEHOLDER_COUNT * 3 + 2)).toBe(namePlaceholderKey(2));
-    expect(namePlaceholderKey(-1)).toBe(namePlaceholderKey(NAME_PLACEHOLDER_COUNT - 1));
-    expect(messages.ru[namePlaceholderKey(1_000_000)]).toBeTruthy();
+    expect(keyAt(count)).toBe(keyAt(0));
+    expect(keyAt(count * 3 + 2)).toBe(keyAt(2));
+    expect(keyAt(-1)).toBe(keyAt(count - 1));
+    expect(messages.ru[keyAt(1_000_000)]).toBeTruthy();
   });
 
-  it('picks an index the dictionaries can answer', () => {
+  it('is reached in full by the pick, so an example added to it is not dead weight', () => {
+    const seen = new Set(Array.from({ length: 400 }, () => keyAt(pickNamePlaceholderIndex())));
+
+    expect(seen.size).toBe(count);
+  });
+});
+
+describe('the placeholder pick', () => {
+  it('answers a whole number no set has to be asked about first', () => {
     for (let attempt = 0; attempt < 50; attempt += 1) {
       const index = pickNamePlaceholderIndex();
 
       expect(Number.isInteger(index)).toBe(true);
       expect(index).toBeGreaterThanOrEqual(0);
-      expect(index).toBeLessThan(NAME_PLACEHOLDER_COUNT);
+      expect(messages.ru[namePlaceholderKey(index)]).toBeTruthy();
+      expect(messages.ru[accountNamePlaceholderKey(index)]).toBeTruthy();
     }
-  });
-
-  it('does not always pick the same example, or the server may as well send a constant', () => {
-    const picked = new Set(Array.from({ length: 200 }, pickNamePlaceholderIndex));
-
-    expect(picked.size).toBeGreaterThan(1);
   });
 });

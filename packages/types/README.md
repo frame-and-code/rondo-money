@@ -24,12 +24,17 @@ what the OpenAPI schema publishes; the codes themselves are not published, becau
 when the runtime does.
 
 `toDecimalString` / `parseDecimalString` convert between minor units and the decimal form a
-person reads and types (`1250n` ↔ `"12.50"` in USD). They convert the **scale** and nothing
-else. No currency symbol, no grouping separator, no locale-specific decimal mark. Rendering
-an amount for a screen belongs to the UI, which puts `Intl.NumberFormat` on top of the digit
-count this package owns. Parsing refuses more precision than the currency has rather than
-rounding it away. The amount someone typed and the amount that gets stored have to be the
-same number.
+person reads and types (`1250n` ↔ `"12.50"` at two digits). They take the **digit count**, not
+a currency, because the count a budget works at is frozen on the budget row and looking it up
+again from the currency is how an amount gets written at one scale and read at another. They
+convert the scale and nothing else. No currency symbol, no grouping separator, no
+locale-specific decimal mark. Rendering an amount for a screen belongs to the UI, which puts
+`Intl.NumberFormat` on top. Parsing refuses more precision than the count allows rather than
+rounding it away. The amount someone typed and the amount that gets stored have to be the same
+number.
+
+`MONEY_NON_NEGATIVE_PATTERN` is the same canonical form with the sign dropped, for an amount
+that may not go below zero such as an account's opening balance.
 
 **Calendar dates** are `YYYY-MM-DD` strings with no time attached, and the month bucket is
 `YYYY-MM`. `todayIn` and `calendarDateIn` take the IANA zone to answer in, which is the
