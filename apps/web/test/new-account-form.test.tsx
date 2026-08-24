@@ -375,7 +375,7 @@ describe('the first account form', () => {
       await screen.findByText(interpolate(ru['newAccount.doneTitle'], { name: 'Кошелёк' })),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText(ru['newAccount.nameLabel'])).not.toBeInTheDocument();
-    expect(screen.queryByText(ru['newAccount.cardTitle'])).not.toBeInTheDocument();
+    expect(screen.queryByText(ru['newAccount.cardDescription'])).not.toBeInTheDocument();
     await waitFor(() =>
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['accountsControllerList'] }),
     );
@@ -489,7 +489,7 @@ describe('the first account form', () => {
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/new'));
     expect(screen.queryByLabelText(ru['newAccount.nameLabel'])).not.toBeInTheDocument();
-    expect(screen.queryByText(ru['newAccount.cardTitle'])).not.toBeInTheDocument();
+    expect(screen.queryByText(ru['newAccount.cardDescription'])).not.toBeInTheDocument();
   });
 
   it('reports a failure instead of pretending the account exists', async () => {

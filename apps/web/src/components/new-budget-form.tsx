@@ -50,22 +50,14 @@ import {
 import { Separator } from '@rondo/ui/components/ui/separator';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import {
-  IconBuildingBank,
-  IconCheck,
-  IconChevronDown,
-  IconLoader,
-  IconLock,
-  IconTrendingUp,
-  IconWallet,
-} from '@tabler/icons-react';
+import { IconCheck, IconChevronDown, IconLoader, IconLock } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
+import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { localeLabels, locales, type Locale } from '@/i18n/locales';
-import { type MessageKey } from '@/i18n/messages';
 import { namePlaceholderKey } from '@/i18n/name-placeholders';
 import {
   currencyName,
@@ -103,16 +95,6 @@ const SHEET_ITEM = 'min-h-12 rounded-2xl px-3 text-sm';
 /// Rendering every currency turns the list into a wall and the search into decoration. The
 /// count underneath says what was left out, so a missing code reads as "keep typing".
 const RESULT_LIMIT = 60;
-
-const POINTS: ReadonlyArray<{
-  icon: typeof IconWallet;
-  title: MessageKey;
-  body: MessageKey;
-}> = [
-  { icon: IconWallet, title: 'newBudget.point1Title', body: 'newBudget.point1Body' },
-  { icon: IconBuildingBank, title: 'newBudget.point2Title', body: 'newBudget.point2Body' },
-  { icon: IconTrendingUp, title: 'newBudget.point3Title', body: 'newBudget.point3Body' },
-];
 
 function mintKey(): string {
   return crypto.randomUUID();
@@ -246,22 +228,6 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
       },
     });
   };
-
-  const points = (
-    <ul className="flex flex-col gap-4">
-      {POINTS.map((point) => (
-        <li key={point.title} className="flex items-start gap-3">
-          <span className="bg-secondary grid size-8 shrink-0 place-items-center rounded-lg">
-            <point.icon className="size-4" />
-          </span>
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">{t(point.title)}</span>
-            <span className="text-muted-foreground text-sm">{t(point.body)}</span>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
 
   const currencyRow = (option: CurrencyOption): ReactNode => (
     <>
@@ -427,7 +393,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
             <p className="text-muted-foreground text-sm">{t('newBudget.lead')}</p>
           </div>
 
-          {isMobile ? null : points}
+          {isMobile ? null : <OnboardingSteps done={created === null ? 0 : 1} />}
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
@@ -551,7 +517,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
         {isMobile ? (
           <div className="flex flex-col gap-6">
             <Separator />
-            {points}
+            <OnboardingSteps done={created === null ? 0 : 1} />
           </div>
         ) : null}
       </div>

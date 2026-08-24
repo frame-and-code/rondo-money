@@ -38,16 +38,19 @@ export const pl: Record<MessageKey, string> = {
   'settings.slotTitle': 'Slot sekcji „Ustawienia”',
   'settings.slotBody': 'Tu pojawią się waluta, strefa czasowa i język budżetu.',
 
+  'onboarding.progress': 'Konfiguracja, krok {{step}} z 3',
+  'onboarding.step1Title': 'Budżet',
+  'onboarding.step1Body':
+    'Język aplikacji, nazwa budżetu i jego waluta. Walutę wybiera się raz i zostaje z budżetem na zawsze.',
+  'onboarding.step2Title': 'Pierwsze konto',
+  'onboarding.step2Body': 'Ile pieniędzy jest na nim dzisiaj. Ta kwota trafi do „Do rozdania”.',
+  'onboarding.step3Title': 'Pieniądze do kategorii',
+  'onboarding.step3Body':
+    'Tworzysz kategorie i rozdzielasz między nie wolne pieniądze, aż zostanie zero.',
+
   'newBudget.heading': 'Zbudujmy twój pierwszy budżet',
   'newBudget.lead':
     'Każda kwota na twoich kontach ma swoje zadanie. Nie zgadujesz przyszłych przychodów, rozdzielasz pieniądze, które już masz.',
-  'newBudget.point1Title': 'Grupy i kategorie',
-  'newBudget.point1Body': 'Zestaw startowy powstaje na twoje życzenie, w wybranym języku.',
-  'newBudget.point2Title': 'Salda kont',
-  'newBudget.point2Body': 'Następny krok: ile pieniędzy jest teraz na każdym koncie.',
-  'newBudget.point3Title': 'Rozdzielanie',
-  'newBudget.point3Body':
-    'Potem rozdzielasz pieniądze na kategorie, aż zostanie zero do rozdysponowania.',
   'newBudget.cardTitle': 'Nowy budżet',
   'newBudget.cardDescription': 'Język, nazwa i waluta. Resztę ustawimy w kolejnych krokach.',
   'newBudget.languageLabel': 'Język',
@@ -82,15 +85,6 @@ export const pl: Record<MessageKey, string> = {
   'newAccount.heading': 'Teraz dodaj pierwsze konto',
   'newAccount.lead':
     'Konto to miejsce, gdzie pieniądze naprawdę leżą: portfel, karta, rachunek bankowy. To, co jest na nim dzisiaj, staje się pieniędzmi do rozdania.',
-  'newAccount.point1Title': 'Gotówka albo karta',
-  'newAccount.point1Body':
-    'Na razie dwa rodzaje. Karta kredytowa zmienia sposób liczenia „Do rozdania”, więc pojawi się później.',
-  'newAccount.point2Title': 'Saldo to przychód',
-  'newAccount.point2Body':
-    'Kwota początkowa zapisuje się jako transakcja, a nie pole konta, więc można ją poprawić jak każdą inną.',
-  'newAccount.point3Title': 'Potem rozdajesz',
-  'newAccount.point3Body':
-    'Pieniądze trafiają do „Do rozdania”. Stamtąd rozdajesz je kategoriom, aż nic nie zostanie.',
   'newAccount.cardTitle': 'Pierwsze konto',
   'newAccount.cardDescription': 'Nazwa, rodzaj i to, ile jest na nim teraz.',
   'newAccount.nameLabel': 'Nazwa',

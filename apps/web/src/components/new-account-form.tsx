@@ -24,15 +24,14 @@ import {
   IconAlertCircle,
   IconCash,
   IconCheck,
-  IconCoins,
   IconCreditCard,
   IconLoader,
-  IconTrendingUp,
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
+import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
 import { accountNamePlaceholderKey } from '@/i18n/name-placeholders';
@@ -47,16 +46,6 @@ const FIELD = cn(
   'focus-within:border-ring focus-within:ring-ring/30 focus-within:ring-3',
   CONTROL,
 );
-
-const POINTS: ReadonlyArray<{
-  icon: typeof IconCash;
-  title: MessageKey;
-  body: MessageKey;
-}> = [
-  { icon: IconCash, title: 'newAccount.point1Title', body: 'newAccount.point1Body' },
-  { icon: IconCoins, title: 'newAccount.point2Title', body: 'newAccount.point2Body' },
-  { icon: IconTrendingUp, title: 'newAccount.point3Title', body: 'newAccount.point3Body' },
-];
 
 const TYPES: ReadonlyArray<{
   id: AccountType;
@@ -304,22 +293,6 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
     });
   };
 
-  const points = (
-    <ul className="flex flex-col gap-4">
-      {POINTS.map((point) => (
-        <li key={point.title} className="flex items-start gap-3">
-          <span className="bg-secondary grid size-8 shrink-0 place-items-center rounded-lg">
-            <point.icon className="size-4" />
-          </span>
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">{t(point.title)}</span>
-            <span className="text-muted-foreground text-sm">{t(point.body)}</span>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-
   const symbol = <span className="text-muted-foreground shrink-0 text-sm">{money.symbol}</span>;
 
   return (
@@ -344,7 +317,9 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
             <p className="text-muted-foreground text-sm">{t('newAccount.lead')}</p>
           </div>
 
-          <div className="max-md:hidden">{points}</div>
+          <div className="max-md:hidden">
+            <OnboardingSteps done={created === null ? 1 : 2} />
+          </div>
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
@@ -514,7 +489,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
         <div className="flex flex-col gap-6 md:hidden">
           <Separator />
-          {points}
+          <OnboardingSteps done={created === null ? 1 : 2} />
         </div>
       </div>
     </>

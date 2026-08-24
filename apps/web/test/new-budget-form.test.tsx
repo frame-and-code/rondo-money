@@ -109,9 +109,9 @@ describe('the new budget form', () => {
 
     expect(screen.getByRole('heading', { name: ru['newBudget.heading'] })).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.lead'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point1Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point2Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point3Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step1Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step2Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step3Title'])).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.cardTitle'])).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.cardDescription'])).toBeInTheDocument();
   });
@@ -119,7 +119,7 @@ describe('the new budget form', () => {
   it('puts the explainer beside the form, where the wide layout has room for it', () => {
     draw();
 
-    expect(comesAfterTheForm(screen.getByText(ru['newBudget.point1Title']))).toBe(false);
+    expect(comesAfterTheForm(screen.getByText(ru['onboarding.step1Title']))).toBe(false);
   });
 
   it('offers the theme switch, which is the only control outside the form', () => {
@@ -502,11 +502,11 @@ describe('the new budget form on a phone', () => {
   it('keeps the explainer, moving it under the form instead of dropping it', () => {
     draw();
 
-    expect(screen.getByText(ru['newBudget.point1Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point2Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point3Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point3Body'])).toBeInTheDocument();
-    expect(comesAfterTheForm(screen.getByText(ru['newBudget.point1Title']))).toBe(true);
+    expect(screen.getByText(ru['onboarding.step1Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step2Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step3Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step3Body'])).toBeInTheDocument();
+    expect(comesAfterTheForm(screen.getByText(ru['onboarding.step1Title']))).toBe(true);
   });
 
   it('opens the currency list in a drawer rather than a popover under the thumb', async () => {

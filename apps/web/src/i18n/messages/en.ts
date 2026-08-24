@@ -38,16 +38,20 @@ export const en: Record<MessageKey, string> = {
   'settings.slotTitle': 'The "Settings" slot',
   'settings.slotBody': 'Currency, timezone and budget language land here.',
 
+  'onboarding.progress': 'Setup, step {{step}} of 3',
+  'onboarding.step1Title': 'Budget',
+  'onboarding.step1Body':
+    'The app language, the budget name and its currency. The currency is chosen once and stays with the budget for good.',
+  'onboarding.step2Title': 'First account',
+  'onboarding.step2Body':
+    'How much money it holds today. That amount is what lands in Ready to Assign.',
+  'onboarding.step3Title': 'Money into categories',
+  'onboarding.step3Body':
+    'You create categories and hand the free money out until nothing is left.',
+
   'newBudget.heading': 'Let us set up your first budget',
   'newBudget.lead':
     'Every amount sitting in your accounts has a job. You are not guessing at future income, you are handing out the money that is already there.',
-  'newBudget.point1Title': 'Groups and categories',
-  'newBudget.point1Body': 'The starter set is created if you ask for it, in the language you pick.',
-  'newBudget.point2Title': 'Account balances',
-  'newBudget.point2Body': 'Next step: how much money each account holds right now.',
-  'newBudget.point3Title': 'Assigning',
-  'newBudget.point3Body':
-    'After that you hand money to categories until Ready to Assign reaches zero.',
   'newBudget.cardTitle': 'New budget',
   'newBudget.cardDescription':
     'Language, name and currency. Everything else comes in the next steps.',
@@ -83,15 +87,6 @@ export const en: Record<MessageKey, string> = {
   'newAccount.heading': 'Now add your first account',
   'newAccount.lead':
     'An account is where the money actually sits: a wallet, a card, a bank account. What is in it today becomes the money you get to hand out.',
-  'newAccount.point1Title': 'Cash or a card',
-  'newAccount.point1Body':
-    'Two kinds for now. A credit card changes how Ready to Assign is counted, so it comes later.',
-  'newAccount.point2Title': 'The balance is income',
-  'newAccount.point2Body':
-    'The starting amount is written as a transaction, not stored on the account, so you can correct it like any other.',
-  'newAccount.point3Title': 'Then you assign',
-  'newAccount.point3Body':
-    'The money lands in Ready to Assign. From there you hand it to categories until nothing is left over.',
   'newAccount.cardTitle': 'First account',
   'newAccount.cardDescription': 'Its name, what kind it is, and what is in it right now.',
   'newAccount.nameLabel': 'Name',
