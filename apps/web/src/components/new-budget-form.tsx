@@ -68,6 +68,7 @@ import { localeLabels, locales, type Locale } from '@/i18n/locales';
 import { type MessageKey } from '@/i18n/messages';
 import { namePlaceholderKey } from '@/i18n/name-placeholders';
 import {
+  currencyName,
   currencyOptions,
   sampleAmount,
   searchCurrencies,
@@ -459,8 +460,8 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
                 <div className="bg-secondary flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3.5">
                   <span className="text-sm">{t('newBudget.doneCurrency')}</span>
-                  <span className="text-[22px] font-semibold tracking-tight tabular-nums">
-                    {created.currency}
+                  <span className="text-end text-lg font-semibold tracking-tight text-balance">
+                    {currencyName(locale, created.currency)}
                   </span>
                 </div>
 

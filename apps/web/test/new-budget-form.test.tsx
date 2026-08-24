@@ -433,7 +433,10 @@ describe('the new budget form', () => {
       await screen.findByText(interpolate(ru['newBudget.doneTitle'], { name: 'Семейный' })),
     ).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.doneWithDefaults'])).toBeInTheDocument();
-    expect(screen.getByText('PLN')).toBeInTheDocument();
+    // Written out, and starting with a capital: `Intl` answers "польский злотый" in Russian,
+    // which reads as a mistake standing on its own in a plaque.
+    expect(screen.getByText('Польский злотый')).toBeInTheDocument();
+    expect(screen.queryByText('PLN')).not.toBeInTheDocument();
   });
 
   it('offers the way on to the accounts step, and goes nowhere on its own', async () => {
