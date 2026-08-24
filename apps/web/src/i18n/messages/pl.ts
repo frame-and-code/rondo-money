@@ -41,9 +41,10 @@ export const pl: Record<MessageKey, string> = {
   'onboarding.progress': 'Konfiguracja, krok {{step}} z 3',
   'onboarding.step1Title': 'Budżet',
   'onboarding.step1Body':
-    'Język aplikacji, nazwa budżetu i jego waluta. Walutę wybiera się raz i zostaje z budżetem na zawsze.',
+    'Wybierasz język aplikacji, nazwę budżetu i jego walutę. Walutę wybiera się raz i zostaje z budżetem na zawsze.',
   'onboarding.step2Title': 'Pierwsze konto',
-  'onboarding.step2Body': 'Ile pieniędzy jest na nim dzisiaj. Ta kwota trafi do „Do rozdania”.',
+  'onboarding.step2Body':
+    'Mówisz, ile pieniędzy jest na nim dzisiaj. Ta kwota trafi do „Do rozdania”.',
   'onboarding.step3Title': 'Pieniądze do kategorii',
   'onboarding.step3Body':
     'Tworzysz kategorie i rozdzielasz między nie wolne pieniądze, aż zostanie zero.',
@@ -112,6 +113,7 @@ export const pl: Record<MessageKey, string> = {
   'newAccount.submitFailed': 'Nie udało się utworzyć konta. Spróbuj ponownie.',
   'newAccount.doneTitle': 'Konto „{{name}}” utworzone',
   'newAccount.doneReady': 'W „Do rozdania”',
-  'newAccount.doneOpening': 'Otwieramy „Kategorie”',
-  'newAccount.footnote': 'To ostatni krok. Dalej otworzy się sekcja „Kategorie”.',
+  'newAccount.moreAccounts': 'Chcesz dodać więcej kont?',
+  'newAccount.startAssigning': 'Gotów rozdzielić pieniądze?',
+  'newAccount.footnote': 'To ostatni krok konfiguracji.',
 };

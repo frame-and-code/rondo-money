@@ -8,7 +8,7 @@ import {
 import { parseDecimalString, toDecimalString } from '@rondo/types';
 import type { AccountType } from '@rondo/types';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
-import { Button } from '@rondo/ui/components/ui/button';
+import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
 import {
   Card,
   CardContent,
@@ -18,7 +18,6 @@ import {
 } from '@rondo/ui/components/ui/card';
 import { Input } from '@rondo/ui/components/ui/input';
 import { Label } from '@rondo/ui/components/ui/label';
-import { Separator } from '@rondo/ui/components/ui/separator';
 import { cn } from '@rondo/ui/lib/utils';
 import {
   IconAlertCircle,
@@ -28,6 +27,7 @@ import {
   IconLoader,
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
@@ -61,10 +61,6 @@ const TYPES: ReadonlyArray<{
   },
   { id: 'CASH', icon: IconCash, title: 'newAccount.typeCash', body: 'newAccount.typeCashHint' },
 ];
-
-/// Long enough to read the line under the check, short enough that nobody waits for it. This
-/// is the last step, so nothing follows it to read the confirmation on.
-const CONFIRMATION_MS = 2200;
 
 /// The kind most first accounts are. Cash sits beside it rather than under it, so choosing the
 /// other one is one tap and not a discovery.
@@ -203,18 +199,6 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
     }
   }, [isSuccess, isFetchedAfterMount, budget, router]);
 
-  useEffect(() => {
-    if (created === null) return;
-
-    const timer = window.setTimeout(() => {
-      router.replace('/categories');
-    }, CONFIRMATION_MS);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [created, router]);
-
   const money = useMemo(() => {
     if (budget === null) return null;
 
@@ -297,7 +281,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
   return (
     <>
-      <div className="absolute end-5 top-5 md:end-6 md:top-6">
+      <div className="flex justify-end max-md:mb-6 md:absolute md:end-6 md:top-6">
         <ThemeToggle label={t('common.themeToggle.trigger')} />
       </div>
 
@@ -317,9 +301,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
             <p className="text-muted-foreground text-sm">{t('newAccount.lead')}</p>
           </div>
 
-          <div className="max-md:hidden">
-            <OnboardingSteps done={created === null ? 1 : 2} />
-          </div>
+          <OnboardingSteps done={created === null ? 1 : 2} />
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
@@ -474,23 +456,30 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                   </span>
                 </div>
 
-                <p className="text-muted-foreground flex items-center justify-between gap-2 text-sm">
-                  {t('newAccount.doneOpening')}
-                  <span className="flex gap-1" aria-hidden>
-                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse" />
-                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse [animation-delay:180ms]" />
-                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse [animation-delay:360ms]" />
-                  </span>
-                </p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground text-sm">
+                      {t('newAccount.moreAccounts')}
+                    </span>
+                    <Link
+                      href="/accounts"
+                      className={cn(buttonVariants({ variant: 'outline' }), CONTROL)}
+                    >
+                      {t('nav.accounts')}
+                    </Link>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm">{t('newAccount.startAssigning')}</span>
+                    <Link href="/categories" className={cn(buttonVariants(), CONTROL)}>
+                      {t('nav.categories')}
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
-
-        <div className="flex flex-col gap-6 md:hidden">
-          <Separator />
-          <OnboardingSteps done={created === null ? 1 : 2} />
-        </div>
       </div>
     </>
   );

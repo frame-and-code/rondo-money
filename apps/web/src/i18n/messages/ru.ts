@@ -110,8 +110,9 @@ export const ru = {
   'newAccount.submitFailed': 'Не получилось создать счёт. Попробуйте ещё раз.',
   'newAccount.doneTitle': 'Счёт «{{name}}» создан',
   'newAccount.doneReady': 'В «Свободно»',
-  'newAccount.doneOpening': 'Открываем «Категории»',
-  'newAccount.footnote': 'Это последний шаг. Дальше откроется раздел «Категории».',
+  'newAccount.moreAccounts': 'Хотите добавить ещё счета?',
+  'newAccount.startAssigning': 'Готовы распределить деньги?',
+  'newAccount.footnote': 'Это последний шаг настройки.',
 } as const;
 
 export type MessageKey = keyof typeof ru;

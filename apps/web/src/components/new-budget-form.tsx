@@ -47,7 +47,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@rondo/ui/components/ui/select';
-import { Separator } from '@rondo/ui/components/ui/separator';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconCheck, IconChevronDown, IconLoader, IconLock } from '@tabler/icons-react';
@@ -368,7 +367,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
   return (
     <>
-      <div className="absolute end-5 top-5 md:end-6 md:top-6">
+      <div className="flex justify-end max-md:mb-6 md:absolute md:end-6 md:top-6">
         <ThemeToggle label={t('common.themeToggle.trigger')} />
       </div>
 
@@ -393,7 +392,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
             <p className="text-muted-foreground text-sm">{t('newBudget.lead')}</p>
           </div>
 
-          {isMobile ? null : <OnboardingSteps done={created === null ? 0 : 1} />}
+          <OnboardingSteps done={created === null ? 0 : 1} />
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
@@ -513,13 +512,6 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
             )}
           </CardContent>
         </Card>
-
-        {isMobile ? (
-          <div className="flex flex-col gap-6">
-            <Separator />
-            <OnboardingSteps done={created === null ? 0 : 1} />
-          </div>
-        ) : null}
       </div>
     </>
   );

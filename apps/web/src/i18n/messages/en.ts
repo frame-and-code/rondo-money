@@ -41,10 +41,10 @@ export const en: Record<MessageKey, string> = {
   'onboarding.progress': 'Setup, step {{step}} of 3',
   'onboarding.step1Title': 'Budget',
   'onboarding.step1Body':
-    'The app language, the budget name and its currency. The currency is chosen once and stays with the budget for good.',
+    'You pick the app language, name the budget and choose its currency. The currency is chosen once and stays with the budget for good.',
   'onboarding.step2Title': 'First account',
   'onboarding.step2Body':
-    'How much money it holds today. That amount is what lands in Ready to Assign.',
+    'You say how much money it holds today. That amount is what lands in Ready to Assign.',
   'onboarding.step3Title': 'Money into categories',
   'onboarding.step3Body':
     'You create categories and hand the free money out until nothing is left.',
@@ -113,6 +113,7 @@ export const en: Record<MessageKey, string> = {
   'newAccount.submitFailed': 'The account was not created. Try again.',
   'newAccount.doneTitle': 'Account “{{name}}” created',
   'newAccount.doneReady': 'In Ready to Assign',
-  'newAccount.doneOpening': 'Opening Categories',
-  'newAccount.footnote': 'This is the last step. Your budget opens on Categories.',
+  'newAccount.moreAccounts': 'Want to add more accounts?',
+  'newAccount.startAssigning': 'Ready to hand the money out?',
+  'newAccount.footnote': 'This is the last step of the setup.',
 };

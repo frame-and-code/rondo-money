@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { NewAccountForm } from '@/components/new-account-form';
@@ -97,10 +97,6 @@ describe('the first account form', () => {
     budget = { id: 'b-1', currency: 'PLN', minorDigits: 2, active: true };
     budgetFails = false;
     budgetGate = null;
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   it('sends zero when the amount is left empty', async () => {
@@ -382,22 +378,23 @@ describe('the first account form', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('opens the budget on Categories once that confirmation has been read', async () => {
-    jest.useFakeTimers();
-    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+  it('offers both ways on, and takes neither by itself', async () => {
+    const user = userEvent.setup();
     draw();
 
     await fillOut(user, { amount: '1000' });
     await send(user);
     await screen.findByText(interpolate(ru['newAccount.doneTitle'], { name: 'Кошелёк' }));
 
+    expect(screen.getByRole('link', { name: ru['nav.accounts'] })).toHaveAttribute(
+      'href',
+      '/accounts',
+    );
+    expect(screen.getByRole('link', { name: ru['nav.categories'] })).toHaveAttribute(
+      'href',
+      '/categories',
+    );
     expect(replace).not.toHaveBeenCalled();
-
-    await act(async () => {
-      jest.advanceTimersByTime(5_000);
-    });
-
-    expect(replace).toHaveBeenCalledWith('/categories');
   });
 
   it('does not read a failed budget request as an absent budget', async () => {

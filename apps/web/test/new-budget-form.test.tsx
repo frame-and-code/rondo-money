@@ -499,14 +499,15 @@ describe('the new budget form on a phone', () => {
     Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
   });
 
-  it('keeps the explainer, moving it under the form instead of dropping it', () => {
+  it('puts the progress above the form, carrying only the step being worked on', () => {
     draw();
 
+    // The phone has no room for three explanations at once, so the row shows the current one
+    // and hands the other names out on a tap.
     expect(screen.getByText(ru['onboarding.step1Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['onboarding.step2Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['onboarding.step3Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['onboarding.step3Body'])).toBeInTheDocument();
-    expect(comesAfterTheForm(screen.getByText(ru['onboarding.step1Title']))).toBe(true);
+    expect(screen.getByText(ru['onboarding.step1Body'])).toBeInTheDocument();
+    expect(screen.queryByText(ru['onboarding.step2Body'])).not.toBeInTheDocument();
+    expect(comesAfterTheForm(screen.getByText(ru['onboarding.step1Body']))).toBe(false);
   });
 
   it('opens the currency list in a drawer rather than a popover under the thumb', async () => {

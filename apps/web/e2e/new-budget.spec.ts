@@ -54,5 +54,8 @@ test('a new user creates a budget, adds the first account and lands in the app',
   await expect(finish).toBeEnabled();
   await finish.click();
 
+  await expect(page.getByText(pl['newAccount.startAssigning'])).toBeVisible();
+  await page.getByRole('link', { name: pl['nav.categories'] }).click();
+
   await expect(page.getByText(pl['categories.slotTitle'])).toBeVisible();
 });
