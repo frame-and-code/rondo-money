@@ -42,8 +42,7 @@ test('a new user creates a budget, adds the first account and lands in the app',
     page.getByText(pl['newBudget.doneTitle'].replace('{{name}}', 'Budżet domowy')),
   ).toBeVisible();
 
-  await page.getByRole('link', { name: pl['newBudget.continue'] }).click();
-
+  // The wizard moves on by itself; nothing here clicks anything.
   await expect(page.getByRole('heading', { name: pl['newAccount.heading'] })).toBeVisible();
 
   await page.getByLabel(pl['newAccount.nameLabel']).fill('Portfel');

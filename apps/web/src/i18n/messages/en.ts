@@ -75,12 +75,10 @@ export const en: Record<MessageKey, string> = {
   'newBudget.submitting': 'Creating…',
   'newBudget.submitFailed': 'The budget was not created. Try again.',
   'newBudget.doneTitle': 'Budget “{{name}}” created',
-  'newBudget.doneWithDefaults':
-    'Currency {{currency}}. The starter categories are in place. Next step: your accounts and their balances.',
-  'newBudget.doneWithoutDefaults':
-    'Currency {{currency}}. No categories yet, you will add your own. Next step: your accounts and their balances.',
-
-  'newBudget.continue': 'Add your first account',
+  'newBudget.doneWithDefaults': 'The starter categories are in place',
+  'newBudget.doneWithoutDefaults': 'No categories yet, you will add your own',
+  'newBudget.doneCurrency': 'Currency',
+  'newBudget.doneOpening': 'Opening the next step',
 
   'newAccount.heading': 'Now add your first account',
   'newAccount.lead':

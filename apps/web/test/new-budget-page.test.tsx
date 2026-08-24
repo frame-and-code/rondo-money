@@ -5,6 +5,10 @@ import NewBudgetPage from '@/app/new/page';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { en } from '@/i18n/messages/en';
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: () => {} }),
+}));
+
 jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerCreateMutation: () => ({ mutationFn: async () => ({ id: 'budget-1' }) }),
   budgetsControllerListQueryKey: () => ['budgetsControllerList'],

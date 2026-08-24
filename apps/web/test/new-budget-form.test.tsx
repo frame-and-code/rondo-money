@@ -1,6 +1,6 @@
 import { supportedCurrencyCodes } from '@rondo/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { NewBudgetForm } from '@/components/new-budget-form';
@@ -11,6 +11,11 @@ import { pl } from '@/i18n/messages/pl';
 import { ru } from '@/i18n/messages/ru';
 
 const submit = jest.fn();
+const replace = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: (href: string) => replace(href) as unknown }),
+}));
 
 jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerCreateMutation: () => ({
@@ -88,6 +93,14 @@ const fillOut = async (user: ReturnType<typeof userEvent.setup>, name = 'Сем�
 };
 
 describe('the new budget form', () => {
+  beforeEach(() => {
+    replace.mockReset();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     submit.mockReset();
     submit.mockResolvedValue({ id: 'budget-1' });
@@ -413,7 +426,7 @@ describe('the new budget form', () => {
     });
   });
 
-  it('names the budget it created and says what comes next', async () => {
+  it('names the budget it created, and the currency it is now stuck with', async () => {
     const user = userEvent.setup();
     draw();
 
@@ -423,33 +436,28 @@ describe('the new budget form', () => {
     expect(
       await screen.findByText(interpolate(ru['newBudget.doneTitle'], { name: 'Семейный' })),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(interpolate(ru['newBudget.doneWithDefaults'], { currency: 'PLN' })),
-    ).toBeInTheDocument();
+    expect(screen.getByText(ru['newBudget.doneWithDefaults'])).toBeInTheDocument();
+    expect(screen.getByText('PLN')).toBeInTheDocument();
   });
 
-  it('renders the way on as a real anchor, with no complaint from the primitive', async () => {
-    const user = userEvent.setup();
-    const complaints = jest.spyOn(console, 'error').mockImplementation(() => {});
+  it('carries the user on to the second step rather than parking them on a button', async () => {
+    jest.useFakeTimers();
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     draw();
 
     await fillOut(user);
     await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
-    await screen.findByRole('link', { name: ru['newBudget.continue'] });
+    await screen.findByText(interpolate(ru['newBudget.doneTitle'], { name: 'Семейный' }));
 
-    expect(complaints).not.toHaveBeenCalled();
-    complaints.mockRestore();
-  });
+    // The confirmation is the only place the screen says the budget exists, so it is read
+    // before the wizard moves, not skipped past.
+    expect(replace).not.toHaveBeenCalled();
 
-  it('offers the way on to the accounts step', async () => {
-    const user = userEvent.setup();
-    draw();
+    await act(async () => {
+      jest.advanceTimersByTime(5_000);
+    });
 
-    await fillOut(user);
-    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
-
-    const onwards = await screen.findByRole('link', { name: ru['newBudget.continue'] });
-    expect(onwards).toHaveAttribute('href', '/new/account');
+    expect(replace).toHaveBeenCalledWith('/new/account');
   });
 
   it('reports a failure instead of pretending the budget exists', async () => {

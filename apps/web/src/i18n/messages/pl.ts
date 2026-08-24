@@ -74,12 +74,10 @@ export const pl: Record<MessageKey, string> = {
   'newBudget.submitting': 'Tworzymy…',
   'newBudget.submitFailed': 'Nie udało się utworzyć budżetu. Spróbuj ponownie.',
   'newBudget.doneTitle': 'Budżet „{{name}}” utworzony',
-  'newBudget.doneWithDefaults':
-    'Waluta {{currency}}. Startowe kategorie są gotowe. Następny krok: konta i ich salda.',
-  'newBudget.doneWithoutDefaults':
-    'Waluta {{currency}}. Na razie brak kategorii, dodasz własne. Następny krok: konta i ich salda.',
-
-  'newBudget.continue': 'Dodaj pierwsze konto',
+  'newBudget.doneWithDefaults': 'Startowe kategorie są gotowe',
+  'newBudget.doneWithoutDefaults': 'Na razie brak kategorii, dodasz własne',
+  'newBudget.doneCurrency': 'Waluta',
+  'newBudget.doneOpening': 'Otwieramy następny krok',
 
   'newAccount.heading': 'Teraz dodaj pierwsze konto',
   'newAccount.lead':

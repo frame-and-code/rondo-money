@@ -71,12 +71,10 @@ export const ru = {
   'newBudget.submitting': 'Создаём…',
   'newBudget.submitFailed': 'Не получилось создать бюджет. Попробуйте ещё раз.',
   'newBudget.doneTitle': 'Бюджет «{{name}}» создан',
-  'newBudget.doneWithDefaults':
-    'Валюта {{currency}}. Стартовый набор категорий создан. Следующий шаг: счета и остатки на них.',
-  'newBudget.doneWithoutDefaults':
-    'Валюта {{currency}}. Категорий пока нет, добавите свои. Следующий шаг: счета и остатки на них.',
-
-  'newBudget.continue': 'Добавить первый счёт',
+  'newBudget.doneWithDefaults': 'Стартовый набор категорий создан',
+  'newBudget.doneWithoutDefaults': 'Категорий пока нет, добавите свои',
+  'newBudget.doneCurrency': 'Валюта',
+  'newBudget.doneOpening': 'Открываем следующий шаг',
 
   'newAccount.heading': 'Теперь заведём первый счёт',
   'newAccount.lead':

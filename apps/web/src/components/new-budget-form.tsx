@@ -5,7 +5,7 @@ import {
   budgetsControllerListQueryKey,
 } from '@rondo/api-client/react-query';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
-import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
+import { Button } from '@rondo/ui/components/ui/button';
 import {
   Card,
   CardContent,
@@ -60,8 +60,8 @@ import {
   IconWallet,
 } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
 import { localeLabels, locales, type Locale } from '@/i18n/locales';
@@ -73,6 +73,7 @@ import {
   searchCurrencies,
   type CurrencyOption,
 } from '@/lib/currencies';
+import { CONFIRMATION_MS } from '@/lib/onboarding';
 
 /// Long enough to read as a change of language, short enough that nobody waits for it. The
 /// dictionary is in the bundle, so there is nothing to load and a spinner would be a lie.
@@ -163,6 +164,7 @@ function FieldDrawer({
 
 export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
   const { t, locale, setLocale } = useTranslations();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
@@ -191,6 +193,18 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
       setFailed(true);
     },
   });
+
+  useEffect(() => {
+    if (created === null) return;
+
+    const timer = window.setTimeout(() => {
+      router.replace('/new/account');
+    }, CONFIRMATION_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [created, router]);
 
   const options = useMemo(() => currencyOptions(locale), [locale]);
   const matched = useMemo(() => searchCurrencies(options, query), [options, query]);
@@ -437,28 +451,41 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
           <CardContent className="max-md:px-0">
             {created ? (
-              <div className="flex items-start gap-3">
-                <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-full">
-                  <IconCheck className="size-5" />
-                </span>
-                <div className="flex flex-col items-start gap-4">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium">
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center gap-3.5">
+                  <span className="bg-primary text-primary-foreground grid size-14 shrink-0 place-items-center rounded-full motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-300">
+                    <IconCheck
+                      strokeWidth={2.5}
+                      className="size-7 [stroke-dasharray:30] motion-safe:animate-draw-check"
+                    />
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-xl font-semibold tracking-tight">
                       {t('newBudget.doneTitle', { name: created.name })}
                     </p>
                     <p className="text-muted-foreground text-sm">
                       {withDefaultCategories
-                        ? t('newBudget.doneWithDefaults', { currency: created.currency })
-                        : t('newBudget.doneWithoutDefaults', { currency: created.currency })}
+                        ? t('newBudget.doneWithDefaults')
+                        : t('newBudget.doneWithoutDefaults')}
                     </p>
                   </div>
-                  <Link
-                    href="/new/account"
-                    className={cn(buttonVariants(), CONTROL, 'max-md:w-full')}
-                  >
-                    {t('newBudget.continue')}
-                  </Link>
                 </div>
+
+                <div className="bg-secondary flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3.5">
+                  <span className="text-sm">{t('newBudget.doneCurrency')}</span>
+                  <span className="text-[22px] font-semibold tracking-tight tabular-nums">
+                    {created.currency}
+                  </span>
+                </div>
+
+                <p className="text-muted-foreground flex items-center justify-between gap-2 text-sm">
+                  {t('newBudget.doneOpening')}
+                  <span className="flex gap-1" aria-hidden>
+                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse" />
+                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse [animation-delay:180ms]" />
+                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse [animation-delay:360ms]" />
+                  </span>
+                </p>
               </div>
             ) : (
               <form onSubmit={submit} className="flex flex-col gap-6">
