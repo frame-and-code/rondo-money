@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiOkResponse,
@@ -13,6 +14,7 @@ import { BudgetResponse } from '@/budgets/budget.response';
 import { BudgetsService } from '@/budgets/budgets.service';
 import { CreateBudgetDto } from '@/budgets/create-budget.dto';
 import { ConflictResponse } from '@/mutations/conflict.response';
+import { BadRequestResponse } from '@/openapi/bad-request.response';
 
 @Controller('budgets')
 export class BudgetsController {
@@ -28,6 +30,10 @@ export class BudgetsController {
       'one active budget, so a previous one stops being active here.',
   })
   @ApiCreatedResponse({ description: 'The budget that now exists.', type: BudgetResponse })
+  @ApiBadRequestResponse({
+    description: 'The body was refused: a field is missing, malformed or not declared at all.',
+    type: BadRequestResponse,
+  })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
     type: ConflictResponse,

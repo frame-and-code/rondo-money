@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -66,6 +66,32 @@ export const budgetsControllerList = <ThrowOnError extends boolean = false>(opti
 export const budgetsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<BudgetsControllerCreateData, ThrowOnError>): RequestResult<BudgetsControllerCreateResponses, BudgetsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<BudgetsControllerCreateResponses, BudgetsControllerCreateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/budgets',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The active budget's accounts
+ *
+ * The accounts of the budget the caller is working in, oldest first. Balances are not here: they are computed from transactions rather than stored.
+ */
+export const accountsControllerList = <ThrowOnError extends boolean = false>(options?: Options<AccountsControllerListData, ThrowOnError>): RequestResult<AccountsControllerListResponses, AccountsControllerListErrors, ThrowOnError> => (options?.client ?? client).get<AccountsControllerListResponses, AccountsControllerListErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts',
+    ...options
+});
+
+/**
+ * Create an account
+ *
+ * Creates the account and its opening balance in one database transaction. The balance is an income transaction dated today in the budget timezone, carrying no category, so the money lands in Ready to Assign. It is written even when the balance is zero.
+ */
+export const accountsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<AccountsControllerCreateData, ThrowOnError>): RequestResult<AccountsControllerCreateResponses, AccountsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<AccountsControllerCreateResponses, AccountsControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts',
     ...options,
     headers: {
         'Content-Type': 'application/json',

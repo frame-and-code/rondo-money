@@ -36,15 +36,19 @@ export const ru = {
   'settings.slotTitle': 'Слот раздела «Настройки»',
   'settings.slotBody': 'Сюда встанут валюта, таймзона и язык бюджета.',
 
+  'onboarding.progress': 'Настройка, шаг {{step}} из 3',
+  'onboarding.step1Title': 'Бюджет',
+  'onboarding.step1Body':
+    'Язык приложения, имя бюджета и его валюта. Валюту выбирают один раз, она остаётся с бюджетом навсегда.',
+  'onboarding.step2Title': 'Первый счёт',
+  'onboarding.step2Body': 'Сколько денег лежит на нём сегодня. Эта сумма и попадёт в «Свободно».',
+  'onboarding.step3Title': 'Деньги по категориям',
+  'onboarding.step3Body':
+    'Создаёте категории и распределяете по ним свободные деньги, пока не останется ноль.',
+
   'newBudget.heading': 'Соберём ваш первый бюджет',
   'newBudget.lead':
     'У каждой суммы на счетах есть задача. Вы не гадаете про будущие доходы, вы распределяете деньги, которые уже лежат на счетах.',
-  'newBudget.point1Title': 'Группы и категории',
-  'newBudget.point1Body': 'Стартовый набор создаётся по вашему выбору, на выбранном языке.',
-  'newBudget.point2Title': 'Остатки по счетам',
-  'newBudget.point2Body': 'Следующий шаг: сколько денег сейчас лежит на каждом счёте.',
-  'newBudget.point3Title': 'Распределение',
-  'newBudget.point3Body': 'Дальше вы раздаёте деньги категориям, пока «Свободно» не станет нулём.',
   'newBudget.cardTitle': 'Новый бюджет',
   'newBudget.cardDescription': 'Язык, имя и валюта. Всё остальное настроим на следующих шагах.',
   'newBudget.languageLabel': 'Язык',
@@ -71,10 +75,44 @@ export const ru = {
   'newBudget.submitting': 'Создаём…',
   'newBudget.submitFailed': 'Не получилось создать бюджет. Попробуйте ещё раз.',
   'newBudget.doneTitle': 'Бюджет «{{name}}» создан',
-  'newBudget.doneWithDefaults':
-    'Валюта {{currency}}. Стартовый набор категорий создан. Следующий шаг: счета и остатки на них.',
-  'newBudget.doneWithoutDefaults':
-    'Валюта {{currency}}. Категорий пока нет, добавите свои. Следующий шаг: счета и остатки на них.',
+  'newBudget.doneWithDefaults': 'Стартовый набор категорий создан',
+  'newBudget.doneWithoutDefaults': 'Категорий пока нет, добавите свои',
+  'newBudget.doneCurrency': 'Валюта',
+  'newBudget.continue': 'Создать счёт',
+
+  'newAccount.heading': 'Теперь заведём первый счёт',
+  'newAccount.lead':
+    'Счёт это место, где деньги лежат на самом деле: кошелёк, карта, банковский счёт. То, что на нём сегодня, и станет деньгами, которые вы раздаёте.',
+  'newAccount.cardTitle': 'Первый счёт',
+  'newAccount.cardDescription': 'Название, вид и то, сколько на нём сейчас.',
+  'newAccount.nameLabel': 'Название',
+  'newAccount.namePlaceholder.0': 'Основная карта',
+  'newAccount.namePlaceholder.1': 'Повседневный счёт',
+  'newAccount.namePlaceholder.2': 'Наличные',
+  'newAccount.namePlaceholder.3': 'Накопления',
+  'newAccount.namePlaceholder.4': 'Вторая карта',
+  'newAccount.typeLabel': 'Вид',
+  'newAccount.typeCash': 'Наличные',
+  'newAccount.typeCashHint': 'Купюры и монеты на руках.',
+  'newAccount.typeDebit': 'Дебетовая карта',
+  'newAccount.typeDebitHint': 'Банковский счёт, с которого вы тратите.',
+  'newAccount.balanceLabel': 'Начальный остаток',
+  'newAccount.balanceHint':
+    'Ноль это нормально. Сумма датируется сегодняшним днём, её можно поправить позже.',
+  'newAccount.balancePreview': '{{amount}} попадёт в «Свободно»',
+  'newAccount.balanceNegative': 'Начальный остаток не может быть отрицательным.',
+  'newAccount.balanceDigitsOnly': 'Сумма записывается цифрами.',
+  'newAccount.balanceNoDecimals': 'У {{currency}} нет дробной части.',
+  'newAccount.balanceDecimals': 'У {{currency}} {{digits}} знака после запятой.',
+  'newAccount.submit': 'Завершить настройку',
+  'newAccount.submitting': 'Сохраняем…',
+  'newAccount.budgetUnavailable': 'Не удалось прочитать ваш бюджет. Обновите страницу.',
+  'newAccount.submitFailed': 'Не получилось создать счёт. Попробуйте ещё раз.',
+  'newAccount.doneTitle': 'Счёт «{{name}}» создан',
+  'newAccount.doneReady': 'В «Свободно»',
+  'newAccount.moreAccounts': 'Хотите добавить ещё счета?',
+  'newAccount.startAssigning': 'Готовы распределить деньги?',
+  'newAccount.footnote': 'Это последний шаг настройки.',
 } as const;
 
 export type MessageKey = keyof typeof ru;

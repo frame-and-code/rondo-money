@@ -112,8 +112,9 @@ stop**. Never quietly substitute a single-context read and report it as a review
    The whole value of a second pass is that a human can disagree with it. Each finding keeps
    its `file:line` and its one-line claim; a reviewer's own wording is preserved rather than
    paraphrased into agreement.
-5. Then **stop**. This command changes no files and runs no git. Fixing is a separate
-   decision and it is the user's, including the decision that a finding is wrong.
+5. Then **stop**. Invoked on its own this command changes no files and runs no git; called
+   from [`/prep-pr`](prep-pr.md) it is that command's step 5 that fixes what blocks. Deciding a
+   finding is **wrong** stays the user's either way.
 
 ## Report
 
@@ -149,6 +150,16 @@ Report an empty review as an empty review. A round that finds nothing real is th
 outcome of a careful change, and inventing a NICE TO HAVE to fill the section is how a
 reviewer teaches its reader to skip it.
 
+**A round costs four agents, five when a migration puts a fifth reviewer in, and when it
+blocks it costs a fix and another round on top.** The user pays for
+that, so the bar for a blocking grade is whether the change should wait, not whether a rule
+can be shown to apply. Two things follow, and the reviewers are briefed on both
+([`pr-reviewer`](../agents/pr-reviewer.md)): a defect nobody reaches without a contrived
+setup is not a blocker whatever it breaks, and a sentence that is true is not a finding
+however you would have worded it. Wording arguments change no behaviour and cost exactly what
+a cross-tenant leak costs to find. When you drop a finding for either reason, say so in the
+report; a bar applied silently reads as a bar not applied.
+
 ## How many rounds, and on what
 
 Fixing changes the code, so a second round reads something that did not exist when the first
@@ -172,11 +183,10 @@ the code is for"**. An accident still getting through means keep going; another 
 someone determined does not. Write that class down in the code before the first round, or
 there is nothing to stop against.
 
-Nothing loops this command, and deliberately so: a round can only follow a fix, and fixing is
-not this command's to do. The loop lives one level up. [`/prep-pr`](prep-pr.md) runs a round
-before it commits and refuses to open a PR while a MUST FIX or a SHOULD FIX stands, so fixing
-and running `/prep-pr` again _is_ the next round. Rounds are therefore automatic exactly where
-they matter, and absent when you are only asking what the reviewers think.
+Nothing loops this command, and deliberately so: a round can only follow a fix. The loop lives
+one level up, in [`/prep-pr`](prep-pr.md) step 5, which fixes what blocks and rounds again on
+the new state, up to three times. Rounds are therefore automatic exactly where they matter, and
+absent when you are only asking what the reviewers think.
 
 And not every change earns a round at all. What earns it is code that can **fail silently**:
 a guard, a scoping path, a migration, a mutation, an aggregate. A one-line fix, a copy edit or

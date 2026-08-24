@@ -5,7 +5,7 @@ import {
   budgetsControllerListQueryKey,
 } from '@rondo/api-client/react-query';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
-import { Button } from '@rondo/ui/components/ui/button';
+import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
 import {
   Card,
   CardContent,
@@ -47,26 +47,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@rondo/ui/components/ui/select';
-import { Separator } from '@rondo/ui/components/ui/separator';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import {
-  IconBuildingBank,
-  IconCheck,
-  IconChevronDown,
-  IconLoader,
-  IconLock,
-  IconTrendingUp,
-  IconWallet,
-} from '@tabler/icons-react';
+import { IconCheck, IconChevronDown, IconLoader, IconLock } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
+import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { localeLabels, locales, type Locale } from '@/i18n/locales';
-import { type MessageKey } from '@/i18n/messages';
 import { namePlaceholderKey } from '@/i18n/name-placeholders';
 import {
+  currencyName,
   currencyOptions,
   sampleAmount,
   searchCurrencies,
@@ -101,16 +94,6 @@ const SHEET_ITEM = 'min-h-12 rounded-2xl px-3 text-sm';
 /// Rendering every currency turns the list into a wall and the search into decoration. The
 /// count underneath says what was left out, so a missing code reads as "keep typing".
 const RESULT_LIMIT = 60;
-
-const POINTS: ReadonlyArray<{
-  icon: typeof IconWallet;
-  title: MessageKey;
-  body: MessageKey;
-}> = [
-  { icon: IconWallet, title: 'newBudget.point1Title', body: 'newBudget.point1Body' },
-  { icon: IconBuildingBank, title: 'newBudget.point2Title', body: 'newBudget.point2Body' },
-  { icon: IconTrendingUp, title: 'newBudget.point3Title', body: 'newBudget.point3Body' },
-];
 
 function mintKey(): string {
   return crypto.randomUUID();
@@ -244,22 +227,6 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
       },
     });
   };
-
-  const points = (
-    <ul className="flex flex-col gap-4">
-      {POINTS.map((point) => (
-        <li key={point.title} className="flex items-start gap-3">
-          <span className="bg-secondary grid size-8 shrink-0 place-items-center rounded-lg">
-            <point.icon className="size-4" />
-          </span>
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">{t(point.title)}</span>
-            <span className="text-muted-foreground text-sm">{t(point.body)}</span>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
 
   const currencyRow = (option: CurrencyOption): ReactNode => (
     <>
@@ -400,7 +367,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
   return (
     <>
-      <div className="absolute end-5 top-5 md:end-6 md:top-6">
+      <div className="flex justify-end max-md:mb-6 md:absolute md:end-6 md:top-6">
         <ThemeToggle label={t('common.themeToggle.trigger')} />
       </div>
 
@@ -425,29 +392,52 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
             <p className="text-muted-foreground text-sm">{t('newBudget.lead')}</p>
           </div>
 
-          {isMobile ? null : points}
+          <OnboardingSteps done={created === null ? 0 : 1} />
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
-          <CardHeader className="max-md:hidden">
-            <CardTitle>{t('newBudget.cardTitle')}</CardTitle>
-            <CardDescription>{t('newBudget.cardDescription')}</CardDescription>
-          </CardHeader>
+          {created === null ? (
+            <CardHeader className="max-md:hidden">
+              <CardTitle>{t('newBudget.cardTitle')}</CardTitle>
+              <CardDescription>{t('newBudget.cardDescription')}</CardDescription>
+            </CardHeader>
+          ) : null}
 
           <CardContent className="max-md:px-0">
             {created ? (
-              <div className="flex items-start gap-3">
-                <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-full">
-                  <IconCheck className="size-5" />
-                </span>
-                <div className="flex flex-col gap-1">
-                  <p className="font-medium">{t('newBudget.doneTitle', { name: created.name })}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {withDefaultCategories
-                      ? t('newBudget.doneWithDefaults', { currency: created.currency })
-                      : t('newBudget.doneWithoutDefaults', { currency: created.currency })}
-                  </p>
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center gap-3.5">
+                  <span className="bg-primary text-primary-foreground grid size-14 shrink-0 place-items-center rounded-full motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-300">
+                    <IconCheck
+                      strokeWidth={2.5}
+                      className="size-7 [stroke-dasharray:30] motion-safe:animate-draw-check"
+                    />
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-xl font-semibold tracking-tight">
+                      {t('newBudget.doneTitle', { name: created.name })}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {withDefaultCategories
+                        ? t('newBudget.doneWithDefaults')
+                        : t('newBudget.doneWithoutDefaults')}
+                    </p>
+                  </div>
                 </div>
+
+                <div className="bg-secondary flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3.5">
+                  <span className="text-sm">{t('newBudget.doneCurrency')}</span>
+                  <span className="text-end text-base font-semibold tracking-tight text-balance">
+                    {currencyName(locale, created.currency)}
+                  </span>
+                </div>
+
+                <Link
+                  href="/new/account"
+                  className={cn(buttonVariants(), CONTROL, 'max-md:w-full')}
+                >
+                  {t('newBudget.continue')}
+                </Link>
               </div>
             ) : (
               <form onSubmit={submit} className="flex flex-col gap-6">
@@ -522,13 +512,6 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
             )}
           </CardContent>
         </Card>
-
-        {isMobile ? (
-          <div className="flex flex-col gap-6">
-            <Separator />
-            {points}
-          </div>
-        ) : null}
       </div>
     </>
   );

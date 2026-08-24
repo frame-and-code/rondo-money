@@ -26,11 +26,18 @@ this file. It is one method, and every rule below is visible in it.
 ## The shape
 
 ```ts
+const intended = await this.activeBudget(this.prisma);
+
 const created = await this.mutations.run(
-  { key: body.idempotencyKey, request: body, decode: decodeAccount },
+  {
+    key: body.idempotencyKey,
+    request: { budgetId: intended.id, ...body },
+    decode: decodeAccount,
+  },
   async (tx) => {
-    const account = await tx.account.create({ data: { userId, budgetId, ...} });
-    await tx.transaction.create({ data: { userId, budgetId, accountId: account.id, ... } });
+    const budget = await this.activeBudget(tx, intended.id);
+    const account = await tx.account.create({ data: { userId, budgetId: budget.id, ...} });
+    await tx.transaction.create({ data: { userId, budgetId: budget.id, accountId: account.id, ... } });
     return serializeAccount(account);
   },
 );
@@ -82,6 +89,14 @@ What the service does with it, and why the order matters:
 A mutation that fails leaves no key row, so an honest retry goes through. And a user who
 enters the same coffee twice gets two transactions, which is correct: the key catches a
 resubmitted intent, not a repeated one.
+
+**A mutation writing into a budget the caller already has puts that budget in the intent.**
+The active budget is resolved on `SCOPED_PRISMA` before `run` opens, its id goes into
+`request` so it joins the fingerprint, and the work re-reads it on the transactional client to
+confirm it is still the active one. Leave it out and the same key sent after the caller
+switched budgets is answered with the row made in the old one, reporting a write this request
+never made. A mutation that **creates** the budget has nothing to resolve and skips all three
+steps.
 
 ## Scoping still applies, unchanged
 

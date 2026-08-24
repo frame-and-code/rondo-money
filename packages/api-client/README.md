@@ -78,8 +78,10 @@ of truth for something `@Public()` already decides in `apps/api`.
 ## Money
 
 Money crosses the wire as a base-10 string of minor units, never a number. See
-`packages/types/src/money.ts` for the convention and its parser. No endpoint carries money yet;
-when the first one does, parse at the edge rather than passing the string on.
+`packages/types/src/money.ts` for the convention and its parser. Parse at the edge rather
+than passing the string on, the way
+[`new-account-form.tsx`](../../apps/web/src/components/new-account-form.tsx) turns what the
+user typed into minor units before it sends anything.
 
 ## Why this generator
 

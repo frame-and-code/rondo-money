@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { budgetsControllerCreate, budgetsControllerList, healthControllerCheck, meControllerIdentify, type Options, userSettingsControllerRead } from '../sdk.gen';
-import type { BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
+import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, healthControllerCheck, meControllerIdentify, type Options, userSettingsControllerRead } from '../sdk.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -128,6 +128,45 @@ export const budgetsControllerCreateMutation = (options?: Partial<Options<Budget
     const mutationOptions: UseMutationOptions<BudgetsControllerCreateResponse, BudgetsControllerCreateError, Options<BudgetsControllerCreateData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await budgetsControllerCreate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const accountsControllerListQueryKey = (options?: Options<AccountsControllerListData>) => createQueryKey('accountsControllerList', options);
+
+/**
+ * The active budget's accounts
+ *
+ * The accounts of the budget the caller is working in, oldest first. Balances are not here: they are computed from transactions rather than stored.
+ */
+export const accountsControllerListOptions = (options?: Options<AccountsControllerListData>) => queryOptions<AccountsControllerListResponse, AccountsControllerListError, AccountsControllerListResponse, ReturnType<typeof accountsControllerListQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await accountsControllerList({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: accountsControllerListQueryKey(options)
+});
+
+/**
+ * Create an account
+ *
+ * Creates the account and its opening balance in one database transaction. The balance is an income transaction dated today in the budget timezone, carrying no category, so the money lands in Ready to Assign. It is written even when the balance is zero.
+ */
+export const accountsControllerCreateMutation = (options?: Partial<Options<AccountsControllerCreateData>>): UseMutationOptions<AccountsControllerCreateResponse, AccountsControllerCreateError, Options<AccountsControllerCreateData>> => {
+    const mutationOptions: UseMutationOptions<AccountsControllerCreateResponse, AccountsControllerCreateError, Options<AccountsControllerCreateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await accountsControllerCreate({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

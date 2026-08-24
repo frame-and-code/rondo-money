@@ -11,7 +11,10 @@ user operation and its idempotency key are written in one transaction. Both stan
 request context, the auto-scoped Prisma client and the raw-SQL repository below.
 [`src/budgets`](src/budgets) uses both: `GET /budgets` reads through the scoped client, and
 `POST /budgets` writes the budget, the caller's language and the starter categories in one
-transaction.
+transaction. [`src/accounts`](src/accounts) is the same pair over a model a budget owns, so it
+is also where a handler asks for the active budget itself rather than letting the scoping
+extension refuse the read: without one the extension raises an internal error, and a user part
+way through onboarding would meet a 500 for an ordinary state.
 
 ## Endpoints
 
@@ -35,6 +38,15 @@ transaction.
   currency is chosen here and nowhere else, so no operation in the contract accepts one
   afterwards, and its minor digit count is frozen on the row. A user holds at most one active
   budget, so creating one deactivates the previous.
+- `GET /accounts` returns the active budget's accounts, oldest first. No balances: those are
+  computed from transactions rather than stored.
+- `POST /accounts` creates an account and its opening balance in one transaction. The balance
+  is an income transaction dated today in the budget's timezone and carrying no category, so
+  the money lands in Ready to Assign. It is written even when the amount is zero, because
+  nothing creates it a second time and an account without it would have no opening balance
+  ever. A caller with no active budget gets a 400 from both of these rather than a 500, in the
+  shape [`BadRequestResponse`](src/openapi/bad-request.response.ts) publishes: it covers the
+  pipe's list of field failures and a handler's single sentence alike.
 
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
@@ -65,8 +77,9 @@ There is no `@nestjs/swagger` CLI plugin here, so a validation decorator contrib
 the spec on its own; declaring the two separately is how a contract and its guard drift apart.
 The conversion to `bigint` stays explicit, at `serializeMoney` / `parseMoney` in the service,
 and never a global interceptor, which would make the code say one thing and the published
-schema another. No endpoint carries an amount yet; the boundary is settled before anything puts
-money through it, and `test/money-boundary.spec.ts` is what proves it works.
+schema another. `nonNegative` on the decorator moves the published pattern and the pipe's
+together, so an amount that may not go below zero states that bound once;
+`test/money-boundary.spec.ts` is what proves both halves move.
 
 **A currency and a time zone are declared the same way**, with
 [`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts) and

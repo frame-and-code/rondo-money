@@ -8,7 +8,9 @@ import { BUDGET_TEST_EMAIL, hasClerkKeys } from './clerk';
 
 test.skip(!process.env.CI && !hasClerkKeys(), 'Clerk keys are not configured');
 
-test('a new user picks a language, finds a currency and creates a budget', async ({ page }) => {
+test('a new user creates a budget, adds the first account and lands in the app', async ({
+  page,
+}) => {
   await setupClerkTestingToken({ page });
 
   await page.goto('/sign-in');
@@ -39,4 +41,21 @@ test('a new user picks a language, finds a currency and creates a budget', async
   await expect(
     page.getByText(pl['newBudget.doneTitle'].replace('{{name}}', 'Budżet domowy')),
   ).toBeVisible();
+
+  await page.getByRole('link', { name: pl['newBudget.continue'] }).click();
+
+  await expect(page.getByRole('heading', { name: pl['newAccount.heading'] })).toBeVisible();
+
+  await page.getByLabel(pl['newAccount.nameLabel']).fill('Portfel');
+  await page.getByRole('button', { name: new RegExp(pl['newAccount.typeCash']) }).click();
+  await page.getByLabel(pl['newAccount.balanceLabel']).fill('1250,50');
+
+  const finish = page.getByRole('button', { name: pl['newAccount.submit'] });
+  await expect(finish).toBeEnabled();
+  await finish.click();
+
+  await expect(page.getByText(pl['newAccount.startAssigning'])).toBeVisible();
+  await page.getByRole('link', { name: pl['nav.categories'] }).click();
+
+  await expect(page.getByText(pl['categories.slotTitle'])).toBeVisible();
 });

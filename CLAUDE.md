@@ -27,8 +27,8 @@ is a stack in the browser, and the single write point stays for atomicity).
 ## Structure
 
 - `apps/web` is Next.js (App Router): the app shell and its navigation, the sign-in screen and
-  the screen that creates a budget, which sits outside the shell. The screens behind the
-  shell's sections arrive per phase.
+  the two onboarding screens, which sit outside the shell and end by opening it on Categories.
+  The screens behind the shell's sections arrive per phase.
 - `apps/api` is NestJS (REST). Skeleton F0.4.
 - `packages/db` holds the Prisma schema and migrations (F0.4); it grows incrementally per phase.
 - `packages/types` holds the shared DTOs, money as `bigint` in minor units with the

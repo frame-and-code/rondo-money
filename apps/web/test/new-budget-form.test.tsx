@@ -11,6 +11,11 @@ import { pl } from '@/i18n/messages/pl';
 import { ru } from '@/i18n/messages/ru';
 
 const submit = jest.fn();
+const replace = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: (href: string) => replace(href) as unknown }),
+}));
 
 jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerCreateMutation: () => ({
@@ -89,6 +94,10 @@ const fillOut = async (user: ReturnType<typeof userEvent.setup>, name = 'Сем�
 
 describe('the new budget form', () => {
   beforeEach(() => {
+    replace.mockReset();
+  });
+
+  beforeEach(() => {
     submit.mockReset();
     submit.mockResolvedValue({ id: 'budget-1' });
     window.localStorage.clear();
@@ -100,9 +109,9 @@ describe('the new budget form', () => {
 
     expect(screen.getByRole('heading', { name: ru['newBudget.heading'] })).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.lead'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point1Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point2Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point3Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step1Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step2Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step3Title'])).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.cardTitle'])).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.cardDescription'])).toBeInTheDocument();
   });
@@ -110,7 +119,7 @@ describe('the new budget form', () => {
   it('puts the explainer beside the form, where the wide layout has room for it', () => {
     draw();
 
-    expect(comesAfterTheForm(screen.getByText(ru['newBudget.point1Title']))).toBe(false);
+    expect(comesAfterTheForm(screen.getByText(ru['onboarding.step1Title']))).toBe(false);
   });
 
   it('offers the theme switch, which is the only control outside the form', () => {
@@ -413,7 +422,7 @@ describe('the new budget form', () => {
     });
   });
 
-  it('names the budget it created and says what comes next', async () => {
+  it('names the budget it created, and the currency it is now stuck with', async () => {
     const user = userEvent.setup();
     draw();
 
@@ -423,10 +432,42 @@ describe('the new budget form', () => {
     expect(
       await screen.findByText(interpolate(ru['newBudget.doneTitle'], { name: 'Семейный' })),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(interpolate(ru['newBudget.doneWithDefaults'], { currency: 'PLN' })),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByText(ru['newBudget.doneWithDefaults'])).toBeInTheDocument();
+    // Written out, and starting with a capital: `Intl` answers "польский злотый" in Russian,
+    // which reads as a mistake standing on its own in a plaque.
+    expect(screen.getByText('Польский злотый')).toBeInTheDocument();
+    expect(screen.queryByText('PLN')).not.toBeInTheDocument();
+    // "New budget: language, name and currency" describes the form. Left above a confirmation
+    // that the budget exists, it argues with it.
+    expect(screen.queryByText(ru['newBudget.cardTitle'])).not.toBeInTheDocument();
+    expect(screen.queryByText(ru['newBudget.cardDescription'])).not.toBeInTheDocument();
+  });
+
+  it('offers the way on to the accounts step, and goes nowhere on its own', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await fillOut(user);
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+
+    const onwards = await screen.findByRole('link', { name: ru['newBudget.continue'] });
+    expect(onwards).toHaveAttribute('href', '/new/account');
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('renders that way on as a real anchor, with no complaint from the primitive', async () => {
+    // A button primitive told to render a link claims native button semantics it does not have,
+    // and says so on the console rather than failing anything.
+    const user = userEvent.setup();
+    const complaints = jest.spyOn(console, 'error').mockImplementation(() => {});
+    draw();
+
+    await fillOut(user);
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+    await screen.findByRole('link', { name: ru['newBudget.continue'] });
+
+    expect(complaints).not.toHaveBeenCalled();
+    complaints.mockRestore();
   });
 
   it('reports a failure instead of pretending the budget exists', async () => {
@@ -458,14 +499,15 @@ describe('the new budget form on a phone', () => {
     Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
   });
 
-  it('keeps the explainer, moving it under the form instead of dropping it', () => {
+  it('puts the progress above the form, carrying only the step being worked on', () => {
     draw();
 
-    expect(screen.getByText(ru['newBudget.point1Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point2Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point3Title'])).toBeInTheDocument();
-    expect(screen.getByText(ru['newBudget.point3Body'])).toBeInTheDocument();
-    expect(comesAfterTheForm(screen.getByText(ru['newBudget.point1Title']))).toBe(true);
+    // The phone has no room for three explanations at once, so the row shows the current one
+    // and hands the other names out on a tap.
+    expect(screen.getByText(ru['onboarding.step1Title'])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step1Body'])).toBeInTheDocument();
+    expect(screen.queryByText(ru['onboarding.step2Body'])).not.toBeInTheDocument();
+    expect(comesAfterTheForm(screen.getByText(ru['onboarding.step1Body']))).toBe(false);
   });
 
   it('opens the currency list in a drawer rather than a popover under the thumb', async () => {

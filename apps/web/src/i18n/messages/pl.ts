@@ -38,16 +38,20 @@ export const pl: Record<MessageKey, string> = {
   'settings.slotTitle': 'Slot sekcji „Ustawienia”',
   'settings.slotBody': 'Tu pojawią się waluta, strefa czasowa i język budżetu.',
 
+  'onboarding.progress': 'Konfiguracja, krok {{step}} z 3',
+  'onboarding.step1Title': 'Budżet',
+  'onboarding.step1Body':
+    'Wybierasz język aplikacji, nazwę budżetu i jego walutę. Walutę wybiera się raz i zostaje z budżetem na zawsze.',
+  'onboarding.step2Title': 'Pierwsze konto',
+  'onboarding.step2Body':
+    'Mówisz, ile pieniędzy jest na nim dzisiaj. Ta kwota trafi do „Do rozdania”.',
+  'onboarding.step3Title': 'Pieniądze do kategorii',
+  'onboarding.step3Body':
+    'Tworzysz kategorie i rozdzielasz między nie wolne pieniądze, aż zostanie zero.',
+
   'newBudget.heading': 'Zbudujmy twój pierwszy budżet',
   'newBudget.lead':
     'Każda kwota na twoich kontach ma swoje zadanie. Nie zgadujesz przyszłych przychodów, rozdzielasz pieniądze, które już masz.',
-  'newBudget.point1Title': 'Grupy i kategorie',
-  'newBudget.point1Body': 'Zestaw startowy powstaje na twoje życzenie, w wybranym języku.',
-  'newBudget.point2Title': 'Salda kont',
-  'newBudget.point2Body': 'Następny krok: ile pieniędzy jest teraz na każdym koncie.',
-  'newBudget.point3Title': 'Rozdzielanie',
-  'newBudget.point3Body':
-    'Potem rozdzielasz pieniądze na kategorie, aż zostanie zero do rozdysponowania.',
   'newBudget.cardTitle': 'Nowy budżet',
   'newBudget.cardDescription': 'Język, nazwa i waluta. Resztę ustawimy w kolejnych krokach.',
   'newBudget.languageLabel': 'Język',
@@ -74,8 +78,42 @@ export const pl: Record<MessageKey, string> = {
   'newBudget.submitting': 'Tworzymy…',
   'newBudget.submitFailed': 'Nie udało się utworzyć budżetu. Spróbuj ponownie.',
   'newBudget.doneTitle': 'Budżet „{{name}}” utworzony',
-  'newBudget.doneWithDefaults':
-    'Waluta {{currency}}. Startowe kategorie są gotowe. Następny krok: konta i ich salda.',
-  'newBudget.doneWithoutDefaults':
-    'Waluta {{currency}}. Na razie brak kategorii, dodasz własne. Następny krok: konta i ich salda.',
+  'newBudget.doneWithDefaults': 'Startowe kategorie są gotowe',
+  'newBudget.doneWithoutDefaults': 'Na razie brak kategorii, dodasz własne',
+  'newBudget.doneCurrency': 'Waluta',
+  'newBudget.continue': 'Utwórz konto',
+
+  'newAccount.heading': 'Teraz dodaj pierwsze konto',
+  'newAccount.lead':
+    'Konto to miejsce, gdzie pieniądze naprawdę leżą: portfel, karta, rachunek bankowy. To, co jest na nim dzisiaj, staje się pieniędzmi do rozdania.',
+  'newAccount.cardTitle': 'Pierwsze konto',
+  'newAccount.cardDescription': 'Nazwa, rodzaj i to, ile jest na nim teraz.',
+  'newAccount.nameLabel': 'Nazwa',
+  'newAccount.namePlaceholder.0': 'Główna karta',
+  'newAccount.namePlaceholder.1': 'Konto codzienne',
+  'newAccount.namePlaceholder.2': 'Gotówka',
+  'newAccount.namePlaceholder.3': 'Oszczędności',
+  'newAccount.namePlaceholder.4': 'Druga karta',
+  'newAccount.typeLabel': 'Rodzaj',
+  'newAccount.typeCash': 'Gotówka',
+  'newAccount.typeCashHint': 'Banknoty i monety, które masz przy sobie.',
+  'newAccount.typeDebit': 'Karta debetowa',
+  'newAccount.typeDebitHint': 'Rachunek bankowy, z którego wydajesz.',
+  'newAccount.balanceLabel': 'Saldo początkowe',
+  'newAccount.balanceHint':
+    'Zero jest w porządku. Kwota ma dzisiejszą datę i można ją później poprawić.',
+  'newAccount.balancePreview': '{{amount}} trafi do „Do rozdania”',
+  'newAccount.balanceNegative': 'Saldo początkowe nie może być ujemne.',
+  'newAccount.balanceDigitsOnly': 'Kwotę zapisuje się cyframi.',
+  'newAccount.balanceNoDecimals': '{{currency}} nie ma części dziesiętnej.',
+  'newAccount.balanceDecimals': '{{currency}} ma {{digits}} miejsca po przecinku.',
+  'newAccount.submit': 'Zakończ konfigurację',
+  'newAccount.submitting': 'Zapisujemy…',
+  'newAccount.budgetUnavailable': 'Nie udało się odczytać budżetu. Odśwież stronę.',
+  'newAccount.submitFailed': 'Nie udało się utworzyć konta. Spróbuj ponownie.',
+  'newAccount.doneTitle': 'Konto „{{name}}” utworzone',
+  'newAccount.doneReady': 'W „Do rozdania”',
+  'newAccount.moreAccounts': 'Chcesz dodać więcej kont?',
+  'newAccount.startAssigning': 'Gotów rozdzielić pieniądze?',
+  'newAccount.footnote': 'To ostatni krok konfiguracji.',
 };

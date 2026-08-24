@@ -43,8 +43,9 @@ than rounded or quietly normalised into something plausible. So is one that fall
 range the money column holds (a signed 64-bit integer), which is the only rejection a client
 cannot predict from the schema, because JSON Schema's numeric bounds do not apply to a string. The single definition of the convention, with its
 serializer, its parser and the pattern published on every money field, is
-\`packages/types/src/money.ts\`. No endpoint carries money yet; the convention is stated here
-because the contract is published before the first amount travels over it.
+\`packages/types/src/money.ts\`. A field that cannot hold less than nothing publishes the
+non-negative form of the same pattern, so the bound is in the schema a client reads rather
+than in prose beside it.
 
 **Request bodies** are validated against the schema published here: a field the schema does
 not declare is an error, not something quietly ignored.`;
@@ -66,7 +67,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addSecurityRequirements(SESSION_TOKEN_SCHEME)
     .build();
 
-  return openPublicOperations(SwaggerModule.createDocument(app, config));
+  return closeRequestBodies(openPublicOperations(SwaggerModule.createDocument(app, config)));
 }
 
 function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
@@ -76,6 +77,31 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
 
       if (operation && PUBLIC_OPERATION_EXTENSION in operation) {
         operation.security = [];
+      }
+    }
+  }
+
+  return document;
+}
+
+/// The global pipe whitelists, so a field a DTO never declared is a 400 rather than something
+/// quietly dropped. Said in the description and not in the schemas, a generated client would
+/// happily build a body the server refuses, so every schema a request body names is closed
+/// here. Response schemas are left open on purpose: a client that meets a field it does not
+/// know should keep working.
+function closeRequestBodies(document: OpenAPIObject): OpenAPIObject {
+  const schemas = document.components?.schemas ?? {};
+
+  for (const pathItem of Object.values(document.paths)) {
+    for (const method of HTTP_METHODS) {
+      const body = pathItem[method]?.requestBody;
+      const reference =
+        body && 'content' in body ? body.content['application/json']?.schema : undefined;
+      const name = reference && '$ref' in reference ? reference.$ref.split('/').pop() : undefined;
+      const schema = name === undefined ? undefined : schemas[name];
+
+      if (schema && 'properties' in schema) {
+        schema.additionalProperties = false;
       }
     }
   }

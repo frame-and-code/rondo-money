@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- The mark the app shell and the onboarding screens draw with Tailwind. The colours are
+       written out because an asset cannot read a CSS variable: #0069a8 is the primary token
+       and #f0f9ff its foreground, both in src/app/globals.css. Change them together. -->
+  <rect width="64" height="64" rx="20" fill="#0069a8" />
+  <text
+    x="32"
+    y="33"
+    fill="#f0f9ff"
+    font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    font-size="38"
+    font-weight="600"
+    text-anchor="middle"
+    dominant-baseline="central"
+  >R</text>
+</svg>

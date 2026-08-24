@@ -21,6 +21,11 @@ class PaymentResponse {
   amount!: string;
 }
 
+class TopUpBody {
+  @ApiMoneyProperty({ nonNegative: true, description: 'The amount to add, in minor units.' })
+  amount!: string;
+}
+
 @Controller('payments')
 class PaymentsController {
   @Post()
@@ -30,12 +35,21 @@ class PaymentsController {
   }
 }
 
+@Controller('top-ups')
+class TopUpsController {
+  @Post()
+  @ApiOkResponse({ type: PaymentResponse })
+  record(@Body() body: TopUpBody): PaymentResponse {
+    return { amount: body.amount };
+  }
+}
+
 describe('money at the API boundary', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [PaymentsController],
+      controllers: [PaymentsController, TopUpsController],
       providers: [{ provide: APP_PIPE, useValue: VALIDATION_PIPE }],
     }).compile();
 
@@ -127,6 +141,22 @@ describe('money at the API boundary', () => {
         .expect(400);
     });
 
+    it('rejects a negative amount on a field declared non-negative', async () => {
+      await request(app.getHttpServer() as Server)
+        .post('/top-ups')
+        .send({ amount: '-1' })
+        .expect(400);
+    });
+
+    it('takes zero and any positive amount on that same field', async () => {
+      for (const amount of ['0', '4500']) {
+        await request(app.getHttpServer() as Server)
+          .post('/top-ups')
+          .send({ amount })
+          .expect(201, { amount });
+      }
+    });
+
     it('rejects a field the DTO never declared', async () => {
       await request(app.getHttpServer() as Server)
         .post('/payments')
@@ -172,6 +202,15 @@ describe('money at the API boundary', () => {
     it('publishes the exact shape a client must send, as a pattern and a length', () => {
       expect(document.components?.schemas?.['PaymentBody']).toMatchObject({
         properties: { amount: { pattern: '^(0|-?[1-9]\\d*)$', maxLength: 20 } },
+      });
+    });
+
+    it('publishes the unsigned pattern for a non-negative field, and the signed one beside it', () => {
+      expect(document.components?.schemas?.['TopUpBody']).toMatchObject({
+        properties: { amount: { pattern: '^(0|[1-9]\\d*)$', example: '4500' } },
+      });
+      expect(document.components?.schemas?.['PaymentBody']).toMatchObject({
+        properties: { amount: { pattern: '^(0|-?[1-9]\\d*)$' } },
       });
     });
 

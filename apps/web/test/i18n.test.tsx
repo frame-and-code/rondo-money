@@ -8,7 +8,12 @@ import { localeLabels, locales } from '@/i18n/locales';
 import { messages } from '@/i18n/messages';
 import { pl } from '@/i18n/messages/pl';
 import { ru } from '@/i18n/messages/ru';
-import { NAME_PLACEHOLDER_COUNT, namePlaceholderKey } from '@/i18n/name-placeholders';
+import {
+  ACCOUNT_PLACEHOLDER_COUNT,
+  accountNamePlaceholderKey,
+  BUDGET_PLACEHOLDER_COUNT,
+  namePlaceholderKey,
+} from '@/i18n/name-placeholders';
 
 function DemoText() {
   const { t } = useTranslations();
@@ -143,20 +148,26 @@ describe('when the browser refuses access to storage', () => {
 });
 
 describe('the dictionaries', () => {
-  it('carries every name example in every language, none of them blank', () => {
-    for (const locale of locales) {
-      const examples = Array.from(
-        { length: NAME_PLACEHOLDER_COUNT },
-        (_, index) => messages[locale][namePlaceholderKey(index)],
-      );
+  it.each([
+    ['budget', namePlaceholderKey, BUDGET_PLACEHOLDER_COUNT],
+    ['account', accountNamePlaceholderKey, ACCOUNT_PLACEHOLDER_COUNT],
+  ])(
+    'carries every %s name example in every language, none of them blank',
+    (_set, keyAt, count) => {
+      for (const locale of locales) {
+        const examples = Array.from(
+          { length: count },
+          (_, index) => messages[locale][keyAt(index)],
+        );
 
-      expect(examples).toHaveLength(NAME_PLACEHOLDER_COUNT);
-      expect(new Set(examples).size).toBe(NAME_PLACEHOLDER_COUNT);
-      for (const example of examples) {
-        expect(example.trim()).not.toBe('');
+        expect(examples).toHaveLength(count);
+        expect(new Set(examples).size).toBe(count);
+        for (const example of examples) {
+          expect(example.trim()).not.toBe('');
+        }
       }
-    }
-  });
+    },
+  );
 
   it('answers every key in every language, so a switch never shows a raw key', () => {
     const expected = Object.keys(messages.ru).sort();

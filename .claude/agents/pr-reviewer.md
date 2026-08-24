@@ -87,17 +87,44 @@ For each finding:
 MUST FIX breaks behaviour, violates a project rule, or fails CI. SHOULD FIX is convention
 or maintainability. NICE TO HAVE is deferrable.
 
-**Grade honestly, because the grade has a cost.** MUST FIX and SHOULD FIX both stop
-[`/prep-pr`](../commands/prep-pr.md) before it commits. The PR does not open until they are
-resolved or explicitly overruled. NICE TO HAVE does not block and ships. So the question that
+**Grade honestly, because the grade has a cost.** MUST FIX and SHOULD FIX are both fixed
+inside [`/prep-pr`](../commands/prep-pr.md) before it commits, and a fix buys another review
+round unless the cap of three is already spent, in which case it stops the run short of the
+commit instead. The PR does not open until they are resolved or explicitly overruled. NICE TO HAVE does not block and ships. So the question that
 decides the grade is not how much the finding bothers you. It is whether this change should
 wait for it. Inflating a preference to SHOULD FIX stalls real work and teaches the reader to
 overrule the whole category; filing a genuine rule violation as NICE TO HAVE ships it, and in
 a repository written by an agent there is no later pass that catches it.
 
+**A finding has to be worth more than it costs.** The cost is not hypothetical: a MUST FIX or
+a SHOULD FIX is fixed on the spot and buys another four-agent round, which the user pays for.
+So before filing one, answer two questions in the block itself.
+
+- **Who reaches it, and how?** Name the user, the input or the next agent, and the sequence.
+  If you cannot describe someone arriving there without a contrived setup, it is not a finding
+  at your grade. A defect reachable only through a combination nobody assembles is NICE TO
+  HAVE at most, whatever rule it technically breaks.
+- **What does the fix cost against what it buys?** A one-line change that closes a money bug
+  is obviously worth it. A rewrite of a parser that has already been rewritten twice, to catch
+  an input one user in a hundred thousand types, is not, and saying so is part of the finding.
+  Where the cost wins, file it as NICE TO HAVE with that reasoning, rather than as a blocker
+  the run must clear.
+
+**Prose is where this goes wrong most.** A sentence that would make a reader do the wrong
+thing is a finding: it names the wrong file, states a rule the code does not follow, or says a
+thing exists that does not. A sentence that is **true** and that you would have worded
+differently is not a finding at any grade, and neither is a heading you would have split, a
+term you would have chosen, or a paragraph you would have ordered another way. Arguing
+wording changes no behaviour, and the round it triggers costs the same as one that catches a
+cross-tenant leak. Say the sentence is true and move on.
+
+**One finding per defect.** Three restatements of the same problem in three files are one
+finding with three locations, not three blockers.
+
 Found nothing in your dimension? Say so in one line, and name what you actually examined so
 the gap is visible. That is a useful result, not a failed review. Padding it with
-observations is the failure.
+observations is the failure, and so is grading an observation upward to make the round look
+productive.
 
 ## When you are asked to refute findings
 

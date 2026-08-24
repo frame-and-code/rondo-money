@@ -63,7 +63,12 @@ itself is published with no response shape at all, and the generated client type
   the silent version of this mistake. A handler that takes an idempotency key also names
   [`ConflictResponse`](../../apps/api/src/mutations/conflict.response.ts) on
   `@ApiConflictResponse`, because every one of them can answer with it, and an undocumented
-  status collapses the whole error type of that operation to `unknown` in the client.
+  status collapses the whole error type of that operation to `unknown` in the client. A
+  handler that can answer 400 names
+  [`BadRequestResponse`](../../apps/api/src/openapi/bad-request.response.ts) on
+  `@ApiBadRequestResponse` for the same reason, and one taking a DTO body always can, whatever
+  the handler itself does, because the pipe answers before it. That one class covers both raisers, which is why it lives with the document
+  rather than beside either of them.
 - `@Public()` carries one decision to both readers. It opens the handler to the guard _and_
   stamps `x-public`, which is what clears the global bearer requirement in the spec. Never add
   a second decorator saying the same thing. The two would eventually disagree.
@@ -78,8 +83,9 @@ itself is published with no response shape at all, and the generated client type
   would publish a field the client may omit while the pipe answers 400. The conversion to
   `bigint` is explicit, at `serializeMoney` / `parseMoney` in the service, and **never** a
   global interceptor, which would leave the code and the published schema saying different
-  things. No endpoint carries an amount yet, and the convention is stated in the spec's own
-  description until one does.
+  things. An amount that may not go below zero passes `nonNegative`, and that one word moves
+  the published pattern and the pipe's together; stating the bound in only one of them would
+  promise a field the other refuses.
 - **A value the app must recognise, and not merely parse, gets one decorator that does both.**
   A currency is [`@ApiCurrencyProperty()`](../../apps/api/src/validation/currency.decorator.ts)
   and a zone is [`@ApiTimeZoneProperty()`](../../apps/api/src/validation/timezone.decorator.ts),
