@@ -212,12 +212,14 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
     setLanguageOpen(false);
     if (next === locale) return;
 
-    edited();
+    // The key and the locale change together, or a submit landing inside the fade window
+    // could send a freshly minted key with the language `submit` hasn't caught up to yet.
     setFading(true);
     window.setTimeout(() => {
       setLocale(next);
       setQuery('');
       setFading(false);
+      edited();
     }, FADE_MS);
   };
 

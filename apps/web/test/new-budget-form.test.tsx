@@ -314,6 +314,41 @@ describe('the new budget form', () => {
   });
 
   describe('the idempotency key', () => {
+    it('keeps the key and the language in step, even mid-fade after a failed submit', async () => {
+      const user = userEvent.setup();
+      submit.mockRejectedValue(new Error('the network was unkind'));
+      draw();
+
+      await fillOut(user);
+      await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+      expect(await screen.findByText(ru['newBudget.submitFailed'])).toBeInTheDocument();
+
+      const timeoutSpy = jest.spyOn(window, 'setTimeout');
+      await user.click(screen.getByRole('combobox', { name: ru['newBudget.languageLabel'] }));
+      await user.click(await screen.findByRole('option', { name: localeLabels.en }));
+
+      // The fade is mid-flight: the callback that flips locale, key and failed together is
+      // queued but has not run. A submit right now must still read as the pre-switch intent,
+      // not a hybrid of the old language under a key minted for the new one.
+      const [pending] = timeoutSpy.mock.calls.at(-1) ?? [];
+      expect(typeof pending).toBe('function');
+
+      await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+      await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
+      expect(bodyOf(1)).toMatchObject({
+        language: 'ru',
+        idempotencyKey: bodyOf(0)['idempotencyKey'],
+      });
+
+      (pending as () => void)();
+      timeoutSpy.mockRestore();
+
+      await user.click(await screen.findByRole('button', { name: en['newBudget.submit'] }));
+      await waitFor(() => expect(submit).toHaveBeenCalledTimes(3));
+      expect(bodyOf(2)).toMatchObject({ language: 'en' });
+      expect(bodyOf(2)['idempotencyKey']).not.toBe(bodyOf(1)['idempotencyKey']);
+    });
+
     it('swallows a second click instead of sending it with a fresh key', async () => {
       const user = userEvent.setup();
       submit.mockReturnValue(new Promise(() => {}));
