@@ -52,10 +52,11 @@ git-ignored `settings.local.json`.
    round single-context instead is a weaker pass reported under the same name. Print what each
    round found, then:
    - a **MUST FIX** or **SHOULD FIX** that came back `confirmed` **is fixed here, in this run,
-     without asking**. One that came back `unproven` is reported at its grade and left alone:
-     nothing settled it either way, and rewriting code on a claim nobody could confirm is how
-     a review round starts costing more than it returns. Print it first, so the user sees what was found and at what grade,
-     then fix it and run the next round on the new state. **The fix is where the next bug
+     without asking**. Print it first, so the user sees what was found and at what grade, then
+     fix that finding and run the next round on the new state. One that came back `unproven` is
+     reported at its grade and left alone: nothing settled it either way, and rewriting code on
+     a claim nobody could confirm is how a review round starts costing more than it returns. An
+     unproven finding schedules no round of its own. **The fix is where the next bug
      lives** (`review.md` records the chain that proved it), so the round after a fix is the
      one worth having, and it is the reason this loop exists rather than a single pass;
    - **the loop runs at most three rounds.** Stop at the first round that finds nothing
