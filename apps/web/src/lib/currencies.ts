@@ -1,9 +1,9 @@
-import { supportedCurrencyCodes } from '@rondo/types';
+import { supportedCurrencyCodes, type CurrencyCode } from '@rondo/types';
 
 import { type Locale } from '@/i18n/locales';
 
 export interface CurrencyOption {
-  code: string;
+  code: CurrencyCode;
   name: string;
 }
 
@@ -45,6 +45,6 @@ export function searchCurrencies(
 
 /// Shows the symbol, its side of the number and the group separator, which says more about
 /// the currency than "two decimal places" would.
-export function sampleAmount(locale: Locale, code: string): string {
+export function sampleAmount(locale: Locale, code: CurrencyCode): string {
   return new Intl.NumberFormat(locale, { style: 'currency', currency: code }).format(1234.5);
 }

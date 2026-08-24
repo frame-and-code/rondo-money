@@ -26,7 +26,10 @@ function IsIanaTimeZone(): PropertyDecorator {
           return typeof value === 'string' && isTimeZone(value);
         },
         defaultMessage(): string {
-          return `${propertyKey.toString()} must be a named IANA time zone, such as Europe/Warsaw`;
+          return (
+            `${propertyKey.toString()} must be a named IANA time zone, such as Europe/Warsaw, ` +
+            'or UTC'
+          );
         },
       },
     });

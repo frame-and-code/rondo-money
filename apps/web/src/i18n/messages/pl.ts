@@ -69,7 +69,7 @@ export const pl: Record<MessageKey, string> = {
   'newBudget.defaultsLabel': 'Utwórz startowe kategorie',
   'newBudget.defaultsOn':
     'Grupy i kategorie powstaną razem z budżetem. Później można je zmienić i ukryć.',
-  'newBudget.defaultsOff': 'Budżet powstanie z pustą listą, kategorie dodasz sam.',
+  'newBudget.defaultsOff': 'Budżet powstanie z pustą listą, kategorie dodasz samodzielnie.',
   'newBudget.submit': 'Utwórz budżet',
   'newBudget.submitting': 'Tworzymy…',
   'newBudget.submitFailed': 'Nie udało się utworzyć budżetu. Spróbuj ponownie.',

@@ -20,5 +20,6 @@ export function namePlaceholderKey(index: number): MessageKey {
 }
 
 export function pickNamePlaceholderIndex(): number {
-  return Math.floor(Math.random() * NAME_PLACEHOLDER_COUNT);
+  const [random] = crypto.getRandomValues(new Uint32Array(1));
+  return (random ?? 0) % NAME_PLACEHOLDER_COUNT;
 }

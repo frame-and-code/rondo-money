@@ -345,6 +345,23 @@ describe('the new budget form', () => {
       expect(bodyOf(1)['idempotencyKey']).not.toBe(bodyOf(0)['idempotencyKey']);
     });
 
+    it('is minted again once the language changes after a failed submit', async () => {
+      const user = userEvent.setup();
+      submit.mockRejectedValue(new Error('the network was unkind'));
+      draw();
+
+      await fillOut(user);
+      await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+      expect(await screen.findByText(ru['newBudget.submitFailed'])).toBeInTheDocument();
+
+      await user.click(screen.getByRole('combobox', { name: ru['newBudget.languageLabel'] }));
+      await user.click(await screen.findByRole('option', { name: localeLabels.en }));
+      await user.click(await screen.findByRole('button', { name: en['newBudget.submit'] }));
+
+      await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
+      expect(bodyOf(1)['idempotencyKey']).not.toBe(bodyOf(0)['idempotencyKey']);
+    });
+
     it('keeps the key while the same intent is retried unchanged', async () => {
       const user = userEvent.setup();
       submit.mockRejectedValue(new Error('the network was unkind'));

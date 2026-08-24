@@ -212,6 +212,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
     setLanguageOpen(false);
     if (next === locale) return;
 
+    edited();
     setFading(true);
     window.setTimeout(() => {
       setLocale(next);
