@@ -431,10 +431,12 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
-          <CardHeader className="max-md:hidden">
-            <CardTitle>{t('newBudget.cardTitle')}</CardTitle>
-            <CardDescription>{t('newBudget.cardDescription')}</CardDescription>
-          </CardHeader>
+          {created === null ? (
+            <CardHeader className="max-md:hidden">
+              <CardTitle>{t('newBudget.cardTitle')}</CardTitle>
+              <CardDescription>{t('newBudget.cardDescription')}</CardDescription>
+            </CardHeader>
+          ) : null}
 
           <CardContent className="max-md:px-0">
             {created ? (

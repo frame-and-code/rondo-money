@@ -437,6 +437,10 @@ describe('the new budget form', () => {
     // which reads as a mistake standing on its own in a plaque.
     expect(screen.getByText('Польский злотый')).toBeInTheDocument();
     expect(screen.queryByText('PLN')).not.toBeInTheDocument();
+    // "New budget: language, name and currency" describes the form. Left above a confirmation
+    // that the budget exists, it argues with it.
+    expect(screen.queryByText(ru['newBudget.cardTitle'])).not.toBeInTheDocument();
+    expect(screen.queryByText(ru['newBudget.cardDescription'])).not.toBeInTheDocument();
   });
 
   it('offers the way on to the accounts step, and goes nowhere on its own', async () => {

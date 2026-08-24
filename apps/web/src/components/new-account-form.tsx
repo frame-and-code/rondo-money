@@ -348,10 +348,12 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
-          <CardHeader className="max-md:hidden">
-            <CardTitle>{t('newAccount.cardTitle')}</CardTitle>
-            <CardDescription>{t('newAccount.cardDescription')}</CardDescription>
-          </CardHeader>
+          {created === null ? (
+            <CardHeader className="max-md:hidden">
+              <CardTitle>{t('newAccount.cardTitle')}</CardTitle>
+              <CardDescription>{t('newAccount.cardDescription')}</CardDescription>
+            </CardHeader>
+          ) : null}
 
           <CardContent className="max-md:px-0">
             {created === null ? (
