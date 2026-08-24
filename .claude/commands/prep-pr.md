@@ -51,8 +51,10 @@ git-ignored `settings.local.json`.
    three git actions. A standing "no subagents unless asked" is satisfied here; doing the
    round single-context instead is a weaker pass reported under the same name. Print what each
    round found, then:
-   - a **MUST FIX** or **SHOULD FIX** that survived verification **is fixed here, in this run,
-     without asking**. Print it first, so the user sees what was found and at what grade,
+   - a **MUST FIX** or **SHOULD FIX** that came back `confirmed` **is fixed here, in this run,
+     without asking**. One that came back `unproven` is reported at its grade and left alone:
+     nothing settled it either way, and rewriting code on a claim nobody could confirm is how
+     a review round starts costing more than it returns. Print it first, so the user sees what was found and at what grade,
      then fix it and run the next round on the new state. **The fix is where the next bug
      lives** (`review.md` records the chain that proved it), so the round after a fix is the
      one worth having, and it is the reason this loop exists rather than a single pass;
@@ -70,9 +72,11 @@ git-ignored `settings.local.json`.
      does not, because the grade already carries that decision.
 
    Fixing inside the run is what keeps a blocking finding from becoming a follow-up nobody
-   files. A round that changed files therefore re-runs **step 3 and step 4** before the next
-   one: a fix that breaks a level must not reach the commit, and a fix that makes a sentence
-   false is exactly what the sweep is for. Both are cheap next to another fan-out.
+   files. **Any** file this step changes re-runs **step 3 and step 4**, whether or not another
+   round follows: a round of quick wins schedules no next round, and without this the commit
+   would carry edits no level ever ran over. A fix that breaks a level must not reach the
+   commit, and a fix that makes a sentence false is what the sweep is for. Both are cheap next
+   to another fan-out.
 
    Convention findings block on purpose. This repository is written by an agent, so "we'll
    tidy it next time" has no one to fall to. What is genuinely deferrable is a NICE TO HAVE,
@@ -105,7 +109,7 @@ git-ignored `settings.local.json`.
 ## Report
 
 ```markdown
-## <ticket>: PR opened, or stopped at round <n>
+## <ticket>: PR opened, or stopped at <the gate | round <n>>
 
 - Branch: <name>
 - Commit: <sha>, <message> (omit when the run stopped before committing)

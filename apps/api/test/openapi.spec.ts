@@ -79,6 +79,31 @@ describe('OpenAPI document', () => {
     expect(undocumented).toEqual([]);
   });
 
+  it('publishes the refusal of an undeclared field, which the pipe already performs', () => {
+    // Stated only in the description, a generated client would build a body the server answers
+    // 400 for. Response schemas stay open: a client meeting a field it does not know is fine.
+    const open = Object.entries(document.paths).flatMap(([path, item]) =>
+      HTTP_METHODS.filter((method) => {
+        const body = item[method]?.requestBody;
+        if (!body) return false;
+
+        const reference = 'content' in body ? body.content['application/json']?.schema : undefined;
+        const name = reference && '$ref' in reference ? reference.$ref.split('/').pop() : undefined;
+
+        const schema = name === undefined ? undefined : document.components?.schemas?.[name];
+
+        return (
+          schema === undefined || !('properties' in schema) || schema.additionalProperties !== false
+        );
+      }).map((method) => `${method.toUpperCase()} ${path}`),
+    );
+
+    expect(open).toEqual([]);
+    expect(document.components?.schemas?.['AccountResponse']).not.toHaveProperty(
+      'additionalProperties',
+    );
+  });
+
   it('describes each parameter once, whatever the case it is written in', () => {
     const duplicates = Object.entries(document.paths).flatMap(([path, pathItem]) =>
       HTTP_METHODS.flatMap((method) => {

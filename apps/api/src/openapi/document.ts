@@ -67,7 +67,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addSecurityRequirements(SESSION_TOKEN_SCHEME)
     .build();
 
-  return openPublicOperations(SwaggerModule.createDocument(app, config));
+  return closeRequestBodies(openPublicOperations(SwaggerModule.createDocument(app, config)));
 }
 
 function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
@@ -77,6 +77,31 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
 
       if (operation && PUBLIC_OPERATION_EXTENSION in operation) {
         operation.security = [];
+      }
+    }
+  }
+
+  return document;
+}
+
+/// The global pipe whitelists, so a field a DTO never declared is a 400 rather than something
+/// quietly dropped. Said in the description and not in the schemas, a generated client would
+/// happily build a body the server refuses, so every schema a request body names is closed
+/// here. Response schemas are left open on purpose: a client that meets a field it does not
+/// know should keep working.
+function closeRequestBodies(document: OpenAPIObject): OpenAPIObject {
+  const schemas = document.components?.schemas ?? {};
+
+  for (const pathItem of Object.values(document.paths)) {
+    for (const method of HTTP_METHODS) {
+      const body = pathItem[method]?.requestBody;
+      const reference =
+        body && 'content' in body ? body.content['application/json']?.schema : undefined;
+      const name = reference && '$ref' in reference ? reference.$ref.split('/').pop() : undefined;
+      const schema = name === undefined ? undefined : schemas[name];
+
+      if (schema && 'properties' in schema) {
+        schema.additionalProperties = false;
       }
     }
   }

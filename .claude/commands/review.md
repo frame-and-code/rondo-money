@@ -150,7 +150,8 @@ Report an empty review as an empty review. A round that finds nothing real is th
 outcome of a careful change, and inventing a NICE TO HAVE to fill the section is how a
 reviewer teaches its reader to skip it.
 
-**A round costs four agents and, when it blocks, a fix and another four.** The user pays for
+**A round costs four agents, five when a migration puts a fifth reviewer in, and when it
+blocks it costs a fix and another round on top.** The user pays for
 that, so the bar for a blocking grade is whether the change should wait, not whether a rule
 can be shown to apply. Two things follow, and the reviewers are briefed on both
 ([`pr-reviewer`](../agents/pr-reviewer.md)): a defect nobody reaches without a contrived

@@ -119,6 +119,7 @@ export const pl: Record<MessageKey, string> = {
   'newAccount.budgetUnavailable': 'Nie udało się odczytać budżetu. Odśwież stronę.',
   'newAccount.submitFailed': 'Nie udało się utworzyć konta. Spróbuj ponownie.',
   'newAccount.doneTitle': 'Konto „{{name}}” utworzone',
-  'newAccount.doneBody': '{{amount}} jest już w „Do rozdania”. Otwieramy budżet…',
+  'newAccount.doneReady': 'W „Do rozdania”',
+  'newAccount.doneOpening': 'Otwieramy „Kategorie”',
   'newAccount.footnote': 'To ostatni krok. Dalej otworzy się sekcja „Kategorie”.',
 };

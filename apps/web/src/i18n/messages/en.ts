@@ -119,6 +119,7 @@ export const en: Record<MessageKey, string> = {
   'newAccount.budgetUnavailable': 'Your budget could not be read. Reload the page.',
   'newAccount.submitFailed': 'The account was not created. Try again.',
   'newAccount.doneTitle': 'Account “{{name}}” created',
-  'newAccount.doneBody': '{{amount}} is in Ready to Assign. Opening your budget…',
+  'newAccount.doneReady': 'In Ready to Assign',
+  'newAccount.doneOpening': 'Opening Categories',
   'newAccount.footnote': 'This is the last step. Your budget opens on Categories.',
 };

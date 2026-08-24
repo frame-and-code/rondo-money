@@ -88,8 +88,9 @@ MUST FIX breaks behaviour, violates a project rule, or fails CI. SHOULD FIX is c
 or maintainability. NICE TO HAVE is deferrable.
 
 **Grade honestly, because the grade has a cost.** MUST FIX and SHOULD FIX are both fixed
-inside [`/prep-pr`](../commands/prep-pr.md) before it commits, and each fix buys another review
-round. The PR does not open until they are resolved or explicitly overruled. NICE TO HAVE does not block and ships. So the question that
+inside [`/prep-pr`](../commands/prep-pr.md) before it commits, and a fix buys another review
+round unless the cap of three is already spent, in which case it stops the run short of the
+commit instead. The PR does not open until they are resolved or explicitly overruled. NICE TO HAVE does not block and ships. So the question that
 decides the grade is not how much the finding bothers you. It is whether this change should
 wait for it. Inflating a preference to SHOULD FIX stalls real work and teaches the reader to
 overrule the whole category; filing a genuine rule violation as NICE TO HAVE ships it, and in

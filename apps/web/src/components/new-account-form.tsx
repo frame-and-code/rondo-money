@@ -472,16 +472,39 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                 <p className="text-muted-foreground text-xs">{t('newAccount.footnote')}</p>
               </form>
             ) : (
-              <div className="flex items-start gap-3">
-                <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-full motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:fade-in motion-safe:duration-500">
-                  <IconCheck className="size-5" />
-                </span>
-                <div className="flex flex-col gap-1">
-                  <p className="font-medium">{t('newAccount.doneTitle', { name: created })}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {t('newAccount.doneBody', { amount: preview(read.minor ?? 0n) })}
-                  </p>
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center gap-3.5">
+                  <span className="bg-primary text-primary-foreground grid size-14 shrink-0 place-items-center rounded-full motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-300">
+                    <IconCheck
+                      strokeWidth={2.5}
+                      className="size-7 [stroke-dasharray:30] motion-safe:animate-draw-check"
+                    />
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-xl font-semibold tracking-tight">
+                      {t('newAccount.doneTitle', { name: created })}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {t(type === 'CASH' ? 'newAccount.typeCash' : 'newAccount.typeDebit')}
+                    </p>
+                  </div>
                 </div>
+
+                <div className="bg-secondary flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3.5">
+                  <span className="text-sm">{t('newAccount.doneReady')}</span>
+                  <span className="text-[22px] font-semibold tracking-tight tabular-nums">
+                    {preview(read.minor ?? 0n)}
+                  </span>
+                </div>
+
+                <p className="text-muted-foreground flex items-center justify-between gap-2 text-sm">
+                  {t('newAccount.doneOpening')}
+                  <span className="flex gap-1" aria-hidden>
+                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse" />
+                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse [animation-delay:180ms]" />
+                    <span className="bg-current size-1 rounded-full motion-safe:animate-pulse [animation-delay:360ms]" />
+                  </span>
+                </p>
               </div>
             )}
           </CardContent>

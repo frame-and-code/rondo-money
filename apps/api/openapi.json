@@ -478,7 +478,8 @@
           "timezone",
           "withDefaultCategories",
           "idempotencyKey"
-        ]
+        ],
+        "additionalProperties": false
       },
       "BudgetResponse": {
         "type": "object",
@@ -623,7 +624,8 @@
           "type",
           "initialBalance",
           "idempotencyKey"
-        ]
+        ],
+        "additionalProperties": false
       },
       "AccountResponse": {
         "type": "object",

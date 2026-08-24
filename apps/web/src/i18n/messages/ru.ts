@@ -116,7 +116,8 @@ export const ru = {
   'newAccount.budgetUnavailable': 'Не удалось прочитать ваш бюджет. Обновите страницу.',
   'newAccount.submitFailed': 'Не получилось создать счёт. Попробуйте ещё раз.',
   'newAccount.doneTitle': 'Счёт «{{name}}» создан',
-  'newAccount.doneBody': '{{amount}} уже в «Свободно». Открываем бюджет…',
+  'newAccount.doneReady': 'В «Свободно»',
+  'newAccount.doneOpening': 'Открываем «Категории»',
   'newAccount.footnote': 'Это последний шаг. Дальше откроется раздел «Категории».',
 } as const;
 
