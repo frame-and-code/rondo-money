@@ -21,8 +21,8 @@ way through onboarding would meet a 500 for an ordinary state.
 - `GET /health` checks the DB connection (`SELECT 1` via Prisma). `200` if the DB
   is reachable, `503` if not. Public (see below).
 - `GET /me` echoes back the `userId` the guard verified. It is protected and touches no table.
-  It exists so that tests and the web client can exercise the whole auth chain
-  (token → guard → `@CurrentUserId()`) over HTTP, with no query in the way (F1.4).
+  It exists so that a test can exercise the whole auth chain
+  (token → guard → `@CurrentUserId()`) over HTTP, with no query in the way.
 - `GET /user-settings` returns the caller's own settings, today just the interface language.
   It is get-or-create: the first call stores the language read from `Accept-Language` (ru/en/pl,
   anything else → `en`), every later one only reads. A GET that can write is deliberate.

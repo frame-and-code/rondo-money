@@ -13,22 +13,6 @@ export const en: Record<MessageKey, string> = {
   'nav.netWorth': 'Net worth',
   'nav.settings': 'Settings',
 
-  'home.subtitle': 'Primitives and an API check, outside the application shell.',
-  'home.demoTitle': 'Component demo',
-  'home.demoDescription': 'shadcn/ui, the stock theme',
-  'home.buttons.default': 'Default',
-  'home.buttons.secondary': 'Secondary',
-  'home.buttons.outline': 'Outline',
-  'home.buttons.ghost': 'Ghost',
-  'home.buttons.destructive': 'Destructive',
-  'home.budgetNameLabel': 'Budget name',
-  'home.budgetNamePlaceholder': 'e.g. "Family budget"',
-  'home.apiLabel': 'API',
-  'home.callerLabel': 'Signed in as',
-  'home.callerLoading': 'checking…',
-  'home.callerSignedOut': 'you are not signed in',
-  'home.callerUnavailable': 'the API did not answer',
-
   'categories.slotTitle': 'The "Categories" slot',
   'categories.slotBody': 'The budget table lands here.',
   'accounts.slotTitle': 'The "Accounts" slot',
@@ -48,6 +32,8 @@ export const en: Record<MessageKey, string> = {
   'onboarding.step3Title': 'Money into categories',
   'onboarding.step3Body':
     'You create categories and hand the free money out until nothing is left.',
+  'onboarding.unavailable':
+    'We could not check where your setup stands. Reload the page to try again.',
 
   'newBudget.heading': 'Let us set up your first budget',
   'newBudget.lead':

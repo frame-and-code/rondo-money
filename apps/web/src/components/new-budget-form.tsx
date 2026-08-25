@@ -243,7 +243,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
       open={languageOpen}
       onOpenChange={setLanguageOpen}
     >
-      <Command label={t('newBudget.languageLabel')} className={SHEET}>
+      <Command value={locale} label={t('newBudget.languageLabel')} className={SHEET}>
         <CommandList className="py-2">
           {locales.map((option) => (
             <CommandItem
@@ -301,7 +301,12 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
       open={currencyOpen}
       onOpenChange={setCurrencyOpen}
     >
-      <Command shouldFilter={false} label={t('newBudget.searchPlaceholder')} className={SHEET}>
+      <Command
+        value={currency}
+        shouldFilter={false}
+        label={t('newBudget.searchPlaceholder')}
+        className={SHEET}
+      >
         <CommandInput
           placeholder={t('newBudget.searchPlaceholder')}
           value={query}

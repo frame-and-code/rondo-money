@@ -17,7 +17,7 @@ import {
 
 function DemoText() {
   const { t } = useTranslations();
-  return <p>{t('home.demoTitle')}</p>;
+  return <p>{t('nav.categories')}</p>;
 }
 
 function SignedOut() {
@@ -47,7 +47,7 @@ describe('locale detection and switching', () => {
       </LocaleProvider>,
     );
 
-    expect(await screen.findByText(pl['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
   });
 
   it('updates displayed strings when the user switches locale', async () => {
@@ -59,12 +59,12 @@ describe('locale detection and switching', () => {
       </LocaleProvider>,
     );
 
-    expect(await screen.findByText(pl['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }));
     await user.click(await screen.findByText(localeLabels.ru));
 
-    expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
   });
 
   it('closes the menu once a language is picked', async () => {
@@ -97,7 +97,7 @@ describe('locale detection and switching', () => {
       await screen.findByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }),
     );
     await user.click(await screen.findByText(localeLabels.ru));
-    expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
 
     unmount();
     render(
@@ -107,7 +107,7 @@ describe('locale detection and switching', () => {
       </LocaleProvider>,
     );
 
-    expect(screen.getByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(screen.getByText(ru['nav.categories'])).toBeInTheDocument();
   });
 });
 
@@ -138,12 +138,12 @@ describe('when the browser refuses access to storage', () => {
       </LocaleProvider>,
     );
 
-    expect(await screen.findByText(pl['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }));
     await user.click(await screen.findByText(localeLabels.ru));
 
-    expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
   });
 });
 

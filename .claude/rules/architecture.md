@@ -233,6 +233,30 @@ re-implementation of a primitive shadcn/ui ships. Missing one? Add it with
 confirmation (`ask` in [`settings.json`](../settings.json)), because `pnpm dlx` fetches and
 executes a package and nothing does that unattended here.
 
+### A route that needs a state of the data is closed by a gate
+
+Setup has a state, and a route behind it is unreachable until that state is right. The gate is
+one client component in the layout of the route group
+([`apps/web/src/components/onboarding-gate.tsx`](../../apps/web/src/components/onboarding-gate.tsx)),
+and the reading of the state lives beside it as a plain function
+([`lib/onboarding.ts`](../../apps/web/src/lib/onboarding.ts)), so what each answer means is
+written once and testable without a browser. Three rules make one work:
+
+- **it decides on this mount's own answer.** A cached one can be older than the row it is being
+  asked about, and a failed read knows nothing at all. Neither is a reason to move a user, so
+  the gate waits, and says the check failed rather than guessing;
+- **it decides once per route and per user, then holds.** The screens behind a gate create the
+  very rows it reads and invalidate those queries on success, so an answer arriving a moment
+  later would tear the confirmation off the screen. What resets the verdict is the step it
+  guards changing, or the signed-in user changing, and nothing else. Navigating between two
+  routes a single gate covers holds the verdict, which is what keeps the shell from deciding
+  again on every section. One layout wraps every step, so neither unmounts it;
+- **it renders nothing it is about to move the user away from.** Not the shell, not the form.
+  A screen shown for one frame before a redirect is a screen the user can act on.
+
+A gate is a decision about where a user belongs, not a security boundary. What stops a request
+is the API.
+
 ### How a screen gets data
 
 The client is configured once, in `ApiProvider`

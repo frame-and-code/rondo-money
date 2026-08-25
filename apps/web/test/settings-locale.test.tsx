@@ -40,7 +40,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
 
 function DemoText() {
   const { t } = useTranslations();
-  return <p>{t('home.demoTitle')}</p>;
+  return <p>{t('nav.categories')}</p>;
 }
 
 function SettingsProbe() {
@@ -75,7 +75,7 @@ describe('SettingsLocaleSync', () => {
 
     render(<App />);
 
-    expect(await screen.findByText(pl['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
   });
 
   it('does not undo a choice the user makes afterwards', async () => {
@@ -87,7 +87,7 @@ describe('SettingsLocaleSync', () => {
         <LocaleSwitcher />
       </App>,
     );
-    await screen.findByText(pl['home.demoTitle']);
+    await screen.findByText(pl['nav.categories']);
 
     await user.click(screen.getByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }));
     await user.click(await screen.findByText(localeLabels.ru));
@@ -98,7 +98,7 @@ describe('SettingsLocaleSync', () => {
       </App>,
     );
 
-    expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
   });
 
   it('leaves a choice made on an earlier visit in place', async () => {
@@ -111,11 +111,11 @@ describe('SettingsLocaleSync', () => {
       </App>,
     );
 
-    expect(screen.getByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(screen.getByText(ru['nav.categories'])).toBeInTheDocument();
 
     expect(await screen.findByText('settings:pl')).toBeInTheDocument();
-    expect(screen.getByText(ru['home.demoTitle'])).toBeInTheDocument();
-    expect(screen.queryByText(pl['home.demoTitle'])).not.toBeInTheDocument();
+    expect(screen.getByText(ru['nav.categories'])).toBeInTheDocument();
+    expect(screen.queryByText(pl['nav.categories'])).not.toBeInTheDocument();
   });
 
   it("does not hand the next user to sign in the previous one's choice", async () => {
@@ -129,10 +129,10 @@ describe('SettingsLocaleSync', () => {
         <LocaleSwitcher />
       </App>,
     );
-    await screen.findByText(en['home.demoTitle']);
+    await screen.findByText(en['nav.categories']);
     await user.click(screen.getByRole('button', { name: en['common.localeSwitcher.ariaLabel'] }));
     await user.click(await screen.findByText(localeLabels.ru));
-    await screen.findByText(ru['home.demoTitle']);
+    await screen.findByText(ru['nav.categories']);
 
     mockUserId = 'user_b';
     rerender(
@@ -141,7 +141,7 @@ describe('SettingsLocaleSync', () => {
       </App>,
     );
 
-    expect(await screen.findByText(pl['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
     expect(window.localStorage.getItem('rondo.locale:user_a')).toBe('ru');
     expect(window.localStorage.getItem('rondo.locale:user_b')).toBeNull();
   });
@@ -150,13 +150,13 @@ describe('SettingsLocaleSync', () => {
     readSettings.mockResolvedValue({ language: 'pl' });
 
     const { rerender } = render(<App />);
-    await screen.findByText(pl['home.demoTitle']);
+    await screen.findByText(pl['nav.categories']);
 
     mockUserId = null;
     mockIsSignedIn = false;
     rerender(<App />);
 
-    expect(await screen.findByText(en['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(en['nav.categories'])).toBeInTheDocument();
   });
 
   it('keeps a pick made before Clerk has said who is signed in', async () => {
@@ -172,7 +172,7 @@ describe('SettingsLocaleSync', () => {
 
     await user.click(screen.getByRole('button', { name: en['common.localeSwitcher.ariaLabel'] }));
     await user.click(await screen.findByText(localeLabels.ru));
-    expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
 
     mockIsLoaded = true;
     rerender(
@@ -181,7 +181,7 @@ describe('SettingsLocaleSync', () => {
       </App>,
     );
 
-    expect(await screen.findByText(ru['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
     expect(window.localStorage.getItem('rondo.locale:user_a')).toBe('ru');
   });
 
@@ -190,6 +190,6 @@ describe('SettingsLocaleSync', () => {
 
     render(<App />);
 
-    expect(await screen.findByText(en['home.demoTitle'])).toBeInTheDocument();
+    expect(await screen.findByText(en['nav.categories'])).toBeInTheDocument();
   });
 });

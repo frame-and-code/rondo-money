@@ -1,7 +1,8 @@
 import { clerk, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import { hasClerkKeys, TEST_EMAIL } from './clerk';
+import { hasClerkKeys, NAV_TEST_EMAIL } from './clerk';
+import { onboard } from './onboarding';
 
 test.skip(!process.env.CI && !hasClerkKeys(), 'Clerk keys are not configured');
 
@@ -9,13 +10,17 @@ const SECTIONS = ['/categories', '/accounts', '/net-worth', '/settings'];
 
 const PHONE = { width: 390, height: 844 };
 
+/// The sections are behind the gate, so this account has to have finished setup. It has its
+/// own address rather than sharing one: spec files run in parallel workers, and two of them
+/// creating a budget for the same user would leave one of the two deactivated.
 async function signIn(page: Page) {
   await setupClerkTestingToken({ page });
   await page.goto('/sign-in');
   await clerk.signIn({
     page,
-    signInParams: { strategy: 'email_code', identifier: TEST_EMAIL },
+    signInParams: { strategy: 'email_code', identifier: NAV_TEST_EMAIL },
   });
+  await onboard(page);
 }
 
 test('the menu carries a signed-in user through every section', async ({ page }) => {
