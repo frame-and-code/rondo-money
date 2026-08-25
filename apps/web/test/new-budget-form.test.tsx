@@ -492,12 +492,19 @@ describe('the new budget form on a phone', () => {
     submit.mockReset();
     submit.mockResolvedValue({ id: 'budget-1' });
     window.localStorage.clear();
+    Object.defineProperty(window.navigator, 'languages', { value: ['ru-RU'], configurable: true });
     Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true });
   });
 
   afterEach(() => {
     Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
   });
+
+  const highlighted = (): string[] =>
+    screen
+      .getAllByRole('option')
+      .filter((option) => option.getAttribute('data-selected') === 'true')
+      .map((option) => option.textContent ?? '');
 
   it('puts the progress above the form, carrying only the step being worked on', () => {
     draw();
@@ -543,5 +550,47 @@ describe('the new budget form on a phone', () => {
     expect(
       await screen.findByRole('combobox', { name: en['newBudget.languageLabel'] }),
     ).toHaveTextContent(localeLabels.en);
+  });
+
+  it('highlights the language the budget will use, not whichever is listed first', async () => {
+    const user = userEvent.setup();
+    // Polish is third in the list, so a highlight that sits on the first row is visible here.
+    Object.defineProperty(window.navigator, 'languages', { value: ['pl-PL'], configurable: true });
+    draw();
+
+    await user.click(screen.getByRole('combobox', { name: pl['newBudget.languageLabel'] }));
+    await screen.findByRole('option', { name: localeLabels.pl });
+
+    expect(highlighted()).toEqual([localeLabels.pl]);
+  });
+
+  it('highlights no currency until one is picked', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await openCurrencies(user);
+    await screen.findAllByRole('option');
+
+    expect(highlighted()).toEqual([]);
+  });
+
+  it('moves the highlight onto the currency that was picked', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await openCurrencies(user);
+    const rows = await screen.findAllByRole('option');
+    // The second row, so a highlight left on the first one is a different answer here.
+    const second = rows[1];
+    if (second === undefined) {
+      throw new Error('the currency list came up with fewer than two rows');
+    }
+    const picked = second.textContent ?? '';
+
+    await user.click(second);
+    await openCurrencies(user);
+    await screen.findAllByRole('option');
+
+    expect(highlighted()).toEqual([picked]);
   });
 });

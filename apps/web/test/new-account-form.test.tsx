@@ -9,15 +9,9 @@ import { en } from '@/i18n/messages/en';
 import { ru } from '@/i18n/messages/ru';
 
 const submit = jest.fn();
-const replace = jest.fn();
 
 let budget: { id: string; currency: string; minorDigits: number; active: boolean } | null = null;
 let budgetFails = false;
-let budgetGate: Promise<void> | null = null;
-
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: (href: string) => replace(href) as unknown }),
-}));
 
 jest.mock('@rondo/api-client/react-query', () => ({
   accountsControllerCreateMutation: () => ({
@@ -27,7 +21,6 @@ jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerListOptions: () => ({
     queryKey: ['budgetsControllerList'],
     queryFn: async () => {
-      if (budgetGate !== null) await budgetGate;
       if (budgetFails) throw new Error('the api was unreachable');
 
       return budget === null ? [] : [budget];
@@ -93,10 +86,8 @@ describe('the first account form', () => {
   beforeEach(() => {
     submit.mockReset();
     submit.mockResolvedValue({ id: 'acc-1', name: 'Кошелёк', type: 'CASH' });
-    replace.mockReset();
     budget = { id: 'b-1', currency: 'PLN', minorDigits: 2, active: true };
     budgetFails = false;
-    budgetGate = null;
   });
 
   it('sends zero when the amount is left empty', async () => {
@@ -262,6 +253,18 @@ describe('the first account form', () => {
     expect(await screen.findByText(/12,50/)).toBeInTheDocument();
   });
 
+  it('shows the currency in something the user cannot operate', async () => {
+    budget = { id: 'b-1', currency: 'PLN', minorDigits: 2, active: true };
+    draw();
+
+    // The budget froze it when it was created and the API refuses a change, so a control here
+    // would promise one the API would then refuse.
+    const shown = await screen.findByText('zł');
+
+    expect(shown).toBeVisible();
+    expect(shown.closest('button, input, select, [role="combobox"], [contenteditable]')).toBeNull();
+  });
+
   it('shows the symbol of a currency that has one, and the code of a currency that does not', async () => {
     budget = { id: 'b-1', currency: 'PLN', minorDigits: 2, active: true };
     const withSymbol = draw();
@@ -375,7 +378,6 @@ describe('the first account form', () => {
     await waitFor(() =>
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ['accountsControllerList'] }),
     );
-    expect(replace).not.toHaveBeenCalled();
   });
 
   it('offers both ways on, and takes neither by itself', async () => {
@@ -394,17 +396,13 @@ describe('the first account form', () => {
       'href',
       '/categories',
     );
-    expect(replace).not.toHaveBeenCalled();
   });
 
-  it('does not read a failed budget request as an absent budget', async () => {
-    // Only an answer says there is no budget. Bouncing on a failure sends someone who has one
-    // to the screen that would create them a second, which deactivates the first.
+  it('says the budget could not be read rather than drawing a field with no currency', async () => {
     budgetFails = true;
     draw();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(ru['newAccount.budgetUnavailable']);
-    expect(replace).not.toHaveBeenCalled();
   });
 
   it('freezes the fields while the request is in flight, so the body cannot outrun its key', async () => {
@@ -444,27 +442,6 @@ describe('the first account form', () => {
     expect(await screen.findByPlaceholderText('0.00')).toBeVisible();
   });
 
-  it('waits for its own answer before deciding there is no budget', async () => {
-    // A cached empty list can be older than the budget it is being asked about: the user was
-    // bounced to step 1, made one there, and came back. Redirecting on it sends them to the
-    // screen that would create a second budget, which deactivates the first.
-    const shared = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    shared.setQueryData(['budgetsControllerList'], []);
-    await shared.invalidateQueries({ queryKey: ['budgetsControllerList'] });
-
-    let answer: () => void = () => {};
-    budgetGate = new Promise<void>((resolve) => {
-      answer = resolve;
-    });
-
-    draw('ru', shared);
-    expect(replace).not.toHaveBeenCalled();
-
-    answer();
-    expect(await screen.findByLabelText(ru['newAccount.nameLabel'])).toBeInTheDocument();
-    expect(replace).not.toHaveBeenCalled();
-  });
-
   it('refuses a separator where grouping could not have put it', async () => {
     // "1250,50" is a comma used as a decimal mark in a locale that groups with one. Dropping it
     // would send a hundred times the amount, and nothing downstream could tell.
@@ -480,15 +457,6 @@ describe('the first account form', () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-  it('sends a visitor who has no budget back to the first step', async () => {
-    budget = null;
-    draw();
-
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/new'));
-    expect(screen.queryByLabelText(ru['newAccount.nameLabel'])).not.toBeInTheDocument();
-    expect(screen.queryByText(ru['newAccount.cardDescription'])).not.toBeInTheDocument();
-  });
-
   it('reports a failure instead of pretending the account exists', async () => {
     const user = userEvent.setup();
     submit.mockRejectedValue(new Error('the network was unkind'));
@@ -498,6 +466,5 @@ describe('the first account form', () => {
     await send(user);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(ru['newAccount.submitFailed']);
-    expect(replace).not.toHaveBeenCalled();
   });
 });

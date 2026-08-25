@@ -4,10 +4,14 @@ import AccountsLoading from '@/app/(app)/accounts/loading';
 import CategoriesLoading from '@/app/(app)/categories/loading';
 import NetWorthLoading from '@/app/(app)/net-worth/loading';
 import SettingsLoading from '@/app/(app)/settings/loading';
+import { OnboardingLoading } from '@/components/onboarding-loading';
+import { ShellLoading } from '@/components/shell-loading';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { ru } from '@/i18n/messages/ru';
 
 const screens = [
+  ['the app, while the gate reads how far setup got', ShellLoading],
+  ['a step of setup, while the gate reads whether this is the right one', OnboardingLoading],
   ['categories', CategoriesLoading],
   ['accounts', AccountsLoading],
   ['net worth', NetWorthLoading],

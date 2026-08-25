@@ -104,19 +104,25 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
 - The Clerk **dev instance** treats `<name>+clerk_test@example.com` as a test account.
   The OTP is always `424242` and no real mail is sent. The addresses live in
   [`apps/web/e2e/clerk.ts`](../apps/web/e2e/clerk.ts).
-- There are **three** accounts, and the extras are not redundancy. Since F1.6 the first
-  authenticated request a user makes creates their settings row and fixes their interface
-  language from `Accept-Language`, so whichever scenario signs in first decides it for every
-  later one. `locale.spec.ts` therefore owns `LOCALE_TEST_EMAIL` and no other spec touches it;
-  a scenario that needs a language of its own adds an account rather than sharing one. The
-  budget scenario needs more than that: it picks a language **and** leaves a budget, an
-  account and a transaction behind, so its Clerk user is deleted and created again on every
-  run. A fresh Clerk user id owns nothing the
-  last run wrote, which is what keeps "this user has no budget" true a second time.
+- **Each scenario owns its account, and that is not redundancy.** The first authenticated
+  request a user makes creates their settings row and fixes their interface language from
+  `Accept-Language`, so whichever scenario signs in first decides it for every later one.
+  `locale.spec.ts` therefore owns `LOCALE_TEST_EMAIL` and no other spec touches it; a scenario
+  that needs a language of its own adds an account rather than sharing one.
+- **What a scenario writes decides how its account is made.** An account is created once and
+  kept when the scenario only reads with it, and also when the scenario needs a finished setup,
+  because the helper that walks one through setup checks where it stands first and is safe to
+  run again. A scenario about a user who has no budget writes one the moment it
+  runs, so it deletes and recreates its Clerk user **itself**, at the start of the test rather
+  than once per run: `retries` would otherwise hand the second attempt a user whose setup the
+  first attempt finished. A fresh Clerk user id owns nothing the last attempt wrote. What that
+  attempt left in the database stays there under an id nobody signs in as any more, which is
+  the price of keeping Prisma out of `apps/web` (ADR-002).
+- **Spec files run in parallel workers**, so two of them writing as the same user race: one
+  budget deactivates the other. An account that gets taken through setup belongs to one file.
 - [`e2e/global-setup.ts`](../apps/web/e2e/global-setup.ts) issues the Clerk **Testing
   Token** (`@clerk/testing`, which bypasses bot detection for automated browsers) and creates
-  those accounts through the Backend API, so a fresh instance needs no manual setup. The shared
-  ones are created only when missing; the per-run one is recreated.
+  the kept accounts through the Backend API, so a fresh instance needs no manual setup.
 - In a spec: call `setupClerkTestingToken({ page })`, then sign in programmatically with
   `clerk.signIn(...)` (strategy `email_code`) on a page where clerk-js is loaded, which is
   the public `/sign-in`. Example:
@@ -208,9 +214,11 @@ implements. The routing below is what it picks from, and what you pick from by h
    api unit tests (no DB) go in a regular `*.spec.ts` next to the code or in `test/`.
 3. **Component / page** → a jsdom test in `apps/web/test` (Testing Library).
 4. **User scenario** (a whole screen, web + api) → `apps/web/e2e/<feature>.spec.ts`.
-   Example: [`apps/web/e2e/auth.spec.ts`](../apps/web/e2e/auth.spec.ts), which drives a real
-   screen. (`home.spec.ts` is a bare API probe, not a scenario to copy.) E2E is the most
-   expensive level: one or two scenarios per feature, cover the rest lower down.
+   Example: [`apps/web/e2e/onboarding.spec.ts`](../apps/web/e2e/onboarding.spec.ts), which
+   drives real screens and shows how a scenario builds the state it needs
+   ([`e2e/onboarding.ts`](../apps/web/e2e/onboarding.ts)). (`home.spec.ts` is a bare API probe,
+   not a scenario to copy.) E2E is the most expensive level: one or two scenarios per feature,
+   cover the rest lower down.
 5. Package has no runner yet? Copy `jest.config.mjs` from `packages/types` (node) or
    `apps/web` (jsdom), add `test` / `test:unit` scripts, and turbo picks them up automatically.
    Drop the `coverageThreshold` you copy along with it unless the new package means to hold

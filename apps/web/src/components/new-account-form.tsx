@@ -28,8 +28,7 @@ import {
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
@@ -156,15 +155,9 @@ function mintKey(): string {
 
 export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
   const { t, locale } = useTranslations();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
-  const {
-    data: budgets,
-    isError,
-    isFetchedAfterMount,
-    isSuccess,
-  } = useQuery(budgetsControllerListOptions());
+  const { data: budgets, isError } = useQuery(budgetsControllerListOptions());
   const budget = budgets?.find((candidate) => candidate.active) ?? null;
 
   const [name, setName] = useState('');
@@ -188,16 +181,6 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
       setFailed(true);
     },
   });
-
-  // A visitor who reaches this step without a budget has nothing for an account to belong to.
-  // Only this mount's own answer says that. A failed read knows nothing, and a cached one can
-  // be older than the budget it is being asked about: both would send someone who already has
-  // a budget to the screen that would create them a second one, deactivating the first.
-  useEffect(() => {
-    if (isSuccess && isFetchedAfterMount && budget === null) {
-      router.replace('/new');
-    }
-  }, [isSuccess, isFetchedAfterMount, budget, router]);
 
   const money = useMemo(() => {
     if (budget === null) return null;

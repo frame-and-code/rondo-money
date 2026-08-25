@@ -11,22 +11,6 @@ export const ru = {
   'nav.netWorth': 'Капитал',
   'nav.settings': 'Настройки',
 
-  'home.subtitle': 'Примитивы и проверка API, вне оболочки приложения.',
-  'home.demoTitle': 'Демо компонентов',
-  'home.demoDescription': 'shadcn/ui, стоковая тема',
-  'home.buttons.default': 'По умолчанию',
-  'home.buttons.secondary': 'Вторичная',
-  'home.buttons.outline': 'Контур',
-  'home.buttons.ghost': 'Прозрачная',
-  'home.buttons.destructive': 'Опасная',
-  'home.budgetNameLabel': 'Название бюджета',
-  'home.budgetNamePlaceholder': 'Например, «Семейный бюджет»',
-  'home.apiLabel': 'API',
-  'home.callerLabel': 'Вы вошли как',
-  'home.callerLoading': 'проверяем…',
-  'home.callerSignedOut': 'вы не вошли',
-  'home.callerUnavailable': 'API не ответил',
-
   'categories.slotTitle': 'Слот раздела «Категории»',
   'categories.slotBody': 'Сюда встанет таблица бюджета.',
   'accounts.slotTitle': 'Слот раздела «Счета»',
@@ -45,6 +29,8 @@ export const ru = {
   'onboarding.step3Title': 'Деньги по категориям',
   'onboarding.step3Body':
     'Создаёте категории и распределяете по ним свободные деньги, пока не останется ноль.',
+  'onboarding.unavailable':
+    'Не удалось узнать, на каком вы шаге настройки. Перезагрузите страницу.',
 
   'newBudget.heading': 'Соберём ваш первый бюджет',
   'newBudget.lead':
