@@ -13,22 +13,6 @@ export const pl: Record<MessageKey, string> = {
   'nav.netWorth': 'Kapitał',
   'nav.settings': 'Ustawienia',
 
-  'home.subtitle': 'Prymitywy i sprawdzenie API, poza powłoką aplikacji.',
-  'home.demoTitle': 'Demo komponentów',
-  'home.demoDescription': 'shadcn/ui, motyw domyślny',
-  'home.buttons.default': 'Domyślny',
-  'home.buttons.secondary': 'Drugorzędny',
-  'home.buttons.outline': 'Kontur',
-  'home.buttons.ghost': 'Przezroczysty',
-  'home.buttons.destructive': 'Niebezpieczny',
-  'home.budgetNameLabel': 'Nazwa budżetu',
-  'home.budgetNamePlaceholder': 'Np. „Budżet rodzinny”',
-  'home.apiLabel': 'API',
-  'home.callerLabel': 'Zalogowano jako',
-  'home.callerLoading': 'sprawdzanie…',
-  'home.callerSignedOut': 'nie zalogowano',
-  'home.callerUnavailable': 'API nie odpowiedziało',
-
   'categories.slotTitle': 'Slot sekcji „Kategorie”',
   'categories.slotBody': 'Tu pojawi się tabela budżetu.',
   'accounts.slotTitle': 'Slot sekcji „Konta”',
@@ -48,6 +32,8 @@ export const pl: Record<MessageKey, string> = {
   'onboarding.step3Title': 'Pieniądze do kategorii',
   'onboarding.step3Body':
     'Tworzysz kategorie i rozdzielasz między nie wolne pieniądze, aż zostanie zero.',
+  'onboarding.unavailable':
+    'Nie udało się sprawdzić, na którym kroku konfiguracji jesteś. Odśwież stronę.',
 
   'newBudget.heading': 'Zbudujmy twój pierwszy budżet',
   'newBudget.lead':

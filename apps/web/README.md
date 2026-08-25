@@ -8,15 +8,18 @@ protection, the shadcn/ui base from `@rondo/ui`, the locale switcher and the typ
 Query. Server state lives in that cache, not in component state. Each section is a slot: the
 real screens behind them are still ahead.
 
+Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
+account, is on a step of it, and every address leads to that step until both exist. Once they
+do, the steps themselves are closed.
+
 ## Structure
 
 ```text
 src/
   app/
     layout.tsx                # root layout (html/body, providers, metadata)
-    page.tsx                  # home page — also the F0.6/F0.7 demo screen: primitives,
-                              # theme toggle, locale switcher, the API address, and the
-                              # first authenticated API call (GET /me, F1.4)
+    page.tsx                  # the one address people type by hand. It carries them into
+                              # the app, where the gate reads which step they are on
     globals.css               # Tailwind entry point + the theme's CSS variables. `--font-sans`
                               # points at the variable `next/font` sets in layout.tsx, so a
                               # font name written back into that line silently drops the font
@@ -27,6 +30,8 @@ src/
     api/health/route.ts       # liveness probe for Railway — public, answers 200 flat; also
                               # reports the mode the bundle was built in, which is what e2e
                               # read to refuse a dev server (F1.11)
+    new/layout.tsx            # the gate over both steps: which one this is comes from the
+                              # path, so a user standing on the wrong one is moved
     new/page.tsx              # onboarding step 1, creating a budget, deliberately outside
                               # (app): the shell would navigate to sections a user without a
                               # budget cannot use. Rendered per request (`force-dynamic`)
@@ -37,12 +42,13 @@ src/
                               # Ends the flow by opening the app on Categories
     (app)/                    # the app shell: a sidebar on desktop, a bottom tab bar on a
                               # phone, and the sections it navigates
-      layout.tsx              # renders AppShell around every section
+      layout.tsx              # the gate over the app, and AppShell around every section
       categories/             # each section is page.tsx (the slot) + loading.tsx (skeletons)
       accounts/
       net-worth/
       settings/
   components/                 # app-level components: the shell and its navigation, the
+                              # onboarding gate and what it shows while it decides, the
                               # section slot, the loading region, the Clerk provider wrapper,
                               # the locale switcher and the two onboarding forms
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
@@ -55,6 +61,9 @@ src/
                               # names from Intl.DisplayNames, memoised per locale
   lib/sections.ts             # the sections in one place: route, message key, icon.
                               # The navigation and the header title both read it
+  lib/onboarding.ts           # how far setup got, and the route each answer belongs on.
+                              # The gate reads it, and nothing else decides where a user
+                              # part way through setup is sent
   lib/auth.ts                 # SIGN_IN_URL and HEALTH_URL — the paths proxy.ts,
                               # railway.json and the routes must agree on
   proxy.ts                    # clerkMiddleware: everything is protected except the
