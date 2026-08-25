@@ -20,8 +20,8 @@ every query is scoped to the user who made it, the typed API client is generated
 API's own contract, and money is an integer number of minor units whose digit count comes from
 the currency. A request body is refused unless every field in it is declared.
 The tables the product is built from exist, budgets, category groups, categories, accounts,
-transactions and the assignments a month is planned in, and a read of what a budget owns is
-scoped to the caller's active budget.
+transactions and monthly assignments, and a read of what a budget owns is scoped to the
+caller's active budget.
 A budget can now be created: it is named, it takes a currency from the list the runtime
 knows and keeps it, and it can start with a set of categories. That write and everything after it goes
 through one point, so a user operation lands whole or not at all and a double submit writes
