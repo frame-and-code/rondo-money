@@ -93,8 +93,10 @@ polish:
   from the registry that covers it, and
   [`stop-scoping-drift.sh`](../hooks/stop-scoping-drift.sh) reminds before the commit. The test
   is the guarantee; the hook only fires inside a Claude Code session.
-- **The extension does not cover `$queryRaw` / `$executeRaw`.** Raw SQL lives in
-  [`apps/api/src/raw-sql`](../../apps/api/src/raw-sql). `ScopedRawRepository` takes the scope
+- **The extension does not cover `$queryRaw` / `$executeRaw`.** The code that runs raw SQL
+  lives in [`apps/api/src/raw-sql`](../../apps/api/src/raw-sql), and the statement it runs is
+  built beside the module it serves, as a function returning `Prisma.Sql`
+  ([`aggregate-query`](../skills/aggregate-query/SKILL.md)). `ScopedRawRepository` takes the scope
   from the request context and refuses without one; `DatabaseProbe` holds the single
   deliberately unscoped statement (the healthcheck's `SELECT 1`). Everywhere else the lint rule
   `@rondo/config/eslint/prisma-raw` fails CI. There are **no** inline exemptions. An

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -97,4 +97,15 @@ export const accountsControllerCreate = <ThrowOnError extends boolean = false>(o
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * One month of the budget screen
+ *
+ * The groups and categories of the active budget with what each holds this month, plus the money that has no job yet. Nothing here is stored: every number is computed from transactions and assignments when it is asked for.
+ */
+export const budgetViewControllerRead = <ThrowOnError extends boolean = false>(options: Options<BudgetViewControllerReadData, ThrowOnError>): RequestResult<BudgetViewControllerReadResponses, BudgetViewControllerReadErrors, ThrowOnError> => (options.client ?? client).get<BudgetViewControllerReadResponses, BudgetViewControllerReadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/budget-view',
+    ...options
 });

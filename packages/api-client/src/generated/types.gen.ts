@@ -140,6 +140,47 @@ export type AccountResponse = {
     type: AccountType;
 };
 
+export type BudgetViewCategoryResponse = {
+    id: string;
+    /**
+     * What the user calls this category.
+     */
+    name: string;
+    /**
+     * What this month's assignment holds. Last month's leftover is not added in; it shows as available being larger than this.
+     */
+    assigned: string;
+    /**
+     * The month's own transactions, signed.
+     */
+    activity: string;
+    /**
+     * Assigned and activity from the beginning of time up to and including this month. It goes below zero on an overspend, which is a signal rather than an error.
+     */
+    available: string;
+};
+
+export type BudgetViewGroupResponse = {
+    id: string;
+    /**
+     * What the user calls this group.
+     */
+    name: string;
+    categories: Array<BudgetViewCategoryResponse>;
+};
+
+export type BudgetViewResponse = {
+    /**
+     * The month these numbers describe.
+     */
+    month: string;
+    /**
+     * Money that has arrived and has no job yet. It belongs to the budget rather than to a month: an assignment to any month, future ones included, lowers it at once.
+     */
+    readyToAssign: string;
+    groups: Array<BudgetViewGroupResponse>;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -340,3 +381,37 @@ export type AccountsControllerCreateResponses = {
 };
 
 export type AccountsControllerCreateResponse = AccountsControllerCreateResponses[keyof AccountsControllerCreateResponses];
+
+export type BudgetViewControllerReadData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * The month the screen is showing. Required: a default here would make the answer depend on a clock rather than on what the user is looking at.
+         */
+        month: string;
+    };
+    url: '/budget-view';
+};
+
+export type BudgetViewControllerReadErrors = {
+    /**
+     * The month was refused, or the caller has no active budget to read.
+     */
+    400: BadRequestResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type BudgetViewControllerReadError = BudgetViewControllerReadErrors[keyof BudgetViewControllerReadErrors];
+
+export type BudgetViewControllerReadResponses = {
+    /**
+     * The month as it stands now.
+     */
+    200: BudgetViewResponse;
+};
+
+export type BudgetViewControllerReadResponse = BudgetViewControllerReadResponses[keyof BudgetViewControllerReadResponses];

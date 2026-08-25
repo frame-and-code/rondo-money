@@ -4,7 +4,7 @@ export type CalendarMonth = string;
 
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const CALENDAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+const CALENDAR_MONTH = /^[1-9]\d{3}-(0[1-9]|1[0-2])$/;
 
 const FIXED_OFFSET = /^[+-]/;
 
@@ -120,4 +120,57 @@ export function calendarMonthOf(stored: Date): CalendarMonth {
   }
 
   return parseCalendarMonth(day.slice(0, 7));
+}
+
+/// What an API takes, which is narrower than what a month can be. Every month here has a
+/// neighbouring month the helpers below can still bound in any zone, so an endpoint cannot
+/// accept a value that throws two calls later, and a year nobody budgets in is refused at the
+/// edge rather than deep inside a query.
+export const CALENDAR_MONTH_PATTERN = /^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/;
+
+export function nextCalendarMonth(month: CalendarMonth): CalendarMonth {
+  const current = parseCalendarMonth(month);
+  const year = Number(current.slice(0, 4));
+  const index = Number(current.slice(5, 7));
+
+  return parseCalendarMonth(
+    index === 12 ? `${year + 1}-01` : `${year}-${String(index + 1).padStart(2, '0')}`,
+  );
+}
+
+const WALL_CLOCK: Intl.DateTimeFormatOptions = {
+  calendar: 'gregory',
+  numberingSystem: 'latn',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+};
+
+function offsetAt(instant: number, timeZone: string): number {
+  const moment = new Date(instant);
+  const day = new Intl.DateTimeFormat('en-CA', { ...ISO_ORDER, timeZone }).format(moment);
+  const time = new Intl.DateTimeFormat('en-GB', { ...WALL_CLOCK, timeZone }).format(moment);
+
+  return Date.parse(`${day}T${time}Z`) - instant;
+}
+
+export function monthStartInstant(month: CalendarMonth, timeZone: string): Date {
+  const wanted = Date.parse(`${parseCalendarMonth(month)}-01T00:00:00Z`);
+  if (!isTimeZone(timeZone)) {
+    throw new TypeError(`Unknown time zone: ${JSON.stringify(timeZone)}`);
+  }
+
+  // Sampled on either side of the day as well as at the naive instant: east of Greenwich the
+  // naive instant already sits hours into the local day, so a transition earlier that day would
+  // otherwise be read from its far side. A candidate counts only when its own offset reproduces
+  // it, which drops the ones falling in a gap; the earliest survivor is the first instant of the
+  // month, and with no survivor the clock jumped over local midnight and the latest candidate is
+  // the moment the day begins.
+  const candidates = [-DAY_MS, 0, DAY_MS].map(
+    (shift) => wanted - offsetAt(wanted + shift, timeZone),
+  );
+  const real = candidates.filter((instant) => wanted - offsetAt(instant, timeZone) === instant);
+
+  return new Date(real.length > 0 ? Math.min(...real) : Math.max(...candidates));
 }

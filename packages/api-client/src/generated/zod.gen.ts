@@ -85,6 +85,26 @@ export const zAccountResponse = z.object({
     type: zAccountType
 });
 
+export const zBudgetViewCategoryResponse = z.object({
+    id: z.uuid(),
+    name: z.string(),
+    assigned: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    activity: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
+});
+
+export const zBudgetViewGroupResponse = z.object({
+    id: z.uuid(),
+    name: z.string(),
+    categories: z.array(zBudgetViewCategoryResponse)
+});
+
+export const zBudgetViewResponse = z.object({
+    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    readyToAssign: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    groups: z.array(zBudgetViewGroupResponse)
+});
+
 /**
  * The database answered.
  */
@@ -127,3 +147,12 @@ export const zAccountsControllerCreateBody = zCreateAccountDto;
  * The account that now exists.
  */
 export const zAccountsControllerCreateResponse = zAccountResponse;
+
+export const zBudgetViewControllerReadQuery = z.object({
+    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/)
+});
+
+/**
+ * The month as it stands now.
+ */
+export const zBudgetViewControllerReadResponse = zBudgetViewResponse;

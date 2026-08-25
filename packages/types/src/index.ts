@@ -22,9 +22,11 @@ export {
 export type { AccountDto, AccountType } from './account.js';
 export { ACCOUNT_TYPES, isAccountType } from './account.js';
 export type { BudgetDto } from './budget.js';
+export type { BudgetViewCategoryDto, BudgetViewDto, BudgetViewGroupDto } from './budget-view.js';
 export type { LanguageTag, UserSettingsDto } from './user-settings.js';
 export type { CalendarDate, CalendarMonth } from './calendar.js';
 export {
+  CALENDAR_MONTH_PATTERN,
   isTimeZone,
   calendarDateIn,
   calendarDateOf,
@@ -35,4 +37,6 @@ export {
   parseCalendarDate,
   parseCalendarMonth,
   monthOf,
+  monthStartInstant,
+  nextCalendarMonth,
 } from './calendar.js';

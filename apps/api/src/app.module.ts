@@ -4,6 +4,7 @@ import { APP_PIPE } from '@nestjs/core';
 
 import { AccountsModule } from '@/accounts/accounts.module';
 import { AuthModule } from '@/auth/auth.module';
+import { BudgetViewModule } from '@/budget-view/budget-view.module';
 import { BudgetsModule } from '@/budgets/budgets.module';
 import { HealthModule } from '@/health/health.module';
 import { MeModule } from '@/me/me.module';
@@ -27,6 +28,7 @@ import { VALIDATION_PIPE } from '@/validation/validation.options';
     UserSettingsModule,
     BudgetsModule,
     AccountsModule,
+    BudgetViewModule,
   ],
   providers: [{ provide: APP_PIPE, useValue: VALIDATION_PIPE }],
 })

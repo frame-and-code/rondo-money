@@ -5,7 +5,7 @@
   "private": true,
   "main": "dist/main.js",
   "scripts": {
-    "predev": "test -d ../../packages/types/dist -a -d ../../packages/db/dist || { echo 'Start the api through turbo \u2014 pnpm dev --filter=@rondo/api \u2014 which builds the packages this watches.' >&2; exit 1; }",
+    "predev": "test -d ../../packages/types/dist -a -d ../../packages/db/dist || { echo 'Start the api through turbo, pnpm dev --filter=@rondo/api, which builds the packages this watches.' >&2; exit 1; }",
     "dev": "nest start --watch --exec \"node --watch-path=../../packages/types/dist --watch-path=../../packages/db/dist\"",
     "build": "nest build",
     "start": "node dist/main.js",
@@ -44,6 +44,7 @@
     "@types/node": "^26.2.0",
     "@types/supertest": "^7.2.1",
     "eslint": "^10.8.1",
+    "fast-check": "^4.9.0",
     "jest": "^30.4.2",
     "prettier": "^3.9.6",
     "supertest": "^7.1.1",

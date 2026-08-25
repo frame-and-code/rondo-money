@@ -315,6 +315,61 @@
           "Accounts"
         ]
       }
+    },
+    "/budget-view": {
+      "get": {
+        "description": "The groups and categories of the active budget with what each holds this month, plus the money that has no job yet. Nothing here is stored: every number is computed from transactions and assignments when it is asked for.",
+        "operationId": "BudgetViewController_read",
+        "parameters": [
+          {
+            "name": "month",
+            "required": true,
+            "in": "query",
+            "description": "The month the screen is showing. Required: a default here would make the answer depend on a clock rather than on what the user is looking at.",
+            "schema": {
+              "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+              "example": "2026-02",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The month as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetViewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The month was refused, or the caller has no active budget to read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One month of the budget screen",
+        "tags": [
+          "BudgetView"
+        ]
+      }
     }
   },
   "info": {
@@ -653,6 +708,100 @@
           "id",
           "name",
           "type"
+        ]
+      },
+      "BudgetViewCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this category."
+          },
+          "assigned": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What this month's assignment holds. Last month's leftover is not added in; it shows as available being larger than this."
+          },
+          "activity": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "The month's own transactions, signed."
+          },
+          "available": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "Assigned and activity from the beginning of time up to and including this month. It goes below zero on an overspend, which is a signal rather than an error."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "assigned",
+          "activity",
+          "available"
+        ]
+      },
+      "BudgetViewGroupResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this group."
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetViewCategoryResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "categories"
+        ]
+      },
+      "BudgetViewResponse": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month these numbers describe."
+          },
+          "readyToAssign": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "Money that has arrived and has no job yet. It belongs to the budget rather than to a month: an assignment to any month, future ones included, lowers it at once."
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetViewGroupResponse"
+            }
+          }
+        },
+        "required": [
+          "month",
+          "readyToAssign",
+          "groups"
         ]
       }
     }
