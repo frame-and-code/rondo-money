@@ -1,6 +1,7 @@
 import { clerk, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
+import { localeLabels } from '../src/i18n/locales';
 import { en } from '../src/i18n/messages/en';
 import { pl } from '../src/i18n/messages/pl';
 
@@ -36,7 +37,7 @@ test('a new user is taken through setup and lands in the app', async ({ page }) 
   await expect(page.getByRole('heading', { name: en['newBudget.heading'] })).toBeVisible();
 
   await page.getByRole('combobox', { name: en['newBudget.languageLabel'] }).click();
-  await page.getByRole('option', { name: 'Polski' }).click();
+  await page.getByRole('option', { name: localeLabels.pl }).click();
   await expect(page.getByRole('heading', { name: pl['newBudget.heading'] })).toBeVisible();
 
   await page.getByLabel(pl['newBudget.nameLabel']).fill('Budżet domowy');

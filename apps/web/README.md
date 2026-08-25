@@ -9,8 +9,8 @@ Query. Server state lives in that cache, not in component state. Each section is
 real screens behind them are still ahead.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
-account, is on a step of it, and every address leads to that step until both exist. Once they
-do, the steps themselves are closed.
+account, is on a step of it, and every address behind the sign-in leads to that step until
+both exist. Once they do, the steps themselves are closed.
 
 ## Structure
 
