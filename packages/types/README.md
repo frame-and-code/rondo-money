@@ -43,6 +43,13 @@ day, so `2026-02-30` throws instead of rolling over into March the way `new Date
 Nothing here reads the host's zone, and `new Date()` outside this module is how a
 transaction lands in the wrong month for anyone east or west of the server.
 
+The month bucket has the same pair of directions. `parseCalendarMonth` refuses anything that
+is not a real `YYYY-MM`, so `2026-00` and `2026-13` throw rather than becoming a month nobody
+wrote. `toDbMonth` writes the first day of that month, which is the only shape the assignment
+column stores, and `calendarMonthOf` reads it back. That one refuses a value carrying a time
+and a day that is not the first, for the reason `calendarDateOf` refuses a time: rounding
+either would name a month the writer never chose.
+
 A date that came **out of the database** takes the other pair. `calendarDateOf` reads the day
 a `date` column stores and `toDbDate` writes one back; neither takes a zone, because a stored
 calendar date is not an instant and converting it through one shifts the day. Passing such a

@@ -4,6 +4,8 @@ export type CalendarMonth = string;
 
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+const CALENDAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+
 const FIXED_OFFSET = /^[+-]/;
 
 const OFFSET_NAMESPACE = /^(Etc|SystemV)\//i;
@@ -86,4 +88,36 @@ export function todayIn(timeZone: string): CalendarDate {
 
 export function monthOf(date: CalendarDate): CalendarMonth {
   return parseCalendarDate(date).slice(0, 7);
+}
+
+export function parseCalendarMonth(value: string): CalendarMonth {
+  if (!CALENDAR_MONTH.test(value)) {
+    throw new TypeError(`Invalid calendar month: ${JSON.stringify(value)}`);
+  }
+
+  return value;
+}
+
+export function toDbMonth(month: CalendarMonth): Date {
+  return new Date(`${parseCalendarMonth(month)}-01T00:00:00Z`);
+}
+
+export function calendarMonthOf(stored: Date): CalendarMonth {
+  const time = requireInstant(stored);
+  if (time % DAY_MS !== 0) {
+    throw new TypeError(
+      `Not a stored calendar month: ${stored.toISOString()} carries a time, so the month it ` +
+        'falls in depends on a timezone this function is not given',
+    );
+  }
+
+  const day = new Date(time).toISOString();
+  if (!day.startsWith(`${day.slice(0, 7)}-01`)) {
+    throw new TypeError(
+      `Not a stored calendar month: ${day.slice(0, 10)} is not the first day of its month, ` +
+        'and rounding it would name a month nobody wrote',
+    );
+  }
+
+  return parseCalendarMonth(day.slice(0, 7));
 }

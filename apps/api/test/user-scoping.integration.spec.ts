@@ -24,6 +24,7 @@ describe('userId auto-scoping (integration)', () => {
   const owners = { userId: { in: [USER_A, USER_B] } };
 
   const removeFixtures = async (): Promise<void> => {
+    await prisma.assignment.deleteMany({ where: owners });
     await prisma.transaction.deleteMany({ where: owners });
     await prisma.category.deleteMany({ where: owners });
     await prisma.categoryGroup.deleteMany({ where: owners });
@@ -167,6 +168,7 @@ describe('userId auto-scoping (integration)', () => {
     let budgetOfB: { id: string };
     let categoryOfA: { id: string };
     let groupOfA: { id: string };
+    let assignmentOfA: { id: string };
 
     const asOwner = <T>(userId: string, budgetId: string, query: () => Promise<T>): Promise<T> =>
       context.run(async () => {
@@ -226,6 +228,15 @@ describe('userId auto-scoping (integration)', () => {
       await prisma.idempotencyKey.create({
         data: { userId: USER_A, key: 'intent-of-a', requestFingerprint: 'f' },
       });
+      assignmentOfA = await prisma.assignment.create({
+        data: {
+          userId: USER_A,
+          budgetId: budgetOfA.id,
+          categoryId: categoryOfA.id,
+          month: new Date('2026-02-01T00:00:00Z'),
+          amount: 1000n,
+        },
+      });
     });
 
     it('shows B nothing of A, on every model the phase adds', async () => {
@@ -235,6 +246,7 @@ describe('userId auto-scoping (integration)', () => {
         categories: await scoped.category.findMany(),
         accounts: await scoped.account.findMany(),
         transactions: await scoped.transaction.findMany(),
+        assignments: await scoped.assignment.findMany(),
         keys: await scoped.idempotencyKey.findMany(),
       }));
 
@@ -244,6 +256,7 @@ describe('userId auto-scoping (integration)', () => {
         categories: [],
         accounts: [],
         transactions: [],
+        assignments: [],
         keys: [],
       });
     });
@@ -252,9 +265,10 @@ describe('userId auto-scoping (integration)', () => {
       const counted = await asOwner(USER_B, budgetOfB.id, async () => ({
         transactions: await scoped.transaction.count(),
         categories: await scoped.category.count(),
+        assignments: await scoped.assignment.count(),
       }));
 
-      expect(counted).toEqual({ transactions: 0, categories: 0 });
+      expect(counted).toEqual({ transactions: 0, categories: 0, assignments: 0 });
     });
 
     it('stamps a domain write with the caller, whoever the payload names', async () => {
@@ -317,6 +331,59 @@ describe('userId auto-scoping (integration)', () => {
       expect(created.userId).toBe(USER_B);
       expect(created.id).not.toBe(groupOfA.id);
       expect(stored.name).toBe('Living');
+    });
+
+    it('refuses to let B change or remove an assignment of A', async () => {
+      await expect(
+        mutatingAsOwner(USER_B, budgetOfA.id, () =>
+          scoped.assignment.update({ where: { id: assignmentOfA.id }, data: { amount: 7n } }),
+        ),
+      ).rejects.toThrow();
+
+      await expect(
+        mutatingAsOwner(USER_B, budgetOfA.id, () =>
+          scoped.assignment.delete({ where: { id: assignmentOfA.id } }),
+        ),
+      ).rejects.toThrow();
+
+      const bulk = await mutatingAsOwner(USER_B, budgetOfA.id, async () => ({
+        updated: await scoped.assignment.updateMany({ data: { amount: 7n } }),
+        deleted: await scoped.assignment.deleteMany({}),
+      }));
+
+      expect(bulk).toEqual({ updated: { count: 0 }, deleted: { count: 0 } });
+
+      const stored = await prisma.assignment.findUniqueOrThrow({ where: { id: assignmentOfA.id } });
+      expect(stored.amount).toBe(1000n);
+    });
+
+    it("touches nothing when B upserts on the pair A's assignment holds", async () => {
+      const answer = await mutatingAsOwner(USER_B, budgetOfB.id, () =>
+        scoped.assignment.upsert({
+          where: {
+            categoryId_month: {
+              categoryId: categoryOfA.id,
+              month: new Date('2026-02-01T00:00:00Z'),
+            },
+          },
+          create: {
+            userId: USER_A,
+            budgetId: budgetOfB.id,
+            categoryId: categoryOfA.id,
+            month: new Date('2026-02-01T00:00:00Z'),
+            amount: 7n,
+          },
+          update: { amount: 7n },
+        }),
+      );
+
+      const stored = await prisma.assignment.findUniqueOrThrow({ where: { id: assignmentOfA.id } });
+
+      // The scope reaches the conflicting update, which then matches no row: B is answered with
+      // nothing rather than with A's row, and writes nothing of its own.
+      expect(answer).toBeNull();
+      expect(stored.amount).toBe(1000n);
+      expect(await prisma.assignment.count({ where: { userId: USER_B } })).toBe(0);
     });
 
     it('lets two users hold the same idempotency key without colliding', async () => {

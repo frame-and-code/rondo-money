@@ -107,6 +107,7 @@ model Budget {
   categories     Category[]
   accounts       Account[]
   transactions   Transaction[]
+  assignments    Assignment[]
 
   @@unique([userId, active], map: "budget_one_active_per_user", where: { active: true })
   /// The target of every child's `(budgetId, userId)` foreign key. Two independent keys would
@@ -151,6 +152,12 @@ model Category {
   name      String
   sortOrder Int    @map("sort_order")
 
+  /// A short domain name of an icon and of a colour, both optional. Neither is the name of a
+  /// component or a free hex value: what a name means belongs to the app, so the row does not
+  /// depend on what draws it. A group carries neither.
+  icon  String? @db.VarChar(32)
+  color String? @db.VarChar(32)
+
   /// A category is hidden, never deleted, so its past Activity keeps counting and no
   /// expense is left without one.
   hiddenAt DateTime? @map("hidden_at")
@@ -161,8 +168,9 @@ model Category {
   budget       Budget        @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
   group        CategoryGroup @relation(fields: [groupId, budgetId], references: [id, budgetId], onDelete: Restrict)
   transactions Transaction[]
+  assignments  Assignment[]
 
-  /// The target of `Transaction`'s `(categoryId, budgetId)` foreign key.
+  /// The target of every child's `(categoryId, budgetId)` foreign key.
   @@unique([id, budgetId])
   @@index([userId, budgetId])
   @@index([groupId])
@@ -232,6 +240,39 @@ model Transaction {
   @@index([categoryId])
   @@index([transferId])
   @@map("transaction")
+}
+
+/// What one category holds for one month. The amount is not a balance and not a total: it is
+/// what a move put into that envelope for that month, and every derived number is computed
+/// from these rows and the transactions.
+model Assignment {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  categoryId String @map("category_id") @db.Uuid
+
+  /// The first day of the month, a calendar date without a time. Which month a date falls in
+  /// is decided in the budget's timezone, by the calendar helpers in `packages/types`.
+  month DateTime @db.Date
+
+  /// Minor units of the budget's currency, signed. A negative assignment is a month that gave
+  /// money back, and nothing in the schema bounds the sign.
+  amount BigInt
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget   Budget   @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+  category Category @relation(fields: [categoryId, budgetId], references: [id, budgetId], onDelete: Restrict)
+
+  /// One row per category and month: a move edits it rather than adding a second. The index is
+  /// on the stored day, so what holds `month` to the first of its month is a check constraint in
+  /// the migration, which Prisma has no way to declare here.
+  @@unique([categoryId, month])
+  @@index([userId, budgetId, month])
+  @@map("assignment")
 }
 
 /// One user's idempotency keys. Unique per user and key rather than globally: a global

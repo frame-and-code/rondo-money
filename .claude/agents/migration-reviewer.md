@@ -67,7 +67,15 @@ diff and takes the site down during the rollout window, or on any rollback.
 - **Money as anything but an integer of minor units**, a date with a time attached where the
   domain means a calendar date, or a currency's digit count recomputed rather than stored.
 - **A hand-edited generated migration.** The SQL is produced from `schema.prisma`. An edit
-  that the schema does not produce becomes drift on the next generate.
+  that the schema does not produce becomes drift on the next generate. A `CHECK` constraint is
+  the one exception, and for one reason: the differ reads it from neither side, so a hand-written
+  one survives and drifts nothing. Nothing else qualifies, and each for its own reason. An index
+  the differ does read, so the next `migrate dev` offers to drop it. A trigger it never reads,
+  but a trigger is a domain write outside the single write point. An EXCLUDE constraint and a
+  generated column go unread too, and unlike a `CHECK` nothing in the schema or the tests would
+  show one going missing. Even a `CHECK` is sound only when the edit adds and leaves every
+  generated statement alone, the schema comment points at it, and a test pins it against the
+  applied schema.
 - **A `deletedAt` column.** There is no soft-delete here, and hiding, archiving and
   deactivating are not it either. Which model uses which field is in
   [`packages/db/README.md`](../../packages/db/README.md).

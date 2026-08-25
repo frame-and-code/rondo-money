@@ -10,10 +10,17 @@ const DOMAIN_MODELS = [
   'Category',
   'Account',
   'Transaction',
+  'Assignment',
   'IdempotencyKey',
 ] as const;
 
-const BUDGET_OWNED_MODELS = ['CategoryGroup', 'Category', 'Account', 'Transaction'] as const;
+const BUDGET_OWNED_MODELS = [
+  'CategoryGroup',
+  'Category',
+  'Account',
+  'Transaction',
+  'Assignment',
+] as const;
 
 describe('the domain core schema', () => {
   const client = new PrismaClient({
@@ -24,7 +31,7 @@ describe('the domain core schema', () => {
     await client.$disconnect();
   });
 
-  it('carries all six models of the domain core', () => {
+  it('carries every model of the domain core', () => {
     const missing = DOMAIN_MODELS.filter(
       (model) => !Object.values<string>(Prisma.ModelName).includes(model),
     );
@@ -50,6 +57,15 @@ describe('the domain core schema', () => {
   it('keeps the user-level models out of a budget', () => {
     expect(Object.keys(fieldsOf(client, 'Budget'))).not.toContain('budgetId');
     expect(Object.keys(fieldsOf(client, 'IdempotencyKey'))).not.toContain('budgetId');
+  });
+
+  it('gives a category a look of its own, and gives a group none', () => {
+    const category = Object.keys(fieldsOf(client, 'Category'));
+
+    expect(category).toContain('icon');
+    expect(category).toContain('color');
+    expect(Object.keys(fieldsOf(client, 'CategoryGroup'))).not.toContain('icon');
+    expect(Object.keys(fieldsOf(client, 'CategoryGroup'))).not.toContain('color');
   });
 
   it('soft-deletes nothing: no model carries deletedAt', () => {
