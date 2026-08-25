@@ -1,10 +1,13 @@
 import {
   calendarDateIn,
   calendarDateOf,
+  calendarMonthOf,
   isTimeZone,
   monthOf,
   parseCalendarDate,
+  parseCalendarMonth,
   toDbDate,
+  toDbMonth,
   todayIn,
 } from '@rondo/types';
 
@@ -147,5 +150,64 @@ describe('toDbDate', () => {
 
   it('refuses a value that is not a calendar date', () => {
     expect(() => toDbDate('2026-02-30')).toThrow(TypeError);
+  });
+});
+
+describe('parseCalendarMonth', () => {
+  it('accepts a month and hands it back', () => {
+    expect(parseCalendarMonth('2026-02')).toBe('2026-02');
+    expect(parseCalendarMonth('1969-12')).toBe('1969-12');
+  });
+
+  it('refuses a month number no month answers to', () => {
+    expect(() => parseCalendarMonth('2026-00')).toThrow(TypeError);
+    expect(() => parseCalendarMonth('2026-13')).toThrow(TypeError);
+  });
+
+  it('refuses anything that is not the year-month shape', () => {
+    for (const value of ['2026-1', '2026-02-01', '2026', '', 'not a month', '26-02']) {
+      expect(() => parseCalendarMonth(value)).toThrow(TypeError);
+    }
+  });
+
+  it('names the value it refused, so the failure reads without a debugger', () => {
+    expect(() => parseCalendarMonth('2026-13')).toThrow(/Invalid calendar month: "2026-13"/);
+  });
+});
+
+describe('toDbMonth', () => {
+  it('writes the first day of the month at midnight UTC, not in the host zone', () => {
+    expect(toDbMonth('2026-02').toISOString()).toBe('2026-02-01T00:00:00.000Z');
+    expect(toDbMonth('2025-12').toISOString()).toBe('2025-12-01T00:00:00.000Z');
+  });
+
+  it('refuses a value that is not a month', () => {
+    expect(() => toDbMonth('2026-13')).toThrow(TypeError);
+  });
+});
+
+describe('calendarMonthOf', () => {
+  it('reads back the month a stored first-of-month carries', () => {
+    expect(calendarMonthOf(new Date('2026-02-01T00:00:00Z'))).toBe('2026-02');
+  });
+
+  it('refuses a value carrying a time, whose month depends on a zone it is not given', () => {
+    expect(() => calendarMonthOf(new Date('2026-02-01T23:30:00Z'))).toThrow(TypeError);
+    expect(() => calendarMonthOf(new Date('2026-02-01T23:30:00Z'))).toThrow(/carries a time/);
+  });
+
+  it('refuses a day that is not the first, rather than rounding to a month nobody wrote', () => {
+    expect(() => calendarMonthOf(new Date('2026-02-05T00:00:00Z'))).toThrow(TypeError);
+    expect(() => calendarMonthOf(new Date('2026-02-05T00:00:00Z'))).toThrow(/first day/);
+  });
+
+  it('refuses an instant that is not a point in time', () => {
+    expect(() => calendarMonthOf(new Date('not a date'))).toThrow(TypeError);
+  });
+
+  it('round-trips across the year boundary and before the epoch', () => {
+    for (const month of ['2025-12', '2026-01', '1969-12', '1970-01']) {
+      expect(calendarMonthOf(toDbMonth(month))).toBe(month);
+    }
   });
 });

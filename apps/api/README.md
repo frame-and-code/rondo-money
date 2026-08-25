@@ -223,9 +223,10 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
      does and does not cover, and what a nested write has to do about it. The domain models
      carry relations, so a nested write is reachable now. It keeps whatever owner the caller
      put on the nested rows, and it is the shape a transfer's two legs take.
-3. **The registry.** [`scoped-models.ts`](src/prisma/scoped-models.ts) lists the models this
-   applies to, in two sets: everything scoped to a user, and the subset a budget owns. A new
-   table joins them in the same change that creates it.
+3. **The registry.** [`scoped-models.ts`](src/prisma/scoped-models.ts) classifies every model
+   in the schema: everything scoped to a user, the subset a budget owns, and the ones only a
+   mutation may write. A new table joins each set it belongs to in the same change that creates
+   it.
    [`test/scoped-models.spec.ts`](test/scoped-models.spec.ts) catches a forgotten one by
    walking the schema and failing when a model with a `userId` or `budgetId` column is missing
    (the CI gate).

@@ -28,8 +28,11 @@ export {
   isTimeZone,
   calendarDateIn,
   calendarDateOf,
+  calendarMonthOf,
   toDbDate,
+  toDbMonth,
   todayIn,
   parseCalendarDate,
+  parseCalendarMonth,
   monthOf,
 } from './calendar.js';

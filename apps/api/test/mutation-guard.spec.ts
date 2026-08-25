@@ -87,6 +87,13 @@ describe('the marker that keeps a domain write inside the mutation service', () 
     amount: -500n,
     type: 'EXPENSE' as const,
   };
+  const assignmentRow = {
+    userId: USER,
+    budgetId: BUDGET,
+    categoryId: 'c1',
+    month: new Date('2026-02-01T00:00:00Z'),
+    amount: 1000n,
+  };
   const where = { id: 'r1' };
 
   const writesOf = (
@@ -159,6 +166,21 @@ describe('the marker that keeps a domain write inside the mutation service', () 
           delete: () => scoped.transaction.delete({ where }),
           deleteMany: () => scoped.transaction.deleteMany({}),
         };
+      case Prisma.ModelName.Assignment:
+        return {
+          create: () => scoped.assignment.create({ data: assignmentRow }),
+          createMany: () => scoped.assignment.createMany({ data: [assignmentRow] }),
+          createManyAndReturn: () =>
+            scoped.assignment.createManyAndReturn({ data: [assignmentRow] }),
+          update: () => scoped.assignment.update({ where, data: { amount: 1n } }),
+          updateMany: () => scoped.assignment.updateMany({ data: { amount: 1n } }),
+          updateManyAndReturn: () =>
+            scoped.assignment.updateManyAndReturn({ data: { amount: 1n } }),
+          upsert: () =>
+            scoped.assignment.upsert({ where, create: assignmentRow, update: { amount: 1n } }),
+          delete: () => scoped.assignment.delete({ where }),
+          deleteMany: () => scoped.assignment.deleteMany({}),
+        };
       default:
         throw new Error(
           `No writes are spelled out for ${model}, so this spec would silently test another ` +
@@ -173,6 +195,7 @@ describe('the marker that keeps a domain write inside the mutation service', () 
     Prisma.ModelName.Category,
     Prisma.ModelName.Account,
     Prisma.ModelName.Transaction,
+    Prisma.ModelName.Assignment,
   ];
 
   const inRequest = <T>(work: () => Promise<T>): Promise<T> =>
@@ -221,9 +244,15 @@ describe('the marker that keeps a domain write inside the mutation service', () 
       await scoped.category.findMany();
       await scoped.transaction.count();
       await scoped.budget.findFirst();
+      await scoped.assignment.findMany();
     });
 
-    expect(captured.map((entry) => entry.operation)).toEqual(['findMany', 'count', 'findFirst']);
+    expect(captured.map((entry) => entry.operation)).toEqual([
+      'findMany',
+      'count',
+      'findFirst',
+      'findMany',
+    ]);
   });
 
   it('refuses a write outside a mutation whether or not a budget was resolved', async () => {

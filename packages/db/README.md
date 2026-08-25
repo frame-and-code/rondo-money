@@ -3,9 +3,10 @@
 Data layer: Prisma schema, migrations and the generated client (Prisma 7).
 
 The schema grows incrementally, one migration per phase. It starts as a datasource, a
-generator and an empty `0_init`. `UserSettings` is the first table, and the domain core is
-six more in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
-`Transaction`, `IdempotencyKey`. No table carries `deletedAt`. ADR-006 dropped soft-delete
+generator and an empty `0_init`. `UserSettings` is the first table, then the domain core
+arrives in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
+`Transaction`, `IdempotencyKey`. `Assignment` joins them later, with the two columns that give
+a category a look of its own. No table carries `deletedAt`. ADR-006 dropped soft-delete
 and the change-log journal alike.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum with
@@ -39,6 +40,30 @@ Postgres cannot match to an index carrying a predicate, and fails there. So read
 `active: true`, and create or activate a budget with an explicit read and then a write inside
 the mutation's own transaction. `budget-core.integration.spec.ts` pins all four, because this
 paragraph is the only warning a caller gets.
+
+`Assignment` holds what one category was given for one month. `month` is a `date` column
+carrying the first day, so which month a date falls in is decided once, in the budget's
+timezone, by the calendar helpers in [`@rondo/types`](../types/README.md). One row per category
+and month is what lets a move edit an assignment instead of stacking a second one beside it, and
+it takes two things rather than one: `@@unique([categoryId, month])` is unique per stored **day**,
+so a check constraint holds `month` to the first of its month. Prisma cannot declare one, so that
+constraint lives in the migration and nowhere else. The `amount` is signed and nothing bounds it: a month that gives money
+back is an ordinary negative row, and no aggregate is stored anywhere.
+
+⚠️ **An upsert on that pair reaches only the active budget, and its result type does not say
+so.** The scoping extension puts the caller and the active budget into the `where` half, so an
+upsert aimed at the pair of a row that scope does not reach matches nothing. What comes back
+then depends on the payload rather than on who owns that row. When `create` names the budget the
+scope carries, Prisma compiles one `INSERT ... ON CONFLICT ... DO UPDATE` whose `WHERE` filters
+the conflicting row out, nothing is written and the answer is `null`. When it names another
+budget, Prisma falls back to a select and a plain insert, and that insert fails on the unique
+index with `P2002`. Prisma types the result as a row in both cases, so `(await scoped.assignment.upsert(...)).id`
+compiles and then throws at runtime. A move that edits an assignment either handles both
+answers or reads and writes inside its own transaction instead.
+
+`Category` carries an optional `icon` and `color`, each a short name of at most 32 characters
+rather than a component name or a hex value. A group carries neither, and a category without
+them is a normal row.
 
 Three fields mean three different kinds of disappearance and they are not interchangeable.
 An account is archived (`archivedAt`), a category and its group are hidden (`hiddenAt`), a

@@ -83,6 +83,7 @@ describe('budget scoping (integration)', () => {
     inRequest(userId, budgetId, () => context.runInMutation(query));
 
   const removeFixtures = async (): Promise<void> => {
+    await prisma.assignment.deleteMany({ where: { userId: { in: USERS } } });
     await prisma.category.deleteMany({ where: { userId: { in: USERS } } });
     await prisma.categoryGroup.deleteMany({ where: { userId: { in: USERS } } });
     await prisma.budget.deleteMany({ where: { userId: { in: USERS } } });
@@ -99,6 +100,20 @@ describe('budget scoping (integration)', () => {
         active,
       },
     });
+
+  const assignTo = async (userId: string, budgetId: string, name: string) => {
+    const category = await prisma.category.findFirstOrThrow({ where: { userId, budgetId, name } });
+
+    return prisma.assignment.create({
+      data: {
+        userId,
+        budgetId,
+        categoryId: category.id,
+        month: new Date('2026-02-01T00:00:00Z'),
+        amount: 1000n,
+      },
+    });
+  };
 
   const createCategory = async (userId: string, budgetId: string, name: string) => {
     const group = await prisma.categoryGroup.create({
@@ -208,6 +223,33 @@ describe('budget scoping (integration)', () => {
 
       expect(removed).toEqual({ count: 1 });
       expect(left).toEqual(['Old food']);
+    });
+
+    it('keeps an assignment of the caller`s other budget out of the read', async () => {
+      await assignTo(WITH_ACTIVE, active.id, 'Food');
+      await assignTo(WITH_ACTIVE, archived.id, 'Old food');
+
+      const seen = await inRequest(WITH_ACTIVE, active.id, () => scoped.assignment.findMany());
+
+      expect(seen.map((row) => row.budgetId)).toEqual([active.id]);
+    });
+
+    it('confines a bulk write on assignments to the active budget', async () => {
+      await assignTo(WITH_ACTIVE, active.id, 'Food');
+      await assignTo(WITH_ACTIVE, archived.id, 'Old food');
+
+      const renamed = await inMutation(WITH_ACTIVE, active.id, () =>
+        scoped.assignment.updateMany({ data: { amount: 42n } }),
+      );
+      const removed = await inMutation(WITH_ACTIVE, active.id, () =>
+        scoped.assignment.deleteMany({}),
+      );
+
+      const left = await prisma.assignment.findMany({ where: { userId: WITH_ACTIVE } });
+
+      expect(renamed).toEqual({ count: 1 });
+      expect(removed).toEqual({ count: 1 });
+      expect(left.map((row) => row.budgetId)).toEqual([archived.id]);
     });
 
     it('takes the budget of a write from the payload, not from the context', async () => {
