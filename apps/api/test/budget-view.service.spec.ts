@@ -21,9 +21,8 @@ const row = (over: Partial<BudgetViewRow> = {}): BudgetViewRow => ({
   ...over,
 });
 
-/// The statement the service builds, captured rather than executed: the repository is the seam
-/// where the caller's scope arrives, so a fake one can hand in a scope and read back what the
-/// service asked for.
+/// The repository is where the caller's scope arrives, so a fake one hands in a scope and
+/// keeps the statement instead of running it.
 function serviceReading(
   rows: BudgetViewRow[],
   budget: { id: string; timezone: string } | null = BUDGET,

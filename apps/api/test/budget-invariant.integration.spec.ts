@@ -16,9 +16,7 @@ import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
 const USER = 'user_2rondoInvariantAaaaaaaaaa';
 
-/// Every generated date and month sits below this one, so reading it sums assignments and
-/// activity over all of time. That is the shape invariant 5.5 holds in; a per-month
-/// reconciliation is not required to balance and is deliberately never asserted here.
+/// Every generated date and month sits below this one, so reading it sums over all of time.
 const ALL_TIME = '2400-01';
 
 const DATES = [

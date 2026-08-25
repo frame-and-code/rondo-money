@@ -15,8 +15,8 @@ const TABLES = ['category_group', 'category', 'assignment', 'transaction'] as co
 const TABLE_REFERENCE =
   /\b(?:from|join)\s+"?(category_group|category|assignment|transaction)"?\b/gi;
 
-/// Every table the statement reads, with whether the caller and the budget are compared to a
-/// bound parameter in that table's own clause rather than somewhere else in the query.
+/// Every table the statement reads, with whether both ids are compared to a bound parameter in
+/// that table's own clause rather than somewhere else in the query.
 function scopeOfEachTable(text: string): { table: string; scoped: boolean }[] {
   const references = [...text.matchAll(TABLE_REFERENCE)];
 
