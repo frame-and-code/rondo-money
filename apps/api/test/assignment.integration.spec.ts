@@ -317,10 +317,8 @@ describe('the assignment table (integration)', () => {
 
     const stored = await prisma.assignment.findUniqueOrThrow({ where: { id: elsewhere.id } });
 
-    // The scope never reaches the row, and what comes back depends on the payload rather than on
-    // who owns it: naming another budget falls back to a select and a plain insert, which the
-    // index refuses. Naming the budget the scope carries answers with nothing instead, which the
-    // test below pins. Neither is the row, and neither shows in the type.
+    // Why an upsert the scope cannot reach answers this way, and what a caller has to do about
+    // it, is in packages/db/README.md. The test below pins the other answer.
     expect(codeOf(answer)).toBe('P2002');
     expect(stored.amount).toBe(1000n);
     expect(await prisma.assignment.count({ where: { userId: USER } })).toBe(1);
