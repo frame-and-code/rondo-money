@@ -214,7 +214,9 @@ status check keeps the exact id `gate` that branch rules point at.
   problem.
 - **Coverage for Sonar**: the jest configs keep coverage always on, so the plain test
   commands (`pnpm test:unit`, `pnpm test:integration`) emit an `lcov.info` in each
-  tested workspace. The same command produces the same artefacts locally and in CI, and
+  tested workspace. Not every source file is scored: the declaration-only ones are excluded
+  from coverage, and [`sonar-project.properties`](../sonar-project.properties) names which and
+  says why. The same command produces the same artefacts locally and in CI, and
   the lcov reporter
   rewrites paths to be repo-root-relative (the scanner runs at the repo root and could not
   resolve workspace-relative `src/…` otherwise). `apps/api` emits **two**, one per level
