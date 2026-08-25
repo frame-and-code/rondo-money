@@ -159,6 +159,26 @@ describe('the onboarding gate', () => {
     expect(screen.queryByText(CHILD)).not.toBeInTheDocument();
   });
 
+  it('does not answer from a cache that nothing is refreshing', async () => {
+    // The refetch on mount is what makes the cached answer harmless today. A `staleTime` added
+    // to the client later takes that away, and then the gate would decide on a list written
+    // before the budget it is being asked about existed.
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    });
+    client.setQueryData(BUDGETS_KEY, []);
+    client.setQueryData(ACCOUNTS_KEY, []);
+
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+
+    draw('app', client);
+    await settle();
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.queryByText(CHILD)).not.toBeInTheDocument();
+  });
+
   it('sends a user with no budget out of the app to step 1', async () => {
     draw('app');
 
@@ -267,6 +287,34 @@ describe('the onboarding gate', () => {
     // One layout wraps both steps, so walking on does not unmount the gate. The verdict that
     // kept the confirmation on screen would send the user straight back to the step they left.
     rerender(tree('account', client));
+
+    expect(await screen.findByText(CHILD)).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('waits for the read it just invalidated before deciding the next step', async () => {
+    const { client, rerender } = draw('budget');
+    await screen.findByText(CHILD);
+
+    // The budget exists now and the form invalidated its query, but the confirmation carrying
+    // the way on is already on screen, so the user can walk on while that read is in flight.
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [];
+    let land = () => {};
+    budgetsGate = new Promise((resolve) => {
+      land = resolve;
+    });
+    void client.invalidateQueries({ queryKey: BUDGETS_KEY });
+    await settle();
+
+    rerender(tree('account', client));
+    await settle();
+
+    // The answer still on the observer describes the moment before the budget existed.
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.queryByText(CHILD)).not.toBeInTheDocument();
+
+    land();
 
     expect(await screen.findByText(CHILD)).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();

@@ -21,6 +21,24 @@ function unreachable(query: { isError: boolean; fetchStatus: FetchStatus }): boo
   return query.isError || query.fetchStatus === 'paused';
 }
 
+/// What this mount is allowed to decide on, and `null` for everything else.
+///
+/// `isFetchedAfterMount` rules out a cached answer, which can be older than the row it is
+/// being asked about. `isFetching` rules out one that is being replaced right now: the screens
+/// behind this gate invalidate these queries the moment they write, and the way on to the next
+/// step is already on screen while that read is still in flight. Deciding on the answer from
+/// before the write sends the user back to the step they have just finished.
+function answerOf<T>(query: {
+  data: T | undefined;
+  isSuccess: boolean;
+  isFetchedAfterMount: boolean;
+  isFetching: boolean;
+}): T | null {
+  return query.isSuccess && query.isFetchedAfterMount && !query.isFetching
+    ? (query.data ?? null)
+    : null;
+}
+
 export function OnboardingGate({
   expects,
   fallback = null,
@@ -35,18 +53,15 @@ export function OnboardingGate({
   const { userId } = useAuth();
   const signedIn = userId !== null && userId !== undefined;
 
-  // `isFetchedAfterMount` is what makes these this mount's own answers. A cached one can be
-  // older than the budget it is being asked about, and it would send a user who already has
-  // one to the screen that creates a second, deactivating the first without asking.
   const budgets = useQuery({ ...budgetsControllerListOptions(), enabled: signedIn });
-  const budgetsRead = budgets.isSuccess && budgets.isFetchedAfterMount ? budgets.data : null;
+  const budgetsRead = answerOf(budgets);
   const hasActiveBudget = budgetsRead?.some((budget) => budget.active) ?? false;
 
   const accounts = useQuery({
     ...accountsControllerListOptions(),
     enabled: signedIn && hasActiveBudget,
   });
-  const accountsRead = accounts.isSuccess && accounts.isFetchedAfterMount ? accounts.data : null;
+  const accountsRead = answerOf(accounts);
 
   // What a verdict belongs to. The subtree outlives both: one layout wraps both steps of
   // setup, and the app shell survives a change of signed-in user. A verdict carried across
