@@ -21,6 +21,11 @@
       "owner": "docs/testing.md"
     },
     {
+      "phrase": "Σ Assigned(≤ M)",
+      "owner": ".claude/skills/budget-invariant/SKILL.md",
+      "note": "the budget formulas; a second copy is how two screens start disagreeing"
+    },
+    {
       "phrase": "reuseExistingServer",
       "owner": "docs/testing.md",
       "note": "e2e prerequisites"

@@ -50,9 +50,13 @@ turn. They stay short deliberately. Detail belongs in `docs/`, and the rule link
 | [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that **reads** a domain table (the `user-settings` shape)                      |
 | [`add-a-mutation/`](skills/add-a-mutation/SKILL.md)           | writing a domain mutation: one transaction, one idempotency key, the tests that are not optional    |
 | [`testing-patterns/`](skills/testing-patterns/SKILL.md)       | writing a test in this repository: the harnesses, the fixtures, the traps that make a green run lie |
+| [`aggregate-query/`](skills/aggregate-query/SKILL.md)         | a screen needs numbers over many rows: raw SQL that keeps its own scoping, and the tests around it  |
+| [`budget-invariant/`](skills/budget-invariant/SKILL.md)       | the four budget numbers, how each is computed, and the reconciliation that need not balance         |
 
 A skill is grounded in code that exists. Every step names a real file to copy from, so it
-cannot drift into describing an API nobody wrote.
+cannot drift into describing an API nobody wrote, and neither a skill nor an agent lands ahead
+of the code it describes. Every phase carries the same DoD item, that a repeatable pattern it
+introduced is captured here in the same PR.
 
 ## Agents (`agents/`)
 
@@ -60,6 +64,7 @@ cannot drift into describing an API nobody wrote.
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | [`pr-reviewer.md`](agents/pr-reviewer.md)               | reviewing a change against this project's invariants, spawned per dimension by [`/review`](commands/review.md)                      |
 | [`migration-reviewer.md`](agents/migration-reviewer.md) | the change touches `packages/db/prisma/migrations/`; [`/review`](commands/review.md) sends it in place of one of its four reviewers |
+| [`invariant-debugger.md`](agents/invariant-debugger.md) | the property-based test of invariant 5.5 went red, and the counterexample has to be read before the code                            |
 
 An agent exists here for one reason: **a subagent starts with no conversation history.** It
 receives `CLAUDE.md` and the rules, and nothing of the session that spawned it. So it reads
@@ -158,17 +163,6 @@ project's decisions actually depend on: Prisma extension boundaries, the ESLint 
 enforce ADR-005, Clerk JWT and revoked sessions, currency minor digits, the Railway
 config-as-code keys behind `apps/*/railway.json`. Each entry says why we go there, because
 a link list nobody can justify becomes a link list nobody opens.
-
-## Not here yet
-
-Deliberate, not missing. Each arrives with the phase that gives it something true to
-describe. A skill grounded in code that does not exist yet would be fiction:
-
-- more `skills/`: `aggregate-query`, `budget-invariant` (the budget aggregates);
-- more `agents/`: `invariant-debugger` (invariant 5.5).
-
-Every phase carries the same DoD item: a repeatable pattern it introduced is captured here
-in the same PR.
 
 ## Extending
 

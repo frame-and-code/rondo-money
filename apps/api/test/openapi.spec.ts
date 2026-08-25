@@ -1,4 +1,5 @@
-import { type OpenAPIObject } from '@nestjs/swagger';
+import { type OpenAPIObject, type PathItemObject } from '@nestjs/swagger';
+import { MONEY_PATTERN } from '@rondo/types';
 
 import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
 import { HTTP_METHODS, SESSION_TOKEN_SCHEME } from '@/openapi/document';
@@ -14,6 +15,7 @@ describe('OpenAPI document', () => {
   it('describes the endpoints the app actually serves', () => {
     expect(Object.keys(document.paths).sort()).toEqual([
       '/accounts',
+      '/budget-view',
       '/budgets',
       '/health',
       '/me',
@@ -56,9 +58,10 @@ describe('OpenAPI document', () => {
   });
 
   it('publishes a bad request shape wherever the pipe can answer with one', () => {
-    // Every operation taking a body is validated by the global pipe, so 400 is answerable
-    // whatever the handler itself does, and an undocumented status collapses that operation's
-    // whole error type to `unknown` in the generated client.
+    // Every operation taking a body or a query is validated by the global pipe, so 400 is
+    // answerable whatever the handler itself does, and an undocumented status collapses that
+    // operation's whole error type to `unknown` in the generated client. A query counts
+    // because the DTO behind it is refused before the handler runs, exactly like a body.
     const typed = (response: unknown): boolean => {
       const schema =
         response && typeof response === 'object' && 'content' in response
@@ -70,9 +73,15 @@ describe('OpenAPI document', () => {
       return schema.endsWith('/BadRequestResponse');
     };
 
+    const validated = (method: (typeof HTTP_METHODS)[number], item: PathItemObject): boolean =>
+      Boolean(item[method]?.requestBody) ||
+      (item[method]?.parameters ?? []).some(
+        (parameter) => 'in' in parameter && parameter.in === 'query',
+      );
+
     const undocumented = Object.entries(document.paths).flatMap(([path, item]) =>
       HTTP_METHODS.filter(
-        (method) => item[method]?.requestBody && !typed(item[method]?.responses['400']),
+        (method) => validated(method, item) && !typed(item[method]?.responses['400']),
       ).map((method) => `${method.toUpperCase()} ${path}`),
     );
 
@@ -179,6 +188,40 @@ describe('OpenAPI document', () => {
       );
 
       expect(accepting).toEqual(['POST /budgets']);
+    });
+  });
+
+  describe('the budget view', () => {
+    it('takes the month as a query parameter carrying the shape the pipe enforces', () => {
+      const parameter = document.paths['/budget-view']?.get?.parameters?.find(
+        (candidate) => 'name' in candidate && candidate.name === 'month',
+      );
+
+      expect(parameter).toMatchObject({
+        in: 'query',
+        required: true,
+        schema: { type: 'string', pattern: '^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$' },
+      });
+    });
+
+    it('publishes every amount it answers with as a string of minor units', () => {
+      const moneyOf = (name: string): string[] => {
+        const schema = document.components?.schemas?.[name];
+        const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+        return Object.entries(properties)
+          .filter(
+            ([, property]) => 'pattern' in property && property.pattern === MONEY_PATTERN.source,
+          )
+          .map(([field]) => field);
+      };
+
+      expect(moneyOf('BudgetViewResponse')).toEqual(['readyToAssign']);
+      expect(moneyOf('BudgetViewCategoryResponse').sort()).toEqual([
+        'activity',
+        'assigned',
+        'available',
+      ]);
     });
   });
 

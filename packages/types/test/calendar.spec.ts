@@ -1,9 +1,12 @@
 import {
+  CALENDAR_MONTH_PATTERN,
   calendarDateIn,
   calendarDateOf,
   calendarMonthOf,
   isTimeZone,
   monthOf,
+  monthStartInstant,
+  nextCalendarMonth,
   parseCalendarDate,
   parseCalendarMonth,
   toDbDate,
@@ -159,6 +162,11 @@ describe('parseCalendarMonth', () => {
     expect(parseCalendarMonth('1969-12')).toBe('1969-12');
   });
 
+  it('refuses a year the helpers cannot render, which is every one below a thousand', () => {
+    expect(() => parseCalendarMonth('0999-01')).toThrow(TypeError);
+    expect(() => parseCalendarMonth('0001-01')).toThrow(TypeError);
+  });
+
   it('refuses a month number no month answers to', () => {
     expect(() => parseCalendarMonth('2026-00')).toThrow(TypeError);
     expect(() => parseCalendarMonth('2026-13')).toThrow(TypeError);
@@ -208,6 +216,98 @@ describe('calendarMonthOf', () => {
   it('round-trips across the year boundary and before the epoch', () => {
     for (const month of ['2025-12', '2026-01', '1969-12', '1970-01']) {
       expect(calendarMonthOf(toDbMonth(month))).toBe(month);
+    }
+  });
+});
+
+describe('nextCalendarMonth', () => {
+  it('moves to the month after the one it was given', () => {
+    expect(nextCalendarMonth('2026-01')).toBe('2026-02');
+    expect(nextCalendarMonth('2026-11')).toBe('2026-12');
+  });
+
+  it('crosses the year boundary rather than counting to a thirteenth month', () => {
+    expect(nextCalendarMonth('2026-12')).toBe('2027-01');
+  });
+
+  it('refuses a value that is not a month, and names it', () => {
+    expect(() => nextCalendarMonth('2026-13')).toThrow(TypeError);
+    expect(() => nextCalendarMonth('2026-1')).toThrow(TypeError);
+    expect(() => nextCalendarMonth('2026-13')).toThrow(/"2026-13"/);
+  });
+});
+
+describe('monthStartInstant', () => {
+  it('answers with the instant the month begins in the zone it was given', () => {
+    expect(monthStartInstant('2026-02', 'Europe/Warsaw')).toEqual(new Date('2026-01-31T23:00:00Z'));
+  });
+
+  it('uses the offset in effect at that instant, so a summer month starts an hour earlier', () => {
+    expect(monthStartInstant('2026-07', 'Europe/Warsaw')).toEqual(new Date('2026-06-30T22:00:00Z'));
+  });
+
+  it('holds a zone at no offset, a half-hour one and the far side of the date line', () => {
+    expect(monthStartInstant('2026-02', 'UTC')).toEqual(new Date('2026-02-01T00:00:00Z'));
+    expect(monthStartInstant('2026-02', 'Asia/Kolkata')).toEqual(new Date('2026-01-31T18:30:00Z'));
+    expect(monthStartInstant('2026-02', 'Pacific/Kiritimati')).toEqual(
+      new Date('2026-01-31T10:00:00Z'),
+    );
+  });
+
+  it('reads the offset in force at the start of the local day, not the one hours into it', () => {
+    // Sydney puts its clock back at 03:00 on the first Sunday of April, which in 2029 is the
+    // first of the month. Sampling the offset at naive midnight UTC lands after that change and
+    // loses the first local hour of April.
+    expect(monthStartInstant('2029-04', 'Australia/Sydney')).toEqual(
+      new Date('2029-03-31T13:00:00Z'),
+    );
+  });
+
+  it('answers for a day that has no local midnight with the first instant it does have', () => {
+    // America/Asuncion jumps from 23:59:59 on 30 September 2023 to 01:00 on the first, so
+    // the month has no 00:00 at all. The boundary is still a real instant, and everything
+    // from it on belongs to the new month.
+    expect(monthStartInstant('2023-10', 'America/Asuncion')).toEqual(
+      new Date('2023-10-01T04:00:00Z'),
+    );
+  });
+
+  it('refuses a zone the runtime cannot resolve, naming it', () => {
+    expect(() => monthStartInstant('2026-02', 'Nowhere/Nothing')).toThrow(TypeError);
+    expect(() => monthStartInstant('2026-02', 'Nowhere/Nothing')).toThrow(/Nowhere\/Nothing/);
+  });
+
+  it('refuses a value that is not a month', () => {
+    expect(() => monthStartInstant('2026-13', 'UTC')).toThrow(TypeError);
+    expect(() => monthStartInstant('2026-02-01', 'UTC')).toThrow(TypeError);
+  });
+});
+
+describe('CALENDAR_MONTH_PATTERN', () => {
+  it('accepts a month a budget can be about, and only what the parser accepts too', () => {
+    for (const value of ['2026-01', '2026-12', '1970-01', '1900-01', '2999-12']) {
+      expect(CALENDAR_MONTH_PATTERN.test(value)).toBe(true);
+      expect(parseCalendarMonth(value)).toBe(value);
+    }
+
+    for (const value of ['2026-13', '2026-00', '2026-1', '202601', '2026-01-01', '']) {
+      expect(CALENDAR_MONTH_PATTERN.test(value)).toBe(false);
+      expect(() => parseCalendarMonth(value)).toThrow(TypeError);
+    }
+  });
+
+  it('refuses a year outside the range, which is what keeps the helpers total over it', () => {
+    for (const value of ['9999-12', '0999-12', '0001-01', '3000-01', '1899-12']) {
+      expect(CALENDAR_MONTH_PATTERN.test(value)).toBe(false);
+    }
+  });
+
+  it('leaves every month it accepts bounded, at both ends and either side of Greenwich', () => {
+    for (const month of ['1900-01', '2026-02', '2999-12']) {
+      for (const zone of ['America/New_York', 'Pacific/Kiritimati', 'UTC']) {
+        expect(monthStartInstant(month, zone).getTime()).not.toBeNaN();
+        expect(monthStartInstant(nextCalendarMonth(month), zone).getTime()).not.toBeNaN();
+      }
     }
   });
 });

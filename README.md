@@ -26,8 +26,10 @@ A budget can now be created: it is named, it takes a currency from the list the 
 knows and keeps it, and it can start with a set of categories. That write and everything after it goes
 through one point, so a user operation lands whole or not at all and a double submit writes
 once. The first account can be created too, and its opening balance is written as a transaction
-rather than stored on the account, so it stays correctable. What does not exist yet is
-entering transactions by hand and the screens that distribute money.
+rather than stored on the account, so it stays correctable. A month of the budget can be read:
+what each category holds, what it spent, what is left in it and what has no job yet, every one
+of them computed from transactions and assignments rather than stored anywhere. What does not
+exist yet is entering transactions by hand and the screens that distribute money.
 
 ## What it is
 

@@ -15,6 +15,9 @@ transaction. [`src/accounts`](src/accounts) is the same pair over a model a budg
 is also where a handler asks for the active budget itself rather than letting the scoping
 extension refuse the read: without one the extension raises an internal error, and a user part
 way through onboarding would meet a 500 for an ordinary state.
+[`src/budget-view`](src/budget-view) is the third shape, a read the extension cannot express at
+all: the budget numbers are aggregates over many rows, so they are hand-written SQL through the
+raw-SQL repository, which supplies the caller and leaves the budget to the service.
 
 ## Endpoints
 
@@ -31,6 +34,12 @@ way through onboarding would meet a 500 for an ordinary state.
   Changing the language on its own has no endpoint yet.
 - `GET /budgets` returns the caller's budgets, oldest first, with the active one marked. A
   caller who has not created one yet gets an empty list rather than an error.
+- `GET /budget-view?month=YYYY-MM` returns one month of the categories screen: the groups and
+  categories of the active budget with what each holds this month, plus the money that has no
+  job yet. Nothing in it is stored; every number is computed from transactions and assignments
+  in one statement. The month is required, because a default would make the answer depend on a
+  clock rather than on what the user is looking at. A category or a group hidden later than the
+  month asked for is still listed in it, and a hidden one counts in the totals regardless.
 - `POST /budgets` creates a budget and, when asked for, the starter groups and categories. One
   transaction covers all of it, the caller's interface language included: the category names
   are written in that language, and a second request to store it would leave a window where
@@ -81,10 +90,14 @@ schema another. `nonNegative` on the decorator moves the published pattern and t
 together, so an amount that may not go below zero states that bound once;
 `test/money-boundary.spec.ts` is what proves both halves move.
 
-**A currency and a time zone are declared the same way**, with
-[`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts) and
-[`@ApiTimeZoneProperty()`](src/validation/timezone.decorator.ts). Each publishes the field and
-refuses a value the app cannot use, in one decorator, for the reason above. What a currency
+**A currency, a time zone and a calendar month are declared the same way**, with
+[`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts),
+[`@ApiTimeZoneProperty()`](src/validation/timezone.decorator.ts) and
+[`@ApiCalendarMonthProperty()`](src/validation/month.decorator.ts). Each publishes the field and
+refuses a value the app cannot use, in one decorator, for the reason above. The month lands on
+a `@Query()` DTO as readily as on a body, and the same global pipe validates both. The range it
+takes is narrower than what a month can be, and
+[`@rondo/types`](../../packages/types/README.md) owns both the range and the reason. What a currency
 publishes is the **shape** of a code and not the list of them: the codes come from the
 runtime's own currency data, so publishing them would let a runtime upgrade rewrite the
 committed contract and fail the gate on a change that touches no currency. The codes are owned
@@ -239,6 +252,9 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    [`DatabaseProbe`](src/raw-sql/database-probe.ts) holds the one deliberately unscoped query,
    the healthcheck's `SELECT 1`. Everywhere else the lint rule
    (`@rondo/config/eslint/prisma-raw`) fails the gate, and there are no inline exemptions.
+   The scope it hands out carries the caller and nothing else, so an aggregate over a model a
+   budget owns adds the budget itself; how one is written is
+   [`aggregate-query`](../../.claude/skills/aggregate-query/SKILL.md).
 
 5. **The single write point.** A write to a guarded model is refused unless it is inside
    [`MutationService.run`](src/mutations/mutation.service.ts), which puts the whole user

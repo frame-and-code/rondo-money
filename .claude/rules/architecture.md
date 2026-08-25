@@ -87,10 +87,11 @@ itself is published with no response shape at all, and the generated client type
   the published pattern and the pipe's together; stating the bound in only one of them would
   promise a field the other refuses.
 - **A value the app must recognise, and not merely parse, gets one decorator that does both.**
-  A currency is [`@ApiCurrencyProperty()`](../../apps/api/src/validation/currency.decorator.ts)
-  and a zone is [`@ApiTimeZoneProperty()`](../../apps/api/src/validation/timezone.decorator.ts),
+  A currency is [`@ApiCurrencyProperty()`](../../apps/api/src/validation/currency.decorator.ts),
+  a zone is [`@ApiTimeZoneProperty()`](../../apps/api/src/validation/timezone.decorator.ts) and
+  a month is [`@ApiCalendarMonthProperty()`](../../apps/api/src/validation/month.decorator.ts),
   each publishing the field and refusing an unusable value together, for the reason money's
-  does. What a currency publishes is the shape of a code and never the list of them: the codes
+  does. A query parameter is a DTO class like any other, so it gets the same treatment. What a currency publishes is the shape of a code and never the list of them: the codes
   come from the runtime's own data, so an enum in the schema would let a runtime upgrade
   rewrite the committed contract and fail the gate on a change that touches no currency.
   [`create-budget.dto.ts`](../../apps/api/src/budgets/create-budget.dto.ts) is a request DTO

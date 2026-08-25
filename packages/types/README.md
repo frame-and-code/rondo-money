@@ -44,11 +44,22 @@ Nothing here reads the host's zone, and `new Date()` outside this module is how 
 transaction lands in the wrong month for anyone east or west of the server.
 
 The month bucket has the same pair of directions. `parseCalendarMonth` refuses anything that
-is not a real `YYYY-MM`, so `2026-00` and `2026-13` throw rather than becoming a month nobody
-wrote. `toDbMonth` writes the first day of that month, which is the only shape the assignment
+is not a real `YYYY-MM`, so `2026-00`, `2026-13` and a year below a thousand throw rather than
+becoming a month nobody wrote. That floor is not cosmetic: a three-digit year is rendered
+without its leading zero, and every instant computed from one comes back invalid. `toDbMonth` writes the first day of that month, which is the only shape the assignment
 column stores, and `calendarMonthOf` reads it back. That one refuses a value carrying a time
 and a day that is not the first, for the reason `calendarDateOf` refuses a time: rounding
-either would name a month the writer never chose.
+either would name a month the writer never chose. `nextCalendarMonth` steps to the following
+month, across the turn of the year included. `CALENDAR_MONTH_PATTERN` is what an API publishes
+and its pipe enforces, and it is **narrower** than what the parser takes: `1900-01` through
+`2999-12`. Every month in that range has a neighbouring month the helpers below can still
+bound, so an endpoint cannot accept a value that throws two calls later.
+
+`monthStartInstant` is the one direction that turns a month into a **moment**: the instant that
+month begins in a given zone, which is what a comparison against a timestamp column needs. Use
+it for a timestamp and never for a `date` column, where the plain calendar date is the right
+bound and a moment shifts rows a day either way. A day whose local midnight does not exist,
+because the clock jumped over it, answers with the first instant that day does have.
 
 A date that came **out of the database** takes the other pair. `calendarDateOf` reads the day
 a `date` column stores and `toDbDate` writes one back; neither takes a zone, because a stored

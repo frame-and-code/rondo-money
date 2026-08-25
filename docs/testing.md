@@ -5,11 +5,11 @@ the feature**. A feature without tests doesn't count as done (no test debt accru
 
 ## Levels
 
-| Level       | What it checks                             | Runner              | Where it lives                                                                 | Naming                  |
-| ----------- | ------------------------------------------ | ------------------- | ------------------------------------------------------------------------------ | ----------------------- |
-| Unit        | Domain logic, components, no DB or network | Jest (+ fast-check) | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api` | see Naming, below       |
-| Integration | API ↔ Postgres (from F0.3)                 | Jest + supertest    | `apps/api/test`                                                                | `*.integration.spec.ts` |
-| E2E         | Browser → web → api → Postgres             | Playwright          | `apps/web/e2e`                                                                 | `*.spec.ts`             |
+| Level       | What it checks                             | Runner                                                                  | Where it lives                                                                 | Naming                  |
+| ----------- | ------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------- |
+| Unit        | Domain logic, components, no DB or network | Jest (+ fast-check)                                                     | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api` | see Naming, below       |
+| Integration | API ↔ Postgres (from F0.3)                 | Jest + supertest, fast-check where a claim holds over a space of inputs | `apps/api/test`                                                                | `*.integration.spec.ts` |
+| E2E         | Browser → web → api → Postgres             | Playwright                                                              | `apps/web/e2e`                                                                 | `*.spec.ts`             |
 
 Plus one that is not a level of the app at all: **the agent guard hooks and `check-docs.mjs`**
 ([`.claude/hooks/hooks.test.sh`](../.claude/hooks/hooks.test.sh), `pnpm test:hooks`, a step
@@ -203,7 +203,9 @@ implements. The routing below is what it picks from, and what you pick from by h
    where it lives (usually `packages/types/test/*.spec.ts`). Reach for **fast-check** when
    the claim holds over a whole space of inputs, such as an invariant or a round-trip law.
    Example: [`packages/types/test/money.spec.ts`](../packages/types/test/money.spec.ts).
-   Invariant 5.5 (`RTA + Σ Available = Σ Balance`) is checked exactly this way from Phase 4.
+   Invariant 5.5 (`RTA + Σ Available = Σ Balance`) is property-based in the same way, but it
+   lives at the integration level, because the aggregates it compares are computed in SQL:
+   [`apps/api/test/budget-invariant.integration.spec.ts`](../apps/api/test/budget-invariant.integration.spec.ts).
    It is **not** the default for every spec: a named set of cases (an endpoint's rejection
    reasons, a two-branch config lookup, the casings of a header) is covered by enumerating
    them. Generating over that space proves the standard library works, and buys it with a

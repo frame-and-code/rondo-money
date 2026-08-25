@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, healthControllerCheck, meControllerIdentify, type Options, userSettingsControllerRead } from '../sdk.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
+import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, healthControllerCheck, meControllerIdentify, type Options, userSettingsControllerRead } from '../sdk.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -176,3 +176,23 @@ export const accountsControllerCreateMutation = (options?: Partial<Options<Accou
     };
     return mutationOptions;
 };
+
+export const budgetViewControllerReadQueryKey = (options: Options<BudgetViewControllerReadData>) => createQueryKey('budgetViewControllerRead', options);
+
+/**
+ * One month of the budget screen
+ *
+ * The groups and categories of the active budget with what each holds this month, plus the money that has no job yet. Nothing here is stored: every number is computed from transactions and assignments when it is asked for.
+ */
+export const budgetViewControllerReadOptions = (options: Options<BudgetViewControllerReadData>) => queryOptions<BudgetViewControllerReadResponse, BudgetViewControllerReadError, BudgetViewControllerReadResponse, ReturnType<typeof budgetViewControllerReadQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await budgetViewControllerRead({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: budgetViewControllerReadQueryKey(options)
+});
