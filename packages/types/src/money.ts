@@ -21,6 +21,10 @@ export const MONEY_PATTERN = /^(0|-?[1-9]\d*)$/;
 /// schema and its pipe state the bound once.
 export const MONEY_NON_NEGATIVE_PATTERN = /^(0|[1-9]\d*)$/;
 
+/// The same canonical form above zero. An amount that moves money, where zero would write a
+/// row and change nothing, is published and validated with this one.
+export const MONEY_POSITIVE_PATTERN = /^[1-9]\d*$/;
+
 export function parseMoney(value: string): Money {
   if (!MONEY_PATTERN.test(value)) {
     throw new TypeError(`Invalid money string: ${JSON.stringify(value)}`);

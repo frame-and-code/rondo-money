@@ -18,6 +18,8 @@ way through onboarding would meet a 500 for an ordinary state.
 [`src/budget-view`](src/budget-view) is the third shape, a read the extension cannot express at
 all: the budget numbers are aggregates over many rows, so they are hand-written SQL through the
 raw-SQL repository, which supplies the caller and leaves the budget to the service.
+[`src/moves`](src/moves) is a write and nothing else, and it is the only code that may **write**
+the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
 
 ## Endpoints
 
@@ -56,6 +58,16 @@ raw-SQL repository, which supplies the caller and leaves the budget to the servi
   ever. A caller with no active budget gets a 400 from both of these rather than a 500, in the
   shape [`BadRequestResponse`](src/openapi/bad-request.response.ts) publishes: it covers the
   pipe's list of field failures and a handler's single sentence alike.
+- `POST /moves` moves an amount out of one envelope and into another for one month, where Ready
+  to Assign is an envelope too. Assigning money is this operation with the pool as the source,
+  so nothing else in the contract sets what a category holds. A side names a category or the
+  pool, and the category side is the only one that writes: the pool is derived from every
+  assignment, so it moves on its own. The refusals are: an amount that is not above zero, two
+  sides naming one envelope, a category this budget does not hold, a hidden category, and a
+  caller with no active budget, who gets the same 400 rather than a 500, the way the account
+  endpoints do. What a category currently holds is never read, so a move is never
+  refused for lack of money and a month's assignment goes negative when last month's leftover
+  is handed back.
 
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
@@ -86,9 +98,10 @@ There is no `@nestjs/swagger` CLI plugin here, so a validation decorator contrib
 the spec on its own; declaring the two separately is how a contract and its guard drift apart.
 The conversion to `bigint` stays explicit, at `serializeMoney` / `parseMoney` in the service,
 and never a global interceptor, which would make the code say one thing and the published
-schema another. `nonNegative` on the decorator moves the published pattern and the pipe's
-together, so an amount that may not go below zero states that bound once;
-`test/money-boundary.spec.ts` is what proves both halves move.
+schema another. The decorator's `sign` option moves the published pattern and the pipe's
+together, so an amount that may not go below zero (`nonNegative`) or one that would move
+nothing at zero (`positive`) states that bound once; `test/money-boundary.spec.ts` is what
+proves both halves move.
 
 **A currency, a time zone and a calendar month are declared the same way**, with
 [`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts),
@@ -250,8 +263,8 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    [`ScopedRawRepository`](src/raw-sql/scoped-raw.repository.ts) hands the statement builder a
    scope taken from the request context (no context → it throws before any SQL is sent), and
    [`DatabaseProbe`](src/raw-sql/database-probe.ts) holds the one deliberately unscoped query,
-   the healthcheck's `SELECT 1`. Everywhere else the lint rule
-   (`@rondo/config/eslint/prisma-raw`) fails the gate, and there are no inline exemptions.
+   the healthcheck's `SELECT 1`. Everywhere else the restriction `prisma-raw`, composed into
+   `@rondo/config/eslint/tenant-isolation`, fails the gate, and there are no inline exemptions.
    The scope it hands out carries the caller and nothing else, so an aggregate over a model a
    budget owns adds the budget itself; how one is written is
    [`aggregate-query`](../../.claude/skills/aggregate-query/SKILL.md).

@@ -98,8 +98,9 @@ polish:
   built beside the module it serves, as a function returning `Prisma.Sql`
   ([`aggregate-query`](../skills/aggregate-query/SKILL.md)). `ScopedRawRepository` takes the scope
   from the request context and refuses without one; `DatabaseProbe` holds the single
-  deliberately unscoped statement (the healthcheck's `SELECT 1`). Everywhere else the lint rule
-  `@rondo/config/eslint/prisma-raw` fails CI. There are **no** inline exemptions. An
+  deliberately unscoped statement (the healthcheck's `SELECT 1`). Everywhere else the
+  restriction `prisma-raw`, composed into `@rondo/config/eslint/tenant-isolation`, fails CI.
+  There are **no** inline exemptions. An
   `eslint-disable` here is the thing the rule exists to prevent.
 - Cross-tenant tests ("user B sees nothing of user A's") are part of the DoD of every phase
   that adds domain tables, raw aggregates included. Pattern to copy:

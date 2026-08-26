@@ -83,9 +83,11 @@ itself is published with no response shape at all, and the generated client type
   would publish a field the client may omit while the pipe answers 400. The conversion to
   `bigint` is explicit, at `serializeMoney` / `parseMoney` in the service, and **never** a
   global interceptor, which would leave the code and the published schema saying different
-  things. An amount that may not go below zero passes `nonNegative`, and that one word moves
-  the published pattern and the pipe's together; stating the bound in only one of them would
-  promise a field the other refuses.
+  things. The bound an amount lives under is one option, `sign`, reading `nonNegative` for one
+  that may not go below zero and `positive` for one that would do nothing at zero, and that one
+  word moves the published pattern and the pipe's together; stating the bound in only one of
+  them would promise a field the other refuses, and a flag per bound would let a field ask for
+  two and get whichever was tested first.
 - **A value the app must recognise, and not merely parse, gets one decorator that does both.**
   A currency is [`@ApiCurrencyProperty()`](../../apps/api/src/validation/currency.decorator.ts),
   a zone is [`@ApiTimeZoneProperty()`](../../apps/api/src/validation/timezone.decorator.ts) and
@@ -102,7 +104,12 @@ itself is published with no response shape at all, and the generated client type
   a 400 rather than a silent drop. Implicit conversion is off on purpose. It would coerce a
   JSON number into the string a money field expects, and by then the precision is already
   gone. The pipe skips a `@Body()` typed as an interface, in silence, exactly as an
-  interface response publishes no schema. See [security](security.md).
+  interface response publishes no schema. See [security](security.md). It also skips **inside**
+  a nested object it was not told to validate, so a field declared as a class of its own carries
+  `@ValidateNested()` and `@Type(() => That)`. Without the pair, an undeclared field one level
+  down reaches the handler while the top level refuses its own, and the published schema says
+  the nested object takes anything. `test/openapi.spec.ts` walks the request schemas down and
+  fails the gate on one left open.
 - `pnpm openapi` rewrites [`apps/api/openapi.json`](../../apps/api/openapi.json) and
   `pnpm --filter @rondo/api-client codegen` the client. Both artefacts are committed, so a
   contract change is a reviewable diff; turbo runs them in order, so neither is a step anyone
@@ -141,6 +148,15 @@ Which models it owns is a registry, `MUTATION_GUARDED_MODELS` in
 is either in it or in the exemption list beside it. Being under the mutator is not a claim that
 an operation is undoable. The undo scope is ADR-006's and lives in the browser; a rename and an
 archive go through the same point for atomicity and nothing else.
+
+**`Assignment` has exactly one writer**, [`apps/api/src/moves`](../../apps/api/src/moves), and
+that is a narrower claim than the mutator's. Assigning money and moving it are one operation,
+because ready to assign is an envelope that is derived rather than stored: writing an amount
+into a category **is** a move out of the pool. So the inverse of a move is the same move with
+its sides swapped, which is what the undo stack in the browser stands on, and a second writer
+would be a second inverse for it to disagree with. Not left to memory: the restriction
+`assignment-writes`, composed into `@rondo/config/eslint/tenant-isolation`, fails the gate on a
+write to that model anywhere but there and the tests.
 
 A mutation opened inside another one is refused. Postgres has no nested interactive
 transaction, so the inner one would commit on its own and claim a second key. Compose the whole

@@ -5,6 +5,82 @@ import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
 import { HTTP_METHODS, SESSION_TOKEN_SCHEME } from '@/openapi/document';
 import { generateOpenApiDocument } from '@/openapi/generate';
 
+type Operation = NonNullable<PathItemObject['post']>;
+
+type Schema = NonNullable<NonNullable<OpenAPIObject['components']>['schemas']>[string];
+
+/// Reads through `allOf`, which is how a `$ref` arrives once the property carries a description
+/// of its own: the generator cannot put both on one node, so it wraps the reference. A reader
+/// that only looks for a bare `$ref` sees such a property as carrying no schema at all.
+const referencedName = (value: unknown): string | undefined => {
+  if (typeof value !== 'object' || value === null) {
+    return undefined;
+  }
+
+  if ('$ref' in value && typeof value.$ref === 'string') {
+    return value.$ref.split('/').pop();
+  }
+
+  if ('allOf' in value && Array.isArray(value.allOf)) {
+    for (const member of value.allOf) {
+      const name = referencedName(member);
+      if (name !== undefined) {
+        return name;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const schemaNamed = (document: OpenAPIObject, name: string | undefined): Schema | undefined =>
+  name === undefined ? undefined : document.components?.schemas?.[name];
+
+const requestSchemaOf = (document: OpenAPIObject, operation?: Operation): Schema | undefined => {
+  const body = operation?.requestBody;
+  const content = body && 'content' in body ? body.content['application/json']?.schema : undefined;
+
+  return schemaNamed(document, referencedName(content));
+};
+
+const answersWith = (response: unknown, name: string): boolean => {
+  const schema =
+    response && typeof response === 'object' && 'content' in response
+      ? ((response.content as Record<string, { schema?: { $ref?: string } }> | undefined)?.[
+          'application/json'
+        ]?.schema?.$ref ?? '')
+      : '';
+
+  return schema.endsWith(`/${name}`);
+};
+
+/// Every named schema a request body reaches through its own properties, however deep. The
+/// visited set is what stops a schema that refers back to itself from looping forever.
+const nestedSchemaNames = (
+  document: OpenAPIObject,
+  schema: Schema | undefined,
+  visited: Set<string> = new Set(),
+): Set<string> => {
+  if (schema === undefined || !('properties' in schema)) {
+    return visited;
+  }
+
+  for (const property of Object.values(schema.properties ?? {})) {
+    const name =
+      referencedName(property) ??
+      (typeof property === 'object' && property !== null && 'items' in property
+        ? referencedName(property.items)
+        : undefined);
+
+    if (name !== undefined && !visited.has(name)) {
+      visited.add(name);
+      nestedSchemaNames(document, schemaNamed(document, name), visited);
+    }
+  }
+
+  return visited;
+};
+
 describe('OpenAPI document', () => {
   let document: OpenAPIObject;
 
@@ -19,6 +95,7 @@ describe('OpenAPI document', () => {
       '/budgets',
       '/health',
       '/me',
+      '/moves',
       '/user-settings',
     ]);
   });
@@ -29,6 +106,8 @@ describe('OpenAPI document', () => {
     expect(document.components?.schemas).toHaveProperty('UserSettingsResponse');
     expect(document.components?.schemas).toHaveProperty('BudgetResponse');
     expect(document.components?.schemas).toHaveProperty('AccountResponse');
+    expect(document.components?.schemas).toHaveProperty('MoveResponse');
+    expect(document.components?.schemas).toHaveProperty('MoveSideResponse');
     expect(document.components?.schemas).toHaveProperty('BadRequestResponse');
     expect(document.paths['/me']?.get?.responses['200']).toBeDefined();
   });
@@ -47,6 +126,32 @@ describe('OpenAPI document', () => {
     });
   });
 
+  it('names the move side enum, so clients get a union type instead of a bare string', () => {
+    expect(document.components?.schemas).toHaveProperty('MoveSideKind');
+    expect(document.components?.schemas?.['MoveSideKind']).toMatchObject({
+      enum: ['CATEGORY', 'READY_TO_ASSIGN'],
+    });
+  });
+
+  it('publishes the conflict wherever an idempotency key can be claimed twice', () => {
+    // Every operation taking a key can answer 409, and an undocumented status collapses that
+    // operation's whole error type to `unknown` in the generated client, exactly as a missing
+    // 400 does. Found by the key rather than by a list, so the next mutation cannot forget.
+    const undocumented = Object.entries(document.paths).flatMap(([path, item]) =>
+      HTTP_METHODS.filter((method) => {
+        const schema = requestSchemaOf(document, item[method]);
+        const takesKey =
+          schema !== undefined &&
+          'properties' in schema &&
+          'idempotencyKey' in (schema.properties ?? {});
+
+        return takesKey && !answersWith(item[method]?.responses['409'], 'ConflictResponse');
+      }).map((method) => `${method.toUpperCase()} ${path}`),
+    );
+
+    expect(undocumented).toEqual([]);
+  });
+
   it('publishes a bad request body that covers both the pipe and the domain', () => {
     expect(document.components?.schemas?.['BadRequestResponse']).toMatchObject({
       properties: {
@@ -62,17 +167,6 @@ describe('OpenAPI document', () => {
     // answerable whatever the handler itself does, and an undocumented status collapses that
     // operation's whole error type to `unknown` in the generated client. A query counts
     // because the DTO behind it is refused before the handler runs, exactly like a body.
-    const typed = (response: unknown): boolean => {
-      const schema =
-        response && typeof response === 'object' && 'content' in response
-          ? ((response.content as Record<string, { schema?: { $ref?: string } }> | undefined)?.[
-              'application/json'
-            ]?.schema?.$ref ?? '')
-          : '';
-
-      return schema.endsWith('/BadRequestResponse');
-    };
-
     const validated = (method: (typeof HTTP_METHODS)[number], item: PathItemObject): boolean =>
       Boolean(item[method]?.requestBody) ||
       (item[method]?.parameters ?? []).some(
@@ -81,7 +175,9 @@ describe('OpenAPI document', () => {
 
     const undocumented = Object.entries(document.paths).flatMap(([path, item]) =>
       HTTP_METHODS.filter(
-        (method) => validated(method, item) && !typed(item[method]?.responses['400']),
+        (method) =>
+          validated(method, item) &&
+          !answersWith(item[method]?.responses['400'], 'BadRequestResponse'),
       ).map((method) => `${method.toUpperCase()} ${path}`),
     );
 
@@ -96,10 +192,7 @@ describe('OpenAPI document', () => {
         const body = item[method]?.requestBody;
         if (!body) return false;
 
-        const reference = 'content' in body ? body.content['application/json']?.schema : undefined;
-        const name = reference && '$ref' in reference ? reference.$ref.split('/').pop() : undefined;
-
-        const schema = name === undefined ? undefined : document.components?.schemas?.[name];
+        const schema = requestSchemaOf(document, item[method]);
 
         return (
           schema === undefined || !('properties' in schema) || schema.additionalProperties !== false
@@ -111,6 +204,51 @@ describe('OpenAPI document', () => {
     expect(document.components?.schemas?.['AccountResponse']).not.toHaveProperty(
       'additionalProperties',
     );
+  });
+
+  it('refuses an undeclared field inside a nested body object too', () => {
+    // The sweep above stops at the body's own schema. A nested object publishing nothing is
+    // the same hole one level down, and the pipe only descends into one that is declared for
+    // it, so an open nested schema is also the sign that @ValidateNested is missing.
+    const open = Object.entries(document.paths).flatMap(([path, item]) =>
+      HTTP_METHODS.flatMap((method) =>
+        [...nestedSchemaNames(document, requestSchemaOf(document, item[method]))]
+          // Only the object schemas: a named enum carries no properties, so there is nothing
+          // for an undeclared field to arrive in and nothing to close.
+          .filter((name) => {
+            const schema = schemaNamed(document, name);
+
+            return (
+              schema !== undefined &&
+              'properties' in schema &&
+              schema.additionalProperties !== false
+            );
+          })
+          .map((name) => `${method.toUpperCase()} ${path} > ${name}`),
+      ),
+    );
+
+    expect(open).toEqual([]);
+  });
+
+  it('closes every request DTO, whatever shape the body referred to it through', () => {
+    // Reached by name rather than by following references, because the sweep above resolves
+    // them the way the generator does and is therefore blind wherever the generator is. A
+    // request DTO is closed however it was referred to, and no response class is named this
+    // way, so the naming convention is the whole selector.
+    const named = Object.entries(document.components?.schemas ?? {}).filter(([name]) =>
+      name.endsWith('Dto'),
+    );
+
+    // Asserted before the closure is, because an empty list satisfies the check below just as
+    // well as a closed one, and a convention that moved would take this guard with it silently.
+    expect(named.length).toBeGreaterThan(0);
+
+    const open = named
+      .filter(([, schema]) => 'properties' in schema && schema.additionalProperties !== false)
+      .map(([name]) => name);
+
+    expect(open).toEqual([]);
   });
 
   it('describes each parameter once, whatever the case it is written in', () => {

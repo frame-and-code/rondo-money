@@ -4,6 +4,7 @@ import {
   MONEY_MIN,
   MONEY_NON_NEGATIVE_PATTERN,
   MONEY_PATTERN,
+  MONEY_POSITIVE_PATTERN,
   isStorableMoney,
   parseDecimalString,
   parseMoney,
@@ -267,5 +268,41 @@ describe('MONEY_NON_NEGATIVE_PATTERN', () => {
 
   it('carries no flags, so repeated tests cannot go stateful on lastIndex', () => {
     expect(MONEY_NON_NEGATIVE_PATTERN.flags).toBe('');
+  });
+});
+
+describe('MONEY_POSITIVE_PATTERN', () => {
+  it('accepts any amount a move can carry', () => {
+    expect(MONEY_POSITIVE_PATTERN.test('1')).toBe(true);
+    expect(MONEY_POSITIVE_PATTERN.test('1250')).toBe(true);
+    expect(MONEY_POSITIVE_PATTERN.test(serializeMoney(MONEY_MAX))).toBe(true);
+  });
+
+  it('rejects zero, which moves nothing and would still write a row', () => {
+    expect(MONEY_POSITIVE_PATTERN.test('0')).toBe(false);
+    expect(MONEY_POSITIVE_PATTERN.test('-0')).toBe(false);
+  });
+
+  it('rejects a negative amount, which is the same move with its sides swapped', () => {
+    expect(MONEY_POSITIVE_PATTERN.test('-1')).toBe(false);
+    expect(MONEY_POSITIVE_PATTERN.test(serializeMoney(MONEY_MIN))).toBe(false);
+  });
+
+  it('rejects the near-misses MONEY_PATTERN also rejects', () => {
+    for (const input of ['', ' 1', '1 ', '01', '+1', '1.0', '1e3', 'abc']) {
+      expect(MONEY_POSITIVE_PATTERN.test(input)).toBe(false);
+    }
+  });
+
+  it('accepts exactly the amounts above zero that MONEY_PATTERN accepts', () => {
+    fc.assert(
+      fc.property(fc.bigInt(), (amount) => {
+        expect(MONEY_POSITIVE_PATTERN.test(serializeMoney(amount))).toBe(amount > 0n);
+      }),
+    );
+  });
+
+  it('carries no flags, so repeated tests cannot go stateful on lastIndex', () => {
+    expect(MONEY_POSITIVE_PATTERN.flags).toBe('');
   });
 });

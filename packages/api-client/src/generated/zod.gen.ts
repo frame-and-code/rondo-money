@@ -106,6 +106,36 @@ export const zBudgetViewResponse = z.object({
 });
 
 /**
+ * Which envelope this side is. Ready to assign is stored nowhere: it is derived from every assignment, so a side naming it writes no row and moves on its own.
+ */
+export const zMoveSideKind = z.enum(['CATEGORY', 'READY_TO_ASSIGN']);
+
+export const zMoveSideDto = z.object({
+    kind: zMoveSideKind,
+    categoryId: z.uuid().optional()
+});
+
+export const zCreateMoveDto = z.object({
+    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    from: zMoveSideDto,
+    to: zMoveSideDto,
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zMoveSideResponse = z.object({
+    kind: zMoveSideKind,
+    categoryId: z.uuid().optional()
+});
+
+export const zMoveResponse = z.object({
+    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    from: zMoveSideResponse,
+    to: zMoveSideResponse
+});
+
+/**
  * The database answered.
  */
 export const zHealthControllerCheckResponse = zHealthResponse;
@@ -156,3 +186,10 @@ export const zBudgetViewControllerReadQuery = z.object({
  * The month as it stands now.
  */
 export const zBudgetViewControllerReadResponse = zBudgetViewResponse;
+
+export const zMovesControllerMoveBody = zCreateMoveDto;
+
+/**
+ * The move that was applied.
+ */
+export const zMovesControllerMoveResponse = zMoveResponse;

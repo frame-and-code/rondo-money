@@ -370,6 +370,69 @@
           "BudgetView"
         ]
       }
+    },
+    "/moves": {
+      "post": {
+        "description": "Moves an amount out of one envelope and into another for one month, where ready to assign is an envelope too. Assigning money is this same operation with ready to assign as the source, so there is no separate way to set what a category holds.",
+        "operationId": "MovesController_move",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMoveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The move that was applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or a side names an envelope the caller cannot move.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Move money between two envelopes",
+        "tags": [
+          "Moves"
+        ]
+      }
     }
   },
   "info": {
@@ -802,6 +865,136 @@
           "month",
           "readyToAssign",
           "groups"
+        ]
+      },
+      "MoveSideKind": {
+        "type": "string",
+        "enum": [
+          "CATEGORY",
+          "READY_TO_ASSIGN"
+        ],
+        "description": "Which envelope this side is. Ready to assign is stored nowhere: it is derived from every assignment, so a side naming it writes no row and moves on its own."
+      },
+      "MoveSideDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Which envelope this side is. Ready to assign is stored nowhere: it is derived from every assignment, so a side naming it writes no row and moves on its own.",
+            "example": "CATEGORY",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MoveSideKind"
+              }
+            ]
+          },
+          "categoryId": {
+            "type": "string",
+            "description": "Required on a category side, and refused on a ready to assign one.",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "CreateMoveDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month whose envelopes the money moves between. Required: a default here would make the write depend on a clock rather than on what the user is looking at."
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What to move, in minor units. The direction is the two sides, so zero would write a row and change nothing, and a negative amount would be this same move written backwards."
+          },
+          "from": {
+            "description": "The envelope the money leaves.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MoveSideDto"
+              }
+            ]
+          },
+          "to": {
+            "description": "The envelope the money arrives in.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MoveSideDto"
+              }
+            ]
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two moves again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "month",
+          "amount",
+          "from",
+          "to",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "MoveSideResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "example": "CATEGORY",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MoveSideKind"
+              }
+            ]
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Carried by a category side, and absent from a ready to assign one."
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "MoveResponse": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month whose envelopes the money moved between."
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What moved, in minor units."
+          },
+          "from": {
+            "$ref": "#/components/schemas/MoveSideResponse"
+          },
+          "to": {
+            "$ref": "#/components/schemas/MoveSideResponse"
+          }
+        },
+        "required": [
+          "month",
+          "amount",
+          "from",
+          "to"
         ]
       }
     }

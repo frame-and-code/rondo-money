@@ -27,7 +27,7 @@ export class CreateAccountDto {
   type!: AccountType;
 
   @ApiMoneyProperty({
-    nonNegative: true,
+    sign: 'nonNegative',
     description:
       'What the account holds right now, in minor units of the budget currency. It is stored ' +
       'as an income transaction dated today, never as a column on the account, so it stays ' +

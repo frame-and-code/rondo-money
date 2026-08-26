@@ -4,7 +4,7 @@ import { Body, Controller, type INestApplication, Post } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
 import { ApiOkResponse, SwaggerModule, type OpenAPIObject } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
-import { parseMoney, serializeMoney } from '@rondo/types';
+import { MONEY_MAX, parseMoney, serializeMoney } from '@rondo/types';
 import request from 'supertest';
 
 import { AppModule } from '@/app.module';
@@ -22,7 +22,12 @@ class PaymentResponse {
 }
 
 class TopUpBody {
-  @ApiMoneyProperty({ nonNegative: true, description: 'The amount to add, in minor units.' })
+  @ApiMoneyProperty({ sign: 'nonNegative', description: 'The amount to add, in minor units.' })
+  amount!: string;
+}
+
+class TransferBody {
+  @ApiMoneyProperty({ sign: 'positive', description: 'The amount to move, in minor units.' })
   amount!: string;
 }
 
@@ -44,12 +49,21 @@ class TopUpsController {
   }
 }
 
+@Controller('transfers')
+class TransfersController {
+  @Post()
+  @ApiOkResponse({ type: PaymentResponse })
+  record(@Body() body: TransferBody): PaymentResponse {
+    return { amount: body.amount };
+  }
+}
+
 describe('money at the API boundary', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [PaymentsController, TopUpsController],
+      controllers: [PaymentsController, TopUpsController, TransfersController],
       providers: [{ provide: APP_PIPE, useValue: VALIDATION_PIPE }],
     }).compile();
 
@@ -157,6 +171,38 @@ describe('money at the API boundary', () => {
       }
     });
 
+    it('rejects zero on a field declared positive, which would write a row and move nothing', async () => {
+      await request(app.getHttpServer() as Server)
+        .post('/transfers')
+        .send({ amount: '0' })
+        .expect(400);
+    });
+
+    it('rejects a negative amount on that field, which is the same move reversed', async () => {
+      await request(app.getHttpServer() as Server)
+        .post('/transfers')
+        .send({ amount: '-100' })
+        .expect(400);
+    });
+
+    it('takes any amount above zero on that field, to both ends of the range', async () => {
+      for (const amount of ['1', '4500', serializeMoney(MONEY_MAX)]) {
+        await request(app.getHttpServer() as Server)
+          .post('/transfers')
+          .send({ amount })
+          .expect(201, { amount });
+      }
+    });
+
+    it('says a positive field cannot be zero, so the message states the bound it enforces', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .post('/transfers')
+        .send({ amount: '0' })
+        .expect(400);
+
+      expect(JSON.stringify(response.body)).toContain('above zero');
+    });
+
     it('rejects a field the DTO never declared', async () => {
       await request(app.getHttpServer() as Server)
         .post('/payments')
@@ -211,6 +257,12 @@ describe('money at the API boundary', () => {
       });
       expect(document.components?.schemas?.['PaymentBody']).toMatchObject({
         properties: { amount: { pattern: '^(0|-?[1-9]\\d*)$' } },
+      });
+    });
+
+    it('publishes the positive pattern for a field declared positive, and an example above zero', () => {
+      expect(document.components?.schemas?.['TransferBody']).toMatchObject({
+        properties: { amount: { pattern: '^[1-9]\\d*$', example: '4500' } },
       });
     });
 

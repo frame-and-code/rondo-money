@@ -9,6 +9,10 @@ interface RestrictedPattern {
   group?: string[];
 }
 
+interface RestrictedSelector {
+  selector?: string;
+}
+
 const workspace = join(__dirname, '..');
 const eslintBinary = join(
   dirname(createRequire(__filename).resolve('eslint/package.json')),
@@ -52,6 +56,61 @@ function restrictedIn(file: string): string[] {
     ? patterns.flatMap((pattern: RestrictedPattern) => pattern.group ?? []).sort()
     : [];
 }
+
+/// The same reading for `no-restricted-syntax`, whose entries are selectors rather than
+/// import patterns, and which carries the raw-SQL and the assignment-write guards together.
+function restrictedSyntaxIn(file: string): string[] {
+  const printed = execFileSync(process.execPath, [eslintBinary, '--print-config', file], {
+    cwd: workspace,
+    encoding: 'utf8',
+  });
+  const config: unknown = JSON.parse(printed);
+
+  if (typeof config !== 'object' || config === null || !('rules' in config)) {
+    throw new Error(`ESLint printed no rules for ${file}`);
+  }
+
+  const { rules } = config;
+  if (typeof rules !== 'object' || rules === null) {
+    throw new Error(`ESLint printed no rules for ${file}`);
+  }
+
+  const rule: unknown = Reflect.get(rules, 'no-restricted-syntax');
+  if (!Array.isArray(rule) || (rule[0] !== 'error' && rule[0] !== 2)) {
+    return [];
+  }
+
+  return rule
+    .slice(1)
+    .map((entry: RestrictedSelector) => entry.selector ?? '')
+    .sort();
+}
+
+const RAW_SQL = 'MemberExpression[property.name=/^\\$(query|execute)Raw(Unsafe)?$/]';
+
+const ASSIGNMENT_WRITE =
+  "MemberExpression[object.property.name='assignment'][property.name=/^(create|createMany|" +
+  'createManyAndReturn|update|updateMany|updateManyAndReturn|upsert|delete|deleteMany)$/]';
+
+describe('the syntax restrictions that keep a second writer out of the assignment table', () => {
+  it('refuses both raw SQL and an assignment write in ordinary domain code', () => {
+    expect(restrictedSyntaxIn('src/budgets/budgets.service.ts')).toEqual(
+      [RAW_SQL, ASSIGNMENT_WRITE].sort(),
+    );
+  });
+
+  it('lets the move endpoint write an assignment, and nothing else about it', () => {
+    expect(restrictedSyntaxIn('src/moves/moves.service.ts')).toEqual([RAW_SQL]);
+  });
+
+  it('still refuses an assignment write inside the raw-SQL repository', () => {
+    expect(restrictedSyntaxIn('src/raw-sql/scoped-raw.repository.ts')).toEqual([ASSIGNMENT_WRITE]);
+  });
+
+  it('leaves fixtures free to write one, since a test builds the state it reads', () => {
+    expect(restrictedSyntaxIn('test/moves.integration.spec.ts')).toEqual([RAW_SQL]);
+  });
+});
 
 describe('the import restrictions that keep the wrong client out of domain code', () => {
   // Both restrictions set one rule, and flat config replaces a rule's options rather than

@@ -84,6 +84,31 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
   return document;
 }
 
+/// Reads through `allOf`, which is how a `$ref` arrives once the property carries a description
+/// of its own: a JSON Schema node holds either a reference or its own keywords, so the
+/// generator wraps the reference rather than dropping the description. Looking for a bare
+/// `$ref` alone leaves every described nested object unclosed.
+const referencedName = (value: unknown): string | undefined => {
+  if (typeof value !== 'object' || value === null) {
+    return undefined;
+  }
+
+  if ('$ref' in value && typeof value.$ref === 'string') {
+    return value.$ref.split('/').pop();
+  }
+
+  if ('allOf' in value && Array.isArray(value.allOf)) {
+    for (const member of value.allOf) {
+      const name = referencedName(member);
+      if (name !== undefined) {
+        return name;
+      }
+    }
+  }
+
+  return undefined;
+};
+
 /// The global pipe whitelists, so a field a DTO never declared is a 400 rather than something
 /// quietly dropped. Said in the description and not in the schemas, a generated client would
 /// happily build a body the server refuses, so every schema a request body names is closed
@@ -91,18 +116,38 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
 /// know should keep working.
 function closeRequestBodies(document: OpenAPIObject): OpenAPIObject {
   const schemas = document.components?.schemas ?? {};
+  const closed = new Set<string>();
+
+  /// Follows the body's own properties down, because the pipe whitelists a nested object it
+  /// was told to validate just as it whitelists the body. Closing only the outer schema would
+  /// publish a nested object as open while the server refuses a field inside it.
+  const close = (name: string | undefined): void => {
+    if (name === undefined || closed.has(name)) {
+      return;
+    }
+    closed.add(name);
+
+    const schema = schemas[name];
+    if (!schema || !('properties' in schema)) {
+      return;
+    }
+    schema.additionalProperties = false;
+
+    for (const property of Object.values(schema.properties ?? {})) {
+      close(referencedName(property));
+      if (typeof property === 'object' && property !== null && 'items' in property) {
+        close(referencedName(property.items));
+      }
+    }
+  };
 
   for (const pathItem of Object.values(document.paths)) {
     for (const method of HTTP_METHODS) {
       const body = pathItem[method]?.requestBody;
       const reference =
         body && 'content' in body ? body.content['application/json']?.schema : undefined;
-      const name = reference && '$ref' in reference ? reference.$ref.split('/').pop() : undefined;
-      const schema = name === undefined ? undefined : schemas[name];
 
-      if (schema && 'properties' in schema) {
-        schema.additionalProperties = false;
-      }
+      close(referencedName(reference));
     }
   }
 
