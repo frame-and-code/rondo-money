@@ -116,9 +116,12 @@ describe('/moves (integration)', () => {
       data: { userId, budgetId, groupId, name, sortOrder: 0, ...over },
     });
 
-  /// Money arrives with no category, which is the only thing that fills the pool the moves
-  /// then draw on.
-  const seedIncome = (userId: string, budgetId: string, accountId: string, amount: bigint) =>
+  const seedUncategorisedIncome = (
+    userId: string,
+    budgetId: string,
+    accountId: string,
+    amount: bigint,
+  ) =>
     prisma.transaction.create({
       data: {
         userId,
@@ -133,7 +136,6 @@ describe('/moves (integration)', () => {
   const seedAccount = (userId: string, budgetId: string) =>
     prisma.account.create({ data: { userId, budgetId, name: 'Счёт', type: 'CASH' } });
 
-  /// A budget with money in the pool and two categories, which is what every move below needs.
   const seedBudgetWithMoney = async (suffix: string, income = 100_000n) => {
     const userId = user(suffix);
     const budget = await seedBudget(userId);
@@ -141,7 +143,7 @@ describe('/moves (integration)', () => {
     const group = await seedGroup(userId, budget.id);
     const first = await seedCategory(userId, budget.id, group.id, 'Еда');
     const second = await seedCategory(userId, budget.id, group.id, 'Транспорт');
-    await seedIncome(userId, budget.id, account.id, income);
+    await seedUncategorisedIncome(userId, budget.id, account.id, income);
 
     return { userId, budget, account, first, second };
   };
@@ -562,7 +564,7 @@ describe('/moves (integration)', () => {
       expect(await assignmentsOf(userId)).toHaveLength(0);
     });
 
-    it('refuses a categoryId that is not a uuid at the edge, not in Postgres', async () => {
+    it('names the field when refusing a categoryId that is not a uuid, so the pipe is what refused', async () => {
       const { userId } = await seedBudgetWithMoney('MalformedId');
 
       const response = await move(userId, {
@@ -573,12 +575,10 @@ describe('/moves (integration)', () => {
         idempotencyKey: 'malformed-id',
       }).expect(400);
 
-      // The status alone would also come back from the domain refusal one layer down, so the
-      // field the pipe names is what says which half answered.
       expect(JSON.stringify(response.body)).toContain('categoryId');
     });
 
-    it('takes a category named in upper case, since a uuid column holds one row per value', async () => {
+    it('takes a category named in upper case and echoes back the one name the row has', async () => {
       const { userId, first } = await seedBudgetWithMoney('UpperCaseId');
 
       const response = await move(userId, {
@@ -589,8 +589,6 @@ describe('/moves (integration)', () => {
         idempotencyKey: 'upper-case-id',
       }).expect(201);
 
-      // The echo is what the undo stack swaps and sends back, so it has to name the row the
-      // way the row is named, not the way this caller happened to spell it.
       expect(asRecord(response.body).to).toEqual({ kind: 'CATEGORY', categoryId: first.id });
 
       const rows = await assignmentsOf(userId);
@@ -853,11 +851,9 @@ describe('/moves (integration)', () => {
       expect(rows[0]?.amount).toBe(2_000n);
     });
 
-    it('takes two opposite moves over the same pair at once, without deadlocking', async () => {
+    it('takes two opposite moves over one pair of filled envelopes at once, without deadlocking', async () => {
       const { userId, first, second } = await seedBudgetWithMoney('Opposite');
 
-      // Both rows exist first, so each request updates two existing rows and the order it takes
-      // their locks in is the only thing that differs between the two.
       for (const [index, category] of [first, second].entries()) {
         await move(userId, {
           month: '2026-02',
@@ -868,8 +864,6 @@ describe('/moves (integration)', () => {
         }).expect(201);
       }
 
-      // Undo sends the inverse of a move immediately after it, and two tabs need no undo at
-      // all, so opposite directions arriving together is ordinary rather than contrived.
       for (const round of [0, 1, 2, 3]) {
         const answers = await Promise.all([
           move(userId, {

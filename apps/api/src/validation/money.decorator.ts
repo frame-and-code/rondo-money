@@ -10,8 +10,6 @@ import {
 } from '@rondo/types';
 import { registerDecorator } from 'class-validator';
 
-/// One option rather than a flag per bound. Two booleans would let a field ask for both, and
-/// whichever the code tested first would win in silence.
 type MoneySign = 'signed' | 'nonNegative' | 'positive';
 
 const BOUNDS: Record<MoneySign, { pattern: RegExp; example: string; says: string }> = {

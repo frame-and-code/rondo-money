@@ -49,8 +49,6 @@ describe('moves across tenants', () => {
     await prisma.userSettings.deleteMany({ where: owned });
   };
 
-  /// One budget with one category each, so a side naming the other user's category is the only
-  /// thing that differs between the two callers.
   const seedOwner = async (userId: string, name: string) => {
     const budget = await prisma.budget.create({
       data: {

@@ -18,8 +18,7 @@ const NO_ACTIVE_BUDGET =
   'The caller has no active budget, so there are no envelopes to move money between. Create ' +
   'a budget first.';
 
-/// The category a side names, or null when the side is the pool. Both sides reduce to this,
-/// which is what makes "the same envelope twice" one comparison rather than two.
+/// Null is the pool, which is an envelope, and never an absent side.
 function categoryOf(side: MoveSideDto): string | null {
   if (side.kind !== 'CATEGORY') {
     return null;
@@ -85,6 +84,15 @@ interface CategoryMove {
   delta: Money;
 }
 
+/// Why the order is fixed: the `add-a-mutation` skill.
+function inLockOrder(
+  sides: readonly { categoryId: string | null; delta: Money }[],
+): CategoryMove[] {
+  return sides
+    .flatMap(({ categoryId, delta }) => (categoryId === null ? [] : [{ categoryId, delta }]))
+    .sort((left, right) => (left.categoryId < right.categoryId ? -1 : 1));
+}
+
 @Injectable()
 export class MovesService {
   constructor(
@@ -125,15 +133,10 @@ export class MovesService {
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
 
-        // Sorted by id, so every request takes the two rows' locks in the same order. Left in
-        // the order the caller sent them, two opposite moves over one pair deadlock and
-        // Postgres kills one of them, which undo would meet on its very first use.
-        const moves: CategoryMove[] = [
+        const moves = inLockOrder([
           { categoryId: from, delta: -amount },
           { categoryId: to, delta: amount },
-        ]
-          .flatMap(({ categoryId, delta }) => (categoryId === null ? [] : [{ categoryId, delta }]))
-          .sort((left, right) => (left.categoryId < right.categoryId ? -1 : 1));
+        ]);
 
         await this.refuseUnusableCategories(tx, moves);
 
@@ -161,9 +164,6 @@ export class MovesService {
     );
   }
 
-  /// Read on the mutation's own client, so the answer is the one the write will meet. The
-  /// scoping extension filters by caller and active budget, which is what makes a category
-  /// held elsewhere simply absent rather than refused later by a foreign key.
   private async refuseUnusableCategories(
     tx: MutationClient,
     moves: readonly CategoryMove[],

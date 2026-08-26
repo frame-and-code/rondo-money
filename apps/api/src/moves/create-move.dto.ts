@@ -18,16 +18,9 @@ import { ApiCalendarMonthProperty } from '@/validation/month.decorator';
 const trimmed = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
 
-/// A uuid column holds one row per value however the caller spelled it, and Postgres hands the
-/// value back in lower case. Folded here rather than at any single use, so the lookup, the
-/// comparison of the two sides, the idempotency fingerprint and the echoed answer all speak of
-/// the row by the one name it has.
 const lowercased = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.toLowerCase() : value;
 
-/// One rule rather than two, because what the field must be depends on the field beside it. A
-/// category side names a category; a pool side names none, and one carrying an id anyway
-/// states an intent that reads two ways, so it is refused rather than half-honoured.
 function IsCategoryOfItsKind(): PropertyDecorator {
   return (target, propertyKey): void => {
     registerDecorator({

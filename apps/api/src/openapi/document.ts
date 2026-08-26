@@ -84,10 +84,7 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
   return document;
 }
 
-/// Reads through `allOf`, which is how a `$ref` arrives once the property carries a description
-/// of its own: a JSON Schema node holds either a reference or its own keywords, so the
-/// generator wraps the reference rather than dropping the description. Looking for a bare
-/// `$ref` alone leaves every described nested object unclosed.
+/// A `$ref` arrives wrapped in `allOf` once the property carries a description of its own.
 const referencedName = (value: unknown): string | undefined => {
   if (typeof value !== 'object' || value === null) {
     return undefined;
@@ -118,9 +115,6 @@ function closeRequestBodies(document: OpenAPIObject): OpenAPIObject {
   const schemas = document.components?.schemas ?? {};
   const closed = new Set<string>();
 
-  /// Follows the body's own properties down, because the pipe whitelists a nested object it
-  /// was told to validate just as it whitelists the body. Closing only the outer schema would
-  /// publish a nested object as open while the server refuses a field inside it.
   const close = (name: string | undefined): void => {
     if (name === undefined || closed.has(name)) {
       return;

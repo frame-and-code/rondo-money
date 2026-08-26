@@ -15,14 +15,10 @@ import { RequestContextService } from '@/request-context/request-context.service
 
 import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
-/// Deliberately not prefixed `user_2rondoMoves`: `moves.integration.spec.ts` clears by that
-/// prefix, and a fixture two files share is a failure neither of them explains.
+/// Not prefixed `user_2rondoMoves`: `moves.integration.spec.ts` clears by that prefix.
 const USER_TORN = 'user_2rondoMoveTornAaaa';
 
-/// Counts the assignment writes that reached the wrapper. The first side is let through and
-/// the second is refused, because a move whose first write never ran leaves no rows either and
-/// would satisfy the assertions below without proving anything.
-let seen = 0;
+let assignmentWritesSeen = 0;
 
 describe('POST /moves when the second side fails to write', () => {
   let app: INestApplication;
@@ -49,9 +45,7 @@ describe('POST /moves when the second side fails to write', () => {
     key = createTestSigningKey();
     process.env.CLERK_JWT_KEY = key.publicKeyPem;
 
-    // The whole chain is the real one, transaction and rollback included. Only the second
-    // write to one model is made to fail, because nothing reachable over HTTP can tear a
-    // transaction in half from the outside.
+    // Nothing reachable over HTTP can tear a transaction in half, so one write is failed here.
     const moduleRef: TestingModule = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(MUTATOR_PRISMA)
       .useFactory({
@@ -65,8 +59,10 @@ describe('POST /moves when the second side fails to write', () => {
             query: {
               assignment: {
                 $allOperations({ args, query }) {
-                  seen += 1;
-                  if (seen >= 2) {
+                  assignmentWritesSeen += 1;
+                  const isTheSecondSide = assignmentWritesSeen >= 2;
+
+                  if (isTheSecondSide) {
                     throw new Error('the second side failed on purpose');
                   }
 
@@ -131,7 +127,7 @@ describe('POST /moves when the second side fails to write', () => {
     }
   });
 
-  it('leaves neither side of the move and no claimed key', async () => {
+  it('leaves neither side of the move and no claimed key, having reached the second write', async () => {
     const now = Math.floor(Date.now() / 1000);
     const token = key.signToken({ sub: USER_TORN, iat: now, exp: now + 60, azp: webOrigin });
 
@@ -147,7 +143,7 @@ describe('POST /moves when the second side fails to write', () => {
       });
 
     expect(response.status).toBe(500);
-    expect(seen).toBeGreaterThanOrEqual(2);
+    expect(assignmentWritesSeen).toBeGreaterThanOrEqual(2);
     await expect(prisma.assignment.count({ where: { userId: USER_TORN } })).resolves.toBe(0);
     await expect(prisma.idempotencyKey.count({ where: { userId: USER_TORN } })).resolves.toBe(0);
   });

@@ -30,8 +30,9 @@ const DATES = [
 
 const MONTHS = ['2026-01', '2026-02', '2026-03', '2026-06', '2027-01'] as const;
 
-/// A side is a category by index, or the pool when it is null.
-type Side = number | null;
+const POOL = null;
+
+type Side = number | typeof POOL;
 
 type Operation =
   | { kind: 'income'; amount: bigint; date: string }
@@ -41,12 +42,9 @@ type Operation =
 
 const CATEGORIES = 3;
 
-const SIDES: readonly Side[] = [null, 0, 1, 2];
+const SIDES: readonly Side[] = [POOL, 0, 1, 2];
 
-/// Minted per HTTP call and never derived from the step. fast-check replays and shrinks the
-/// same sequence, and a key that repeats is answered from the first attempt, so the operation
-/// would silently not apply and the property would pass over a budget nobody moved money in.
-let keysMinted = 0;
+let movesApplied = 0;
 
 const operation = (): fc.Arbitrary<Operation> =>
   fc.oneof(
@@ -121,19 +119,18 @@ describe('invariant 5.5 (integration)', () => {
   };
 
   const sideOf = (side: Side): Record<string, unknown> =>
-    side === null
+    side === POOL
       ? { kind: 'READY_TO_ASSIGN' }
       : { kind: 'CATEGORY', categoryId: categoryIds[side] ?? '' };
 
   const apply = async (step: Operation): Promise<void> => {
     if (step.kind === 'move') {
-      // The same envelope on both sides is refused by the endpoint, and a step that only
-      // proves a refusal says nothing about the invariant.
-      if (step.from === step.to) {
+      const bothSidesAreOneEnvelope = step.from === step.to;
+      if (bothSidesAreOneEnvelope) {
         return;
       }
 
-      keysMinted += 1;
+      movesApplied += 1;
       await request(app.getHttpServer() as Server)
         .post('/moves')
         .set('Authorization', `Bearer ${tokenFor()}`)
@@ -142,7 +139,7 @@ describe('invariant 5.5 (integration)', () => {
           amount: step.amount.toString(10),
           from: sideOf(step.from),
           to: sideOf(step.to),
-          idempotencyKey: `invariant-${keysMinted}`,
+          idempotencyKey: `invariant-move-${movesApplied}`,
         })
         .expect(201);
 
@@ -287,8 +284,6 @@ describe('invariant 5.5 (integration)', () => {
       { numRuns: 50 },
     );
 
-    // The generator is what makes this test cover moves at all, and a move that never ran
-    // would leave every assertion above passing over a budget only the fixtures touched.
-    expect(keysMinted).toBeGreaterThan(0);
+    expect(movesApplied).toBeGreaterThan(0);
   }, 180_000);
 });
