@@ -15,7 +15,6 @@ import { RequestContextService } from '@/request-context/request-context.service
 
 import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
-/// Not prefixed `user_2rondoMoves`: `moves.integration.spec.ts` clears by that prefix.
 const USER_TORN = 'user_2rondoMoveTornAaaa';
 
 let assignmentWritesSeen = 0;
@@ -45,7 +44,6 @@ describe('POST /moves when the second side fails to write', () => {
     key = createTestSigningKey();
     process.env.CLERK_JWT_KEY = key.publicKeyPem;
 
-    // Nothing reachable over HTTP can tear a transaction in half, so one write is failed here.
     const moduleRef: TestingModule = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(MUTATOR_PRISMA)
       .useFactory({

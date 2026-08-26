@@ -18,10 +18,13 @@ const NO_ACTIVE_BUDGET =
   'The caller has no active budget, so there are no envelopes to move money between. Create ' +
   'a budget first.';
 
-/// Null is the pool, which is an envelope, and never an absent side.
-function categoryOf(side: MoveSideDto): string | null {
+const POOL = null;
+
+type Envelope = string | typeof POOL;
+
+function envelopeOf(side: MoveSideDto): Envelope {
   if (side.kind !== 'CATEGORY') {
-    return null;
+    return POOL;
   }
 
   if (side.categoryId === undefined) {
@@ -58,9 +61,6 @@ function decodeSide(stored: Prisma.JsonValue): MoveSideResponse {
   return { kind, categoryId };
 }
 
-/// Runs on the fresh path and on the replay alike, so a stored result cannot drift from a
-/// fresh one. It narrows rather than casts: the row is `JsonValue`, and a cast would promise
-/// the caller a shape the row may not carry.
 function decodeMove(stored: Prisma.JsonValue): MoveResponse {
   if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
     throw new Error(`A stored move is not an object: ${JSON.stringify(stored)}`);
@@ -84,12 +84,9 @@ interface CategoryMove {
   delta: Money;
 }
 
-/// Why the order is fixed: the `add-a-mutation` skill.
-function inLockOrder(
-  sides: readonly { categoryId: string | null; delta: Money }[],
-): CategoryMove[] {
+function inLockOrder(sides: readonly { categoryId: Envelope; delta: Money }[]): CategoryMove[] {
   return sides
-    .flatMap(({ categoryId, delta }) => (categoryId === null ? [] : [{ categoryId, delta }]))
+    .flatMap(({ categoryId, delta }) => (categoryId === POOL ? [] : [{ categoryId, delta }]))
     .sort((left, right) => (left.categoryId < right.categoryId ? -1 : 1));
 }
 
@@ -104,8 +101,8 @@ export class MovesService {
     const month = parseCalendarMonth(body.month);
     const amount = parseMoney(body.amount);
 
-    const from = categoryOf(body.from);
-    const to = categoryOf(body.to);
+    const from = envelopeOf(body.from);
+    const to = envelopeOf(body.to);
     if (from === to) {
       throw new BadRequestException(
         'The two sides of a move are the same envelope, so the money would arrive where it ' +
@@ -113,9 +110,6 @@ export class MovesService {
       );
     }
 
-    // Resolved before the mutation opens so that the budget can join the intent. Without it a
-    // key replayed after the caller switched budgets answers with the move it made in the old
-    // one, having written nothing in the new.
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -194,9 +188,6 @@ export class MovesService {
     }
   }
 
-  /// Asked before anything reads a model a budget owns. The scoping extension refuses such a
-  /// read without one, and what it raises is an internal error rather than an answer, so the
-  /// caller would see a 500 for an ordinary state: a user part way through onboarding.
   private async activeBudget(
     client: MutationClient | ScopedPrismaClient,
     id?: string,

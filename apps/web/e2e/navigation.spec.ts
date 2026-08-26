@@ -10,9 +10,6 @@ const SECTIONS = ['/categories', '/accounts', '/net-worth', '/settings'];
 
 const PHONE = { width: 390, height: 844 };
 
-/// The sections are behind the gate, so this account has to have finished setup. It has its
-/// own address rather than sharing one: spec files run in parallel workers, and two of them
-/// creating a budget for the same user would leave one of the two deactivated.
 async function signIn(page: Page) {
   await setupClerkTestingToken({ page });
   await page.goto('/sign-in');

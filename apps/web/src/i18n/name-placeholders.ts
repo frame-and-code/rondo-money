@@ -1,7 +1,5 @@
 import { type MessageKey } from './messages';
 
-/// The server picks the index and hands it to the page, so the two renders agree and the
-/// string comes from the dictionary of whatever language the reader chose.
 const BUDGET_KEYS = [
   'newBudget.namePlaceholder.0',
   'newBudget.namePlaceholder.1',
@@ -37,8 +35,6 @@ export function accountNamePlaceholderKey(index: number): MessageKey {
   return keyAt(ACCOUNT_KEYS, index);
 }
 
-/// Unbounded on purpose. Folding happens where the keys are, so a set that grows a sixth
-/// example starts showing it without anyone remembering to widen the pick.
 export function pickNamePlaceholderIndex(): number {
   const [random] = crypto.getRandomValues(new Uint32Array(1));
   return random ?? 0;

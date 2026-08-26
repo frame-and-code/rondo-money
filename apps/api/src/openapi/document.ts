@@ -84,7 +84,6 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
   return document;
 }
 
-/// A `$ref` arrives wrapped in `allOf` once the property carries a description of its own.
 const referencedName = (value: unknown): string | undefined => {
   if (typeof value !== 'object' || value === null) {
     return undefined;
@@ -106,11 +105,6 @@ const referencedName = (value: unknown): string | undefined => {
   return undefined;
 };
 
-/// The global pipe whitelists, so a field a DTO never declared is a 400 rather than something
-/// quietly dropped. Said in the description and not in the schemas, a generated client would
-/// happily build a body the server refuses, so every schema a request body names is closed
-/// here. Response schemas are left open on purpose: a client that meets a field it does not
-/// know should keep working.
 function closeRequestBodies(document: OpenAPIObject): OpenAPIObject {
   const schemas = document.components?.schemas ?? {};
   const closed = new Set<string>();

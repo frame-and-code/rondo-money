@@ -165,9 +165,6 @@ describe('/accounts (integration)', () => {
       const east = await prisma.transaction.findFirstOrThrow({ where: { userId: USER_EAST } });
       const west = await prisma.transaction.findFirstOrThrow({ where: { userId: USER_WEST } });
 
-      // The zones sit 25 hours apart, so one is always at least a calendar day ahead of the
-      // other, and for the hour after midnight in Kiritimati it is two. A server clock used
-      // instead would date both the same, which is what this refuses.
       expect(east.date.getTime() - west.date.getTime()).toBeGreaterThanOrEqual(DAY_MS);
       expect(calendarDateOf(east.date)).toBe(todayIn('Pacific/Kiritimati'));
       expect(calendarDateOf(west.date)).toBe(todayIn('Pacific/Niue'));
@@ -274,8 +271,6 @@ describe('/accounts (integration)', () => {
     });
 
     it('refuses a repeated key aimed at a budget the caller has since left', async () => {
-      // The body is identical; only the budget it means has changed. Answering with the first
-      // account would report a write this request never made, in a budget it never named.
       const first = await seedBudget(USER_MOVED);
       await create(USER_MOVED, creation());
 

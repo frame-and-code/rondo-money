@@ -66,33 +66,20 @@ import {
   type CurrencyOption,
 } from '@/lib/currencies';
 
-/// Long enough to read as a change of language, short enough that nobody waits for it. The
-/// dictionary is in the bundle, so there is nothing to load and a spinner would be a lie.
 const FADE_MS = 150;
 
-/// A tap target on a phone, the design system's own height from the medium breakpoint up.
-/// The radius follows the height, so a 44px control is a pill and a 32px one is not. Only the
-/// sizes change with the width; the type scale is the same at both.
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
-/// The same tokens `Input` carries, because a field that opens a list still has to read as a
-/// field beside the one that does not.
 const FIELD = cn(
   'bg-input/50 flex w-full items-center justify-between gap-2 border border-transparent text-start transition-colors',
   CONTROL,
 );
 
-/// The combobox popup is wider than its anchor by default, which suits a popup hanging under
-/// an input and not a field that opens over itself.
 const POPUP = 'min-w-(--anchor-width)';
 
-/// A list that opens on a phone is sized for a thumb throughout, not only at its trigger:
-/// the search box matches the field that opened it and every row is a tap target.
 const SHEET = '**:data-[slot=input-group]:h-11! **:data-[slot=input-group]:rounded-full px-2';
 const SHEET_ITEM = 'min-h-12 rounded-2xl px-3 text-sm';
 
-/// Rendering every currency turns the list into a wall and the search into decoration. The
-/// count underneath says what was left out, so a missing code reads as "keep typing".
 const RESULT_LIMIT = 60;
 
 function mintKey(): string {
@@ -103,9 +90,6 @@ function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
-/// The phone half of a field that opens a list. `Combobox` positions its own popup and cannot
-/// be put inside a drawer, so the two widths are two compositions of the same primitives:
-/// the combobox on a desktop, this drawer under a thumb.
 function FieldDrawer({
   id,
   label,
@@ -157,9 +141,6 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
   const [fading, setFading] = useState(false);
   const [created, setCreated] = useState<{ name: string; currency: string } | null>(null);
 
-  // Minted when the form opens, not per click, or a double click writes two budgets. It is
-  // minted again only when the user changes their mind after a failure: the same key carrying
-  // a different intent is refused by the API, which would read as a bug from the outside.
   const [idempotencyKey, setIdempotencyKey] = useState(mintKey);
   const [failed, setFailed] = useState(false);
 
@@ -195,8 +176,6 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
     setLanguageOpen(false);
     if (next === locale) return;
 
-    // The key and the locale change together, or a submit landing inside the fade window
-    // could send a freshly minted key with the language `submit` hasn't caught up to yet.
     setFading(true);
     window.setTimeout(() => {
       setLocale(next);

@@ -30,8 +30,6 @@ interface MoneyPropertyOptions {
   description?: string;
   example?: string;
 
-  /// Publishes the bound and refuses below it together. Stated in only one of the two, the
-  /// schema would promise a field the pipe answers 400 for, or the reverse.
   sign?: MoneySign;
 }
 

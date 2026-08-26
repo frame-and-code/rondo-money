@@ -16,7 +16,6 @@ import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
 const USER = 'user_2rondoInvariantAaaaaaaaaa';
 
-/// Every generated date and month sits below this one, so reading it sums over all of time.
 const ALL_TIME = '2400-01';
 
 const DATES = [

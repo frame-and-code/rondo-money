@@ -22,28 +22,32 @@ to its file makes the codebase harder to read, not easier.
 
 ## Comments
 
-Almost none. Code is the only description of itself that cannot go out of date, and a
-comment is a second copy nobody recompiles.
+**TypeScript and JavaScript carry no comments.** Not a short one, not a good one, not this
+once. The only ones that may appear are the ones a tool reads and acts on: `eslint-disable`,
+`@ts-expect-error`, `/// <reference>`, `prettier-ignore`, a JSDoc type a checker consumes, a
+`@jest-environment` docblock, a coverage pragma. Those are instructions to a machine and not
+prose about the code.
 
-- **No decisions in code.** The Notion ticket that decided it owns why an approach was
-  chosen, what was rejected, what a measurement showed and which ADR applies. Not a
-  comment, and not a second document either (see [specs](specs.md)).
-- **What may stay is what a machine reads**: an `eslint-disable` carries why the rule is
-  wrong here, a `@ts-expect-error` carries what it expects, a pragma is not a comment.
-- **A field or constant whose meaning its name cannot carry** may take one short line. That
-  is the ordinary case, and it is the only one.
-- Everywhere else, reach for the fix instead: a better name, a smaller function, a type that
-  makes the wrong value unrepresentable, an error message that says what failed.
-- Never a comment that narrates the next line, repeats the file name, records what used to be
-  here, or dates itself to a version. Git remembers, and Notion decides.
-- **A file a tool reads and no document can annotate** keeps its comments, because there is
-  nowhere else to put the constraint. That covers `///` in `schema.prisma`, which Prisma emits
-  into the generated client; the JSONC in each `tsconfig.json`; `.claude/hooks/*`, where a
-  guard's charter lives, meaning what it refuses and what it knowingly does not; and the build
-  and workspace files, `Dockerfile`, `pnpm-workspace.yaml`, `sonar-project.properties`,
-  `.gitignore` and their neighbours. The test is whether any document could carry the
-  constraint instead. Even there the comment states the constraint and not its history: what breaks if
-  you change this line, never what broke once.
+This is a lint rule, `rondo/no-comments` in
+[`@rondo/config/eslint`](../../packages/config/eslint/no-comments.mjs), and it fails the gate.
+It also fixes itself: `eslint --fix` deletes the comment. There is no inline exemption, and an
+`eslint-disable` aimed at this rule is the thing the rule exists to stop.
+
+It is absolute on purpose. The rule that stood here before allowed "one short line where the
+name cannot carry the meaning", and every comment anyone wanted to write turned out to be that
+case. A bound with an exception is a bound nobody meets.
+
+What to reach for instead: a better name, a smaller function, a type that makes the wrong value
+unrepresentable, an error message that says what failed with what input. A **decision** goes to
+the Notion ticket that took it, never into the code and never into a second document
+(see [specs](specs.md)). A **constraint a reader must not break** goes to the rule or the skill
+that owns the pattern; if there is no such home, that is the signal to write one.
+
+Two file kinds keep their comments, because there is nowhere else to put what they say and no
+document can annotate them: `///` in `schema.prisma`, which Prisma emits into the generated
+client, so it is output rather than commentary; and `.claude/hooks/*`, where a guard's charter
+lives, meaning what it refuses and what it knowingly does not. Even there the comment states
+the constraint and not its history: what breaks if you change this line, never what broke once.
 
 ## Dead code
 

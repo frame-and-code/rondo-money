@@ -255,18 +255,12 @@ describe('monthStartInstant', () => {
   });
 
   it('reads the offset in force at the start of the local day, not the one hours into it', () => {
-    // Sydney puts its clock back at 03:00 on the first Sunday of April, which in 2029 is the
-    // first of the month. Sampling the offset at naive midnight UTC lands after that change and
-    // loses the first local hour of April.
     expect(monthStartInstant('2029-04', 'Australia/Sydney')).toEqual(
       new Date('2029-03-31T13:00:00Z'),
     );
   });
 
   it('answers for a day that has no local midnight with the first instant it does have', () => {
-    // America/Asuncion jumps from 23:59:59 on 30 September 2023 to 01:00 on the first, so
-    // the month has no 00:00 at all. The boundary is still a real instant, and everything
-    // from it on belongs to the new month.
     expect(monthStartInstant('2023-10', 'America/Asuncion')).toEqual(
       new Date('2023-10-01T04:00:00Z'),
     );

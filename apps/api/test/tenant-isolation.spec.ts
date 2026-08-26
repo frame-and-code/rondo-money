@@ -19,10 +19,6 @@ const eslintBinary = join(
   'bin/eslint.js',
 );
 
-/// ESLint is run as a process rather than through its API: it loads a flat config by dynamic
-/// import, which jest cannot do, and what is worth checking is the config the gate actually
-/// resolves rather than one rebuilt here. The binary is resolved rather than assumed, and the
-/// workspace is named, because the root config answers differently for the same paths.
 function restrictedIn(file: string): string[] {
   const printed = execFileSync(process.execPath, [eslintBinary, '--print-config', file], {
     cwd: workspace,
@@ -44,8 +40,6 @@ function restrictedIn(file: string): string[] {
     return [];
   }
 
-  // Severity first: a later block that only turns the rule off leaves its options in place, so
-  // reading the patterns alone cannot tell a restriction from a rule nobody enforces.
   if (rule[0] !== 'error' && rule[0] !== 2) {
     return [];
   }
@@ -57,8 +51,6 @@ function restrictedIn(file: string): string[] {
     : [];
 }
 
-/// The same reading for `no-restricted-syntax`, whose entries are selectors rather than
-/// import patterns, and which carries the raw-SQL and the assignment-write guards together.
 function restrictedSyntaxIn(file: string): string[] {
   const printed = execFileSync(process.execPath, [eslintBinary, '--print-config', file], {
     cwd: workspace,
@@ -113,8 +105,6 @@ describe('the syntax restrictions that keep a second writer out of the assignmen
 });
 
 describe('the import restrictions that keep the wrong client out of domain code', () => {
-  // Both restrictions set one rule, and flat config replaces a rule's options rather than
-  // merging them, so two config blocks would leave only the last standing. In silence.
   it('restricts both clients in domain code', () => {
     expect(restrictedIn('src/user-settings/user-settings.service.ts')).toEqual(
       [...PRISMA_SERVICE, ...SCOPED_PRISMA].sort(),

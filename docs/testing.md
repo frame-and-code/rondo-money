@@ -180,6 +180,10 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
   awaited, not when `findMany()` is called. Returning an un-awaited promise out of `run()`
   executes the query with no context, so a test expecting a rejection passes for the wrong
   reason. In the running app this cannot happen, because the middleware wraps the whole request.
+- **A spec's fixture user ids may not prefix another spec's.** Cleanup is written as
+  `where: { userId: { startsWith: PREFIX } }`, so `user_2rondoMoves` erases `user_2rondoMovesTorn`
+  as well. Files run one at a time, so today this only bites when two runs share the database,
+  but the collision is real and free to avoid: give a second spec a name the first cannot match.
 - **Fixtures and cleanup go through the unscoped client** (`PrismaService`). Setting up user
   A's rows while acting as user B, or deleting both users' rows afterwards, is exactly what the
   scoped client is built to refuse.

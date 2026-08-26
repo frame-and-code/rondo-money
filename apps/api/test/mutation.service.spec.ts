@@ -31,8 +31,6 @@ describe('the key a mutation is claimed with', () => {
     });
 
   it.each(['', '   '])('refuses a blank key (%p) before opening a transaction', async (key) => {
-    // The mechanism rather than the driver's wording: a connection error would satisfy any
-    // assertion about the message, and would mean the transaction had been opened after all.
     const opened = jest.spyOn(scoped, '$transaction');
 
     try {

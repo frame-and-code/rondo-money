@@ -51,10 +51,6 @@ export class ScopedRawRepository {
     return on.$executeRaw(build(this.currentScope()));
   }
 
-  /// Being inside a mutation is not enough: the statement has to run on that mutation's own
-  /// client. Any other one is the pooled connection, where a write commits on its own and a
-  /// read answers from before the transaction started. The type cannot say this, because every
-  /// client satisfies the one-method interface these take.
   private requireTheMutationsClient(on: unknown, kind: 'read' | 'write'): void {
     if (on !== undefined && on === this.context.readBudgetSource()) {
       return;

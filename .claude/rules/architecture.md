@@ -109,7 +109,9 @@ itself is published with no response shape at all, and the generated client type
   `@ValidateNested()` and `@Type(() => That)`. Without the pair, an undeclared field one level
   down reaches the handler while the top level refuses its own, and the published schema says
   the nested object takes anything. `test/openapi.spec.ts` walks the request schemas down and
-  fails the gate on one left open.
+  fails the gate on one left open. Anything walking those schemas reads through `allOf`: the
+  generator wraps a `$ref` in one as soon as the property carries a description of its own, so a
+  reader looking for a bare `$ref` sees a described nested object as carrying no schema at all.
 - `pnpm openapi` rewrites [`apps/api/openapi.json`](../../apps/api/openapi.json) and
   `pnpm --filter @rondo/api-client codegen` the client. Both artefacts are committed, so a
   contract change is a reviewable diff; turbo runs them in order, so neither is a step anyone

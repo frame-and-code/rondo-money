@@ -48,13 +48,18 @@ polish:
   stamped `userId` matches neither form and Prisma refuses it at runtime. Pass the ids flat.
   Also not left to memory: the restriction `unscoped-prisma`, composed into
   `@rondo/config/eslint/tenant-isolation`, fails the gate on importing `PrismaService` outside
-  `src/prisma`, `src/raw-sql` and the tests. Both restrictions reach a file through one rule,
-  because flat config replaces a rule's options rather than merging them, and two blocks would
-  leave only the last standing.
+  `src/prisma`, `src/raw-sql` and the tests. Every restriction on one ESLint rule reaches a file
+  in a single object, because flat config replaces a rule's options rather than merging them and
+  two blocks would leave only the last standing, in silence. That holds for
+  `no-restricted-imports` and for `no-restricted-syntax` alike, which is why
+  `tenant-isolation.mjs` composes the raw-SQL and assignment-write guards together rather than
+  declaring a block each.
 - **A model a budget owns is filtered by `budgetId` as well.** The active budget is the
   caller's one `active` budget row, looked up by the extension itself on the first query that
   needs it and remembered for the rest of the request, so a request that reads nothing a budget
-  owns makes no such query at all. An operation issued when the caller has none is refused
+  owns makes no such query at all. The lookup runs on the transaction in flight when there is
+  one: issued on the pooled client it would take a second connection and read committed state,
+  so a mutation that has just created the caller's first budget would be told they have none. An operation issued when the caller has none is refused
   rather than reaching every budget the caller owns. The filter
   covers reads and the writes that pick out existing rows: `update`, `updateMany`,
   `updateManyAndReturn`, `delete`, `deleteMany` and the `where` half of an `upsert`, none of

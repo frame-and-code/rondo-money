@@ -35,11 +35,8 @@ import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
 import { accountNamePlaceholderKey } from '@/i18n/name-placeholders';
 
-/// A tap target on a phone, the design system's own height from the medium breakpoint up.
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
-/// The same tokens `Input` carries, because a field that holds a symbol beside its input still
-/// has to read as a field beside the one that does not.
 const FIELD = cn(
   'bg-input/50 flex w-full items-center gap-2 border border-transparent transition-colors',
   'focus-within:border-ring focus-within:ring-ring/30 focus-within:ring-3',
@@ -61,8 +58,6 @@ const TYPES: ReadonlyArray<{
   { id: 'CASH', icon: IconCash, title: 'newAccount.typeCash', body: 'newAccount.typeCashHint' },
 ];
 
-/// The kind most first accounts are. Cash sits beside it rather than under it, so choosing the
-/// other one is one tap and not a discovery.
 const DEFAULT_TYPE: AccountType = 'DEBIT';
 
 type AmountFault = 'negative' | 'shape' | 'digits';
@@ -78,9 +73,6 @@ interface Marks {
   decimal: string;
 }
 
-/// Both come from the locale rather than from a guess. A comma is the decimal mark in Russian
-/// and the thousands separator in English, so rewriting it to a dot unconditionally reads
-/// "1,250" as one and a quarter on a currency with three minor digits.
 function marksOf(locale: string): Marks {
   const parts = new Intl.NumberFormat(locale).formatToParts(11111.1);
 
@@ -94,28 +86,16 @@ function quoted(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/// Digits, or digits grouped in threes by this locale's separator, with a plain space allowed
-/// because that is what people type where the locale uses a narrow one. A separator anywhere
-/// grouping could not have put it is a fault rather than something to drop: deleting the comma
-/// in "1250,50" would send a hundred times the amount, and nothing downstream could tell.
-/// A character class, never an alternation. Where the locale groups with a narrow space both
-/// branches of `(?:\u00a0|\s)` match the same character, and a long input that fails the
-/// pattern then backtracks exponentially, which on a paste is a frozen tab.
 function wholeAmount(group: string): RegExp {
   const mark = group === '' || /\s/.test(group) ? '\\s' : `[${quoted(group)}\\s]`;
 
   return new RegExp(`^(?:\\d+|\\d{1,3}(?:${mark}\\d{3})+)$`);
 }
 
-/// A dot means the decimal mark wherever the locale groups with something else, so it is taken
-/// there as well: people reach for it on a numeric keypad whatever their locale says. Where the
-/// locale groups with dots it can only be grouping, and is left to the pattern below.
 function decimalMarks(marks: Marks): readonly string[] {
   return marks.decimal === '.' || marks.group === '.' ? [marks.decimal] : [marks.decimal, '.'];
 }
 
-/// A trailing separator is someone still typing, not a malformed amount, so an empty fraction
-/// is dropped rather than answered with an error the next keystroke removes.
 function readAmount(raw: string, digits: number, marks: Marks): Amount {
   const trimmed = raw.trim();
   if (trimmed === '') {
@@ -129,8 +109,6 @@ function readAmount(raw: string, digits: number, marks: Marks): Amount {
   const used = decimalMarks(marks).filter((mark) => trimmed.includes(mark));
   const parts = trimmed.split(used[0] ?? marks.decimal);
   const [whole = '', fraction = ''] = parts;
-  // An amount under one unit is often typed straight from the mark, so a missing whole part is
-  // a zero rather than a fault.
   if (parts.length > 2 || (whole !== '' && !wholeAmount(marks.group).test(whole))) {
     return { minor: null, fault: 'shape', typed: true };
   }
@@ -164,9 +142,6 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
   const [type, setType] = useState<AccountType>(DEFAULT_TYPE);
   const [amount, setAmount] = useState('');
 
-  // Minted when the form opens, not per click, or a double click writes two accounts. It is
-  // minted again only when the user changes their mind after a failure: the same key carrying
-  // a different intent is refused by the API, which would read as a bug from the outside.
   const [idempotencyKey, setIdempotencyKey] = useState(mintKey);
   const [failed, setFailed] = useState(false);
   const [created, setCreated] = useState<string | null>(null);
@@ -185,14 +160,10 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
   const money = useMemo(() => {
     if (budget === null) return null;
 
-    // `narrowSymbol` falls back to the letter code by itself for a currency that has no
-    // symbol, so the field never needs a fallback of its own.
     const format = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: budget.currency,
       currencyDisplay: 'narrowSymbol',
-      // From the budget row, not from the browser's own currency table: the two disagree for a
-      // code this runtime does not know, and the row is the one the amount was written at.
       minimumFractionDigits: budget.minorDigits,
       maximumFractionDigits: budget.minorDigits,
     });
@@ -220,9 +191,6 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
   const read = readAmount(amount, money.digits, money.marks);
 
-  /// The label only: what gets sent is the `bigint` this reads from, never the number below.
-  /// `Intl.NumberFormat` is typed to take one, so the guard asks whether that number still says
-  /// the same amount; where it does not, the digits stand alone rather than lie by a minor unit.
   const preview = (minor: bigint): string => {
     const decimal = toDecimalString(minor, money.digits);
     const asNumber = Number(decimal);

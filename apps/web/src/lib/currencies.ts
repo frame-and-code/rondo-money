@@ -24,8 +24,6 @@ export function currencyOptions(locale: Locale): readonly CurrencyOption[] {
   return options;
 }
 
-/// Matches on the code and on the name, and puts the codes that start with the query first.
-/// Typing `PL` should not bury `PLN` under every currency whose name happens to contain it.
 export function searchCurrencies(
   options: readonly CurrencyOption[],
   query: string,
@@ -43,17 +41,12 @@ export function searchCurrencies(
     .sort((left, right) => rank(left) - rank(right) || left.code.localeCompare(right.code));
 }
 
-/// The currency written out, for a place that confirms a choice rather than lists options.
-/// `Intl` answers in the case the language uses mid-sentence, which in Russian and Polish is
-/// lower, and a value starting lower reads as a mistake where it stands on its own.
 export function currencyName(locale: Locale, code: string): string {
   const name = new Intl.DisplayNames([locale], { type: 'currency' }).of(code) ?? code;
 
   return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1);
 }
 
-/// Shows the symbol, its side of the number and the group separator, which says more about
-/// the currency than "two decimal places" would.
 export function sampleAmount(locale: Locale, code: CurrencyCode): string {
   return new Intl.NumberFormat(locale, { style: 'currency', currency: code }).format(1234.5);
 }

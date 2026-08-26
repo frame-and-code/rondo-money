@@ -14,9 +14,6 @@ const STEPS: ReadonlyArray<{ title: MessageKey; body: MessageKey }> = [
   { title: 'onboarding.step3Title', body: 'onboarding.step3Body' },
 ];
 
-/// The last step is done in the app rather than in the wizard, so it is never `done` here. It
-/// is listed anyway: setup is not over when the wizard closes, and a list that stopped at the
-/// account would say it was.
 export function OnboardingSteps({ done }: { done: number }) {
   const { t } = useTranslations();
   const isMobile = useIsMobile();
@@ -79,9 +76,6 @@ export function OnboardingSteps({ done }: { done: number }) {
   );
 }
 
-/// The phone has no room for three explanations at once, so the row carries the one the user
-/// is on. The dots are an indicator and nothing else: the eyebrow above already says which
-/// step this is in words, which is what a screen reader needs.
 function OnboardingRow({
   done,
   current,

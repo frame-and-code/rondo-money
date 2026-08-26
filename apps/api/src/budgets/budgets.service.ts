@@ -20,9 +20,6 @@ function serialize(budget: Budget): Prisma.JsonObject {
   };
 }
 
-/// Runs on the fresh path and on the replay alike, so a stored result cannot drift from a
-/// fresh one. It narrows rather than casts: the row is `JsonValue`, and a cast would promise
-/// the caller a shape the row may not carry.
 function decodeBudget(stored: Prisma.JsonValue): BudgetResponse {
   if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
     throw new Error(`A stored budget is not an object: ${JSON.stringify(stored)}`);
@@ -68,8 +65,6 @@ export class BudgetsService {
       async (tx) => {
         await this.deactivateCurrent(tx);
 
-        // The user may have no settings row yet: it is created by their first `GET
-        // /user-settings`, and a visitor who came straight to this screen never made that call.
         await tx.userSettings.upsert({
           where: { userId },
           create: { userId, language },
@@ -105,9 +100,6 @@ export class BudgetsService {
     return budgets.map((budget) => decodeBudget(serialize(budget)));
   }
 
-  /// Explicitly, and before the new row is written. The one-active-per-user index is partial,
-  /// so a second active row is a P2002, which the mutation service reads as a repeated
-  /// idempotency key and reports as something else entirely.
   private async deactivateCurrent(tx: MutationClient): Promise<void> {
     const active = await tx.budget.findFirst({ where: { active: true } });
     if (active) {

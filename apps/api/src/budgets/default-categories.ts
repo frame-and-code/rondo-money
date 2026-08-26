@@ -11,9 +11,6 @@ export interface DefaultCategoryGroup {
   categories: readonly DefaultCategory[];
 }
 
-/// PRD 6.1.1. Eleven envelopes rather than fifteen: zero-based budgeting asks for a decision
-/// per envelope before the first success, and an envelope nobody wanted can only be hidden,
-/// never removed. Each language is written in that language rather than translated.
 const SET_BY_LANGUAGE: Record<Language, ReadonlyArray<readonly [string, readonly string[]]>> = {
   RU: [
     ['Обязательные платежи', ['Жильё', 'Коммунальные услуги', 'Связь и интернет']],

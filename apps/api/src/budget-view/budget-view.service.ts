@@ -81,9 +81,6 @@ export class BudgetViewService {
     };
   }
 
-  /// The month window is a pair of calendar dates, because a transaction and an assignment
-  /// carry dates without a time. The visibility boundary is an instant, because a hiding
-  /// carries one, and it is the only place the budget's timezone is needed.
   private boundsOf(month: CalendarMonth, timezone: string): BudgetViewBounds {
     const next = nextCalendarMonth(month);
 
@@ -94,9 +91,6 @@ export class BudgetViewService {
     };
   }
 
-  /// Asked before the aggregate runs, because a raw statement takes the budget as a value: with
-  /// none, the sums would be collected over no budget at all and answer a screen full of zeros
-  /// to a user who is simply part way through onboarding.
   private async activeBudget(userId: string): Promise<{ id: string; timezone: string }> {
     const budget = await this.prisma.budget.findFirst({ where: { userId, active: true } });
     if (!budget) {

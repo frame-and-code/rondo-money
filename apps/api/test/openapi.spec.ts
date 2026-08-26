@@ -9,9 +9,6 @@ type Operation = NonNullable<PathItemObject['post']>;
 
 type Schema = NonNullable<NonNullable<OpenAPIObject['components']>['schemas']>[string];
 
-/// Reads through `allOf`, which is how a `$ref` arrives once the property carries a description
-/// of its own: the generator cannot put both on one node, so it wraps the reference. A reader
-/// that only looks for a bare `$ref` sees such a property as carrying no schema at all.
 const referencedName = (value: unknown): string | undefined => {
   if (typeof value !== 'object' || value === null) {
     return undefined;
@@ -54,8 +51,6 @@ const answersWith = (response: unknown, name: string): boolean => {
   return schema.endsWith(`/${name}`);
 };
 
-/// Every named schema a request body reaches through its own properties, however deep. The
-/// visited set is what stops a schema that refers back to itself from looping forever.
 const nestedSchemaNames = (
   document: OpenAPIObject,
   schema: Schema | undefined,
@@ -134,9 +129,6 @@ describe('OpenAPI document', () => {
   });
 
   it('publishes the conflict wherever an idempotency key can be claimed twice', () => {
-    // Every operation taking a key can answer 409, and an undocumented status collapses that
-    // operation's whole error type to `unknown` in the generated client, exactly as a missing
-    // 400 does. Found by the key rather than by a list, so the next mutation cannot forget.
     const undocumented = Object.entries(document.paths).flatMap(([path, item]) =>
       HTTP_METHODS.filter((method) => {
         const schema = requestSchemaOf(document, item[method]);
@@ -163,10 +155,6 @@ describe('OpenAPI document', () => {
   });
 
   it('publishes a bad request shape wherever the pipe can answer with one', () => {
-    // Every operation taking a body or a query is validated by the global pipe, so 400 is
-    // answerable whatever the handler itself does, and an undocumented status collapses that
-    // operation's whole error type to `unknown` in the generated client. A query counts
-    // because the DTO behind it is refused before the handler runs, exactly like a body.
     const validated = (method: (typeof HTTP_METHODS)[number], item: PathItemObject): boolean =>
       Boolean(item[method]?.requestBody) ||
       (item[method]?.parameters ?? []).some(
@@ -185,8 +173,6 @@ describe('OpenAPI document', () => {
   });
 
   it('publishes the refusal of an undeclared field, which the pipe already performs', () => {
-    // Stated only in the description, a generated client would build a body the server answers
-    // 400 for. Response schemas stay open: a client meeting a field it does not know is fine.
     const open = Object.entries(document.paths).flatMap(([path, item]) =>
       HTTP_METHODS.filter((method) => {
         const body = item[method]?.requestBody;
@@ -207,14 +193,9 @@ describe('OpenAPI document', () => {
   });
 
   it('refuses an undeclared field inside a nested body object too', () => {
-    // The sweep above stops at the body's own schema. A nested object publishing nothing is
-    // the same hole one level down, and the pipe only descends into one that is declared for
-    // it, so an open nested schema is also the sign that @ValidateNested is missing.
     const open = Object.entries(document.paths).flatMap(([path, item]) =>
       HTTP_METHODS.flatMap((method) =>
         [...nestedSchemaNames(document, requestSchemaOf(document, item[method]))]
-          // Only the object schemas: a named enum carries no properties, so there is nothing
-          // for an undeclared field to arrive in and nothing to close.
           .filter((name) => {
             const schema = schemaNamed(document, name);
 
@@ -232,16 +213,10 @@ describe('OpenAPI document', () => {
   });
 
   it('closes every request DTO, whatever shape the body referred to it through', () => {
-    // Reached by name rather than by following references, because the sweep above resolves
-    // them the way the generator does and is therefore blind wherever the generator is. A
-    // request DTO is closed however it was referred to, and no response class is named this
-    // way, so the naming convention is the whole selector.
     const named = Object.entries(document.components?.schemas ?? {}).filter(([name]) =>
       name.endsWith('Dto'),
     );
 
-    // Asserted before the closure is, because an empty list satisfies the check below just as
-    // well as a closed one, and a convention that moved would take this guard with it silently.
     expect(named.length).toBeGreaterThan(0);
 
     const open = named

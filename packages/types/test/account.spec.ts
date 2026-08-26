@@ -2,8 +2,6 @@ import { ACCOUNT_TYPES, isAccountType } from '@rondo/types';
 
 describe('account types', () => {
   it('holds the two kinds an account row can be created with', () => {
-    // A pin rather than a restatement: adding a kind here without the Ready to Assign work a
-    // credit account needs is the mistake this list exists to make visible.
     expect([...ACCOUNT_TYPES]).toEqual(['CASH', 'DEBIT']);
   });
 

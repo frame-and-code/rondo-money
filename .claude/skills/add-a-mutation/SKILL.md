@@ -58,7 +58,13 @@ const created = await this.mutations.run(
   the types having said nothing.
 - **Compose, do not nest.** A `run` inside another `run` is refused, because Postgres has no
   nested interactive transaction and the inner one would commit on its own and claim a second
-  key. A mutation that wants another one's steps calls a plain function that takes `tx`.
+  key. A mutation that wants another one's steps calls a plain function that takes `tx`. Prisma
+  strips `$transaction` from the client it hands the work, so the nested call is unreachable
+  rather than merely discouraged.
+- **The transaction's timeout outlives the work it may wait on.** A duplicate blocks on the
+  idempotency index until the first attempt commits, so a window narrower than the work itself
+  turns a successful operation into a reported failure for the second caller. Widen the work
+  before narrowing the window.
 - **Writing more than one row of a table in one mutation? Order the writes before the loop, by
   the key the rows are picked out with.** Two requests that touch the same rows in opposite
   orders take the same row locks in opposite orders, and Postgres breaks the cycle by killing

@@ -21,8 +21,6 @@ const row = (over: Partial<BudgetViewRow> = {}): BudgetViewRow => ({
   ...over,
 });
 
-/// The repository is where the caller's scope arrives, so a fake one hands in a scope and
-/// keeps the statement instead of running it.
 function serviceReading(
   rows: BudgetViewRow[],
   budget: { id: string; timezone: string } | null = BUDGET,
@@ -96,7 +94,6 @@ describe('BudgetViewService', () => {
     const [statement] = statements;
     expect(statement?.values).toContain('2026-02-01');
     expect(statement?.values).toContain('2026-03-01');
-    // Midnight on 1 March in Warsaw, which is still 28 February in UTC.
     expect(statement?.values).toContainEqual(new Date('2026-02-28T23:00:00Z'));
   });
 

@@ -4,11 +4,7 @@ import { en } from '../src/i18n/messages/en';
 
 export const APP_ENTRY = '/categories';
 
-/// Fills step 1 and stops on its confirmation, which is where a user who walks away from
-/// setup leaves it.
 export async function submitBudget(page: Page, name = 'Household'): Promise<void> {
-  // "Name" on its own also reaches the starter-categories checkbox and its hidden input, so
-  // the field is asked for by role.
   await page.getByRole('textbox', { name: en['newBudget.nameLabel'], exact: true }).fill(name);
   await page.getByRole('combobox', { name: en['newBudget.currencyLabel'] }).click();
   await page.getByPlaceholder(en['newBudget.searchPlaceholder']).fill('USD');
@@ -24,9 +20,6 @@ export async function submitAccount(page: Page, name = 'Main card'): Promise<voi
   await expect(page.getByText(en['newAccount.startAssigning'])).toBeVisible();
 }
 
-/// Takes a signed-in user into the app from wherever their setup actually stands, rather than
-/// assuming an empty database. A retry, and a local run against a database that outlives it,
-/// both find the user part way through.
 export async function onboard(page: Page): Promise<void> {
   await page.goto(APP_ENTRY);
 

@@ -17,8 +17,6 @@ import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
 const USER_TORN = 'user_2rondoBudgetsTorn';
 
-/// Counts the writes the wrapper refused. Without it "no rows afterwards" is satisfied by a
-/// request that never reached the category write at all.
 let refused = 0;
 
 describe('POST /budgets when a write fails part way through', () => {
@@ -41,9 +39,6 @@ describe('POST /budgets when a write fails part way through', () => {
     key = createTestSigningKey();
     process.env.CLERK_JWT_KEY = key.publicKeyPem;
 
-    // The whole chain is the real one, transaction and rollback included. Only the writes to
-    // one model are made to fail, because nothing reachable over HTTP can tear a transaction
-    // in half from the outside.
     const moduleRef: TestingModule = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(MUTATOR_PRISMA)
       .useFactory({
@@ -109,8 +104,6 @@ describe('POST /budgets when a write fails part way through', () => {
     await expect(prisma.categoryGroup.count({ where: { userId: USER_TORN } })).resolves.toBe(0);
     await expect(prisma.category.count({ where: { userId: USER_TORN } })).resolves.toBe(0);
     await expect(prisma.idempotencyKey.count({ where: { userId: USER_TORN } })).resolves.toBe(0);
-    // The language is written inside the same transaction, before the category that fails. A
-    // settings row surviving here would mean the operation was split across two of them.
     await expect(prisma.userSettings.count({ where: { userId: USER_TORN } })).resolves.toBe(0);
   });
 });

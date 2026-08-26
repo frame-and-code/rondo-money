@@ -4,7 +4,8 @@
 
 Everything that goes into git is written in **English**: code, comments, docs, scripts,
 commit messages, PR text. The project is public, and anyone may read it. A few older files
-still carry Russian comments; do not imitate them, and translate them when you touch them.
+still carry Russian comments in the files that may hold any (see [code quality](code-quality.md));
+do not imitate them, and translate them when you touch them.
 Chat with the user in their language (Russian).
 
 ## Write like a person, not like a model

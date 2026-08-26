@@ -13,10 +13,6 @@ export default defineConfig({
   use: {
     baseURL: WEB_URL,
     trace: 'on-first-retry',
-    // Pinned rather than left to the runner's own locale. onboarding.spec.ts asserts that a
-    // new user's first screen comes up in English, and e2e/onboarding.ts fills every field by
-    // its English label, so both would depend on the runner's machine silently. A test that
-    // wants a different locale opens its own context, the way locale.spec.ts already does.
     locale: 'en-US',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

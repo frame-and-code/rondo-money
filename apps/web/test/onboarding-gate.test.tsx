@@ -60,8 +60,6 @@ jest.mock('@rondo/api-client/react-query', () => ({
     queryFn: async () => {
       accountsAsked += 1;
       if (accountsFail) throw new Error('the api was unreachable');
-      // What the endpoint itself answers without an active budget, so a gate that asks
-      // anyway fails here rather than quietly getting away with it.
       if (!budgets.some((budget) => budget.active)) {
         throw new Error('the caller has no active budget');
       }
@@ -88,8 +86,6 @@ const draw = (expects: OnboardingState, client: QueryClient = newClient()) => ({
   ...render(tree(expects, client)),
 });
 
-/// React Query hands a background failure to its observers on a timer, so a promise flush is
-/// not enough: without this the assertions below pass because nothing has re-rendered yet.
 const settle = async () => {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -142,7 +138,6 @@ describe('the onboarding gate', () => {
     client.setQueryData(BUDGETS_KEY, [{ id: 'budget-1', active: true }]);
     client.setQueryData(ACCOUNTS_KEY, [{ id: 'account-1' }]);
 
-    // The budget the cache remembers is gone. A gate that reads the cache would show the app.
     budgets = [];
     let open = () => {};
     budgetsGate = new Promise((resolve) => {
@@ -160,9 +155,6 @@ describe('the onboarding gate', () => {
   });
 
   it('does not answer from a cache that nothing is refreshing', async () => {
-    // The refetch on mount is what makes the cached answer harmless today. A `staleTime` added
-    // to the client later takes that away, and then the gate would decide on a list written
-    // before the budget it is being asked about existed.
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
@@ -237,15 +229,12 @@ describe('the onboarding gate', () => {
     const { client } = draw('budget');
     await screen.findByText(CHILD);
 
-    // What the form does on success: the budget exists now and its query is invalidated.
     budgets = [{ id: 'budget-1', active: true }];
     accounts = [];
     await act(async () => {
       await client.invalidateQueries({ queryKey: BUDGETS_KEY });
     });
 
-    // The read that follows is what a gate still deciding would act on, so waiting for it is
-    // what gives this assertion something to catch.
     await waitFor(() => expect(accountsAsked).toBe(1));
     await waitFor(() => expect(client.getQueryData(ACCOUNTS_KEY)).toEqual([]));
     await settle();
@@ -284,8 +273,6 @@ describe('the onboarding gate', () => {
     });
     await waitFor(() => expect(accountsAsked).toBe(1));
 
-    // One layout wraps both steps, so walking on does not unmount the gate. The verdict that
-    // kept the confirmation on screen would send the user straight back to the step they left.
     rerender(tree('account', client));
 
     expect(await screen.findByText(CHILD)).toBeInTheDocument();
@@ -296,8 +283,6 @@ describe('the onboarding gate', () => {
     const { client, rerender } = draw('budget');
     await screen.findByText(CHILD);
 
-    // The budget exists now and the form invalidated its query, but the confirmation carrying
-    // the way on is already on screen, so the user can walk on while that read is in flight.
     budgets = [{ id: 'budget-1', active: true }];
     accounts = [];
     let land = () => {};
@@ -310,7 +295,6 @@ describe('the onboarding gate', () => {
     rerender(tree('account', client));
     await settle();
 
-    // The answer still on the observer describes the moment before the budget existed.
     expect(replace).not.toHaveBeenCalled();
     expect(screen.queryByText(CHILD)).not.toBeInTheDocument();
 
@@ -327,8 +311,6 @@ describe('the onboarding gate', () => {
     const { client, rerender } = draw('app');
     await screen.findByText(CHILD);
 
-    // What ApiProvider does on a change of user: the cache is emptied and the subtree stays
-    // mounted. The second user owns none of the first one's budget.
     userId = 'user_b';
     budgets = [];
     accounts = [];
@@ -363,8 +345,6 @@ describe('the onboarding gate', () => {
   });
 
   it('says the check failed when there is no network to make it with', async () => {
-    // Offline is neither an answer nor an error: the query pauses, and a gate that waits for
-    // one of the two waits for something that is not coming.
     onlineManager.setOnline(false);
 
     draw('app');

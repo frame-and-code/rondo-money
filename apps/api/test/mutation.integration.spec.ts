@@ -102,8 +102,6 @@ describe('the single write point (integration)', () => {
 
   beforeEach(async () => {
     await removeFixtures();
-    // A holds no active budget, so the onboarding mutation below can create one; B holds one,
-    // so a write of B's reaches the isolation filter rather than stopping short of it.
     budgetOfA = await budgetFor(USER_A, false);
     budgetOfB = await budgetFor(USER_B, true);
   });

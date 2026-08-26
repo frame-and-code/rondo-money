@@ -56,15 +56,11 @@ describe('the layout over the onboarding steps', () => {
   it('shows the step is coming rather than a blank page while the gate decides', () => {
     draw();
 
-    // Every mount reads for itself, so this is a whole round trip on the first screen a new
-    // user ever sees.
     expect(screen.getByRole('status', { name: ru['common.loading'] })).toBeInTheDocument();
     expect(screen.queryByText('the step itself')).not.toBeInTheDocument();
   });
 
   it('takes which step this is from the address, so the second one opens rather than spins', async () => {
-    // Read the step wrong here and the gate redirects to the address already open: the path
-    // never changes, so the screen waits on a decision that cannot arrive.
     pathname = '/new/account';
     budgets = [{ id: 'budget-1', active: true }];
 

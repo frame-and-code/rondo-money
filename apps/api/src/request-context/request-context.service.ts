@@ -7,8 +7,6 @@ import { type BudgetSource } from '@/prisma/active-budget.resolver';
 interface ActiveBudget {
   id?: string;
   lookup?: Promise<string | undefined>;
-  /// The client the active budget is read on. A mutation puts its transaction here, so the
-  /// lookup sees the rows that transaction has written and takes no second connection.
   source?: BudgetSource;
 }
 
@@ -18,12 +16,7 @@ interface OpenMutation {
 
 interface RequestScope {
   userId?: string;
-  /// Held behind a reference the nested store of a mutation shares, so a budget resolved
-  /// inside one is still resolved after it returns.
   budget: ActiveBudget;
-  /// Shared the same way, so a second mutation started beside the first is seen. `inMutation`
-  /// below is per-store on purpose: it has to go false when its own work settles, which is
-  /// what refuses a promise that escaped the mutation that started it.
   mutation: OpenMutation;
   inMutation?: boolean;
 }
@@ -107,10 +100,6 @@ export class RequestContextService {
       return scope.budget.lookup;
     }
 
-    // The answer is remembered; neither an absence nor a failure is. A budget created later in
-    // the same request has to be found by the next query that needs one, and a lookup that is
-    // no longer the one on the scope was dropped while in flight, by a mutation that rolled
-    // back, so its answer describes a row that may be gone.
     const inFlight: Promise<string | undefined> = lookup(this.requireUserId()).then(
       (budgetId) => {
         if (scope.budget.lookup !== inFlight) {
@@ -146,13 +135,7 @@ export class RequestContextService {
       );
     }
 
-    // Two things this shape buys. The await belongs inside the scope, because a Prisma promise
-    // runs its hooks when it is awaited, so an un-awaited one would leave the marker behind.
-    // And the store is cleared when the work settles, so a promise that escapes the mutation
-    // is refused rather than writing outside the transaction it was started in.
     const store: RequestScope = { ...scope, inMutation: true };
-    // Only the outermost marker owns the shared flag. A nested one that cleared it on its way
-    // out would let a second transaction open beside the first, which is what it refuses.
     const opensTheMutation = !store.mutation.open;
     store.mutation.open = true;
 
@@ -160,8 +143,6 @@ export class RequestContextService {
       try {
         return await work();
       } catch (failure) {
-        // The budget was read on a transaction that is now rolled back, so the row it names
-        // may be gone. Remembering it would filter the rest of the request by a row nobody has.
         store.budget.id = undefined;
         store.budget.lookup = undefined;
         throw failure;

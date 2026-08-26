@@ -50,6 +50,16 @@ To observe something the response cannot show, such as whether a query happened 
 override the provider with a counting wrapper around the real one rather than a stub, so what
 runs is still the real behaviour.
 
+## Proving a composite write is atomic
+
+Nothing reachable over HTTP tears a transaction in half, so the failure has to be injected.
+Override `MUTATOR_PRISMA` on the testing module with a client whose writes to **one** model
+throw, drive the real endpoint, and assert that no row and no idempotency key survive. Count the
+writes the wrapper saw and assert the count as well: without it, a request that died before the
+first write leaves no rows either and satisfies every other assertion for free. A mutation that
+writes two rows of the same model fails the second one, not the model, or the first write never
+happens and the test proves nothing.
+
 ## Concurrency
 
 Two requests are two calls to `context.run`, never one `run` around a `Promise.all`: a shared

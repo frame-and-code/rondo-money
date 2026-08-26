@@ -15,9 +15,6 @@ function serialize(account: Account): Prisma.JsonObject {
   return { id: account.id, name: account.name, type: account.type };
 }
 
-/// Runs on the fresh path and on the replay alike, so a stored result cannot drift from a
-/// fresh one. It narrows rather than casts: the row is `JsonValue`, and a cast would promise
-/// the caller a shape the row may not carry.
 function decodeAccount(stored: Prisma.JsonValue): AccountResponse {
   if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
     throw new Error(`A stored account is not an object: ${JSON.stringify(stored)}`);
@@ -39,9 +36,6 @@ export class AccountsService {
   ) {}
 
   async create(userId: string, body: CreateAccountDto): Promise<AccountResponse> {
-    // Resolved before the mutation opens so that the budget can join the intent. Without it a
-    // key replayed after the caller switched budgets answers with the account it made in the
-    // old one, having written nothing in the new.
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -62,9 +56,6 @@ export class AccountsService {
           data: { userId, budgetId: budget.id, name: body.name, type: body.type },
         });
 
-        // PRD 7.2: the opening balance is a transaction and not a field on the account, so it
-        // stays correctable later. It is written even at zero, because nothing creates it a
-        // second time and an account without it would have no opening balance ever.
         await tx.transaction.create({
           data: {
             userId,
@@ -93,9 +84,6 @@ export class AccountsService {
     return accounts.map((account) => decodeAccount(serialize(account)));
   }
 
-  /// Asked before anything reads a model a budget owns. The scoping extension refuses such a
-  /// read without one, and what it raises is an internal error rather than an answer, so the
-  /// caller would see a 500 for an ordinary state: a user part way through onboarding.
   private async activeBudget(
     client: MutationClient | ScopedPrismaClient,
     id?: string,

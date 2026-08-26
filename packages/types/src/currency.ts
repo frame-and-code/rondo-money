@@ -1,8 +1,5 @@
 export type CurrencyCode = string;
 
-/// The shape of a currency code, published in the OpenAPI schema. The codes themselves are
-/// not: they come from the runtime's ICU data, and a Node upgrade would rewrite the committed
-/// contract on a change that touches no currency.
 export const CURRENCY_PATTERN = /^[A-Z]{3}$/;
 
 export function isCurrencyCode(value: string): boolean {

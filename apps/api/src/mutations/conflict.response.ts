@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/// What a mutation answers when its idempotency key was claimed by a different request. It
-/// lives beside the service that raises it, because every endpoint taking a key can return it.
 export class ConflictResponse {
   @ApiProperty({ example: 409 })
   statusCode!: number;

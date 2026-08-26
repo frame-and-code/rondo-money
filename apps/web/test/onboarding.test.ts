@@ -10,9 +10,6 @@ describe('where a user stands in setup', () => {
   });
 
   it('sends a user whose budgets are all inactive to step 1', () => {
-    // Unreachable through the API: creating a budget deactivates the previous one and the
-    // schema holds at most one active. The branch exists so that a reader with no active
-    // budget is never treated as if they had one.
     expect(onboardingState({ budgets: [inactive, inactive], accounts: null })).toBe('budget');
   });
 

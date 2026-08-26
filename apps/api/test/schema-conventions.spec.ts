@@ -48,9 +48,6 @@ describe('the domain core schema', () => {
   });
 
   it('publishes exactly the account kinds the column holds', () => {
-    // The two lists are written in different packages, and the published one cannot import the
-    // schema. Without this, a kind added to the column is refused by the API that stores it and
-    // throws on the way back out.
     expect([...ACCOUNT_TYPES].sort()).toEqual(Object.values($Enums.AccountType).sort());
   });
 

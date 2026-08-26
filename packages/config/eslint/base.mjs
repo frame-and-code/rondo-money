@@ -4,6 +4,8 @@ import importX from 'eslint-plugin-import-x';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import noComments from './no-comments.mjs';
+
 export default tseslint.config(
   {
     ignores: [
@@ -21,6 +23,10 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.node },
     },
+  },
+  {
+    plugins: { rondo: { rules: { 'no-comments': noComments } } },
+    rules: { 'rondo/no-comments': 'error' },
   },
   {
     plugins: { 'import-x': importX },

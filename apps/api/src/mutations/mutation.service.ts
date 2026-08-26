@@ -12,14 +12,9 @@ import { RequestContextService } from '@/request-context/request-context.service
 
 export type MutationClient = TransactionalPrismaClient;
 
-/// Wide enough that a mutation waiting on the idempotency index outlives the work it is
-/// waiting for. A duplicate that times out instead of replaying reports a failure for an
-/// operation that succeeded.
 const TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 15_000 };
 
 export interface MutationIntent<Decoded> {
-  /// Minted once when the user's form opens, never once per HTTP request: a key per request
-  /// makes a double click two writes again.
   key: string;
   request: Prisma.InputJsonValue;
   decode: (stored: Prisma.JsonValue) => Decoded;
@@ -29,11 +24,6 @@ function carriesToJson(value: object): value is { toJSON: () => unknown } {
   return 'toJSON' in value && typeof value.toJSON === 'function';
 }
 
-/// Sorted by key at every level, so the same intent hashes the same however its JSON arrived.
-/// Insertion order would make a rebuilt retry look like a different request and refuse it.
-/// A value that cannot be canonicalised is refused rather than hashed to something plausible:
-/// a `Date` rebuilt from its own properties is `{}`, and every date would share one
-/// fingerprint.
 function canonical(value: unknown): unknown {
   if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
     return value;
@@ -129,17 +119,12 @@ export class MutationService {
     }
   }
 
-  /// Read after the rollback, never inside the transaction: the conflict that sent us here
-  /// took the whole transaction down with it, so nothing can be read on it any more.
   private async resultOfTheFirstAttempt(
     userId: string,
     key: string,
     requestFingerprint: string,
     conflict: unknown,
   ): Promise<Prisma.JsonValue> {
-    // Named by the key it was claimed with rather than by `key` alone. The extension would add
-    // the caller either way, and the unique index makes another user's row unreachable, but a
-    // read that says which row it wants does not rest on either.
     const claimed = await this.prisma.idempotencyKey.findUnique({
       where: { userId_key: { userId, key } },
     });
