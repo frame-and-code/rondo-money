@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, healthControllerCheck, meControllerIdentify, type Options, userSettingsControllerRead } from '../sdk.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
+import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, userSettingsControllerRead } from '../sdk.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -196,3 +196,22 @@ export const budgetViewControllerReadOptions = (options: Options<BudgetViewContr
     },
     queryKey: budgetViewControllerReadQueryKey(options)
 });
+
+/**
+ * Move money between two envelopes
+ *
+ * Moves an amount out of one envelope and into another for one month, where ready to assign is an envelope too. Assigning money is this same operation with ready to assign as the source, so there is no separate way to set what a category holds.
+ */
+export const movesControllerMoveMutation = (options?: Partial<Options<MovesControllerMoveData>>): UseMutationOptions<MovesControllerMoveResponse, MovesControllerMoveError, Options<MovesControllerMoveData>> => {
+    const mutationOptions: UseMutationOptions<MovesControllerMoveResponse, MovesControllerMoveError, Options<MovesControllerMoveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await movesControllerMove({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};

@@ -17,8 +17,6 @@ import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
 const USER_TORN = 'user_2rondoAccountsTorn';
 
-/// Counts the writes the wrapper refused. Without it "no rows afterwards" is satisfied by a
-/// request that never reached the transaction write at all.
 let refused = 0;
 
 describe('POST /accounts when the opening income fails to write', () => {
@@ -41,9 +39,6 @@ describe('POST /accounts when the opening income fails to write', () => {
     key = createTestSigningKey();
     process.env.CLERK_JWT_KEY = key.publicKeyPem;
 
-    // The whole chain is the real one, transaction and rollback included. Only the writes to
-    // one model are made to fail, because nothing reachable over HTTP can tear a transaction
-    // in half from the outside.
     const moduleRef: TestingModule = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(MUTATOR_PRISMA)
       .useFactory({

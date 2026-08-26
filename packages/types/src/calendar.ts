@@ -122,10 +122,6 @@ export function calendarMonthOf(stored: Date): CalendarMonth {
   return parseCalendarMonth(day.slice(0, 7));
 }
 
-/// What an API takes, which is narrower than what a month can be. Every month here has a
-/// neighbouring month the helpers below can still bound in any zone, so an endpoint cannot
-/// accept a value that throws two calls later, and a year nobody budgets in is refused at the
-/// edge rather than deep inside a query.
 export const CALENDAR_MONTH_PATTERN = /^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/;
 
 export function nextCalendarMonth(month: CalendarMonth): CalendarMonth {
@@ -161,12 +157,6 @@ export function monthStartInstant(month: CalendarMonth, timeZone: string): Date 
     throw new TypeError(`Unknown time zone: ${JSON.stringify(timeZone)}`);
   }
 
-  // Sampled on either side of the day as well as at the naive instant: east of Greenwich the
-  // naive instant already sits hours into the local day, so a transition earlier that day would
-  // otherwise be read from its far side. A candidate counts only when its own offset reproduces
-  // it, which drops the ones falling in a gap; the earliest survivor is the first instant of the
-  // month, and with no survivor the clock jumped over local midnight and the latest candidate is
-  // the moment the day begins.
   const candidates = [-DAY_MS, 0, DAY_MS].map(
     (shift) => wanted - offsetAt(wanted + shift, timeZone),
   );

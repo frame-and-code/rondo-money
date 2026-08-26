@@ -4,8 +4,6 @@ const MESSAGE =
   'code injects SCOPED_PRISMA and writes through the client MutationService hands it. See ' +
   '.claude/rules/security.md.';
 
-/// A `patterns` entry rather than `paths`: only patterns are globs, so this covers the aliased
-/// spelling and the relative one. See unscoped-prisma.mjs for why it is not a config block.
 export default function mutatorPrisma({
   patterns = ['@/prisma/scoped-prisma', '**/prisma/scoped-prisma'],
 } = {}) {

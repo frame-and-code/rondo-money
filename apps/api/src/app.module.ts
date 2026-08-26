@@ -8,6 +8,7 @@ import { BudgetViewModule } from '@/budget-view/budget-view.module';
 import { BudgetsModule } from '@/budgets/budgets.module';
 import { HealthModule } from '@/health/health.module';
 import { MeModule } from '@/me/me.module';
+import { MovesModule } from '@/moves/moves.module';
 import { MutationsModule } from '@/mutations/mutations.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { RawSqlModule } from '@/raw-sql/raw-sql.module';
@@ -29,6 +30,7 @@ import { VALIDATION_PIPE } from '@/validation/validation.options';
     BudgetsModule,
     AccountsModule,
     BudgetViewModule,
+    MovesModule,
   ],
   providers: [{ provide: APP_PIPE, useValue: VALIDATION_PIPE }],
 })

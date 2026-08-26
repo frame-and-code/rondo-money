@@ -45,8 +45,6 @@ const bodyOf = (call: number): Record<string, unknown> => {
 let client: QueryClient;
 
 const draw = (locale: Locale = 'ru', shared?: QueryClient) => {
-  // The provider takes the browser's languages over its own initial value, so the language
-  // under test is set where the browser reports it.
   Object.defineProperty(window.navigator, 'languages', {
     value: [locale === 'en' ? 'en-US' : 'ru-RU'],
     configurable: true,
@@ -117,8 +115,6 @@ describe('the first account form', () => {
   });
 
   it('reads a grouping separator as grouping, not as a decimal mark', async () => {
-    // A comma groups thousands in English and marks the decimal in Russian. Rewriting it to a
-    // dot either way turns 1,250 into one and a quarter on a currency with three minor digits.
     budget = { id: 'b-1', currency: 'KWD', minorDigits: 3, active: true };
     const user = userEvent.setup();
     draw('en');
@@ -217,8 +213,6 @@ describe('the first account form', () => {
   });
 
   it('refuses a long grouped amount without taking the regular expression apart', async () => {
-    // The separator this locale groups with is also whitespace. Written as an alternation both
-    // branches match it, and an input this long that fails the pattern backtracks for minutes.
     const user = userEvent.setup();
     draw();
 
@@ -242,8 +236,6 @@ describe('the first account form', () => {
   });
 
   it('previews at the budget scale even where the browser disagrees about the currency', async () => {
-    // The digit count is frozen on the budget row; the browser's own currency table is a second
-    // source, and the two part company on a runtime upgrade.
     budget = { id: 'b-1', currency: 'JPY', minorDigits: 2, active: true };
     const user = userEvent.setup();
     draw();
@@ -257,8 +249,6 @@ describe('the first account form', () => {
     budget = { id: 'b-1', currency: 'PLN', minorDigits: 2, active: true };
     draw();
 
-    // The budget froze it when it was created and the API refuses a change, so a control here
-    // would promise one the API would then refuse.
     const shown = await screen.findByText('zł');
 
     expect(shown).toBeVisible();
@@ -443,8 +433,6 @@ describe('the first account form', () => {
   });
 
   it('refuses a separator where grouping could not have put it', async () => {
-    // "1250,50" is a comma used as a decimal mark in a locale that groups with one. Dropping it
-    // would send a hundred times the amount, and nothing downstream could tell.
     budget = { id: 'b-1', currency: 'USD', minorDigits: 2, active: true };
     const user = userEvent.setup();
     draw('en');

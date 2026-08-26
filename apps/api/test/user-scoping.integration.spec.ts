@@ -379,8 +379,6 @@ describe('userId auto-scoping (integration)', () => {
 
       const stored = await prisma.assignment.findUniqueOrThrow({ where: { id: assignmentOfA.id } });
 
-      // The scope reaches the conflicting update, which then matches no row: B is answered with
-      // nothing rather than with A's row, and writes nothing of its own.
       expect(answer).toBeNull();
       expect(stored.amount).toBe(1000n);
       expect(await prisma.assignment.count({ where: { userId: USER_B } })).toBe(0);

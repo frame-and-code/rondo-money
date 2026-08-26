@@ -34,7 +34,9 @@ rounding it away. The amount someone typed and the amount that gets stored have 
 number.
 
 `MONEY_NON_NEGATIVE_PATTERN` is the same canonical form with the sign dropped, for an amount
-that may not go below zero such as an account's opening balance.
+that may not go below zero such as an account's opening balance, and `MONEY_POSITIVE_PATTERN`
+drops the zero too, for an amount that would do nothing at zero such as a move between
+envelopes.
 
 **Calendar dates** are `YYYY-MM-DD` strings with no time attached, and the month bucket is
 `YYYY-MM`. `todayIn` and `calendarDateIn` take the IANA zone to answer in, which is the

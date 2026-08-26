@@ -1,5 +1,3 @@
-/// The kinds of account v1 holds. A credit card changes how Ready to Assign is counted and is
-/// deliberately not one of them.
 export const ACCOUNT_TYPES = ['CASH', 'DEBIT'] as const;
 
 export type AccountType = (typeof ACCOUNT_TYPES)[number];

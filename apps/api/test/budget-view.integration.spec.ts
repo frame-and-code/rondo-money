@@ -481,7 +481,6 @@ describe('/budget-view (integration)', () => {
     const userId = user('HiddenAtMidnight');
     const budget = await seedBudget(userId);
     const group = await seedGroup(userId, budget.id, 'Дом');
-    // Half past midnight on 1 March in Warsaw, which is still February in UTC.
     await seedCategory(
       userId,
       budget.id,

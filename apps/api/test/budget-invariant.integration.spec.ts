@@ -16,7 +16,6 @@ import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
 const USER = 'user_2rondoInvariantAaaaaaaaaa';
 
-/// Every generated date and month sits below this one, so reading it sums over all of time.
 const ALL_TIME = '2400-01';
 
 const DATES = [
@@ -30,12 +29,21 @@ const DATES = [
 
 const MONTHS = ['2026-01', '2026-02', '2026-03', '2026-06', '2027-01'] as const;
 
+const POOL = null;
+
+type Side = number | typeof POOL;
+
 type Operation =
   | { kind: 'income'; amount: bigint; date: string }
   | { kind: 'expense'; amount: bigint; date: string; category: number }
-  | { kind: 'assign'; amount: bigint; month: string; category: number };
+  | { kind: 'assign'; amount: bigint; month: string; category: number }
+  | { kind: 'move'; amount: bigint; month: string; from: Side; to: Side };
 
 const CATEGORIES = 3;
+
+const SIDES: readonly Side[] = [POOL, 0, 1, 2];
+
+let movesApplied = 0;
 
 const operation = (): fc.Arbitrary<Operation> =>
   fc.oneof(
@@ -55,6 +63,13 @@ const operation = (): fc.Arbitrary<Operation> =>
       amount: fc.bigInt({ min: -100_000n, max: 300_000n }),
       month: fc.constantFrom(...MONTHS),
       category: fc.integer({ min: 0, max: CATEGORIES - 1 }),
+    }),
+    fc.record({
+      kind: fc.constant<'move'>('move'),
+      amount: fc.bigInt({ min: 1n, max: 300_000n }),
+      month: fc.constantFrom(...MONTHS),
+      from: fc.constantFrom(...SIDES),
+      to: fc.constantFrom(...SIDES),
     }),
   );
 
@@ -99,9 +114,37 @@ describe('invariant 5.5 (integration)', () => {
   const clearMoney = async (): Promise<void> => {
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
+    await prisma.idempotencyKey.deleteMany({ where: owned });
   };
 
+  const sideOf = (side: Side): Record<string, unknown> =>
+    side === POOL
+      ? { kind: 'READY_TO_ASSIGN' }
+      : { kind: 'CATEGORY', categoryId: categoryIds[side] ?? '' };
+
   const apply = async (step: Operation): Promise<void> => {
+    if (step.kind === 'move') {
+      const bothSidesAreOneEnvelope = step.from === step.to;
+      if (bothSidesAreOneEnvelope) {
+        return;
+      }
+
+      movesApplied += 1;
+      await request(app.getHttpServer() as Server)
+        .post('/moves')
+        .set('Authorization', `Bearer ${tokenFor()}`)
+        .send({
+          month: step.month,
+          amount: step.amount.toString(10),
+          from: sideOf(step.from),
+          to: sideOf(step.to),
+          idempotencyKey: `invariant-move-${movesApplied}`,
+        })
+        .expect(201);
+
+      return;
+    }
+
     if (step.kind === 'assign') {
       const categoryId = categoryIds[step.category] ?? '';
       await prisma.assignment.upsert({
@@ -161,6 +204,7 @@ describe('invariant 5.5 (integration)', () => {
     await prisma.category.deleteMany({ where: owned });
     await prisma.categoryGroup.deleteMany({ where: owned });
     await prisma.account.deleteMany({ where: owned });
+    await prisma.idempotencyKey.deleteMany({ where: owned });
     await prisma.budget.deleteMany({ where: owned });
     await prisma.userSettings.deleteMany({ where: owned });
 
@@ -206,6 +250,7 @@ describe('invariant 5.5 (integration)', () => {
       await prisma.category.deleteMany({ where: owned });
       await prisma.categoryGroup.deleteMany({ where: owned });
       await prisma.account.deleteMany({ where: owned });
+      await prisma.idempotencyKey.deleteMany({ where: owned });
       await prisma.budget.deleteMany({ where: owned });
       await prisma.userSettings.deleteMany({ where: owned });
     }
@@ -237,5 +282,7 @@ describe('invariant 5.5 (integration)', () => {
         .beforeEach(clearMoney),
       { numRuns: 50 },
     );
+
+    expect(movesApplied).toBeGreaterThan(0);
   }, 180_000);
 });

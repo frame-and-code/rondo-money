@@ -4,37 +4,54 @@ import {
   MONEY_MAX_LENGTH,
   MONEY_NON_NEGATIVE_PATTERN,
   MONEY_PATTERN,
+  MONEY_POSITIVE_PATTERN,
   isStorableMoney,
   parseMoney,
 } from '@rondo/types';
 import { registerDecorator } from 'class-validator';
 
+type MoneySign = 'signed' | 'nonNegative' | 'positive';
+
+const BOUNDS: Record<MoneySign, { pattern: RegExp; example: string; says: string }> = {
+  signed: { pattern: MONEY_PATTERN, example: '-4500', says: '' },
+  nonNegative: {
+    pattern: MONEY_NON_NEGATIVE_PATTERN,
+    example: '4500',
+    says: ', and it cannot be negative',
+  },
+  positive: {
+    pattern: MONEY_POSITIVE_PATTERN,
+    example: '4500',
+    says: ', and it must be above zero',
+  },
+};
+
 interface MoneyPropertyOptions {
   description?: string;
   example?: string;
 
-  /// Publishes the bound and refuses below it together. Stated in only one of the two, the
-  /// schema would promise a field the pipe answers 400 for, or the reverse.
-  nonNegative?: boolean;
+  sign?: MoneySign;
 }
 
 export function ApiMoneyProperty(options: MoneyPropertyOptions = {}) {
-  const { nonNegative = false, ...published } = options;
-  const pattern = nonNegative ? MONEY_NON_NEGATIVE_PATTERN : MONEY_PATTERN;
+  const { sign = 'signed', ...published } = options;
+  const bound = BOUNDS[sign];
 
   return applyDecorators(
     ApiProperty({
       type: String,
-      pattern: pattern.source,
+      pattern: bound.pattern.source,
       maxLength: MONEY_MAX_LENGTH,
-      example: nonNegative ? '4500' : '-4500',
+      example: bound.example,
       ...published,
     }),
-    IsMoneyString(pattern, nonNegative),
+    IsMoneyString(sign),
   );
 }
 
-function IsMoneyString(pattern: RegExp, nonNegative: boolean): PropertyDecorator {
+function IsMoneyString(sign: MoneySign): PropertyDecorator {
+  const bound = BOUNDS[sign];
+
   return (target, propertyKey): void => {
     registerDecorator({
       name: 'isMoneyString',
@@ -43,7 +60,7 @@ function IsMoneyString(pattern: RegExp, nonNegative: boolean): PropertyDecorator
       validator: {
         validate(value: unknown): boolean {
           if (typeof value !== 'string' || value.length > MONEY_MAX_LENGTH) return false;
-          if (!pattern.test(value)) return false;
+          if (!bound.pattern.test(value)) return false;
 
           return isStorableMoney(parseMoney(value));
         },
@@ -51,7 +68,7 @@ function IsMoneyString(pattern: RegExp, nonNegative: boolean): PropertyDecorator
           return (
             `${propertyKey.toString()} must be an integer amount of minor units, sent as a ` +
             'string, and within the range the account can hold' +
-            (nonNegative ? ', and it cannot be negative' : '')
+            bound.says
           );
         },
       },

@@ -35,8 +35,6 @@ function scopedRows<A extends { data: object | readonly object[] }>(args: A, use
   });
 }
 
-/// The `where` half picks out an existing row, so it carries the whole scope. The `create`
-/// half takes its budget from the payload, the way every other row-creating write does.
 function scopedUpsert<A extends { where: object; create: object; update: object }>(
   args: A,
   scope: RequestScope,
@@ -107,9 +105,6 @@ const HANDLED_OPERATIONS: ReadonlySet<string> = new Set([
   'deleteMany',
 ]);
 
-/// The operations that reach the catch-all today, both reads. Anything else arriving here is
-/// an operation this file has no rule for, so it answers to the write guard rather than
-/// slipping past it on a client upgrade.
 const READ_FALLBACKS: ReadonlySet<string> = new Set(['aggregate', 'groupBy']);
 
 function carriesScope(args: unknown, scope: RequestScope): boolean {
@@ -126,12 +121,6 @@ function carriesScope(args: unknown, scope: RequestScope): boolean {
   );
 }
 
-/// The client built with `boundary` is the one domain code injects; the one built without it is
-/// what a mutation opens its transaction from. So an operation reaching a boundary client while
-/// a mutation is open was issued beside that mutation's transaction rather than in it: a write
-/// would commit on its own and survive the rollback, and a read would answer from before the
-/// transaction started. Both are refused, and by any operation rather than by a list of the
-/// writes, so an operation a later Prisma release adds is refused too rather than missed.
 export function withUserScoping(
   client: PrismaClient,
   context: RequestContextService,
@@ -139,8 +128,6 @@ export function withUserScoping(
   { boundary = false }: { boundary?: boolean } = {},
 ) {
   function requireTheMutationsClient(model: Prisma.ModelName, operation: string): void {
-    // The request-wide flag rather than the per-store one: a branch running beside the mutation
-    // is outside its transaction too, and would otherwise be handed the pooled connection.
     if (!boundary || !context.isMutationOpen()) {
       return;
     }

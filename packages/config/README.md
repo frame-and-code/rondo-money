@@ -6,7 +6,10 @@ truth. Every app and package inherits from here, no local copies of rules.
 ## Exports
 
 - `@rondo/config/eslint` is the flat ESLint config (ESLint 10 + typescript-eslint, unified
-  import rules, Prettier-compatible). Consume it from a workspace `eslint.config.mjs`:
+  import rules, Prettier-compatible). It carries `rondo/no-comments`, which refuses a comment
+  in TypeScript and JavaScript that no tool reads
+  ([code quality](../../.claude/rules/code-quality.md)) and deletes it under `--fix`. Consume it
+  from a workspace `eslint.config.mjs`:
 
   ```js
   import base from '@rondo/config/eslint';

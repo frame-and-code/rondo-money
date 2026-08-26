@@ -224,9 +224,6 @@ describe('the assignment table (integration)', () => {
       amount: 1000n,
     }).catch((error: unknown) => error);
 
-    // Named, because this row breaks both composite keys at once. Without the name the test
-    // stays green on the category key alone, and the budget key is the one holding this row's
-    // owner to the owner of the budget it claims.
     expect(codeOf(refused)).toBe('P2003');
     expect(String(refused)).toContain('assignment_budget_id_user_id_fkey');
   });
@@ -317,8 +314,6 @@ describe('the assignment table (integration)', () => {
 
     const stored = await prisma.assignment.findUniqueOrThrow({ where: { id: elsewhere.id } });
 
-    // Why an upsert the scope cannot reach answers this way, and what a caller has to do about
-    // it, is in packages/db/README.md. The test below pins the other answer.
     expect(codeOf(answer)).toBe('P2002');
     expect(stored.amount).toBe(1000n);
     expect(await prisma.assignment.count({ where: { userId: USER } })).toBe(1);

@@ -8,9 +8,6 @@ export type ActiveBudgetResolver = (userId: string) => Promise<string | undefine
 
 export type BudgetSource = PrismaService | TransactionalPrismaClient;
 
-/// Reads the budget on the transaction in flight when there is one. On the pooled client it
-/// would take a second connection and read committed state, so a mutation that has just
-/// created the caller's first budget would be told they have none.
 export function activeBudgetResolver(
   prisma: PrismaService,
   context: RequestContextService,

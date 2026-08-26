@@ -7,8 +7,6 @@ export interface BudgetViewBounds {
   monthStart: CalendarDate;
   nextMonthStart: CalendarDate;
 
-  /// A hiding counts as later than the month being read when it happened at or after this
-  /// instant, which the service computes from the budget's timezone.
   hiddenFrom: Date;
 }
 

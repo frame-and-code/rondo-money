@@ -4,9 +4,6 @@ import { defaultCategories } from '@/budgets/default-categories';
 
 const LANGUAGES: readonly Language[] = ['RU', 'EN', 'PL'];
 
-/// PRD 6.1.1 in Russian, which is the source of truth the set was decided in. The other two
-/// languages are written natively rather than translated, so they are checked by structure and
-/// by the two names the PRD pins by hand.
 const RUSSIAN: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['Обязательные платежи', ['Жильё', 'Коммунальные услуги', 'Связь и интернет']],
   ['Повседневные расходы', ['Продукты', 'Транспорт', 'Кафе и рестораны', 'Прочее']],

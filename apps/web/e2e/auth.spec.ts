@@ -30,7 +30,6 @@ test('signing in opens setup; signing out returns to sign-in', async ({ page }) 
     signInParams: { strategy: 'email_code', identifier: TEST_EMAIL },
   });
 
-  // This account never creates anything, so it is always a user whose setup has not started.
   await page.goto('/');
   await expect(page).toHaveURL(/\/new$/);
   await expect(page.getByRole('heading', { name: en['newBudget.heading'] })).toBeVisible();

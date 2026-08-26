@@ -24,8 +24,6 @@ jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerListQueryKey: () => ['budgetsControllerList'],
 }));
 
-/// Read here rather than pinned, so the assertion is "the form sends the browser's zone"
-/// rather than "the form sends Europe/Warsaw".
 const TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const currencyName = (locale: string, code: string): string =>
@@ -228,8 +226,6 @@ describe('the new budget form', () => {
     const sample = new Intl.NumberFormat('ru', { style: 'currency', currency: 'PLN' }).format(
       1234.5,
     );
-    // Whitespace only: the formatter separates groups with a no-break space, which the DOM
-    // query normalises away. Everything else still comes from Intl rather than a pinned string.
     const shown = new RegExp(sample.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s/g, '\\s'));
     expect(screen.getByText(shown)).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.currencyLocked'])).toBeInTheDocument();
@@ -336,9 +332,6 @@ describe('the new budget form', () => {
       await user.click(screen.getByRole('combobox', { name: ru['newBudget.languageLabel'] }));
       await user.click(await screen.findByRole('option', { name: localeLabels.en }));
 
-      // The fade is mid-flight: the callback that flips locale, key and failed together is
-      // queued but has not run. A submit right now must still read as the pre-switch intent,
-      // not a hybrid of the old language under a key minted for the new one.
       const [pending] = timeoutSpy.mock.calls.at(-1) ?? [];
       expect(typeof pending).toBe('function');
 
@@ -433,12 +426,8 @@ describe('the new budget form', () => {
       await screen.findByText(interpolate(ru['newBudget.doneTitle'], { name: 'Семейный' })),
     ).toBeInTheDocument();
     expect(screen.getByText(ru['newBudget.doneWithDefaults'])).toBeInTheDocument();
-    // Written out, and starting with a capital: `Intl` answers "польский злотый" in Russian,
-    // which reads as a mistake standing on its own in a plaque.
     expect(screen.getByText('Польский злотый')).toBeInTheDocument();
     expect(screen.queryByText('PLN')).not.toBeInTheDocument();
-    // "New budget: language, name and currency" describes the form. Left above a confirmation
-    // that the budget exists, it argues with it.
     expect(screen.queryByText(ru['newBudget.cardTitle'])).not.toBeInTheDocument();
     expect(screen.queryByText(ru['newBudget.cardDescription'])).not.toBeInTheDocument();
   });
@@ -456,8 +445,6 @@ describe('the new budget form', () => {
   });
 
   it('renders that way on as a real anchor, with no complaint from the primitive', async () => {
-    // A button primitive told to render a link claims native button semantics it does not have,
-    // and says so on the console rather than failing anything.
     const user = userEvent.setup();
     const complaints = jest.spyOn(console, 'error').mockImplementation(() => {});
     draw();
@@ -509,8 +496,6 @@ describe('the new budget form on a phone', () => {
   it('puts the progress above the form, carrying only the step being worked on', () => {
     draw();
 
-    // The phone has no room for three explanations at once, so the row shows the current one
-    // and hands the other names out on a tap.
     expect(screen.getByText(ru['onboarding.step1Title'])).toBeInTheDocument();
     expect(screen.getByText(ru['onboarding.step1Body'])).toBeInTheDocument();
     expect(screen.queryByText(ru['onboarding.step2Body'])).not.toBeInTheDocument();
@@ -554,7 +539,6 @@ describe('the new budget form on a phone', () => {
 
   it('highlights the language the budget will use, not whichever is listed first', async () => {
     const user = userEvent.setup();
-    // Polish is third in the list, so a highlight that sits on the first row is visible here.
     Object.defineProperty(window.navigator, 'languages', { value: ['pl-PL'], configurable: true });
     draw();
 
@@ -580,7 +564,6 @@ describe('the new budget form on a phone', () => {
 
     await openCurrencies(user);
     const rows = await screen.findAllByRole('option');
-    // The second row, so a highlight left on the first one is a different answer here.
     const second = rows[1];
     if (second === undefined) {
       throw new Error('the currency list came up with fewer than two rows');

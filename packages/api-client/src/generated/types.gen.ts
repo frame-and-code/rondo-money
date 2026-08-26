@@ -181,6 +181,66 @@ export type BudgetViewResponse = {
     groups: Array<BudgetViewGroupResponse>;
 };
 
+/**
+ * Which envelope this side is. Ready to assign is stored nowhere: it is derived from every assignment, so a side naming it writes no row and moves on its own.
+ */
+export type MoveSideKind = 'CATEGORY' | 'READY_TO_ASSIGN';
+
+export type MoveSideDto = {
+    /**
+     * Which envelope this side is. Ready to assign is stored nowhere: it is derived from every assignment, so a side naming it writes no row and moves on its own.
+     */
+    kind: MoveSideKind;
+    /**
+     * Required on a category side, and refused on a ready to assign one.
+     */
+    categoryId?: string;
+};
+
+export type CreateMoveDto = {
+    /**
+     * The month whose envelopes the money moves between. Required: a default here would make the write depend on a clock rather than on what the user is looking at.
+     */
+    month: string;
+    /**
+     * What to move, in minor units. The direction is the two sides, so zero would write a row and change nothing, and a negative amount would be this same move written backwards.
+     */
+    amount: string;
+    /**
+     * The envelope the money leaves.
+     */
+    from: MoveSideDto;
+    /**
+     * The envelope the money arrives in.
+     */
+    to: MoveSideDto;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two moves again.
+     */
+    idempotencyKey: string;
+};
+
+export type MoveSideResponse = {
+    kind: MoveSideKind;
+    /**
+     * Carried by a category side, and absent from a ready to assign one.
+     */
+    categoryId?: string;
+};
+
+export type MoveResponse = {
+    /**
+     * The month whose envelopes the money moved between.
+     */
+    month: string;
+    /**
+     * What moved, in minor units.
+     */
+    amount: string;
+    from: MoveSideResponse;
+    to: MoveSideResponse;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -415,3 +475,36 @@ export type BudgetViewControllerReadResponses = {
 };
 
 export type BudgetViewControllerReadResponse = BudgetViewControllerReadResponses[keyof BudgetViewControllerReadResponses];
+
+export type MovesControllerMoveData = {
+    body: CreateMoveDto;
+    path?: never;
+    query?: never;
+    url: '/moves';
+};
+
+export type MovesControllerMoveErrors = {
+    /**
+     * The body was refused, or a side names an envelope the caller cannot move.
+     */
+    400: BadRequestResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type MovesControllerMoveError = MovesControllerMoveErrors[keyof MovesControllerMoveErrors];
+
+export type MovesControllerMoveResponses = {
+    /**
+     * The move that was applied.
+     */
+    201: MoveResponse;
+};
+
+export type MovesControllerMoveResponse = MovesControllerMoveResponses[keyof MovesControllerMoveResponses];

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -108,4 +108,19 @@ export const budgetViewControllerRead = <ThrowOnError extends boolean = false>(o
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/budget-view',
     ...options
+});
+
+/**
+ * Move money between two envelopes
+ *
+ * Moves an amount out of one envelope and into another for one month, where ready to assign is an envelope too. Assigning money is this same operation with ready to assign as the source, so there is no separate way to set what a category holds.
+ */
+export const movesControllerMove = <ThrowOnError extends boolean = false>(options: Options<MovesControllerMoveData, ThrowOnError>): RequestResult<MovesControllerMoveResponses, MovesControllerMoveErrors, ThrowOnError> => (options.client ?? client).post<MovesControllerMoveResponses, MovesControllerMoveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/moves',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });

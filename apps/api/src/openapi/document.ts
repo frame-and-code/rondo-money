@@ -84,25 +84,58 @@ function openPublicOperations(document: OpenAPIObject): OpenAPIObject {
   return document;
 }
 
-/// The global pipe whitelists, so a field a DTO never declared is a 400 rather than something
-/// quietly dropped. Said in the description and not in the schemas, a generated client would
-/// happily build a body the server refuses, so every schema a request body names is closed
-/// here. Response schemas are left open on purpose: a client that meets a field it does not
-/// know should keep working.
+const referencedName = (value: unknown): string | undefined => {
+  if (typeof value !== 'object' || value === null) {
+    return undefined;
+  }
+
+  if ('$ref' in value && typeof value.$ref === 'string') {
+    return value.$ref.split('/').pop();
+  }
+
+  if ('allOf' in value && Array.isArray(value.allOf)) {
+    for (const member of value.allOf) {
+      const name = referencedName(member);
+      if (name !== undefined) {
+        return name;
+      }
+    }
+  }
+
+  return undefined;
+};
+
 function closeRequestBodies(document: OpenAPIObject): OpenAPIObject {
   const schemas = document.components?.schemas ?? {};
+  const closed = new Set<string>();
+
+  const close = (name: string | undefined): void => {
+    if (name === undefined || closed.has(name)) {
+      return;
+    }
+    closed.add(name);
+
+    const schema = schemas[name];
+    if (!schema || !('properties' in schema)) {
+      return;
+    }
+    schema.additionalProperties = false;
+
+    for (const property of Object.values(schema.properties ?? {})) {
+      close(referencedName(property));
+      if (typeof property === 'object' && property !== null && 'items' in property) {
+        close(referencedName(property.items));
+      }
+    }
+  };
 
   for (const pathItem of Object.values(document.paths)) {
     for (const method of HTTP_METHODS) {
       const body = pathItem[method]?.requestBody;
       const reference =
         body && 'content' in body ? body.content['application/json']?.schema : undefined;
-      const name = reference && '$ref' in reference ? reference.$ref.split('/').pop() : undefined;
-      const schema = name === undefined ? undefined : schemas[name];
 
-      if (schema && 'properties' in schema) {
-        schema.additionalProperties = false;
-      }
+      close(referencedName(reference));
     }
   }
 

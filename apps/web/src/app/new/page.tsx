@@ -1,8 +1,6 @@
 import { NewBudgetForm } from '@/components/new-budget-form';
 import { pickNamePlaceholderIndex } from '@/i18n/name-placeholders';
 
-/// The name example is picked per visit. Without this the page is rendered at build time and
-/// every visitor for the life of the deployment sees the same one.
 export const dynamic = 'force-dynamic';
 
 export default function NewBudgetPage() {

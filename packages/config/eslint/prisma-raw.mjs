@@ -5,14 +5,6 @@ const MESSAGE =
   'ScopedRawRepository (apps/api/src/raw-sql), which supplies the scope from the request ' +
   'context — see ADR-005 and .claude/rules/security.md.';
 
-export default function prismaRaw({ allow = [] } = {}) {
-  return [
-    {
-      files: ['**/*.ts'],
-      ignores: allow,
-      rules: {
-        'no-restricted-syntax': ['error', { selector: RAW_SQL_MEMBER, message: MESSAGE }],
-      },
-    },
-  ];
+export default function prismaRaw() {
+  return { selector: RAW_SQL_MEMBER, message: MESSAGE };
 }

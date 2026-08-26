@@ -16,10 +16,9 @@ export const MONEY_MAX_LENGTH = 20;
 
 export const MONEY_PATTERN = /^(0|-?[1-9]\d*)$/;
 
-/// The same canonical form with the sign dropped. An amount that may not go below zero, such
-/// as an account's opening balance, is published and validated with this one, so the API's
-/// schema and its pipe state the bound once.
 export const MONEY_NON_NEGATIVE_PATTERN = /^(0|[1-9]\d*)$/;
+
+export const MONEY_POSITIVE_PATTERN = /^[1-9]\d*$/;
 
 export function parseMoney(value: string): Money {
   if (!MONEY_PATTERN.test(value)) {
@@ -28,8 +27,6 @@ export function parseMoney(value: string): Money {
   return BigInt(value);
 }
 
-/// The count comes from the budget row, which froze it when the budget was created, never
-/// from a currency looked up again at read time.
 function requireDigits(digits: number): number {
   if (!Number.isInteger(digits) || digits < 0) {
     throw new TypeError(`Invalid minor digit count: ${JSON.stringify(digits)}`);

@@ -79,7 +79,6 @@ describe('/budget-view keeps to one caller and one budget (integration)', () => 
     await prisma.userSettings.deleteMany({ where: owned });
   };
 
-  /// Every amount is distinct, so a leak between two budgets shows in the numbers themselves.
   const seedBudget = async (
     userId: string,
     name: string,

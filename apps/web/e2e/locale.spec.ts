@@ -16,8 +16,6 @@ async function openFirstStep(context: BrowserContext) {
     page,
     signInParams: { strategy: 'email_code', identifier: LOCALE_TEST_EMAIL },
   });
-  // The first step of setup, not the app: this account never creates a budget, so the gate
-  // would send it here anyway, and going straight there keeps the scenario about language.
   await page.goto('/new');
 
   return page;

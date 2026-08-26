@@ -58,7 +58,22 @@ const created = await this.mutations.run(
   the types having said nothing.
 - **Compose, do not nest.** A `run` inside another `run` is refused, because Postgres has no
   nested interactive transaction and the inner one would commit on its own and claim a second
-  key. A mutation that wants another one's steps calls a plain function that takes `tx`.
+  key. A mutation that wants another one's steps calls a plain function that takes `tx`. Prisma
+  strips `$transaction` from the client it hands the work, so the nested call is unreachable
+  rather than merely discouraged.
+- **The transaction's timeout outlives the work it may wait on.** A duplicate blocks on the
+  idempotency index until the first attempt commits, so a window narrower than the work itself
+  turns a successful operation into a reported failure for the second caller. Widen the work
+  before narrowing the window.
+- **Writing more than one row of a table in one mutation? Order the writes before the loop, by
+  the key the rows are picked out with.** Two requests that touch the same rows in opposite
+  orders take the same row locks in opposite orders, and Postgres breaks the cycle by killing
+  one of them. The caller gets a 500 for an operation nothing was wrong with, and the pair a
+  user moves money between twice, or a transfer's two legs edited from two places, is exactly
+  where that meets them. A fixed order turns the cycle into an ordinary wait. That key is also
+  the one to normalise at the edge, since an order over the caller's spelling of a value is not
+  an order over the row. The test that proves it sends the two opposite operations at once and
+  asserts both answered, since a single-threaded test cannot deadlock at all.
 - **The result is JSON.** `work` returns a `Prisma.JsonValue`, which is what the idempotency row
   stores. Money is `bigint` and is therefore serialized on the way in (`serializeMoney`) and
   parsed on the way out, by the `decode` the caller passes. `decode` runs on both paths, the
