@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MOVE_SIDE_KINDS, type MoveSideKind } from '@rondo/types';
+import { MOVE_SIDE_KINDS, type MoveSideDto as MoveSide, type MoveSideKind } from '@rondo/types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsIn,
@@ -47,7 +47,7 @@ function IsCategoryOfItsKind(): PropertyDecorator {
   };
 }
 
-export class MoveSideDto {
+export class MoveSideDto implements MoveSide {
   @ApiProperty({
     description:
       'Which envelope this side is. Ready to assign is stored nowhere: it is derived from ' +
