@@ -1,6 +1,6 @@
 'use client';
 
-import type { BudgetViewCategoryDto } from '@rondo/types';
+import { parseMoney, type BudgetViewCategoryDto } from '@rondo/types';
 import { cn } from '@rondo/ui/lib/utils';
 
 import { AssignField } from '@/components/assign-field';
@@ -35,9 +35,9 @@ export function CategoryTile({
 }) {
   const { t } = useTranslations();
 
-  const assigned = BigInt(category.assigned);
-  const activity = BigInt(category.activity);
-  const available = BigInt(category.available);
+  const assigned = parseMoney(category.assigned);
+  const activity = parseMoney(category.activity);
+  const available = parseMoney(category.available);
   const ring = spendRing(activity, available);
 
   return (

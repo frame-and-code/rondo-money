@@ -11,6 +11,7 @@ export interface Amount {
   minor: bigint | null;
   fault: AmountFault | null;
   typed: boolean;
+  partial: boolean;
 }
 
 export interface MoneyReader {
@@ -51,15 +52,22 @@ const MINUS = /[-−]/;
 const SIGN = /(?=[+\-−])/;
 
 function readFactor(raw: string, marks: Marks): { by: bigint; scale: bigint } | null {
-  const body = raw.trim().replace(/\s/g, '');
+  const body = raw.trim();
   const mark = decimalMarks(marks).find((candidate) => body.includes(candidate));
-  const [whole = '', fraction = ''] = mark === undefined ? [body] : body.split(mark);
+  const parts = mark === undefined ? [body] : body.split(mark);
+  const [whole = '', fraction = ''] = parts;
 
-  if (!/^\d+$/.test(whole) || (fraction !== '' && !/^\d+$/.test(fraction))) {
+  if (parts.length > 2 || !wholeAmount(marks.group).test(whole)) {
     return null;
   }
 
-  return { by: BigInt(`${whole}${fraction}`), scale: 10n ** BigInt(fraction.length) };
+  if (fraction !== '' && !/^\d+$/.test(fraction)) {
+    return null;
+  }
+
+  const plain = whole.replace(/\s/g, '').split(marks.group).join('');
+
+  return { by: BigInt(`${plain}${fraction}`), scale: 10n ** BigInt(fraction.length) };
 }
 
 function rounded(numerator: bigint, denominator: bigint): bigint {
@@ -76,7 +84,7 @@ function rounded(numerator: bigint, denominator: bigint): bigint {
 function readProduct(raw: string, digits: number, marks: Marks): Amount {
   const [first = '', ...rest] = raw.split(/([*/])/);
   if (rest.length > 0 && first.trim() === '') {
-    return { minor: null, fault: 'shape', typed: true };
+    return { minor: null, fault: 'shape', typed: true, partial: false };
   }
 
   const amount = readTerm(first, digits, marks);
@@ -90,7 +98,7 @@ function readProduct(raw: string, digits: number, marks: Marks): Amount {
   for (let at = 0; at < rest.length; at += 2) {
     const factor = readFactor(rest[at + 1] ?? '', marks);
     if (factor === null) {
-      return { minor: null, fault: 'shape', typed: true };
+      return { minor: null, fault: 'shape', typed: true, partial: false };
     }
 
     if (rest[at] === '*') {
@@ -100,41 +108,46 @@ function readProduct(raw: string, digits: number, marks: Marks): Amount {
     }
 
     if (factor.by === 0n) {
-      return { minor: null, fault: 'shape', typed: true };
+      return { minor: null, fault: 'shape', typed: true, partial: false };
     }
 
     numerator *= factor.scale;
     denominator *= factor.by;
   }
 
-  return { minor: rounded(numerator, denominator), fault: null, typed: true };
+  return { minor: rounded(numerator, denominator), fault: null, typed: true, partial: false };
 }
 
 function readTerm(raw: string, digits: number, marks: Marks): Amount {
   const body = raw.trim();
   if (body === '') {
-    return { minor: 0n, fault: null, typed: true };
+    return { minor: 0n, fault: null, typed: true, partial: true };
   }
 
   const used = decimalMarks(marks).filter((mark) => body.includes(mark));
   const parts = body.split(used[0] ?? marks.decimal);
   const [whole = '', fraction = ''] = parts;
   if (parts.length > 2 || (whole !== '' && !wholeAmount(marks.group).test(whole))) {
-    return { minor: null, fault: 'shape', typed: true };
+    return { minor: null, fault: 'shape', typed: true, partial: false };
   }
 
   if (fraction !== '' && !/^\d+$/.test(fraction)) {
-    return { minor: null, fault: 'shape', typed: true };
+    return { minor: null, fault: 'shape', typed: true, partial: false };
   }
 
   if (fraction.length > digits) {
-    return { minor: null, fault: 'digits', typed: true };
+    return { minor: null, fault: 'digits', typed: true, partial: false };
   }
 
   const plain = whole === '' ? '0' : whole.replace(/\s/g, '').split(marks.group).join('');
   const normalized = fraction === '' ? plain : `${plain}.${fraction}`;
 
-  return { minor: parseDecimalString(normalized, digits), fault: null, typed: true };
+  return {
+    minor: parseDecimalString(normalized, digits),
+    fault: null,
+    typed: true,
+    partial: false,
+  };
 }
 
 export function readAmount(
@@ -145,10 +158,11 @@ export function readAmount(
 ): Amount {
   const trimmed = raw.trim();
   if (trimmed === '') {
-    return { minor: 0n, fault: null, typed: false };
+    return { minor: 0n, fault: null, typed: false, partial: false };
   }
 
   let total = 0n;
+  let partial = false;
 
   for (const piece of trimmed.split(SIGN)) {
     const negative = MINUS.test(piece.slice(0, 1));
@@ -163,13 +177,14 @@ export function readAmount(
     }
 
     total += negative ? -term.minor : term.minor;
+    partial = partial || term.partial;
   }
 
   if (total < 0n && options.signed !== true) {
-    return { minor: null, fault: 'negative', typed: true };
+    return { minor: null, fault: 'negative', typed: true, partial };
   }
 
-  return { minor: total, fault: null, typed: true };
+  return { minor: total, fault: null, typed: true, partial };
 }
 
 export function moneyOf(

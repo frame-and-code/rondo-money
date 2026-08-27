@@ -37,7 +37,7 @@ export const pl: Record<MessageKey, string> = {
   'categories.assignFieldShort': 'przydzielono w tym miesiącu',
   'categories.failTitle': 'Nie zapisano',
   'categories.failConflict':
-    'Operacja z tym kluczem jest już zapisana, i zapisana z inną kwotą. Ekran pokazuje to, co jest na serwerze.',
+    'Operacja z tym kluczem jest już zapisana, i to z inną kwotą. Ekran pokazuje to, co jest na serwerze.',
   'categories.failHidden':
     'Kategorię „{{category}}” ukryto, gdy ekran był otwarty. Miesiąc odczytano ponownie, kwota została bez zmian.',
   'categories.failBudget':

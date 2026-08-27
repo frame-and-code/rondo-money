@@ -1,4 +1,4 @@
-import { isMoveRefusal } from '@rondo/types';
+import { isMoveRefusal, type MoveRefusal } from '@rondo/types';
 
 export type SaveFailureKind = 'conflict' | 'hidden' | 'budget' | 'network' | 'other';
 
@@ -8,7 +8,7 @@ export interface SaveFailure {
   categoryName: string;
 }
 
-const BY_REASON: Record<string, SaveFailureKind> = {
+const BY_REASON: Partial<Record<MoveRefusal, SaveFailureKind>> = {
   CATEGORY_HIDDEN: 'hidden',
   NO_ACTIVE_BUDGET: 'budget',
 };

@@ -28,7 +28,7 @@ export const ru = {
   'categories.emptyBody':
     'Раздавать деньги пока некуда. Заведите первую группу и категорию, и месяц появится.',
   'categories.unavailable': 'Месяц не прочитался. Обновите страницу.',
-  'categories.assignEdit': 'Изменить назначенное, «{{category}}»',
+  'categories.assignEdit': 'Изменить назначенное в категории «{{category}}»',
   'categories.assignSave': 'Сохранить',
   'categories.assignCancel': 'Отменить',
   'categories.assignField': 'Назначено в этом месяце',

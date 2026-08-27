@@ -124,7 +124,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
-    if (read.minor === null) return;
+    if (read.minor === null || read.partial) return;
 
     create.mutate({
       body: {
@@ -280,7 +280,9 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
                 <Button
                   type="submit"
-                  disabled={name.trim() === '' || read.minor === null || create.isPending}
+                  disabled={
+                    name.trim() === '' || read.minor === null || read.partial || create.isPending
+                  }
                   className={CONTROL}
                 >
                   {create.isPending ? <IconLoader className="size-4 animate-spin" /> : null}

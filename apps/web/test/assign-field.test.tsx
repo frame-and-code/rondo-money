@@ -42,7 +42,10 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
   budgetViewControllerReadOptions: ({ query }: { query: { month: string } }) => ({
     queryKey: [{ _id: 'budgetViewControllerRead', baseUrl: 'http://api', query }],
-    queryFn: () => (viewFails ? Promise.reject(new Error('unreachable')) : Promise.resolve(view)),
+    queryFn: () =>
+      viewFails
+        ? Promise.reject(new Error('unreachable'))
+        : (viewHolds ?? Promise.resolve()).then(() => view),
   }),
   budgetViewControllerReadQueryKey: ({ query }: { query: { month: string } }) => [
     { _id: 'budgetViewControllerRead', baseUrl: 'http://api', query },
@@ -53,6 +56,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
 }));
 
 let viewFails = false;
+let viewHolds: Promise<void> | null = null;
 
 const CATEGORY_ID = '0199c1a8-9ecf-71c7-a617-c575df073700';
 const OTHER_ID = '0199c1a8-9ecf-71c7-a617-c575df073701';
@@ -178,6 +182,7 @@ beforeEach(() => {
   jest.useFakeTimers({ advanceTimers: true }).setSystemTime(new Date('2026-08-15T12:00:00Z'));
   search = '';
   viewFails = false;
+  viewHolds = null;
   view = monthOf();
   move.mockResolvedValue({
     month: '2026-08',
@@ -428,6 +433,7 @@ describe('when saving does not go through', () => {
       () => Promise.reject(new TypeError('Failed to fetch')),
       ru['categories.failNetwork'],
     ],
+    ['a refusal the screen cannot name', () => refused(400), ru['categories.failOther']],
   ] as const;
 
   it.each(failures)('leaves the amount and what is free alone: %s', async (_name, fail) => {
@@ -588,6 +594,40 @@ describe('when saving does not go through', () => {
 
     view = monthOf({ assigned: '60000', available: '60000' });
     await user.click(within(banner).getByRole('button', { name: ru['categories.failCancel'] }));
+    await waitFor(() => expect(assignedOf()).toHaveTextContent(/^600,00/));
+
+    const again = await openCell(user);
+    await typeAmount(user, again, '700,00');
+    await save(user);
+
+    await waitFor(() => expect(move).toHaveBeenCalledTimes(2));
+    expect(bodyOf(1)).toMatchObject({ amount: '10000' });
+  });
+
+  it('writes nothing until the re-read lands, so a request that may have arrived is counted once', async () => {
+    move.mockImplementationOnce(() => Promise.reject(new TypeError('Failed to fetch')));
+    const user = setup();
+    draw();
+
+    const field = await openCell(user);
+    await typeAmount(user, field, '600,00');
+    await save(user);
+
+    const banner = await screen.findByRole('alert');
+
+    let land = (): void => {};
+    viewHolds = new Promise<void>((resolve) => {
+      land = resolve;
+    });
+    view = monthOf({ assigned: '60000', available: '60000' });
+    await user.click(within(banner).getByRole('button', { name: ru['categories.failCancel'] }));
+
+    await user.click(assignedOf());
+
+    expect(screen.queryByLabelText(ru['categories.assignField'])).not.toBeInTheDocument();
+
+    viewHolds = null;
+    land();
     await waitFor(() => expect(assignedOf()).toHaveTextContent(/^600,00/));
 
     const again = await openCell(user);

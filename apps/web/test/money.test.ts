@@ -18,6 +18,15 @@ describe('reading an amount a person typed', () => {
     expect(readAmount('-', 2, ru(), { signed: true })).toMatchObject({ minor: 0n, fault: null });
   });
 
+  it('says an expression is unfinished, so a trailing operator never commits its left side', () => {
+    expect(readAmount('100+', 2, ru())).toMatchObject({ minor: 10000n, partial: true });
+    expect(readAmount('100-', 2, ru())).toMatchObject({ minor: 10000n, partial: true });
+    expect(readAmount('100++50', 2, ru())).toMatchObject({ partial: true });
+    expect(readAmount('-', 2, ru(), { signed: true }).partial).toBe(true);
+    expect(readAmount('100+50', 2, ru()).partial).toBe(false);
+    expect(readAmount('', 2, ru()).partial).toBe(false);
+  });
+
   it('refuses more minor digits than the currency has', () => {
     expect(readAmount('12,505', 2, ru()).fault).toBe('digits');
     expect(readAmount('12,5', 0, ru()).fault).toBe('digits');
@@ -93,6 +102,13 @@ describe('arithmetic a person types instead of doing it in their head', () => {
     expect(readAmount('/3', 2, ru()).fault).toBe('shape');
     expect(readAmount('  *3  ', 2, ru()).fault).toBe('shape');
     expect(readAmount('100+*3', 2, ru()).fault).toBe('shape');
+  });
+
+  it('reads a grouped factor on either side of the sign, so the two orders agree', () => {
+    expect(readAmount('2*1,000', 2, en()).minor).toBe(readAmount('1,000*2', 2, en()).minor);
+    expect(readAmount('2*1,000', 2, en()).minor).toBe(200000n);
+    expect(readAmount('2*1 000', 2, ru()).minor).toBe(200000n);
+    expect(readAmount('2*1,2,3', 2, en()).fault).toBe('shape');
   });
 
   it('refuses a division by nothing rather than answering with infinity', () => {

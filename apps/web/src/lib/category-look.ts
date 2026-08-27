@@ -51,8 +51,10 @@ const HUES: Record<CategoryColor, number> = {
 const NEUTRAL = 'var(--muted-foreground)';
 
 export function categoryLook(icon: CategoryIcon | null, color: CategoryColor | null): CategoryLook {
+  const hue = color === null ? undefined : HUES[color];
+
   return {
-    Icon: icon === null ? IconCoin : ICONS[icon],
-    color: color === null ? NEUTRAL : `oklch(0.65 0.13 ${HUES[color]})`,
+    Icon: (icon === null ? undefined : ICONS[icon]) ?? IconCoin,
+    color: hue === undefined ? NEUTRAL : `oklch(0.65 0.13 ${hue})`,
   };
 }

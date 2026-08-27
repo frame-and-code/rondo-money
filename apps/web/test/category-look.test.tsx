@@ -1,4 +1,9 @@
-import { CATEGORY_COLORS, CATEGORY_ICONS } from '@rondo/types';
+import {
+  CATEGORY_COLORS,
+  CATEGORY_ICONS,
+  type CategoryColor,
+  type CategoryIcon,
+} from '@rondo/types';
 import { render } from '@testing-library/react';
 import { createElement } from 'react';
 
@@ -33,6 +38,17 @@ describe('the look the screen draws a category with', () => {
     const drawn = CATEGORY_COLORS.map((color) => categoryLook(null, color).color);
 
     expect(new Set(drawn).size).toBe(CATEGORY_COLORS.length);
+  });
+
+  it('falls back on a name a newer API knows and this bundle does not, rather than crashing', () => {
+    const later = 'cooking' as CategoryIcon;
+    const shade = 'sand' as CategoryColor;
+    const look = categoryLook(later, shade);
+    const nothing = categoryLook(null, null);
+
+    expect(drawn(look)).toBeInstanceOf(SVGElement);
+    expect(look.Icon).toBe(nothing.Icon);
+    expect(look.color).toBe(nothing.color);
   });
 
   it('draws a category nobody gave a look with something that says money', () => {

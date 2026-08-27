@@ -85,9 +85,10 @@ describe('application shell', () => {
   });
 
   it('names the open section in the tab, in the language the reader is using', async () => {
-    renderShell();
+    const first = renderShell();
     await waitFor(() => expect(document.title).toBe(`${ru['nav.categories']} - Rondo Money`));
 
+    first.unmount();
     pathname = '/accounts';
     renderShell();
     await waitFor(() => expect(document.title).toBe(`${ru['nav.accounts']} - Rondo Money`));

@@ -39,6 +39,11 @@ Two consequences that are not obvious:
 not the total, so `434+35` has to be read as one amount. Sum the terms in minor units as `bigint`;
 evaluating the string as a number puts the float back in by the side door.
 
+An expression the person has not finished typing is a third answer, neither an amount nor a
+fault. `434+` reads as 434, and committing that writes a number nobody asked for, while
+refusing it outright paints the field red on the keystroke after every `+`. So the reader
+reports the amount **and** that it is unfinished, and the write is what refuses it.
+
 ## One key per intent, and the intent is the opening
 
 Mint the key when the field opens, not per request. Send the same key for every attempt at that
@@ -68,7 +73,10 @@ Two things that are easy to miss and both cost money:
 - **throwing an unretried request away is itself a state change.** A lost answer may mean the
   write landed, so dismissing the notice, pressing Escape or moving to another tile has to
   re-read the month. Leave it out and the next difference is measured from a number the server
-  has already moved past;
+  has already moved past. Firing that re-read and forgetting it leaves the same hole open for
+  as long as the request takes: the tile still shows the old number, so an edit started in that
+  window measures from it and writes the move a second time. Hold every write, and the opening
+  of every field, until the re-read lands;
 - **the notice has to render where the reader is looking.** On a phone the field lives in a
   modal, and a banner mounted in the page body sits behind its overlay: inert, out of the
   accessibility tree, and often scrolled off a page the modal has locked. Put the notice inside
@@ -118,7 +126,9 @@ Cover, at least:
 - each refusal: where the field goes, what the amount reads, and that the notice stays;
 - the notice reaches the reader on a phone as well as on a desktop;
 - the failing field is named even when the answer arrives after it was closed;
-- throwing an unretried request away re-reads, and a re-read that fails leaves the month up;
+- throwing an unretried request away re-reads, nothing can be written until that re-read
+  lands, and a re-read that fails leaves the month up;
+- an unfinished expression is refused by the write and shown as an amount by the field;
 - every amount rendered under a currency whose minor digit count is not two.
 
 One e2e journey proves the screens are wired together. It is the wrong level for the branches

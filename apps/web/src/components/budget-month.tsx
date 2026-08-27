@@ -7,7 +7,7 @@ import {
   budgetsControllerListOptions,
   movesControllerMoveMutation,
 } from '@rondo/api-client/react-query';
-import { toDecimalString, type CalendarMonth } from '@rondo/types';
+import { parseMoney, toDecimalString, type CalendarMonth } from '@rondo/types';
 import { Button } from '@rondo/ui/components/ui/button';
 import {
   Drawer,
@@ -117,6 +117,7 @@ export function BudgetMonth() {
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [sent, setSent] = useState<CreateMoveDto | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const [settling, setSettling] = useState(false);
   const target = useRef<{ categoryId: string; categoryName: string } | null>(null);
 
   const shownData = held ?? view.data;
@@ -221,7 +222,8 @@ export function BudgetMonth() {
     setSent(null);
 
     if (outstanding) {
-      void reread();
+      setSettling(true);
+      void reread().finally(() => setSettling(false));
     }
   };
 
@@ -229,7 +231,7 @@ export function BudgetMonth() {
     if (open === null) return '';
     if (editing?.draft !== null && editing?.draft !== undefined) return editing.draft;
 
-    const assigned = BigInt(open.assigned);
+    const assigned = parseMoney(open.assigned);
 
     return assigned === 0n ? '' : decimalOf(assigned);
   };
@@ -242,11 +244,22 @@ export function BudgetMonth() {
   };
 
   const commit = (): void => {
-    if (editing === null || open === null || pending !== null || behind || stepping !== null)
+    if (
+      editing === null ||
+      open === null ||
+      pending !== null ||
+      settling ||
+      behind ||
+      stepping !== null
+    )
       return;
 
-    const assigned = BigInt(open.assigned);
+    const assigned = parseMoney(open.assigned);
     const amount = money.read(draftOf(open.id, assigned));
+    if (amount.partial) {
+      return;
+    }
+
     if (amount.fault !== null || amount.minor === null) {
       setEditing(null);
       return;
@@ -305,7 +318,7 @@ export function BudgetMonth() {
     saving: pending === categoryId,
     failed: failure?.categoryId === categoryId,
     onOpen: () => {
-      if (pending !== null || behind || stepping !== null) return;
+      if (pending !== null || settling || behind || stepping !== null) return;
 
       discard();
       setEditing({ categoryId, draft: null, key: mintKey() });
@@ -344,7 +357,7 @@ export function BudgetMonth() {
         floating={drawerOpen}
         today={today}
         first={budget.firstMonth}
-        readyToAssign={BigInt(shownData.readyToAssign)}
+        readyToAssign={parseMoney(shownData.readyToAssign)}
         money={money}
         onMonth={goToMonth}
       />
@@ -369,7 +382,7 @@ export function BudgetMonth() {
               id={group.id}
               name={group.name}
               available={money.format(
-                group.categories.reduce((total, one) => total + BigInt(one.available), 0n),
+                group.categories.reduce((total, one) => total + parseMoney(one.available), 0n),
               )}
             >
               {group.categories.map((category) => (
@@ -377,7 +390,7 @@ export function BudgetMonth() {
                   key={category.id}
                   category={category}
                   money={money}
-                  {...editor(category.id, BigInt(category.assigned))}
+                  {...editor(category.id, parseMoney(category.assigned))}
                 />
               ))}
             </CategoryGroup>
@@ -392,8 +405,8 @@ export function BudgetMonth() {
               <SpendRing
                 icon={open.icon}
                 color={open.color}
-                fraction={spendRing(BigInt(open.activity), BigInt(open.available)).fraction}
-                overspent={BigInt(open.available) < 0n}
+                fraction={spendRing(parseMoney(open.activity), parseMoney(open.available)).fraction}
+                overspent={parseMoney(open.available) < 0n}
                 size={68}
               />
             )}
@@ -437,13 +450,13 @@ export function BudgetMonth() {
               <span className="flex items-baseline gap-1.5">
                 <span>{t('categories.available')}</span>
                 <span className="text-foreground font-medium tabular-nums">
-                  {open === null ? '' : money.format(BigInt(open.available))}
+                  {open === null ? '' : money.format(parseMoney(open.available))}
                 </span>
               </span>
               <span className="flex items-baseline gap-1.5">
                 <span>
                   {t(
-                    open !== null && BigInt(open.activity) > 0n
+                    open !== null && parseMoney(open.activity) > 0n
                       ? 'categories.incoming'
                       : 'categories.spent',
                   )}
@@ -451,7 +464,9 @@ export function BudgetMonth() {
                 <span className="text-foreground font-medium tabular-nums">
                   {open === null
                     ? ''
-                    : money.format(spendRing(BigInt(open.activity), BigInt(open.available)).moved)}
+                    : money.format(
+                        spendRing(parseMoney(open.activity), parseMoney(open.available)).moved,
+                      )}
                 </span>
               </span>
             </div>
