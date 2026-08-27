@@ -111,6 +111,13 @@ describe('arithmetic a person types instead of doing it in their head', () => {
     expect(readAmount('2*1,2,3', 2, en()).fault).toBe('shape');
   });
 
+  it('reads a factor written without its whole part, on either side of the sign', () => {
+    expect(readAmount('2*.5', 2, en()).minor).toBe(readAmount('.5*2', 2, en()).minor);
+    expect(readAmount('2*.5', 2, en()).minor).toBe(100n);
+    expect(readAmount('2*,5', 2, ru()).minor).toBe(100n);
+    expect(readAmount('100/.5', 2, en()).minor).toBe(20000n);
+  });
+
   it('refuses a product left hanging, rather than reading its missing factor as zero', () => {
     expect(readAmount('100*', 2, ru()).fault).toBe('shape');
     expect(readAmount('100/', 2, ru()).fault).toBe('shape');

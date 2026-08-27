@@ -57,7 +57,10 @@ function readFactor(raw: string, marks: Marks): { by: bigint; scale: bigint } | 
   const parts = mark === undefined ? [body] : body.split(mark);
   const [whole = '', fraction = ''] = parts;
 
-  if (parts.length > 2 || !wholeAmount(marks.group).test(whole)) {
+  if (
+    parts.length > 2 ||
+    (whole === '' ? fraction === '' : !wholeAmount(marks.group).test(whole))
+  ) {
     return null;
   }
 
@@ -65,7 +68,7 @@ function readFactor(raw: string, marks: Marks): { by: bigint; scale: bigint } | 
     return null;
   }
 
-  const plain = whole.replace(/\s/g, '').split(marks.group).join('');
+  const plain = whole === '' ? '' : whole.replace(/\s/g, '').split(marks.group).join('');
 
   return { by: BigInt(`${plain}${fraction}`), scale: 10n ** BigInt(fraction.length) };
 }
