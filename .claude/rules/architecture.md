@@ -246,7 +246,7 @@ specification, and prose describing it is a summary rather than a replacement.
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in
 [`packages/ui`](../../packages/ui/README.md)). No hand-written CSS files, no inline `style`
-props, no bespoke
+props outside the one case the next paragraph bounds, no bespoke
 re-implementation of a primitive shadcn/ui ships. Missing one? Add it with
 `pnpm dlx shadcn@latest add <component>` into `packages/ui`. That one stops for the user's
 confirmation (`ask` in [`settings.json`](../settings.json)), because `pnpm dlx` fetches and
