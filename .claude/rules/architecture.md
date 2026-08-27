@@ -252,6 +252,17 @@ re-implementation of a primitive shadcn/ui ships. Missing one? Add it with
 confirmation (`ask` in [`settings.json`](../settings.json)), because `pnpm dlx` fetches and
 executes a package and nothing does that unattended here.
 
+**An inline `style` is allowed for one thing: a value computed per element at runtime.** An
+animation delay taken from a cell's position is the case; a colour, a size or a spacing never
+is. What draws the bound is Tailwind rather than taste. Its scanner reads the source, so a
+class name assembled from a variable names a class that was never generated, and an arbitrary
+value only works when it is written out in full. Anything a static utility can say therefore
+stays a utility, and reaching for `style` because a class is awkward is the thing this rule
+refuses. A custom animation is **not** this case: its keyframes and the `--animate-*` variable
+that names it go in `@theme` in
+[`globals.css`](../../apps/web/src/app/globals.css), the theme's entry point, and the screen
+then uses the utility that variable creates.
+
 ### A route that needs a state of the data is closed by a gate
 
 Setup has a state, and a route behind it is unreachable until that state is right. The gate is
