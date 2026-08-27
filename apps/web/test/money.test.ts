@@ -111,6 +111,14 @@ describe('arithmetic a person types instead of doing it in their head', () => {
     expect(readAmount('2*1,2,3', 2, en()).fault).toBe('shape');
   });
 
+  it('refuses a product left hanging, rather than reading its missing factor as zero', () => {
+    expect(readAmount('100*', 2, ru()).fault).toBe('shape');
+    expect(readAmount('100/', 2, ru()).fault).toBe('shape');
+    expect(readAmount('100 * ', 2, ru()).fault).toBe('shape');
+    expect(readAmount('100**2', 2, ru()).fault).toBe('shape');
+    expect(readAmount('100*+2', 2, ru()).fault).toBe('shape');
+  });
+
   it('refuses a division by nothing rather than answering with infinity', () => {
     expect(readAmount('100/0', 2, ru()).fault).toBe('shape');
   });
