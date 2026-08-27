@@ -1,9 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  CATEGORY_COLORS,
+  CATEGORY_ICONS,
   type BudgetViewCategoryDto,
   type BudgetViewDto,
   type BudgetViewGroupDto,
   type CalendarMonth,
+  type CategoryColor,
+  type CategoryIcon,
 } from '@rondo/types';
 
 import { ApiMoneyProperty } from '@/validation/money.decorator';
@@ -15,6 +19,25 @@ export class BudgetViewCategoryResponse implements BudgetViewCategoryDto {
 
   @ApiProperty({ description: 'What the user calls this category.' })
   name!: string;
+
+  @ApiProperty({
+    description:
+      'Which icon this category is drawn with, as a domain name rather than the name of a ' +
+      'component. A category nobody has given one carries null, and so does a stored name ' +
+      'this app no longer draws.',
+    enum: CATEGORY_ICONS,
+    enumName: 'CategoryIcon',
+    nullable: true,
+  })
+  icon!: CategoryIcon | null;
+
+  @ApiProperty({
+    description: 'Which colour this category is drawn in, on the same terms as its icon.',
+    enum: CATEGORY_COLORS,
+    enumName: 'CategoryColor',
+    nullable: true,
+  })
+  color!: CategoryColor | null;
 
   @ApiMoneyProperty({
     description:

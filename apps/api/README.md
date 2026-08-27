@@ -34,15 +34,20 @@ the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
   There is exactly one settings row per user and nothing for a client to decide, so a
   create-then-read handshake would add a round-trip with one possible outcome (F1.6).
   Changing the language on its own has no endpoint yet.
-- `GET /budgets` returns the caller's budgets, oldest first, with the active one marked. A
-  caller who has not created one yet gets an empty list rather than an error.
+- `GET /budgets` returns the caller's budgets, oldest first, with the active one marked, each
+  carrying the earliest month it can hold, read from when it was created in its own timezone.
+  A screen has no month to show before that one, so it stops there. A caller who has not
+  created a budget yet gets an empty list rather than an error.
 - `GET /budget-view?month=YYYY-MM` returns one month of the categories screen: the groups and
   categories of the active budget with what each holds this month, plus the money that has no
-  job yet. Nothing in it is stored; every number is computed from transactions and assignments
-  in one statement. The month is required, because a default would make the answer depend on a
+  job yet, and the icon and the colour each category is drawn with. Nothing in it is stored;
+  every number is computed from transactions and assignments in one statement. The look is a
+  domain name rather than the name of a component, so a category the user has not given one
+  answers with null and so does a stored name this app no longer draws. The month is required, because a default would make the answer depend on a
   clock rather than on what the user is looking at. A category or a group hidden later than the
   month asked for is still listed in it, and a hidden one counts in the totals regardless.
-- `POST /budgets` creates a budget and, when asked for, the starter groups and categories. One
+- `POST /budgets` creates a budget and, when asked for, the starter groups and categories, each
+  carrying an icon and a colour so the screen has something to draw before the user chooses. One
   transaction covers all of it, the caller's interface language included: the category names
   are written in that language, and a second request to store it would leave a window where
   the two disagree. The language stays a property of the user rather than of the budget. The
@@ -62,10 +67,14 @@ the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
   to Assign is an envelope too. Assigning money is this operation with the pool as the source,
   so nothing else in the contract sets what a category holds. A side names a category or the
   pool, and the category side is the only one that writes: the pool is derived from every
-  assignment, so it moves on its own. The refusals are: an amount that is not above zero, two
-  sides naming one envelope, a category this budget does not hold, a hidden category, and a
-  caller with no active budget, who gets the same 400 rather than a 500, the way the account
-  endpoints do. What a category currently holds is never read, so a move is never
+  assignment, so it moves on its own. The domain refuses four things: two sides naming one
+  envelope, a category this budget does not hold, a hidden category, and a caller with no
+  active budget, who gets the same 400 rather than a 500, the way the account endpoints do.
+  Each of the four carries a `reason` beside the message, because a screen answers them
+  differently and matching on the prose would break the moment it is reworded. An amount that
+  is not above zero is refused earlier, by the pipe, and a body the pipe refuses carries no
+  reason at all: it answers before the domain has one to give. What a
+  category currently holds is never read, so a move is never
   refused for lack of money and a month's assignment goes negative when last month's leftover
   is handed back.
 

@@ -1,5 +1,5 @@
 import { type OpenAPIObject, type PathItemObject } from '@nestjs/swagger';
-import { MONEY_PATTERN } from '@rondo/types';
+import { CATEGORY_COLORS, CATEGORY_ICONS, MONEY_PATTERN, MOVE_REFUSALS } from '@rondo/types';
 
 import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
 import { HTTP_METHODS, SESSION_TOKEN_SCHEME } from '@/openapi/document';
@@ -40,15 +40,47 @@ const requestSchemaOf = (document: OpenAPIObject, operation?: Operation): Schema
   return schemaNamed(document, referencedName(content));
 };
 
-const answersWith = (response: unknown, name: string): boolean => {
-  const schema =
-    response && typeof response === 'object' && 'content' in response
-      ? ((response.content as Record<string, { schema?: { $ref?: string } }> | undefined)?.[
-          'application/json'
-        ]?.schema?.$ref ?? '')
-      : '';
+const responseSchemaOf = (response: unknown): { $ref?: string } | undefined =>
+  response && typeof response === 'object' && 'content' in response
+    ? (response.content as Record<string, { schema?: { $ref?: string } }> | undefined)?.[
+        'application/json'
+      ]?.schema
+    : undefined;
 
-  return schema.endsWith(`/${name}`);
+const answersWith = (response: unknown, name: string): boolean =>
+  (responseSchemaOf(response)?.$ref ?? '').endsWith(`/${name}`);
+
+const fieldsOf = (document: OpenAPIObject, schema: Schema | undefined): Set<string> => {
+  const named = new Set<string>();
+  if (schema === undefined) {
+    return named;
+  }
+
+  for (const field of Object.keys('properties' in schema ? (schema.properties ?? {}) : {})) {
+    named.add(field);
+  }
+
+  if ('allOf' in schema && Array.isArray(schema.allOf)) {
+    for (const member of schema.allOf) {
+      for (const field of fieldsOf(document, schemaNamed(document, referencedName(member)))) {
+        named.add(field);
+      }
+    }
+  }
+
+  return named;
+};
+
+const carriesTheShapeOf = (document: OpenAPIObject, response: unknown, name: string): boolean => {
+  const answered = schemaNamed(document, referencedName(responseSchemaOf(response)));
+  if (answered === undefined) {
+    return false;
+  }
+
+  const wanted = fieldsOf(document, document.components?.schemas?.[name]);
+  const carried = fieldsOf(document, answered);
+
+  return [...wanted].every((field) => carried.has(field));
 };
 
 const nestedSchemaNames = (
@@ -128,6 +160,21 @@ describe('OpenAPI document', () => {
     });
   });
 
+  it('names the category look enums, so a screen gets a union rather than any string', () => {
+    expect(document.components?.schemas?.['CategoryIcon']).toMatchObject({
+      enum: [...CATEGORY_ICONS],
+    });
+    expect(document.components?.schemas?.['CategoryColor']).toMatchObject({
+      enum: [...CATEGORY_COLORS],
+    });
+  });
+
+  it('names the refusal enum, so a screen answers each refusal without reading the message', () => {
+    expect(document.components?.schemas?.['MoveRefusal']).toMatchObject({
+      enum: [...MOVE_REFUSALS],
+    });
+  });
+
   it('publishes the conflict wherever an idempotency key can be claimed twice', () => {
     const undocumented = Object.entries(document.paths).flatMap(([path, item]) =>
       HTTP_METHODS.filter((method) => {
@@ -154,7 +201,7 @@ describe('OpenAPI document', () => {
     });
   });
 
-  it('publishes a bad request shape wherever the pipe can answer with one', () => {
+  it('publishes the bad request shape wherever the pipe can answer with one', () => {
     const validated = (method: (typeof HTTP_METHODS)[number], item: PathItemObject): boolean =>
       Boolean(item[method]?.requestBody) ||
       (item[method]?.parameters ?? []).some(
@@ -165,7 +212,7 @@ describe('OpenAPI document', () => {
       HTTP_METHODS.filter(
         (method) =>
           validated(method, item) &&
-          !answersWith(item[method]?.responses['400'], 'BadRequestResponse'),
+          !carriesTheShapeOf(document, item[method]?.responses['400'], 'BadRequestResponse'),
       ).map((method) => `${method.toUpperCase()} ${path}`),
     );
 
@@ -335,6 +382,39 @@ describe('OpenAPI document', () => {
         'assigned',
         'available',
       ]);
+    });
+
+    it('publishes the look of a category as the named vocabularies, nullable and always present', () => {
+      const schema = document.components?.schemas?.['BudgetViewCategoryResponse'];
+      const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+      const required = schema && 'required' in schema ? (schema.required ?? []) : [];
+
+      for (const [field, name] of [
+        ['icon', 'CategoryIcon'],
+        ['color', 'CategoryColor'],
+      ] as const) {
+        expect(required).toContain(field);
+        expect(JSON.stringify(properties[field])).toContain(`#/components/schemas/${name}`);
+        expect(JSON.stringify(properties[field])).toContain('"nullable":true');
+      }
+    });
+  });
+
+  describe('a refused move', () => {
+    it('answers the reason beside the message, and never as the message', () => {
+      const refused = document.paths['/moves']?.post?.responses['400'];
+      const schema =
+        refused && 'content' in refused ? refused.content?.['application/json']?.schema : undefined;
+
+      expect(JSON.stringify(schema)).toContain('MoveRefusedResponse');
+
+      const shape = document.components?.schemas?.['MoveRefusedResponse'];
+      const properties = shape && 'properties' in shape ? (shape.properties ?? {}) : {};
+      const required = shape && 'required' in shape ? (shape.required ?? []) : [];
+
+      expect(JSON.stringify(properties['reason'])).toContain('#/components/schemas/MoveRefusal');
+      expect(required).not.toContain('reason');
+      expect(required).toContain('message');
     });
   });
 

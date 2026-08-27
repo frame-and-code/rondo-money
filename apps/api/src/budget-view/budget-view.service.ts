@@ -1,10 +1,14 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
+  isCategoryColor,
+  isCategoryIcon,
   monthStartInstant,
   nextCalendarMonth,
   parseCalendarDate,
   serializeMoney,
   type CalendarMonth,
+  type CategoryColor,
+  type CategoryIcon,
 } from '@rondo/types';
 
 import {
@@ -21,6 +25,14 @@ import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 
 const NO_ACTIVE_BUDGET =
   'The caller has no active budget, so there is no month to read. Create a budget first.';
+
+function iconOf(stored: string | null): CategoryIcon | null {
+  return isCategoryIcon(stored) ? stored : null;
+}
+
+function colorOf(stored: string | null): CategoryColor | null {
+  return isCategoryColor(stored) ? stored : null;
+}
 
 function assemble(rows: BudgetViewRow[]): BudgetViewGroupResponse[] {
   const groups = new Map<string, BudgetViewGroupResponse>();
@@ -41,6 +53,8 @@ function assemble(rows: BudgetViewRow[]): BudgetViewGroupResponse[] {
       group.categories.push({
         id: row.categoryId,
         name: row.categoryName,
+        icon: iconOf(row.categoryIcon),
+        color: colorOf(row.categoryColor),
         assigned: serializeMoney(row.assigned),
         activity: serializeMoney(row.activity),
         available: serializeMoney(row.available),

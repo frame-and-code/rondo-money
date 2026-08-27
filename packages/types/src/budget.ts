@@ -1,3 +1,4 @@
+import { type CalendarMonth } from './calendar.js';
 import { type CurrencyCode } from './currency.js';
 
 export interface BudgetDto {
@@ -10,6 +11,8 @@ export interface BudgetDto {
   minorDigits: number;
 
   timezone: string;
+
+  firstMonth: CalendarMonth;
 
   active: boolean;
 }

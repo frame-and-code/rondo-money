@@ -23,9 +23,16 @@ export {
 export type { AccountDto, AccountType } from './account.js';
 export { ACCOUNT_TYPES, isAccountType } from './account.js';
 export type { BudgetDto } from './budget.js';
+export type { CategoryColor, CategoryIcon } from './category-look.js';
+export {
+  CATEGORY_COLORS,
+  CATEGORY_ICONS,
+  isCategoryColor,
+  isCategoryIcon,
+} from './category-look.js';
 export type { BudgetViewCategoryDto, BudgetViewDto, BudgetViewGroupDto } from './budget-view.js';
-export type { MoveDto, MoveSideDto, MoveSideKind } from './move.js';
-export { MOVE_SIDE_KINDS, isMoveSideKind } from './move.js';
+export type { MoveDto, MoveRefusal, MoveSideDto, MoveSideKind } from './move.js';
+export { MOVE_REFUSALS, MOVE_SIDE_KINDS, isMoveRefusal, isMoveSideKind } from './move.js';
 export type { LanguageTag, UserSettingsDto } from './user-settings.js';
 export type { CalendarDate, CalendarMonth } from './calendar.js';
 export {
@@ -42,4 +49,5 @@ export {
   monthOf,
   monthStartInstant,
   nextCalendarMonth,
+  previousCalendarMonth,
 } from './calendar.js';

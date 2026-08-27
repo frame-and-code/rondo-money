@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { type Budget, type Language, type Prisma } from '@rondo/db';
-import { minorDigits } from '@rondo/types';
+import { calendarDateIn, minorDigits, monthOf, parseCalendarMonth } from '@rondo/types';
 
 import { BudgetResponse } from '@/budgets/budget.response';
 import { CreateBudgetDto } from '@/budgets/create-budget.dto';
@@ -16,6 +16,7 @@ function serialize(budget: Budget): Prisma.JsonObject {
     currency: budget.currency,
     minorDigits: budget.minorDigits,
     timezone: budget.timezone,
+    firstMonth: monthOf(calendarDateIn(budget.createdAt, budget.timezone)),
     active: budget.active,
   };
 }
@@ -25,19 +26,28 @@ function decodeBudget(stored: Prisma.JsonValue): BudgetResponse {
     throw new Error(`A stored budget is not an object: ${JSON.stringify(stored)}`);
   }
 
-  const { id, name, currency, minorDigits: digits, timezone, active } = stored;
+  const { id, name, currency, minorDigits: digits, timezone, firstMonth, active } = stored;
   if (
     typeof id !== 'string' ||
     typeof name !== 'string' ||
     typeof currency !== 'string' ||
     typeof digits !== 'number' ||
     typeof timezone !== 'string' ||
+    typeof firstMonth !== 'string' ||
     typeof active !== 'boolean'
   ) {
     throw new Error(`A stored budget is missing fields: ${JSON.stringify(stored)}`);
   }
 
-  return { id, name, currency, minorDigits: digits, timezone, active };
+  return {
+    id,
+    name,
+    currency,
+    minorDigits: digits,
+    timezone,
+    firstMonth: parseCalendarMonth(firstMonth),
+    active,
+  };
 }
 
 @Injectable()
@@ -125,6 +135,8 @@ export class BudgetsService {
           groupId: written.id,
           name: category.name,
           sortOrder: category.sortOrder,
+          icon: category.icon,
+          color: category.color,
         })),
       });
     }

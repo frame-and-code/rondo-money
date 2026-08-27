@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@rondo/ui/components/theme-provider';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { AppShell } from '@/components/app-shell';
@@ -82,6 +82,22 @@ describe('application shell', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: ru['nav.netWorth'] }),
     ).toBeInTheDocument();
+  });
+
+  it('names the open section in the tab, in the language the reader is using', async () => {
+    renderShell();
+    await waitFor(() => expect(document.title).toBe(`${ru['nav.categories']} - Rondo Money`));
+
+    pathname = '/accounts';
+    renderShell();
+    await waitFor(() => expect(document.title).toBe(`${ru['nav.accounts']} - Rondo Money`));
+  });
+
+  it('names the app alone on an address no section owns', async () => {
+    pathname = '/nowhere';
+    renderShell();
+
+    await waitFor(() => expect(document.title).toBe('Rondo Money'));
   });
 
   it('renders the section below the header', () => {

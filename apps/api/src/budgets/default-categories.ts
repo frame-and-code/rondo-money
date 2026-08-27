@@ -1,8 +1,46 @@
 import { type Language } from '@rondo/db';
+import { type CategoryColor, type CategoryIcon } from '@rondo/types';
 
 export interface DefaultCategory {
   name: string;
   sortOrder: number;
+  icon: CategoryIcon;
+  color: CategoryColor;
+}
+
+const LOOK: ReadonlyArray<ReadonlyArray<readonly [CategoryIcon, CategoryColor]>> = [
+  [
+    ['home', 'blue'],
+    ['bolt', 'amber'],
+    ['wifi', 'cyan'],
+  ],
+  [
+    ['cart', 'green'],
+    ['car', 'orange'],
+    ['coffee', 'rose'],
+    ['dots', 'slate'],
+  ],
+  [
+    ['music', 'violet'],
+    ['heart', 'plum'],
+    ['repeat', 'teal'],
+  ],
+  [['shield', 'blue']],
+];
+
+function lookOf(
+  groupIndex: number,
+  categoryIndex: number,
+): { icon: CategoryIcon; color: CategoryColor } {
+  const found = LOOK[groupIndex]?.[categoryIndex];
+  if (!found) {
+    throw new Error(
+      `The starter set has no look for category ${categoryIndex} of group ${groupIndex}: the ` +
+        'names and the look are two lists that have to stay the same shape',
+    );
+  }
+
+  return { icon: found[0], color: found[1] };
 }
 
 export interface DefaultCategoryGroup {
@@ -39,6 +77,7 @@ export function defaultCategories(language: Language): readonly DefaultCategoryG
     categories: categories.map((categoryName, categoryIndex) => ({
       name: categoryName,
       sortOrder: categoryIndex,
+      ...lookOf(groupIndex, categoryIndex),
     })),
   }));
 }

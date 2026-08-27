@@ -45,13 +45,14 @@ turn. They stay short deliberately. Detail belongs in `docs/`, and the rule link
 
 ## Skills (`skills/`)
 
-| Skill                                                         | Use when                                                                                            |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md) | adding an API module that **reads** a domain table (the `user-settings` shape)                      |
-| [`add-a-mutation/`](skills/add-a-mutation/SKILL.md)           | writing a domain mutation: one transaction, one idempotency key, the tests that are not optional    |
-| [`testing-patterns/`](skills/testing-patterns/SKILL.md)       | writing a test in this repository: the harnesses, the fixtures, the traps that make a green run lie |
-| [`aggregate-query/`](skills/aggregate-query/SKILL.md)         | a screen needs numbers over many rows: raw SQL that keeps its own scoping, and the tests around it  |
-| [`budget-invariant/`](skills/budget-invariant/SKILL.md)       | the four budget numbers, how each is computed, and the reconciliation that need not balance         |
+| Skill                                                               | Use when                                                                                              |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [`add-a-domain-module/`](skills/add-a-domain-module/SKILL.md)       | adding an API module that **reads** a domain table (the `user-settings` shape)                        |
+| [`add-a-mutation/`](skills/add-a-mutation/SKILL.md)                 | writing a domain mutation: one transaction, one idempotency key, the tests that are not optional      |
+| [`testing-patterns/`](skills/testing-patterns/SKILL.md)             | writing a test in this repository: the harnesses, the fixtures, the traps that make a green run lie   |
+| [`aggregate-query/`](skills/aggregate-query/SKILL.md)               | a screen needs numbers over many rows: raw SQL that keeps its own scoping, and the tests around it    |
+| [`budget-invariant/`](skills/budget-invariant/SKILL.md)             | the four budget numbers, how each is computed, and the reconciliation that need not balance           |
+| [`edit-money-on-a-screen/`](skills/edit-money-on-a-screen/SKILL.md) | a field in `apps/web` changes money: the difference it sends, the key it sends it under, each refusal |
 
 A skill is grounded in code that exists. Every step names a real file to copy from, so it
 cannot drift into describing an API nobody wrote, and neither a skill nor an agent lands ahead

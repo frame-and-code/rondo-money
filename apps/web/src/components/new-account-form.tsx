@@ -5,7 +5,7 @@ import {
   accountsControllerListQueryKey,
   budgetsControllerListOptions,
 } from '@rondo/api-client/react-query';
-import { parseDecimalString, toDecimalString } from '@rondo/types';
+import { toDecimalString } from '@rondo/types';
 import type { AccountType } from '@rondo/types';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
 import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
@@ -34,6 +34,7 @@ import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
 import { accountNamePlaceholderKey } from '@/i18n/name-placeholders';
+import { moneyOf } from '@/lib/money';
 
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
@@ -59,73 +60,6 @@ const TYPES: ReadonlyArray<{
 ];
 
 const DEFAULT_TYPE: AccountType = 'DEBIT';
-
-type AmountFault = 'negative' | 'shape' | 'digits';
-
-interface Amount {
-  minor: bigint | null;
-  fault: AmountFault | null;
-  typed: boolean;
-}
-
-interface Marks {
-  group: string;
-  decimal: string;
-}
-
-function marksOf(locale: string): Marks {
-  const parts = new Intl.NumberFormat(locale).formatToParts(11111.1);
-
-  return {
-    group: parts.find((part) => part.type === 'group')?.value ?? '',
-    decimal: parts.find((part) => part.type === 'decimal')?.value ?? '.',
-  };
-}
-
-function quoted(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function wholeAmount(group: string): RegExp {
-  const mark = group === '' || /\s/.test(group) ? '\\s' : `[${quoted(group)}\\s]`;
-
-  return new RegExp(`^(?:\\d+|\\d{1,3}(?:${mark}\\d{3})+)$`);
-}
-
-function decimalMarks(marks: Marks): readonly string[] {
-  return marks.decimal === '.' || marks.group === '.' ? [marks.decimal] : [marks.decimal, '.'];
-}
-
-function readAmount(raw: string, digits: number, marks: Marks): Amount {
-  const trimmed = raw.trim();
-  if (trimmed === '') {
-    return { minor: 0n, fault: null, typed: false };
-  }
-
-  if (trimmed.startsWith('-')) {
-    return { minor: null, fault: 'negative', typed: true };
-  }
-
-  const used = decimalMarks(marks).filter((mark) => trimmed.includes(mark));
-  const parts = trimmed.split(used[0] ?? marks.decimal);
-  const [whole = '', fraction = ''] = parts;
-  if (parts.length > 2 || (whole !== '' && !wholeAmount(marks.group).test(whole))) {
-    return { minor: null, fault: 'shape', typed: true };
-  }
-
-  if (fraction !== '' && !/^\d+$/.test(fraction)) {
-    return { minor: null, fault: 'shape', typed: true };
-  }
-
-  if (fraction.length > digits) {
-    return { minor: null, fault: 'digits', typed: true };
-  }
-
-  const plain = whole === '' ? '0' : whole.replace(/\s/g, '').split(marks.group).join('');
-  const normalized = fraction === '' ? plain : `${plain}.${fraction}`;
-
-  return { minor: parseDecimalString(normalized, digits), fault: null, typed: true };
-}
 
 function mintKey(): string {
   return crypto.randomUUID();
@@ -157,29 +91,10 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
     },
   });
 
-  const money = useMemo(() => {
-    if (budget === null) return null;
-
-    const format = new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: budget.currency,
-      currencyDisplay: 'narrowSymbol',
-      minimumFractionDigits: budget.minorDigits,
-      maximumFractionDigits: budget.minorDigits,
-    });
-    const parts = format.formatToParts(0);
-    const symbolAt = parts.findIndex((part) => part.type === 'currency');
-    const numberAt = parts.findIndex((part) => part.type === 'integer');
-
-    return {
-      format,
-      symbol: parts[symbolAt]?.value ?? budget.currency,
-      symbolFirst: symbolAt < numberAt,
-      digits: budget.minorDigits,
-      currency: budget.currency,
-      marks: marksOf(locale),
-    };
-  }, [budget, locale]);
+  const money = useMemo(
+    () => (budget === null ? null : moneyOf(locale, budget.currency, budget.minorDigits)),
+    [budget, locale],
+  );
 
   if (money === null) {
     return isError ? (
@@ -189,14 +104,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
     ) : null;
   }
 
-  const read = readAmount(amount, money.digits, money.marks);
-
-  const preview = (minor: bigint): string => {
-    const decimal = toDecimalString(minor, money.digits);
-    const asNumber = Number(decimal);
-
-    return asNumber.toFixed(money.digits) === decimal ? money.format.format(asNumber) : decimal;
-  };
+  const read = money.read(amount);
 
   const faultMessage = (): string => {
     if (read.fault === 'negative') return t('newAccount.balanceNegative');
@@ -359,7 +267,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                   ) : null}
                   {read.fault === null && read.typed && read.minor !== null ? (
                     <p className="text-sm font-medium">
-                      {t('newAccount.balancePreview', { amount: preview(read.minor) })}
+                      {t('newAccount.balancePreview', { amount: money.format(read.minor) })}
                     </p>
                   ) : null}
                 </div>
@@ -403,7 +311,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                 <div className="bg-secondary flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3.5">
                   <span className="text-sm">{t('newAccount.doneReady')}</span>
                   <span className="text-[22px] font-semibold tracking-tight tabular-nums">
-                    {preview(read.minor ?? 0n)}
+                    {money.format(read.minor ?? 0n)}
                   </span>
                 </div>
 

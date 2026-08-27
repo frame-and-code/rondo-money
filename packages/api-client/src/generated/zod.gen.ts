@@ -49,6 +49,7 @@ export const zBudgetResponse = z.object({
     currency: z.string().regex(/^[A-Z]{3}$/),
     minorDigits: z.number(),
     timezone: z.string(),
+    firstMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
     active: z.boolean()
 });
 
@@ -85,9 +86,44 @@ export const zAccountResponse = z.object({
     type: zAccountType
 });
 
+/**
+ * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
+ */
+export const zCategoryIcon = z.enum([
+    'home',
+    'bolt',
+    'wifi',
+    'cart',
+    'car',
+    'coffee',
+    'music',
+    'heart',
+    'repeat',
+    'shield',
+    'dots'
+]);
+
+/**
+ * Which colour this category is drawn in, on the same terms as its icon.
+ */
+export const zCategoryColor = z.enum([
+    'blue',
+    'cyan',
+    'teal',
+    'green',
+    'amber',
+    'orange',
+    'rose',
+    'violet',
+    'plum',
+    'slate'
+]);
+
 export const zBudgetViewCategoryResponse = z.object({
     id: z.uuid(),
     name: z.string(),
+    icon: zCategoryIcon.nullable(),
+    color: zCategoryColor.nullable(),
     assigned: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     activity: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
@@ -133,6 +169,26 @@ export const zMoveResponse = z.object({
     amount: z.string().max(20).regex(/^[1-9]\d*$/),
     from: zMoveSideResponse,
     to: zMoveSideResponse
+});
+
+/**
+ * Why the move was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export const zMoveRefusal = z.enum([
+    'CATEGORY_HIDDEN',
+    'NO_ACTIVE_BUDGET',
+    'UNKNOWN_CATEGORY',
+    'SAME_ENVELOPE'
+]);
+
+export const zMoveRefusedResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    reason: zMoveRefusal.optional()
 });
 
 /**

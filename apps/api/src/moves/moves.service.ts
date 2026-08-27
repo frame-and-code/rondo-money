@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { type Prisma } from '@rondo/db';
 import {
   isMoveSideKind,
+  type MoveRefusal,
   parseCalendarMonth,
   parseMoney,
   serializeMoney,
@@ -18,6 +19,10 @@ const NO_ACTIVE_BUDGET =
   'The caller has no active budget, so there are no envelopes to move money between. Create ' +
   'a budget first.';
 
+function refuse(reason: MoveRefusal, message: string): BadRequestException {
+  return new BadRequestException({ statusCode: 400, error: 'Bad Request', message, reason });
+}
+
 const POOL = null;
 
 type Envelope = string | typeof POOL;
@@ -28,7 +33,7 @@ function envelopeOf(side: MoveSideDto): Envelope {
   }
 
   if (side.categoryId === undefined) {
-    throw new BadRequestException('A category side names no category.');
+    throw refuse('UNKNOWN_CATEGORY', 'A category side names no category.');
   }
 
   return side.categoryId;
@@ -104,7 +109,8 @@ export class MovesService {
     const from = envelopeOf(body.from);
     const to = envelopeOf(body.to);
     if (from === to) {
-      throw new BadRequestException(
+      throw refuse(
+        'SAME_ENVELOPE',
         'The two sides of a move are the same envelope, so the money would arrive where it ' +
           'left from.',
       );
@@ -174,13 +180,15 @@ export class MovesService {
       const category = found.find((candidate) => candidate.id === categoryId);
 
       if (!category) {
-        throw new BadRequestException(
+        throw refuse(
+          'UNKNOWN_CATEGORY',
           `This budget holds no category ${categoryId}, so no side of the move can name it.`,
         );
       }
 
       if (category.hiddenAt !== null) {
-        throw new BadRequestException(
+        throw refuse(
+          'CATEGORY_HIDDEN',
           `Category ${categoryId} is hidden, and a hidden envelope neither takes money nor ` +
             'gives it back.',
         );
@@ -196,7 +204,7 @@ export class MovesService {
       where: { active: true, ...(id ? { id } : {}) },
     });
     if (!budget) {
-      throw new BadRequestException(NO_ACTIVE_BUDGET);
+      throw refuse('NO_ACTIVE_BUDGET', NO_ACTIVE_BUDGET);
     }
 
     return budget;

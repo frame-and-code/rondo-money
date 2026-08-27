@@ -398,11 +398,11 @@
             }
           },
           "400": {
-            "description": "The body was refused, or a side names an envelope the caller cannot move.",
+            "description": "The body was refused, or a side names an envelope the caller cannot move. A refusal from the domain carries the reason it was refused for.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BadRequestResponse"
+                  "$ref": "#/components/schemas/MoveRefusedResponse"
                 }
               }
             }
@@ -627,6 +627,12 @@
             "example": "Europe/Warsaw",
             "description": "The zone that decides what \"today\" is and which month an amount falls into."
           },
+          "firstMonth": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The earliest month this budget can hold, read from when it was created in its own timezone. Nothing happened before it, so a screen has no month to show there."
+          },
           "active": {
             "type": "boolean",
             "description": "A user holds at most one active budget, and the screens follow that one."
@@ -638,6 +644,7 @@
           "currency",
           "minorDigits",
           "timezone",
+          "firstMonth",
           "active"
         ]
       },
@@ -773,6 +780,39 @@
           "type"
         ]
       },
+      "CategoryIcon": {
+        "type": "string",
+        "enum": [
+          "home",
+          "bolt",
+          "wifi",
+          "cart",
+          "car",
+          "coffee",
+          "music",
+          "heart",
+          "repeat",
+          "shield",
+          "dots"
+        ],
+        "description": "Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws."
+      },
+      "CategoryColor": {
+        "type": "string",
+        "enum": [
+          "blue",
+          "cyan",
+          "teal",
+          "green",
+          "amber",
+          "orange",
+          "rose",
+          "violet",
+          "plum",
+          "slate"
+        ],
+        "description": "Which colour this category is drawn in, on the same terms as its icon."
+      },
       "BudgetViewCategoryResponse": {
         "type": "object",
         "properties": {
@@ -783,6 +823,24 @@
           "name": {
             "type": "string",
             "description": "What the user calls this category."
+          },
+          "icon": {
+            "description": "Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryIcon"
+              }
+            ]
+          },
+          "color": {
+            "description": "Which colour this category is drawn in, on the same terms as its icon.",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryColor"
+              }
+            ]
           },
           "assigned": {
             "type": "string",
@@ -809,6 +867,8 @@
         "required": [
           "id",
           "name",
+          "icon",
+          "color",
           "assigned",
           "activity",
           "available"
@@ -995,6 +1055,58 @@
           "amount",
           "from",
           "to"
+        ]
+      },
+      "MoveRefusal": {
+        "type": "string",
+        "enum": [
+          "CATEGORY_HIDDEN",
+          "NO_ACTIVE_BUDGET",
+          "UNKNOWN_CATEGORY",
+          "SAME_ENVELOPE"
+        ],
+        "description": "Why the move was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
+      },
+      "MoveRefusedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          },
+          "reason": {
+            "description": "Why the move was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MoveRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
         ]
       }
     }

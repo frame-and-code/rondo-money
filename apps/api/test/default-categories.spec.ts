@@ -1,4 +1,5 @@
 import { type Language } from '@rondo/db';
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '@rondo/types';
 
 import { defaultCategories } from '@/budgets/default-categories';
 
@@ -72,5 +73,42 @@ describe('the default category set', () => {
 
     expect(polish).toContain('Media');
     expect(polish).toContain('Fundusz awaryjny');
+  });
+});
+
+describe('the look the default categories are drawn with', () => {
+  it.each(LANGUAGES)(
+    'gives every category an icon and a colour the app draws, in %s',
+    (language) => {
+      const categories = defaultCategories(language).flatMap((group) => group.categories);
+
+      for (const category of categories) {
+        expect(CATEGORY_ICONS).toContain(category.icon);
+        expect(CATEGORY_COLORS).toContain(category.color);
+      }
+    },
+  );
+
+  it('draws the same category the same way whatever language it was named in', () => {
+    const lookOf = (language: Language): Array<[number, number, string, string]> =>
+      defaultCategories(language).flatMap((group, groupIndex) =>
+        group.categories.map((category, index): [number, number, string, string] => [
+          groupIndex,
+          index,
+          category.icon,
+          category.color,
+        ]),
+      );
+
+    expect(lookOf('EN')).toEqual(lookOf('RU'));
+    expect(lookOf('PL')).toEqual(lookOf('RU'));
+  });
+
+  it('gives the categories of one group different icons, so a group is not a row of one symbol', () => {
+    for (const group of defaultCategories('RU')) {
+      const icons = group.categories.map((category) => category.icon);
+
+      expect(new Set(icons).size).toBe(icons.length);
+    }
   });
 });

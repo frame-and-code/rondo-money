@@ -8,6 +8,8 @@ export const NAV_TEST_EMAIL = 'e2e-nav+clerk_test@example.com';
 
 export const TEST_EMAILS = [TEST_EMAIL, LOCALE_TEST_EMAIL, NAV_TEST_EMAIL];
 
+export const BUDGET_TEST_EMAIL = 'e2e-budget+clerk_test@example.com';
+
 export const ONBOARDING_TEST_EMAIL = 'e2e-onboarding+clerk_test@example.com';
 
 export const RESUME_TEST_EMAIL = 'e2e-resume+clerk_test@example.com';

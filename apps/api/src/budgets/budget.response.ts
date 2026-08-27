@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { type BudgetDto } from '@rondo/types';
+import { type BudgetDto, type CalendarMonth } from '@rondo/types';
 
 import { ApiCurrencyProperty } from '@/validation/currency.decorator';
+import { ApiCalendarMonthProperty } from '@/validation/month.decorator';
 import { ApiTimeZoneProperty } from '@/validation/timezone.decorator';
 
 export class BudgetResponse implements BudgetDto {
@@ -29,6 +30,13 @@ export class BudgetResponse implements BudgetDto {
     description: 'The zone that decides what "today" is and which month an amount falls into.',
   })
   timezone!: string;
+
+  @ApiCalendarMonthProperty({
+    description:
+      'The earliest month this budget can hold, read from when it was created in its own ' +
+      'timezone. Nothing happened before it, so a screen has no month to show there.',
+  })
+  firstMonth!: CalendarMonth;
 
   @ApiProperty({
     description: 'A user holds at most one active budget, and the screens follow that one.',

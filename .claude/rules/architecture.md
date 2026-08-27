@@ -300,7 +300,12 @@ component therefore never touches a token, a header or a base URL, and never wri
   exists to prevent.
 - **A missing endpoint is added to `apps/api` and regenerated**, never assembled in web out of
   a URL string.
-- **Mutations** (from Phase 3) invalidate through the generated query keys. Expect the
-  invalidation to be wide. No derived value is stored, so one assignment moves RTA and every
-  later month's Available at once. Their idempotency key belongs to the user's intent, so it is
-  minted once when the form opens, not per HTTP request. Otherwise a double click writes twice.
+- **Mutations** invalidate through the generated query keys, and through the **generated** ones
+  rather than a string that looks like the operation: the key is an object carrying an id, a
+  base URL and the request, so a hand-written literal matches nothing and the screen goes on
+  showing money the server has already moved past. Expect the invalidation to be wide. No
+  derived value is stored, so one assignment moves RTA and every later month's Available at
+  once. Their idempotency key belongs to the user's intent, so it is minted once when the form
+  opens, not per HTTP request. Otherwise a double click writes twice. A field that edits an
+  amount has more rules than that, and
+  [`edit-money-on-a-screen`](../skills/edit-money-on-a-screen/SKILL.md) holds them.

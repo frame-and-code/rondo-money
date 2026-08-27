@@ -4,7 +4,7 @@ import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { TransactionType } from '@rondo/db';
-import { toDbDate } from '@rondo/types';
+import { isMoveRefusal, toDbDate } from '@rondo/types';
 import request from 'supertest';
 
 import { AppModule } from '@/app.module';
@@ -665,6 +665,92 @@ describe('/moves (integration)', () => {
         to: toCategory('01999999-9999-7999-8999-999999999999'),
         idempotencyKey: 'no-budget',
       }).expect(400);
+    });
+  });
+
+  describe('why a move was refused', () => {
+    it('names the reason on every refusal the domain raises', async () => {
+      const userId = user('Reasons');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id);
+      const visible = await seedCategory(userId, budget.id, group.id, 'Еда');
+      const hidden = await seedCategory(userId, budget.id, group.id, 'Убрана', {
+        hiddenAt: new Date('2026-03-01T00:00:00Z'),
+      });
+
+      const cases = [
+        ['CATEGORY_HIDDEN', { from: readyToAssign, to: toCategory(hidden.id) }],
+        [
+          'UNKNOWN_CATEGORY',
+          { from: readyToAssign, to: toCategory('01999999-9999-7999-8999-999999999999') },
+        ],
+        ['SAME_ENVELOPE', { from: toCategory(visible.id), to: toCategory(visible.id) }],
+      ] as const;
+
+      for (const [reason, sides] of cases) {
+        const answer = await move(userId, {
+          month: '2026-01',
+          amount: '1000',
+          ...sides,
+          idempotencyKey: `reason-${reason}`,
+        }).expect(400);
+
+        expect(answer.body).toMatchObject({ statusCode: 400, reason });
+      }
+
+      const noBudget = await move(user('ReasonsNoBudget'), {
+        month: '2026-01',
+        amount: '1000',
+        from: readyToAssign,
+        to: toCategory(visible.id),
+        idempotencyKey: 'reason-no-budget',
+      }).expect(400);
+
+      expect(noBudget.body).toMatchObject({ statusCode: 400, reason: 'NO_ACTIVE_BUDGET' });
+      expect(await assignmentsOf(userId)).toHaveLength(0);
+    });
+
+    it('carries a reason a screen can branch on rather than one it has to read', async () => {
+      const userId = user('ReasonVocabulary');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id);
+      const hidden = await seedCategory(userId, budget.id, group.id, 'Убрана', {
+        hiddenAt: new Date('2026-03-01T00:00:00Z'),
+      });
+
+      const answer = await move(userId, {
+        month: '2026-01',
+        amount: '1000',
+        from: readyToAssign,
+        to: toCategory(hidden.id),
+        idempotencyKey: 'reason-vocabulary',
+      }).expect(400);
+
+      const { reason } = answer.body as { reason?: unknown };
+
+      expect(isMoveRefusal(reason)).toBe(true);
+    });
+
+    it('gives no reason when the body was refused, because the pipe answers before the domain', async () => {
+      const userId = user('PipeNoReason');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id);
+      const category = await seedCategory(userId, budget.id, group.id, 'Еда');
+
+      for (const body of [
+        { month: '2026-13', amount: '1000' },
+        { month: '2026-01', amount: '0' },
+        { month: '2026-01', amount: '10.50' },
+      ]) {
+        const answer = await move(userId, {
+          ...body,
+          from: readyToAssign,
+          to: toCategory(category.id),
+          idempotencyKey: `pipe-${body.month}-${body.amount}`,
+        }).expect(400);
+
+        expect(answer.body).not.toHaveProperty('reason');
+      }
     });
   });
 

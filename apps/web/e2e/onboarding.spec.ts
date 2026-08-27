@@ -68,7 +68,7 @@ test('a new user is taken through setup and lands in the app', async ({ page }) 
 
   await page.getByRole('link', { name: pl['nav.categories'] }).click();
 
-  await expect(page.getByText(pl['categories.slotTitle'])).toBeVisible();
+  await expect(page.getByTestId('ready-to-assign')).toBeVisible();
 });
 
 test('a user who finished setup cannot open the wizard again', async ({ page }) => {
@@ -85,7 +85,7 @@ test('a user who finished setup cannot open the wizard again', async ({ page }) 
 
     await expect(page).toHaveURL(/\/categories$/);
     await expect(page.getByRole('heading', { name: step.heading })).toBeHidden();
-    await expect(page.getByText(en['categories.slotTitle'])).toBeVisible();
+    await expect(page.getByTestId('ready-to-assign')).toBeVisible();
   }
 });
 

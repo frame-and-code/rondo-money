@@ -21,6 +21,8 @@ const user = (name: string): string => `${USER_PREFIX}${name}`;
 interface ViewCategory {
   id: string;
   name: string;
+  icon: string | null;
+  color: string | null;
   assigned: string;
   activity: string;
   available: string;
@@ -687,5 +689,51 @@ describe('/budget-view (integration)', () => {
     await request(app.getHttpServer() as Server)
       .get('/budget-view?month=2026-02')
       .expect(401);
+  });
+
+  describe('the look a category is drawn with', () => {
+    it('answers with the icon and the colour the row holds, and with none where none was chosen', async () => {
+      const userId = user('Look');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Дом');
+      await seedCategory(userId, budget.id, group.id, 'Жильё', 0);
+      await prisma.category.create({
+        data: {
+          userId,
+          budgetId: budget.id,
+          groupId: group.id,
+          name: 'Продукты',
+          sortOrder: 1,
+          icon: 'cart',
+          color: 'green',
+        },
+      });
+
+      const view = await viewOf(userId, '2026-02');
+
+      expect(named(view, 'Продукты')).toMatchObject({ icon: 'cart', color: 'green' });
+      expect(named(view, 'Жильё')).toMatchObject({ icon: null, color: null });
+    });
+
+    it('answers with no look for a stored name this app cannot draw', async () => {
+      const userId = user('LookUnknown');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Дом');
+      await prisma.category.create({
+        data: {
+          userId,
+          budgetId: budget.id,
+          groupId: group.id,
+          name: 'Ракета',
+          sortOrder: 0,
+          icon: 'rocket',
+          color: '#ff0000',
+        },
+      });
+
+      const view = await viewOf(userId, '2026-02');
+
+      expect(named(view, 'Ракета')).toMatchObject({ icon: null, color: null });
+    });
   });
 });

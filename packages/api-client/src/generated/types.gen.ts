@@ -87,6 +87,10 @@ export type BudgetResponse = {
      */
     timezone: string;
     /**
+     * The earliest month this budget can hold, read from when it was created in its own timezone. Nothing happened before it, so a screen has no month to show there.
+     */
+    firstMonth: string;
+    /**
      * A user holds at most one active budget, and the screens follow that one.
      */
     active: boolean;
@@ -140,12 +144,30 @@ export type AccountResponse = {
     type: AccountType;
 };
 
+/**
+ * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
+ */
+export type CategoryIcon = 'home' | 'bolt' | 'wifi' | 'cart' | 'car' | 'coffee' | 'music' | 'heart' | 'repeat' | 'shield' | 'dots';
+
+/**
+ * Which colour this category is drawn in, on the same terms as its icon.
+ */
+export type CategoryColor = 'blue' | 'cyan' | 'teal' | 'green' | 'amber' | 'orange' | 'rose' | 'violet' | 'plum' | 'slate';
+
 export type BudgetViewCategoryResponse = {
     id: string;
     /**
      * What the user calls this category.
      */
     name: string;
+    /**
+     * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
+     */
+    icon: CategoryIcon | null;
+    /**
+     * Which colour this category is drawn in, on the same terms as its icon.
+     */
+    color: CategoryColor | null;
     /**
      * What this month's assignment holds. Last month's leftover is not added in; it shows as available being larger than this.
      */
@@ -239,6 +261,21 @@ export type MoveResponse = {
     amount: string;
     from: MoveSideResponse;
     to: MoveSideResponse;
+};
+
+/**
+ * Why the move was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export type MoveRefusal = 'CATEGORY_HIDDEN' | 'NO_ACTIVE_BUDGET' | 'UNKNOWN_CATEGORY' | 'SAME_ENVELOPE';
+
+export type MoveRefusedResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+    /**
+     * Why the move was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+     */
+    reason?: MoveRefusal;
 };
 
 export type HealthControllerCheckData = {
@@ -485,9 +522,9 @@ export type MovesControllerMoveData = {
 
 export type MovesControllerMoveErrors = {
     /**
-     * The body was refused, or a side names an envelope the caller cannot move.
+     * The body was refused, or a side names an envelope the caller cannot move. A refusal from the domain carries the reason it was refused for.
      */
-    400: BadRequestResponse;
+    400: MoveRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
