@@ -246,11 +246,22 @@ specification, and prose describing it is a summary rather than a replacement.
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in
 [`packages/ui`](../../packages/ui/README.md)). No hand-written CSS files, no inline `style`
-props, no bespoke
+props outside the one case the next paragraph bounds, no bespoke
 re-implementation of a primitive shadcn/ui ships. Missing one? Add it with
 `pnpm dlx shadcn@latest add <component>` into `packages/ui`. That one stops for the user's
 confirmation (`ask` in [`settings.json`](../settings.json)), because `pnpm dlx` fetches and
 executes a package and nothing does that unattended here.
+
+**An inline `style` is allowed for one thing: a value computed per element at runtime.** An
+animation delay taken from a cell's position is the case; a colour, a size or a spacing never
+is. What draws the bound is Tailwind rather than taste. Its scanner reads the source, so a
+class name assembled from a variable names a class that was never generated, and an arbitrary
+value only works when it is written out in full. Anything a static utility can say therefore
+stays a utility, and reaching for `style` because a class is awkward is the thing this rule
+refuses. A custom animation is **not** this case: its keyframes and the `--animate-*` variable
+that names it go in `@theme` in
+[`globals.css`](../../apps/web/src/app/globals.css), the theme's entry point, and the screen
+then uses the utility that variable creates.
 
 ### A route that needs a state of the data is closed by a gate
 
@@ -300,7 +311,12 @@ component therefore never touches a token, a header or a base URL, and never wri
   exists to prevent.
 - **A missing endpoint is added to `apps/api` and regenerated**, never assembled in web out of
   a URL string.
-- **Mutations** (from Phase 3) invalidate through the generated query keys. Expect the
-  invalidation to be wide. No derived value is stored, so one assignment moves RTA and every
-  later month's Available at once. Their idempotency key belongs to the user's intent, so it is
-  minted once when the form opens, not per HTTP request. Otherwise a double click writes twice.
+- **Mutations** invalidate through the generated query keys, and through the **generated** ones
+  rather than a string that looks like the operation: the key is an object carrying an id, a
+  base URL and the request, so a hand-written literal matches nothing and the screen goes on
+  showing money the server has already moved past. Expect the invalidation to be wide. No
+  derived value is stored, so one assignment moves RTA and every later month's Available at
+  once. Their idempotency key belongs to the user's intent, so it is minted once when the form
+  opens, not per HTTP request. Otherwise a double click writes twice. A field that edits an
+  amount has more rules than that, and
+  [`edit-money-on-a-screen`](../skills/edit-money-on-a-screen/SKILL.md) holds them.

@@ -1,6 +1,6 @@
 import { supportedCurrencyCodes } from '@rondo/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { NewBudgetForm } from '@/components/new-budget-form';
@@ -25,6 +25,8 @@ jest.mock('@rondo/api-client/react-query', () => ({
 }));
 
 const TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const FADE_OVER_MS = 5_000;
 
 const currencyName = (locale: string, code: string): string =>
   new Intl.DisplayNames([locale], { type: 'currency' }).of(code) ?? code;
@@ -319,8 +321,13 @@ describe('the new budget form', () => {
   });
 
   describe('the idempotency key', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it('keeps the key and the language in step, even mid-fade after a failed submit', async () => {
-      const user = userEvent.setup();
+      jest.useFakeTimers();
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
       submit.mockRejectedValue(new Error('the network was unkind'));
       draw();
 
@@ -328,12 +335,8 @@ describe('the new budget form', () => {
       await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
       expect(await screen.findByText(ru['newBudget.submitFailed'])).toBeInTheDocument();
 
-      const timeoutSpy = jest.spyOn(window, 'setTimeout');
       await user.click(screen.getByRole('combobox', { name: ru['newBudget.languageLabel'] }));
       await user.click(await screen.findByRole('option', { name: localeLabels.en }));
-
-      const [pending] = timeoutSpy.mock.calls.at(-1) ?? [];
-      expect(typeof pending).toBe('function');
 
       await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
       await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
@@ -342,8 +345,9 @@ describe('the new budget form', () => {
         idempotencyKey: bodyOf(0)['idempotencyKey'],
       });
 
-      (pending as () => void)();
-      timeoutSpy.mockRestore();
+      await act(async () => {
+        jest.advanceTimersByTime(FADE_OVER_MS);
+      });
 
       await user.click(await screen.findByRole('button', { name: en['newBudget.submit'] }));
       await waitFor(() => expect(submit).toHaveBeenCalledTimes(3));

@@ -10,10 +10,10 @@ import {
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { UnauthorizedResponse } from '@/auth/unauthorized.response';
 import { CreateMoveDto } from '@/moves/create-move.dto';
+import { MoveRefusedResponse } from '@/moves/move-refused.response';
 import { MoveResponse } from '@/moves/move.response';
 import { MovesService } from '@/moves/moves.service';
 import { ConflictResponse } from '@/mutations/conflict.response';
-import { BadRequestResponse } from '@/openapi/bad-request.response';
 
 @Controller('moves')
 export class MovesController {
@@ -29,8 +29,10 @@ export class MovesController {
   })
   @ApiCreatedResponse({ description: 'The move that was applied.', type: MoveResponse })
   @ApiBadRequestResponse({
-    description: 'The body was refused, or a side names an envelope the caller cannot move.',
-    type: BadRequestResponse,
+    description:
+      'The body was refused, or a side names an envelope the caller cannot move. A refusal ' +
+      'from the domain carries the reason it was refused for.',
+    type: MoveRefusedResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',

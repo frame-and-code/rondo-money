@@ -16,6 +16,8 @@ export interface BudgetViewRow {
   groupName: string | null;
   categoryId: string | null;
   categoryName: string | null;
+  categoryIcon: string | null;
+  categoryColor: string | null;
   assigned: bigint;
   activity: bigint;
   available: bigint;
@@ -63,6 +65,8 @@ export function budgetViewStatement(
       g.name AS "groupName",
       c.id AS "categoryId",
       c.name AS "categoryName",
+      c.icon AS "categoryIcon",
+      c.color AS "categoryColor",
       COALESCE(assigned.in_month, 0)::bigint AS "assigned",
       COALESCE(activity.in_month, 0)::bigint AS "activity",
       (COALESCE(assigned.to_date, 0) + COALESCE(activity.to_date, 0))::bigint AS "available"

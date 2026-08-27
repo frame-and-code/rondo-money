@@ -51,8 +51,10 @@ becoming a month nobody wrote. That floor is not cosmetic: a three-digit year is
 without its leading zero, and every instant computed from one comes back invalid. `toDbMonth` writes the first day of that month, which is the only shape the assignment
 column stores, and `calendarMonthOf` reads it back. That one refuses a value carrying a time
 and a day that is not the first, for the reason `calendarDateOf` refuses a time: rounding
-either would name a month the writer never chose. `nextCalendarMonth` steps to the following
-month, across the turn of the year included. `CALENDAR_MONTH_PATTERN` is what an API publishes
+either would name a month the writer never chose. `nextCalendarMonth` and
+`previousCalendarMonth` step to the neighbouring month, across the turn of the year included,
+and each refuses to step outside the range the parser takes rather than naming a month that
+throws on the next call. `CALENDAR_MONTH_PATTERN` is what an API publishes
 and its pipe enforces, and it is **narrower** than what the parser takes: `1900-01` through
 `2999-12`. Every month in that range has a neighbouring month the helpers below can still
 bound, so an endpoint cannot accept a value that throws two calls later.
@@ -68,6 +70,12 @@ a `date` column stores and `toDbDate` writes one back; neither takes a zone, bec
 calendar date is not an instant and converting it through one shifts the day. Passing such a
 value to `calendarDateIn` is that mistake, so `calendarDateOf` refuses anything carrying a
 time rather than picking a day for you.
+
+**The look of a category** is two short domain names, `CATEGORY_ICONS` and `CATEGORY_COLORS`,
+with a guard for each. A name says what the category is, not what draws it: the API stores and
+publishes the name, and the screen decides which component and which colour token it becomes.
+So a redraw touches one map in `apps/web` and no rows. Both are nullable everywhere, because a
+category the user made carries neither until they choose.
 
 ## Build
 

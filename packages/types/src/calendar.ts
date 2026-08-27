@@ -134,6 +134,16 @@ export function nextCalendarMonth(month: CalendarMonth): CalendarMonth {
   );
 }
 
+export function previousCalendarMonth(month: CalendarMonth): CalendarMonth {
+  const current = parseCalendarMonth(month);
+  const year = Number(current.slice(0, 4));
+  const index = Number(current.slice(5, 7));
+
+  return parseCalendarMonth(
+    index === 1 ? `${year - 1}-12` : `${year}-${String(index - 1).padStart(2, '0')}`,
+  );
+}
+
 const WALL_CLOCK: Intl.DateTimeFormatOptions = {
   calendar: 'gregory',
   numberingSystem: 'latn',

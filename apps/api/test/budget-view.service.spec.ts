@@ -15,6 +15,8 @@ const row = (over: Partial<BudgetViewRow> = {}): BudgetViewRow => ({
   groupName: null,
   categoryId: null,
   categoryName: null,
+  categoryIcon: null,
+  categoryColor: null,
   assigned: 0n,
   activity: 0n,
   available: 0n,
@@ -67,8 +69,24 @@ describe('BudgetViewService', () => {
           id: 'g1',
           name: 'Дом',
           categories: [
-            { id: 'c1', name: 'Аренда', assigned: '7000', activity: '-2500', available: '4500' },
-            { id: 'c2', name: 'Еда', assigned: '0', activity: '0', available: '0' },
+            {
+              id: 'c1',
+              name: 'Аренда',
+              icon: null,
+              color: null,
+              assigned: '7000',
+              activity: '-2500',
+              available: '4500',
+            },
+            {
+              id: 'c2',
+              name: 'Еда',
+              icon: null,
+              color: null,
+              assigned: '0',
+              activity: '0',
+              available: '0',
+            },
           ],
         },
         { id: 'g2', name: 'Пустая', categories: [] },
@@ -120,5 +138,58 @@ describe('BudgetViewService', () => {
     expect((await service.read(USER, '2026-02')).groups).toEqual([
       { id: 'g2', name: 'Дом', categories: [] },
     ]);
+  });
+});
+
+describe('the look a category is drawn with', () => {
+  it('carries the icon and the colour the row holds through to the response', async () => {
+    const { service } = serviceReading([
+      row({
+        groupId: 'g1',
+        groupName: 'Дом',
+        categoryId: 'c1',
+        categoryName: 'Жильё',
+        categoryIcon: 'home',
+        categoryColor: 'blue',
+      }),
+    ]);
+
+    const view = await service.read(USER, '2026-02');
+
+    expect(view.groups[0]?.categories[0]).toMatchObject({ icon: 'home', color: 'blue' });
+  });
+
+  it('answers with no look for a category that was never given one', async () => {
+    const { service } = serviceReading([
+      row({
+        groupId: 'g1',
+        groupName: 'Дом',
+        categoryId: 'c1',
+        categoryName: 'Жильё',
+        categoryIcon: null,
+        categoryColor: null,
+      }),
+    ]);
+
+    const view = await service.read(USER, '2026-02');
+
+    expect(view.groups[0]?.categories[0]).toMatchObject({ icon: null, color: null });
+  });
+
+  it('reads a stored name this app cannot draw as no look, rather than passing it on', async () => {
+    const { service } = serviceReading([
+      row({
+        groupId: 'g1',
+        groupName: 'Дом',
+        categoryId: 'c1',
+        categoryName: 'Жильё',
+        categoryIcon: 'rocket',
+        categoryColor: '#ff0000',
+      }),
+    ]);
+
+    const view = await service.read(USER, '2026-02');
+
+    expect(view.groups[0]?.categories[0]).toMatchObject({ icon: null, color: null });
   });
 });

@@ -8,6 +8,7 @@ import {
   monthStartInstant,
   nextCalendarMonth,
   parseCalendarDate,
+  previousCalendarMonth,
   parseCalendarMonth,
   toDbDate,
   toDbMonth,
@@ -234,6 +235,34 @@ describe('nextCalendarMonth', () => {
     expect(() => nextCalendarMonth('2026-13')).toThrow(TypeError);
     expect(() => nextCalendarMonth('2026-1')).toThrow(TypeError);
     expect(() => nextCalendarMonth('2026-13')).toThrow(/"2026-13"/);
+  });
+});
+
+describe('previousCalendarMonth', () => {
+  it('moves to the month before the one it was given', () => {
+    expect(previousCalendarMonth('2026-02')).toBe('2026-01');
+    expect(previousCalendarMonth('2026-12')).toBe('2026-11');
+  });
+
+  it('crosses the year boundary rather than counting to a zeroth month', () => {
+    expect(previousCalendarMonth('2026-01')).toBe('2025-12');
+  });
+
+  it('is the inverse of the step forward', () => {
+    for (const month of ['2026-01', '2026-07', '2026-12', '2027-01']) {
+      expect(previousCalendarMonth(nextCalendarMonth(month))).toBe(month);
+      expect(nextCalendarMonth(previousCalendarMonth(month))).toBe(month);
+    }
+  });
+
+  it('refuses a value that is not a month, and names it', () => {
+    expect(() => previousCalendarMonth('2026-13')).toThrow(TypeError);
+    expect(() => previousCalendarMonth('2026-1')).toThrow(TypeError);
+    expect(() => previousCalendarMonth('2026-13')).toThrow(/"2026-13"/);
+  });
+
+  it('refuses to step out of the range a calendar month is written in', () => {
+    expect(() => previousCalendarMonth('1000-01')).toThrow(TypeError);
   });
 });
 

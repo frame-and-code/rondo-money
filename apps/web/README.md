@@ -5,8 +5,9 @@ Rondo Money frontend on **Next.js (App Router)**.
 The app shell is in place: a persistent navigation over its sections, sign-in and route
 protection, the shadcn/ui base from `@rondo/ui`, the locale switcher and the typed API client
 `@rondo/api-client` (ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack
-Query. Server state lives in that cache, not in component state. Each section is a slot: the
-real screens behind them are still ahead.
+Query. Server state lives in that cache, not in component state. Categories is a real screen:
+it draws a month of the budget and assigns money in place. Accounts, net worth and settings are
+still slots.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
 account, is on a step of it, and every address behind the sign-in leads to that step until
@@ -43,14 +44,19 @@ src/
     (app)/                    # the app shell: a sidebar on desktop, a bottom tab bar on a
                               # phone, and the sections it navigates
       layout.tsx              # the gate over the app, and AppShell around every section
-      categories/             # each section is page.tsx (the slot) + loading.tsx (skeletons)
-      accounts/
+      categories/             # the month of the budget: page.tsx renders BudgetMonth, and
+                              # loading.tsx the same skeleton the screen shows while it reads
+      accounts/               # the remaining sections are page.tsx (the slot) + loading.tsx
       net-worth/
       settings/
   components/                 # app-level components: the shell and its navigation, the
                               # onboarding gate and what it shows while it decides, the
                               # section slot, the loading region, the Clerk provider wrapper,
-                              # the locale switcher and the two onboarding forms
+                              # the locale switcher, the two onboarding forms, and the
+                              # categories screen: the month header, a group, a tile, its
+                              # spend ring, the field that assigns money, the amount whose
+                              # digits roll when it changes, and the banner that says a save
+                              # did not go through
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language
                               # from GET /user-settings back into the locale context
@@ -59,8 +65,19 @@ src/
                               # Clerk token and the TanStack Query cache
   lib/currencies.ts           # the currency list for a locale: codes from @rondo/types,
                               # names from Intl.DisplayNames, memoised per locale
+  lib/money.ts                # reading an amount a person typed through their locale's own
+                              # marks, and showing one at the budget's digit count. Both
+                              # screens that touch money use it, so a sign is refused or
+                              # allowed in one place
+  lib/budget-month.ts         # which month the screen shows, its label, and the ring a tile
+                              # is drawn with. Today comes from the budget's timezone
+  lib/category-look.ts        # a category's icon and colour name to a component and a token,
+                              # with the money icon for a category nobody has given one
+  lib/save-failure.ts         # what a refused save was, read from the answer's reason rather
+                              # than from its message, and what the screen does about each
   lib/sections.ts             # the sections in one place: route, message key, icon.
-                              # The navigation and the header title both read it
+                              # The navigation, the header title and the browser tab all
+                              # read it, so a section is named the same in every one
   lib/onboarding.ts           # how far setup got, and the route each answer belongs on.
                               # The gate reads it, and nothing else decides where a user
                               # part way through setup is sent

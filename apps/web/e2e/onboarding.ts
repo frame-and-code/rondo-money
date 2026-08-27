@@ -25,7 +25,7 @@ export async function onboard(page: Page): Promise<void> {
 
   const budgetStep = page.getByRole('heading', { name: en['newBudget.heading'] });
   const accountStep = page.getByRole('heading', { name: en['newAccount.heading'] });
-  const app = page.getByText(en['categories.slotTitle']);
+  const app = page.getByTestId('ready-to-assign');
 
   await expect(budgetStep.or(accountStep).or(app)).toBeVisible();
 

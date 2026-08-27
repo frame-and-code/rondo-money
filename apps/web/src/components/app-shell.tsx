@@ -7,12 +7,12 @@ import { Separator } from '@rondo/ui/components/ui/separator';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconLayoutSidebar } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { SectionNav } from '@/components/section-nav';
 import { useTranslations } from '@/i18n/locale-context';
-import { activeSection } from '@/lib/sections';
+import { activeSection, APP_NAME, documentTitle } from '@/lib/sections';
 
 import type { ReactNode } from 'react';
 
@@ -22,6 +22,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const current = activeSection(pathname);
+
+  useEffect(() => {
+    const wanted = documentTitle(current, (section) => t(section.labelKey));
+
+    document.title = wanted;
+
+    const again = requestAnimationFrame(() => {
+      document.title = wanted;
+    });
+
+    return () => cancelAnimationFrame(again);
+  }, [current, t]);
 
   return (
     <div className="flex h-dvh overflow-hidden">
@@ -45,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             R
           </div>
-          {collapsed ? null : <span className="text-sm font-semibold">Rondo Money</span>}
+          {collapsed ? null : <span className="text-sm font-semibold">{APP_NAME}</span>}
         </div>
         <SectionNav variant="sidebar" collapsed={collapsed} />
       </aside>
