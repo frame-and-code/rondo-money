@@ -241,8 +241,15 @@ describe('the month of the budget', () => {
 });
 
 describe('what a number says by its colour', () => {
-  const tileOf = async (name: string): Promise<HTMLElement> =>
-    (await screen.findByText(name)).closest('[data-slot="category-tile"]') as HTMLElement;
+  const tileOf = async (name: string): Promise<HTMLElement> => {
+    const tile = (await screen.findByText(name)).closest('[data-slot="category-tile"]');
+
+    if (!(tile instanceof HTMLElement)) {
+      throw new Error(`Nothing on the screen holds ${name} inside a category tile.`);
+    }
+
+    return tile;
+  };
 
   it('reds an envelope that owes money, so the one to top up is found without reading', async () => {
     view = oneCategory({ name: 'Транспорт', available: '-12500' });
