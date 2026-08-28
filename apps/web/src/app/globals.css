@@ -240,12 +240,24 @@
 /* The menu primitives ship `cursor-default`, a utility, so a base-layer rule would lose to
    it. This block sits in the same layer and later in the file, which is what makes it win
    without editing a generated file. */
+
 @layer utilities {
   button:not(:disabled),
   [role='button']:not(:disabled),
   [role='menuitem'],
   [role='menuitemradio'],
-  [role='menuitemcheckbox'] {
+  [role='menuitemcheckbox'],
+  [role='option']:not([aria-disabled='true']) {
     cursor: pointer;
+  }
+}
+
+/* The shell scrolls `main`, not the document, so a primitive's own scroll lock does not reach
+   it. This rule is what stops the page moving under an open overlay. */
+@layer utilities {
+  body:has([data-slot='popover-backdrop']) main,
+  body:has([data-slot='dialog-overlay']) main,
+  body:has([data-slot='drawer-overlay']) main {
+    overflow: hidden;
   }
 }

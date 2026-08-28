@@ -16,6 +16,8 @@ export const RESUME_TEST_EMAIL = 'e2e-resume+clerk_test@example.com';
 
 export const FINISHED_TEST_EMAIL = 'e2e-finished+clerk_test@example.com';
 
+export const MOVE_TEST_EMAIL = 'e2e-move+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }

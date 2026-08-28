@@ -28,10 +28,10 @@ through one point, so a user operation lands whole or not at all and a double su
 once. The first account can be created too, and its opening balance is written as a transaction
 rather than stored on the account, so it stays correctable. A month of the budget can be read and worked in:
 what each category holds, what it spent, what is left in it and what has no job yet, every one
-of them computed from transactions and assignments rather than stored anywhere. Money is
-assigned by typing an amount into a category, which is a move between it and the pool rather
-than an endpoint of its own, and the month lives in the address so a link and the back button
-both work. What does not exist yet is entering transactions by hand.
+of them computed from transactions and assignments rather than stored anywhere. Money moves between envelopes from one dialog: a card opens it, the two envelopes are named
+in rows with an arrow between them, and assigning is the same move with the pool on the
+giving side rather than an operation of its own. The month lives in the address, so a link
+and the back button both work. What does not exist yet is entering transactions by hand.
 
 ## What it is
 

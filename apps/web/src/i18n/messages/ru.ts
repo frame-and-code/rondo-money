@@ -11,7 +11,7 @@ export const ru = {
   'nav.netWorth': 'Капитал',
   'nav.settings': 'Настройки',
 
-  'categories.readyToAssign': 'Свободно',
+  'categories.readyToAssign': 'Свободные деньги',
   'categories.readyToAssignFree': 'У этих денег ещё нет задачи',
   'categories.readyToAssignDone': 'Всё распределено',
   'categories.readyToAssignOver': 'Распределено больше, чем лежит на счетах',
@@ -28,16 +28,21 @@ export const ru = {
   'categories.emptyBody':
     'Раздавать деньги пока некуда. Заведите первую группу и категорию, и месяц появится.',
   'categories.unavailable': 'Месяц не прочитался. Обновите страницу.',
-  'categories.assignEdit': 'Изменить назначенное в категории «{{category}}»',
-  'categories.assignSave': 'Сохранить',
-  'categories.assignCancel': 'Отменить',
-  'categories.assignField': 'Назначено в этом месяце',
-  'categories.assignFieldShort': 'назначено в этом месяце',
+  'categories.moveOpen': 'Переложить деньги для категории «{{category}}»',
+  'categories.moveAmountFor': 'Сумма для конверта «{{envelope}}»',
+  'categories.moveOther': 'Второй конверт, сейчас «{{envelope}}»',
+  'categories.moveSwapIn': 'Развернуть: деньги придут в эту категорию',
+  'categories.moveSwapOut': 'Развернуть: деньги уйдут из этой категории',
+  'categories.moveSearch': 'Найти категорию',
+  'categories.moveNothing': 'Ничего не нашлось',
+  'categories.moveSubmit': 'Переложить',
+  'categories.moveAssign': 'Назначить',
+  'categories.moveSubmitting': 'Сохраняем',
+  'categories.moveCancel': 'Отменить',
+  'categories.moveClose': 'Закрыть перенос',
   'categories.failTitle': 'Не сохранилось',
   'categories.failConflict':
     'Операция под этим ключом уже записана, и записана с другой суммой. Экран показывает то, что лежит на сервере.',
-  'categories.failHidden':
-    'Категорию «{{category}}» скрыли, пока экран был открыт. Месяц перечитан, сумма осталась прежней.',
   'categories.failBudget':
     'Активный бюджет сменился в другом окне. Этот экран показывает бюджет, который больше не в работе, поэтому назначать в нём нечего.',
   'categories.failNetwork':
@@ -59,7 +64,8 @@ export const ru = {
   'onboarding.step1Body':
     'Язык приложения, имя бюджета и его валюта. Валюту выбирают один раз, она остаётся с бюджетом навсегда.',
   'onboarding.step2Title': 'Первый счёт',
-  'onboarding.step2Body': 'Сколько денег лежит на нём сегодня. Эта сумма и попадёт в «Свободно».',
+  'onboarding.step2Body':
+    'Сколько денег лежит на нём сегодня. Эта сумма и попадёт в «Свободные деньги».',
   'onboarding.step3Title': 'Деньги по категориям',
   'onboarding.step3Body':
     'Создаёте категории и распределяете по ним свободные деньги, пока не останется ноль.',
@@ -119,7 +125,7 @@ export const ru = {
   'newAccount.balanceLabel': 'Начальный остаток',
   'newAccount.balanceHint':
     'Ноль это нормально. Сумма датируется сегодняшним днём, её можно поправить позже.',
-  'newAccount.balancePreview': '{{amount}} попадёт в «Свободно»',
+  'newAccount.balancePreview': '{{amount}} попадёт в «Свободные деньги»',
   'newAccount.balanceNegative': 'Начальный остаток не может быть отрицательным.',
   'newAccount.balanceDigitsOnly': 'Сумма записывается цифрами.',
   'newAccount.balanceNoDecimals': 'У {{currency}} нет дробной части.',
@@ -129,7 +135,7 @@ export const ru = {
   'newAccount.budgetUnavailable': 'Не удалось прочитать ваш бюджет. Обновите страницу.',
   'newAccount.submitFailed': 'Не получилось создать счёт. Попробуйте ещё раз.',
   'newAccount.doneTitle': 'Счёт «{{name}}» создан',
-  'newAccount.doneReady': 'В «Свободно»',
+  'newAccount.doneReady': 'В «Свободные деньги»',
   'newAccount.moreAccounts': 'Хотите добавить ещё счета?',
   'newAccount.startAssigning': 'Готовы распределить деньги?',
   'newAccount.footnote': 'Это последний шаг настройки.',

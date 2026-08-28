@@ -152,11 +152,7 @@ describe('the month of the budget', () => {
     const shown = within(tile as HTMLElement);
 
     expect(shown.getByTestId('available-Здоровье')).toHaveTextContent(/600,00/);
-    expect(
-      shown.getByRole('button', {
-        name: ru['categories.assignEdit'].replace('{{category}}', 'Здоровье'),
-      }),
-    ).toHaveTextContent(/^0,00/);
+    expect(shown.getByTestId('assigned-Здоровье')).toHaveTextContent(/^0,00/);
   });
 
   it('renders every amount at the digit count the budget was frozen at', async () => {
@@ -317,32 +313,33 @@ describe('moving between months', () => {
     await screen.findByText('Продукты');
     await user.click(
       screen.getByRole('button', {
-        name: ru['categories.assignEdit'].replace('{{category}}', 'Продукты'),
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
       }),
     );
 
-    expect(screen.queryByLabelText(ru['categories.assignField'])).not.toBeInTheDocument();
+    expect(screen.queryByTestId('move-dialog')).not.toBeInTheDocument();
   });
 
-  it('refuses to write from a field opened before the address moved to another month', async () => {
+  it('closes a dialog whose month the address left, so nothing is written into another month', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     draw();
 
     await screen.findByText('Продукты');
     await user.click(
       screen.getByRole('button', {
-        name: ru['categories.assignEdit'].replace('{{category}}', 'Продукты'),
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
       }),
     );
 
-    const field = screen.getByLabelText(ru['categories.assignField']);
+    const surface = await screen.findByTestId('move-dialog');
+    const field = within(surface).getByLabelText(
+      ru['categories.moveAmountFor'].replace('{{envelope}}', 'Продукты'),
+    );
 
     search = 'month=2026-09';
-    await user.clear(field);
-    await user.type(field, '600,00');
-    await user.click(screen.getByRole('button', { name: ru['categories.assignSave'] }));
+    await user.type(field, '1');
 
-    expect(screen.getByText(/август 2026/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('move-dialog')).not.toBeInTheDocument());
     expect(move).not.toHaveBeenCalled();
   });
 

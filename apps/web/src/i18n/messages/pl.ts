@@ -30,16 +30,21 @@ export const pl: Record<MessageKey, string> = {
   'categories.emptyBody':
     'Nie ma jeszcze gdzie odkładać pieniędzy. Dodaj pierwszą grupę i kategorię, a miesiąc się pojawi.',
   'categories.unavailable': 'Nie udało się odczytać miesiąca. Odśwież stronę.',
-  'categories.assignEdit': 'Zmień przydział kategorii „{{category}}”',
-  'categories.assignSave': 'Zapisz',
-  'categories.assignCancel': 'Anuluj',
-  'categories.assignField': 'Przydzielono w tym miesiącu',
-  'categories.assignFieldShort': 'przydzielono w tym miesiącu',
+  'categories.moveOpen': 'Przenieś pieniądze dla kategorii „{{category}}”',
+  'categories.moveAmountFor': 'Kwota dla koperty „{{envelope}}”',
+  'categories.moveOther': 'Druga koperta, teraz „{{envelope}}”',
+  'categories.moveSwapIn': 'Odwróć: pieniądze wpłyną do tej kategorii',
+  'categories.moveSwapOut': 'Odwróć: pieniądze wyjdą z tej kategorii',
+  'categories.moveSearch': 'Znajdź kategorię',
+  'categories.moveNothing': 'Nic nie znaleziono',
+  'categories.moveSubmit': 'Przenieś',
+  'categories.moveAssign': 'Przydziel',
+  'categories.moveSubmitting': 'Zapisujemy',
+  'categories.moveCancel': 'Anuluj',
+  'categories.moveClose': 'Zamknij przeniesienie',
   'categories.failTitle': 'Nie zapisano',
   'categories.failConflict':
     'Operacja z tym kluczem jest już zapisana, i to z inną kwotą. Ekran pokazuje to, co jest na serwerze.',
-  'categories.failHidden':
-    'Kategorię „{{category}}” ukryto, gdy ekran był otwarty. Miesiąc odczytano ponownie, kwota została bez zmian.',
   'categories.failBudget':
     'Aktywny budżet zmienił się w innym oknie. Ten ekran pokazuje budżet, który nie jest już w użyciu, więc nie ma w nim czego przydzielać.',
   'categories.failNetwork':

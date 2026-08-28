@@ -8,41 +8,41 @@ import {
   movesControllerMoveMutation,
 } from '@rondo/api-client/react-query';
 import { parseMoney, toDecimalString, type CalendarMonth } from '@rondo/types';
-import { Button } from '@rondo/ui/components/ui/button';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@rondo/ui/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@rondo/ui/components/ui/drawer';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconWallet } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { BudgetMonthHeader } from '@/components/budget-month-header';
 import { BudgetMonthLoading } from '@/components/budget-month-loading';
 import { CategoryGroup } from '@/components/category-group';
 import { CategoryTile } from '@/components/category-tile';
+import { MoveFields } from '@/components/move-fields';
 import { SaveFailureBanner } from '@/components/save-failure-banner';
 import { SpendRing } from '@/components/spend-ring';
 import { useTranslations } from '@/i18n/locale-context';
 import { monthFromUrl, monthLabel, monthNow, spendRing } from '@/lib/budget-month';
 import { moneyOf } from '@/lib/money';
+import { moveTargets, POOL, type MoveTarget } from '@/lib/move-target';
 import {
-  keepsTheFieldOpen,
   keepsTheKey,
+  keepsThePopoverOpen,
   rereadsTheMonth,
   saveFailureKind,
   type SaveFailure,
 } from '@/lib/save-failure';
 
-interface Editing {
+interface Moving {
   categoryId: string;
-  draft: string | null;
+  month: CalendarMonth;
+  otherId: string;
+  outgoing: boolean;
+  draft: string;
+  query: string;
+  picking: boolean;
   key: string;
 }
 
@@ -113,11 +113,12 @@ export function BudgetMonth() {
     [budget, locale],
   );
 
-  const [editing, setEditing] = useState<Editing | null>(null);
+  const [moving, setMoving] = useState<Moving | null>(null);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [sent, setSent] = useState<CreateMoveDto | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [settling, setSettling] = useState(false);
+  const reading = useRef(false);
   const target = useRef<{ categoryId: string; categoryName: string } | null>(null);
 
   const shownData = held ?? view.data;
@@ -134,8 +135,12 @@ export function BudgetMonth() {
     );
   }
 
+  if (moving !== null && month !== null && moving.month !== month) {
+    setMoving(null);
+  }
+
   const categories = (shownData?.groups ?? []).flatMap((group) => group.categories);
-  const open = categories.find((candidate) => candidate.id === editing?.categoryId) ?? null;
+  const moved = categories.find((candidate) => candidate.id === moving?.categoryId) ?? null;
 
   const reread = () => {
     const [named] = budgetViewControllerReadQueryKey({ query: { month: month ?? '' } });
@@ -146,7 +151,7 @@ export function BudgetMonth() {
   const assign = useMutation({
     ...movesControllerMoveMutation(),
     onSuccess: async () => {
-      setEditing(null);
+      setMoving(null);
       setFailure(null);
       setSent(null);
       await reread();
@@ -163,12 +168,12 @@ export function BudgetMonth() {
       });
       setSent(keepsTheKey(kind) ? variables.body : null);
 
-      setEditing((current) =>
-        current === null || !keepsTheFieldOpen(kind)
+      setMoving((current) =>
+        current === null || !keepsThePopoverOpen(kind)
           ? null
           : keepsTheKey(kind)
             ? current
-            : { categoryId: current.categoryId, draft: null, key: mintKey() },
+            : { ...current, key: mintKey() },
       );
 
       if (rereadsTheMonth(kind)) {
@@ -209,31 +214,21 @@ export function BudgetMonth() {
   const decimalOf = (minor: bigint): string =>
     toDecimalString(minor, money.digits).replace('.', money.marks.decimal);
 
-  const draftOf = (categoryId: string, assigned: bigint): string =>
-    editing?.categoryId === categoryId && editing.draft !== null
-      ? editing.draft
-      : decimalOf(assigned);
-
   const discard = (): void => {
     const outstanding = sent !== null;
 
-    setEditing(null);
+    setMoving(null);
     setFailure(null);
     setSent(null);
 
     if (outstanding) {
+      reading.current = true;
       setSettling(true);
-      void reread().finally(() => setSettling(false));
+      void reread().finally(() => {
+        reading.current = false;
+        setSettling(false);
+      });
     }
-  };
-
-  const drawerDraft = (): string => {
-    if (open === null) return '';
-    if (editing?.draft !== null && editing?.draft !== undefined) return editing.draft;
-
-    const assigned = parseMoney(open.assigned);
-
-    return assigned === 0n ? '' : decimalOf(assigned);
   };
 
   const goToMonth = (next: CalendarMonth): void => {
@@ -243,50 +238,101 @@ export function BudgetMonth() {
     window.history.pushState(null, '', `${pathname}?month=${next}`);
   };
 
-  const commit = (): void => {
+  const moveShape =
+    moving === null || moved === null
+      ? null
+      : {
+          groups: shownData.groups,
+          readyToAssign: parseMoney(shownData.readyToAssign),
+          poolName: t('categories.readyToAssign'),
+        };
+
+  const envelopeOf = (id: string): MoveTarget | null =>
+    moveShape === null
+      ? null
+      : (moveTargets({ ...moveShape, except: '', query: '' }).find((one) => one.id === id) ?? null);
+
+  const moveAnchor = moved === null ? null : envelopeOf(moved.id);
+  const moveOther = moving === null ? null : envelopeOf(moving.otherId);
+  const moveFrom = moving === null ? null : moving.outgoing ? moveAnchor : moveOther;
+  const moveTo = moving === null ? null : moving.outgoing ? moveOther : moveAnchor;
+
+  const sendableMinor = (draft: string): bigint | null => {
+    const amount = money.read(draft);
+
+    return amount.partial || amount.fault !== null || amount.minor === null || amount.minor <= 0n
+      ? null
+      : amount.minor;
+  };
+
+  const moveMinor = moving === null ? null : sendableMinor(moving.draft);
+
+  const sideOf = (envelope: MoveTarget) =>
+    envelope.id === POOL
+      ? { kind: 'READY_TO_ASSIGN' as const }
+      : { kind: 'CATEGORY' as const, categoryId: envelope.id };
+
+  const commitMove = (): void => {
     if (
-      editing === null ||
-      open === null ||
+      moving === null ||
+      moved === null ||
+      moveFrom === null ||
+      moveTo === null ||
+      moveMinor === null ||
       pending !== null ||
+      sent !== null ||
       settling ||
+      reading.current ||
       behind ||
       stepping !== null
     )
       return;
 
-    const assigned = parseMoney(open.assigned);
-    const amount = money.read(draftOf(open.id, assigned));
-    if (amount.partial) {
-      return;
-    }
-
-    if (amount.fault !== null || amount.minor === null) {
-      setEditing(null);
-      return;
-    }
-
-    const delta = amount.minor - assigned;
-    if (delta === 0n) {
-      setEditing(null);
-      return;
-    }
-
-    const category = { kind: 'CATEGORY' as const, categoryId: open.id };
-    const pool = { kind: 'READY_TO_ASSIGN' as const };
-
-    setPending(open.id);
-    target.current = { categoryId: open.id, categoryName: open.name };
+    setPending(moved.id);
+    target.current = { categoryId: moved.id, categoryName: moved.name };
 
     assign.mutate({
       body: {
         month,
-        amount: (delta < 0n ? -delta : delta).toString(10),
-        from: delta > 0n ? pool : category,
-        to: delta > 0n ? category : pool,
-        idempotencyKey: editing.key,
+        amount: moveMinor.toString(10),
+        from: sideOf(moveFrom),
+        to: sideOf(moveTo),
+        idempotencyKey: moving.key,
       },
     });
   };
+
+  const openMove = (categoryId: string): void => {
+    if (
+      pending !== null ||
+      sent !== null ||
+      settling ||
+      reading.current ||
+      behind ||
+      stepping !== null
+    )
+      return;
+
+    const opened = categories.find((candidate) => candidate.id === categoryId);
+    const available = opened === undefined ? 0n : parseMoney(opened.available);
+
+    discard();
+    setMoving({
+      categoryId,
+      month,
+      otherId: POOL,
+      outgoing: available > 0n,
+      draft: available === 0n ? '' : decimalOf(available < 0n ? -available : available),
+      query: '',
+      picking: false,
+      key: mintKey(),
+    });
+  };
+
+  const swapMove = (): void =>
+    setMoving((current) =>
+      current === null ? current : { ...current, outgoing: !current.outgoing },
+    );
 
   const cancel = (): void => {
     discard();
@@ -309,25 +355,71 @@ export function BudgetMonth() {
     setFailure(null);
   };
 
-  const drawerOpen = isMobile && editing !== null;
-  const failureInDrawer = drawerOpen && failure !== null;
+  const moveReady = moving !== null && moved !== null && moveAnchor !== null && moveOther !== null;
+  const moveDrawerOpen = isMobile && moveReady;
+  const moveDialogOpen = !isMobile && moveReady;
+  const failureInSurface = failure !== null && (moveDrawerOpen || moveDialogOpen);
 
-  const editor = (categoryId: string, assigned: bigint) => ({
-    editing: editing?.categoryId === categoryId && !isMobile,
-    draft: draftOf(categoryId, assigned),
-    saving: pending === categoryId,
-    failed: failure?.categoryId === categoryId,
-    onOpen: () => {
-      if (pending !== null || settling || behind || stepping !== null) return;
+  const notice =
+    failure === null ? null : (
+      <SaveFailureBanner
+        failure={failure}
+        className="mb-0"
+        onAction={bannerAction}
+        onCancel={cancel}
+      />
+    );
 
-      discard();
-      setEditing({ categoryId, draft: null, key: mintKey() });
-    },
-    onDraft: (value: string) =>
-      setEditing((current) => (current === null ? current : { ...current, draft: value })),
-    onCommit: commit,
-    onCancel: cancel,
-  });
+  const movePanel = (): ReactNode => {
+    if (
+      moving === null ||
+      moved === null ||
+      moveShape === null ||
+      moveAnchor === null ||
+      moveOther === null
+    )
+      return null;
+
+    return (
+      <MoveFields
+        category={moveAnchor}
+        other={moveOther}
+        targets={moveTargets({ ...moveShape, except: moved.id, query: moving.query })}
+        outgoing={moving.outgoing}
+        assigning={!moving.outgoing && moveOther.id === POOL}
+        picking={moving.picking}
+        draft={moving.draft}
+        query={moving.query}
+        ready={moveMinor !== null}
+        saving={pending !== null}
+        frozen={sent !== null || behind || stepping !== null}
+        money={money}
+        notice={failureInSurface ? notice : null}
+        large={isMobile}
+        onDraft={(value) =>
+          setMoving((current) => (current === null ? current : { ...current, draft: value }))
+        }
+        onQuery={(value) =>
+          setMoving((current) => (current === null ? current : { ...current, query: value }))
+        }
+        onPicking={(open) =>
+          setMoving((current) =>
+            current === null ? current : { ...current, picking: open, query: '' },
+          )
+        }
+        onChoose={(target) =>
+          setMoving((current) =>
+            current === null
+              ? current
+              : { ...current, otherId: target.id, picking: false, query: '' },
+          )
+        }
+        onSwap={swapMove}
+        onCommit={commitMove}
+        onCancel={cancel}
+      />
+    );
+  };
 
   if (shownData.groups.length === 0) {
     return (
@@ -354,7 +446,7 @@ export function BudgetMonth() {
       <BudgetMonthHeader
         month={showing}
         stepping={stepping}
-        floating={drawerOpen}
+        floating={moveDrawerOpen || moveDialogOpen}
         today={today}
         first={budget.firstMonth}
         readyToAssign={parseMoney(shownData.readyToAssign)}
@@ -362,7 +454,7 @@ export function BudgetMonth() {
         onMonth={goToMonth}
       />
 
-      {failure === null || failureInDrawer ? null : (
+      {failure === null || failureInSurface ? null : (
         <SaveFailureBanner failure={failure} onAction={bannerAction} onCancel={cancel} />
       )}
 
@@ -390,7 +482,12 @@ export function BudgetMonth() {
                   key={category.id}
                   category={category}
                   money={money}
-                  {...editor(category.id, parseMoney(category.assigned))}
+                  moveOpen={moveDialogOpen && moving?.categoryId === category.id}
+                  movePanel={moving?.categoryId === category.id ? movePanel() : null}
+                  moveInPopover={!isMobile}
+                  onMoveOpen={() => openMove(category.id)}
+                  onMoveClose={cancel}
+                  failed={failure?.categoryId === category.id}
                 />
               ))}
             </CategoryGroup>
@@ -398,21 +495,23 @@ export function BudgetMonth() {
         </div>
       </div>
 
-      <Drawer open={drawerOpen} onOpenChange={(next) => (next ? null : cancel())}>
+      <Drawer open={moveDrawerOpen} onOpenChange={(next) => (next ? null : cancel())}>
         <DrawerContent>
           <DrawerHeader className="flex-row items-center gap-3 pb-0">
-            {open === null ? null : (
+            {moved === null ? null : (
               <SpendRing
-                icon={open.icon}
-                color={open.color}
-                fraction={spendRing(parseMoney(open.activity), parseMoney(open.available)).fraction}
-                overspent={parseMoney(open.available) < 0n}
+                icon={moved.icon}
+                color={moved.color}
+                fraction={
+                  spendRing(parseMoney(moved.activity), parseMoney(moved.available)).fraction
+                }
+                overspent={parseMoney(moved.available) < 0n}
                 size={68}
               />
             )}
             <span className="flex flex-col items-start gap-0.5">
               <DrawerTitle className="text-2xl leading-tight font-semibold">
-                {open?.name ?? ''}
+                {moved?.name ?? ''}
               </DrawerTitle>
               <span className="text-muted-foreground text-[15px] leading-tight">
                 {monthLabel(showing, locale)}
@@ -420,77 +519,7 @@ export function BudgetMonth() {
             </span>
           </DrawerHeader>
 
-          <div className="flex flex-col px-4 pt-4">
-            <label className="text-muted-foreground text-[15px]" htmlFor="assign-amount">
-              {t('categories.assignFieldShort')}
-            </label>
-            <input
-              id="assign-amount"
-              type="text"
-              inputMode="decimal"
-              aria-label={t('categories.assignField')}
-              autoFocus
-              placeholder={decimalOf(0n)}
-              value={drawerDraft()}
-              disabled={pending !== null}
-              onChange={(event) =>
-                setEditing((current) =>
-                  current === null ? current : { ...current, draft: event.target.value },
-                )
-              }
-              className={cn(
-                'bg-input/50 mt-2 h-13 w-full rounded-full border border-transparent px-4',
-                'placeholder:text-muted-foreground text-xl font-medium tabular-nums outline-none',
-                'transition-colors',
-                'focus:border-ring focus:ring-ring/30 focus:ring-3 disabled:opacity-50',
-              )}
-            />
-
-            <div className="text-muted-foreground flex justify-between gap-3 px-0.5 pt-3 text-[15px]">
-              <span className="flex items-baseline gap-1.5">
-                <span>{t('categories.available')}</span>
-                <span className="text-foreground font-medium tabular-nums">
-                  {open === null ? '' : money.format(parseMoney(open.available))}
-                </span>
-              </span>
-              <span className="flex items-baseline gap-1.5">
-                <span>
-                  {t(
-                    open !== null && parseMoney(open.activity) > 0n
-                      ? 'categories.incoming'
-                      : 'categories.spent',
-                  )}
-                </span>
-                <span className="text-foreground font-medium tabular-nums">
-                  {open === null
-                    ? ''
-                    : money.format(
-                        spendRing(parseMoney(open.activity), parseMoney(open.available)).moved,
-                      )}
-                </span>
-              </span>
-            </div>
-          </div>
-
-          {failureInDrawer ? (
-            <div className="px-4 pt-3">
-              <SaveFailureBanner failure={failure} onAction={bannerAction} onCancel={cancel} />
-            </div>
-          ) : null}
-
-          <DrawerFooter className="flex-row gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 flex-1 rounded-[22px]"
-              onClick={cancel}
-            >
-              {t('categories.assignCancel')}
-            </Button>
-            <Button type="button" className="h-11 flex-1 rounded-[22px]" onClick={commit}>
-              {t('categories.assignSave')}
-            </Button>
-          </DrawerFooter>
+          <div className="p-4">{movePanel()}</div>
         </DrawerContent>
       </Drawer>
     </div>
