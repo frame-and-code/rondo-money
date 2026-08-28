@@ -3,7 +3,17 @@ import { expect, test } from '@playwright/test';
 
 import { en } from '../src/i18n/messages/en';
 
-import { assign, assignedOf, availableOf, freeMoney, moveTo, readyToAssign } from './budget';
+import {
+  assign,
+  assignedOf,
+  availableOf,
+  colourOf,
+  freeMoney,
+  moveTo,
+  readyToAssign,
+  tokenColour,
+  turnTheDarkThemeOn,
+} from './budget';
 import { hasClerkKeys, MOVE_TEST_EMAIL, recreateTestUser } from './clerk';
 import { onboard } from './onboarding';
 
@@ -12,7 +22,9 @@ test.skip(!process.env.CI && !hasClerkKeys(), 'Clerk keys are not configured');
 const FROM = 'Housing';
 const TO = 'Utilities';
 
-test('money moves between envelopes without leaving the screen', async ({ page }) => {
+test('money moves between envelopes, and what fell below zero says so in both themes', async ({
+  page,
+}) => {
   await recreateTestUser(MOVE_TEST_EMAIL);
   await setupClerkTestingToken({ page });
 
@@ -44,4 +56,27 @@ test('money moves between envelopes without leaving the screen', async ({ page }
   await expect(availableOf(page, FROM)).toHaveText('-$110.00');
   await expect(assignedOf(page, FROM)).toHaveText('-$110.00');
   await expect(readyToAssign(page)).toHaveText('$1,000.00');
+
+  const light = await tokenColour(page, '--destructive');
+
+  expect(await colourOf(availableOf(page, FROM))).toBe(light);
+  expect(await colourOf(assignedOf(page, FROM))).toBe(light);
+  expect(await colourOf(availableOf(page, TO))).not.toBe(light);
+
+  await assign(page, '1200', TO);
+
+  await expect(readyToAssign(page)).toHaveText('-$200.00');
+  await expect(page.getByText(en['categories.readyToAssignOver'])).toBeVisible();
+
+  expect(await colourOf(readyToAssign(page))).toBe(light);
+  expect(await colourOf(page.getByText(en['categories.readyToAssignOver']))).toBe(light);
+
+  await turnTheDarkThemeOn(page);
+
+  const dark = await tokenColour(page, '--destructive');
+
+  expect(dark).not.toBe(light);
+  expect(await colourOf(availableOf(page, FROM))).toBe(dark);
+  expect(await colourOf(readyToAssign(page))).toBe(dark);
+  expect(await colourOf(availableOf(page, TO))).not.toBe(dark);
 });

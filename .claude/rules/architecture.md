@@ -242,6 +242,17 @@ specification, and prose describing it is a summary rather than a replacement.
    hand, and a hand-written trigger beside a generated one is how a design system stops being
    one. Reuse the tokens the neighbouring primitive carries rather than values that look
    close.
+4. **An amount below zero is red, and that is the only colour a sign buys.**
+   `text-destructive`, on a category tile's Available and Assigned, on ready to assign in the
+   month header and in its island, and on both rows of the move surface and the list it picks
+   from. What belongs to a red amount reddens with it, the explanation under ready to assign
+   and the spend ring of an overspent tile, and a group's total is the one amount that stays
+   plain. A reader who learns the colour on one of them reads it on the next. Red is the one
+   thing the eye is meant to find, so nothing else competes: a tile greys an amount at zero and
+   leaves one above zero plain, and the move rows rest muted rather than plain. Ready to assign
+   is the single exception, `text-primary` above zero with `dark:text-chart-2` behind it, and it
+   can afford the colour because the screen carries one pool rather than one per row. Every one
+   of these is a theme token, because a literal is right in one theme and wrong in the other.
 
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in

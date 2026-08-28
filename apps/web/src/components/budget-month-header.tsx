@@ -203,6 +203,7 @@ export function BudgetMonthHeader({
             >
               <span className="text-muted-foreground text-xs">{t('categories.readyToAssign')}</span>
               <RollingAmount
+                data-testid="ready-to-assign-island-amount"
                 amount={money.format(readyToAssign)}
                 value={readyToAssign}
                 className={cn(
