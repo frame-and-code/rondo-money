@@ -220,6 +220,24 @@ afterEach(() => {
 });
 
 describe('what the popover sends', () => {
+  it('offers no action until the amount is one the server would take', async () => {
+    view = monthOf({ assigned: '0', available: '0' });
+    const user = setup();
+    draw();
+
+    await openMove(user);
+
+    expect(action()).toBeDisabled();
+
+    await typeAmount(user, '0');
+
+    expect(action()).toBeDisabled();
+
+    await typeAmount(user, '150,00');
+
+    expect(action()).toBeEnabled();
+  });
+
   it('offers to give an empty category money, which is the only thing to do with one', async () => {
     view = monthOf({ assigned: '0', available: '0' });
     const user = setup();
@@ -536,6 +554,34 @@ describe('choosing the other envelope', () => {
 
     await waitFor(() => expect(move).toHaveBeenCalledTimes(1));
     expect(bodyOf(0)).toMatchObject({ from: category(FOOD), to: category(CAR) });
+  });
+
+  it('closes instead of swapping the far envelope when a re-read no longer carries it', async () => {
+    move.mockImplementation(() => refused(500));
+    const user = setup();
+    draw();
+
+    await openMove(user);
+
+    const seek = await openList(user);
+
+    await user.type(seek, 'транс');
+    await user.click(await screen.findByRole('option', { name: /Транспорт/ }));
+    await typeAmount(user, '150,00');
+
+    const gone = monthOf();
+    view = {
+      ...gone,
+      groups: gone.groups.map((group) => ({
+        ...group,
+        categories: group.categories.filter((one) => one.id !== CAR),
+      })),
+    };
+
+    await submit(user);
+
+    await waitFor(() => expect(screen.queryByTestId('move-dialog')).not.toBeInTheDocument());
+    expect(move).toHaveBeenCalledTimes(1);
   });
 
   it('says so when the search matches nothing', async () => {

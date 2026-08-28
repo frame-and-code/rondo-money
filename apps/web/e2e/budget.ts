@@ -26,10 +26,12 @@ const action = (page: Page) =>
     name: new RegExp(`^(${en['categories.moveSubmit']}|${en['categories.moveAssign']})$`),
   });
 
-async function pointInto(page: Page): Promise<void> {
-  await expect(page.getByTestId('move-dialog').or(page.getByRole('dialog'))).toBeVisible();
+const surfaceOf = (page: Page) => page.getByTestId('move-dialog').or(page.getByRole('dialog'));
 
-  const turn = page.getByRole('button', { name: en['categories.moveSwapIn'] });
+async function point(page: Page, turnLabel: string): Promise<void> {
+  await expect(surfaceOf(page)).toBeVisible();
+
+  const turn = page.getByRole('button', { name: turnLabel });
 
   if (await turn.isVisible()) {
     await turn.click();
@@ -38,7 +40,7 @@ async function pointInto(page: Page): Promise<void> {
 
 export async function assign(page: Page, amount: string, category: string): Promise<void> {
   await cardOf(page, category).click();
-  await pointInto(page);
+  await point(page, en['categories.moveSwapIn']);
   await amountField(page, category).fill(amount);
   await action(page).click();
   await expect(amountField(page, category)).toHaveCount(0);
@@ -49,20 +51,14 @@ export async function moveTo(
   options: { from: string; to: string; amount: string },
 ): Promise<void> {
   await cardOf(page, options.from).click();
-
-  await expect(page.getByTestId('move-dialog').or(page.getByRole('dialog'))).toBeVisible();
-
-  const turn = page.getByRole('button', { name: en['categories.moveSwapOut'] });
-  if (await turn.isVisible()) {
-    await turn.click();
-  }
+  await point(page, en['categories.moveSwapOut']);
 
   await page
     .getByRole('combobox', {
       name: en['categories.moveOther'].replace('{{envelope}}', en['categories.readyToAssign']),
     })
     .click();
-  await page.getByRole('option', { name: new RegExp(options.to) }).click();
+  await page.getByRole('option', { name: options.to }).click();
 
   await amountField(page, options.from).fill(options.amount);
   await action(page).click();

@@ -55,9 +55,9 @@ menu and option roles is written there rather than in a primitive.
 **Three files carry hand edits, and a regeneration drops them.** `popover.tsx` gained two parts
 the generator leaves out: `Backdrop`, which lets a popover dim and blur the page behind it
 instead of merging into it, and `Close`, without which `modal` traps no focus at all, because
-base-ui gates the trap on that part being present. The two are separate props, so a popover
-asking for `backdrop` passes `closeLabel` as well or its `modal` stops the mouse and not the
-keyboard. `command.tsx` and
+base-ui gates the trap on that part being present. The dependency is `modal`'s and not the
+backdrop's, so every `modal` popover passes `closeLabel`, with or without a backdrop, and one
+that skips it stops the mouse and not the keyboard. `command.tsx` and
 `combobox.tsx` hold the shape of every picker this app draws: the height and radius of a row,
 the height and radius of the search field, the padding around the list, and the tint a row takes
 under the pointer. They live in the primitive because two screens need the same picker, and a

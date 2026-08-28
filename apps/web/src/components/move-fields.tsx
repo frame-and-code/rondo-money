@@ -44,6 +44,7 @@ export function MoveFields({
   picking,
   draft,
   query,
+  ready,
   saving,
   frozen,
   money,
@@ -65,6 +66,7 @@ export function MoveFields({
   picking: boolean;
   draft: string;
   query: string;
+  ready: boolean;
   saving: boolean;
   frozen: boolean;
   money: MoneyReader;
@@ -80,15 +82,10 @@ export function MoveFields({
 }) {
   const { t } = useTranslations();
   const field = useRef<HTMLInputElement>(null);
-  const seek = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     field.current?.focus();
   }, []);
-
-  useEffect(() => {
-    if (picking) seek.current?.focus();
-  }, [picking]);
 
   const locked = saving || frozen;
   const nameControl = cn(
@@ -246,7 +243,7 @@ export function MoveFields({
         </Button>
         <Button
           type="button"
-          disabled={locked}
+          disabled={locked || !ready}
           className={cn(large && 'h-11 flex-1 rounded-[22px]')}
           onClick={onCommit}
         >

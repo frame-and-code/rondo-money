@@ -247,26 +247,25 @@ export function BudgetMonth() {
           poolName: t('categories.readyToAssign'),
         };
 
-  const envelopeOf = (id: string): MoveTarget => {
-    const pool: MoveTarget = {
-      id: POOL,
-      name: t('categories.readyToAssign'),
-      available: parseMoney(shownData.readyToAssign),
-      icon: null,
-      color: null,
-    };
-
-    if (moveShape === null) return pool;
-
-    return (
-      moveTargets({ ...moveShape, except: '', query: '' }).find((one) => one.id === id) ?? pool
-    );
-  };
+  const envelopeOf = (id: string): MoveTarget | null =>
+    moveShape === null
+      ? null
+      : (moveTargets({ ...moveShape, except: '', query: '' }).find((one) => one.id === id) ?? null);
 
   const moveAnchor = moved === null ? null : envelopeOf(moved.id);
   const moveOther = moving === null ? null : envelopeOf(moving.otherId);
   const moveFrom = moving === null ? null : moving.outgoing ? moveAnchor : moveOther;
   const moveTo = moving === null ? null : moving.outgoing ? moveOther : moveAnchor;
+
+  const sendableMinor = (draft: string): bigint | null => {
+    const amount = money.read(draft);
+
+    return amount.partial || amount.fault !== null || amount.minor === null || amount.minor <= 0n
+      ? null
+      : amount.minor;
+  };
+
+  const moveMinor = moving === null ? null : sendableMinor(moving.draft);
 
   const sideOf = (envelope: MoveTarget) =>
     envelope.id === POOL
@@ -279,6 +278,7 @@ export function BudgetMonth() {
       moved === null ||
       moveFrom === null ||
       moveTo === null ||
+      moveMinor === null ||
       pending !== null ||
       sent !== null ||
       settling ||
@@ -288,18 +288,13 @@ export function BudgetMonth() {
     )
       return;
 
-    const amount = money.read(moving.draft);
-    if (amount.partial || amount.fault !== null || amount.minor === null || amount.minor <= 0n) {
-      return;
-    }
-
     setPending(moved.id);
     target.current = { categoryId: moved.id, categoryName: moved.name };
 
     assign.mutate({
       body: {
         month,
-        amount: amount.minor.toString(10),
+        amount: moveMinor.toString(10),
         from: sideOf(moveFrom),
         to: sideOf(moveTo),
         idempotencyKey: moving.key,
@@ -360,8 +355,9 @@ export function BudgetMonth() {
     setFailure(null);
   };
 
-  const moveDrawerOpen = isMobile && moving !== null && moved !== null;
-  const moveDialogOpen = !isMobile && moving !== null && moved !== null;
+  const moveReady = moving !== null && moved !== null && moveAnchor !== null && moveOther !== null;
+  const moveDrawerOpen = isMobile && moveReady;
+  const moveDialogOpen = !isMobile && moveReady;
   const failureInSurface = failure !== null && (moveDrawerOpen || moveDialogOpen);
 
   const notice =
@@ -394,6 +390,7 @@ export function BudgetMonth() {
         picking={moving.picking}
         draft={moving.draft}
         query={moving.query}
+        ready={moveMinor !== null}
         saving={pending !== null}
         frozen={sent !== null || behind || stepping !== null}
         money={money}

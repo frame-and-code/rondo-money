@@ -47,6 +47,7 @@ const draw = (over: Partial<Parameters<typeof MoveFields>[0]> = {}) =>
         picking={false}
         draft=""
         query=""
+        ready
         saving={false}
         frozen={false}
         money={moneyOf('ru', 'PLN', 2, { signed: true })}
@@ -180,6 +181,15 @@ describe('the list of envelopes', () => {
     const overspent = screen.getByRole('option', { name: /Транспорт/ });
 
     expect(within(overspent).getByText(/-12,50/)).toHaveClass('text-destructive');
+  });
+});
+
+describe('an amount the surface cannot send', () => {
+  it('offers no action, so pressing it is never a dead end', () => {
+    draw({ ready: false });
+
+    expect(screen.getByRole('button', { name: ru['categories.moveSubmit'] })).toBeDisabled();
+    expect(screen.getByRole('button', { name: ru['categories.moveCancel'] })).toBeEnabled();
   });
 });
 
