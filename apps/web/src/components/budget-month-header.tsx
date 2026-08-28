@@ -85,7 +85,7 @@ export function BudgetMonthHeader({
   });
 
   const island = scrolled || floating;
-  const switcherInIsland = island && !isMobile;
+  const switcherInIsland = island && !isMobile && !floating;
 
   useEffect(() => {
     const sentinel = mark.current;
@@ -191,7 +191,10 @@ export function BudgetMonthHeader({
             island ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
         >
-          <div className={floating ? ISLAND_OVER_SHEET : ISLAND}>
+          <div
+            data-testid="ready-to-assign-island"
+            className={floating ? ISLAND_OVER_SHEET : ISLAND}
+          >
             {switcherInIsland ? todayButton : null}
             <span
               ref={amount}

@@ -11,7 +11,7 @@ export const ru = {
   'nav.netWorth': 'Капитал',
   'nav.settings': 'Настройки',
 
-  'categories.readyToAssign': 'Свободно',
+  'categories.readyToAssign': 'Свободные деньги',
   'categories.readyToAssignFree': 'У этих денег ещё нет задачи',
   'categories.readyToAssignDone': 'Всё распределено',
   'categories.readyToAssignOver': 'Распределено больше, чем лежит на счетах',
@@ -28,16 +28,21 @@ export const ru = {
   'categories.emptyBody':
     'Раздавать деньги пока некуда. Заведите первую группу и категорию, и месяц появится.',
   'categories.unavailable': 'Месяц не прочитался. Обновите страницу.',
-  'categories.assignEdit': 'Изменить назначенное в категории «{{category}}»',
-  'categories.assignSave': 'Сохранить',
-  'categories.assignCancel': 'Отменить',
-  'categories.assignField': 'Назначено в этом месяце',
-  'categories.assignFieldShort': 'назначено в этом месяце',
+  'categories.moveOpen': 'Переложить деньги для категории «{{category}}»',
+  'categories.moveAmountFor': 'Сумма для конверта «{{envelope}}»',
+  'categories.moveOther': 'Второй конверт, сейчас «{{envelope}}»',
+  'categories.moveSwapIn': 'Развернуть: деньги придут в эту категорию',
+  'categories.moveSwapOut': 'Развернуть: деньги уйдут из этой категории',
+  'categories.moveSearch': 'Найти категорию',
+  'categories.moveNothing': 'Ничего не нашлось',
+  'categories.moveSubmit': 'Переложить',
+  'categories.moveAssign': 'Назначить',
+  'categories.moveSubmitting': 'Сохраняем',
+  'categories.moveCancel': 'Отменить',
+  'categories.moveClose': 'Закрыть перенос',
   'categories.failTitle': 'Не сохранилось',
   'categories.failConflict':
     'Операция под этим ключом уже записана, и записана с другой суммой. Экран показывает то, что лежит на сервере.',
-  'categories.failHidden':
-    'Категорию «{{category}}» скрыли, пока экран был открыт. Месяц перечитан, сумма осталась прежней.',
   'categories.failBudget':
     'Активный бюджет сменился в другом окне. Этот экран показывает бюджет, который больше не в работе, поэтому назначать в нём нечего.',
   'categories.failNetwork':

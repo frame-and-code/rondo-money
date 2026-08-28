@@ -85,7 +85,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <UserButton />
         </header>
 
-        <main className="min-h-0 flex-1 overflow-auto p-4 md:p-6">{children}</main>
+        <main className="min-h-0 flex-1 overflow-auto p-4 [scrollbar-gutter:stable] md:p-6">
+          {children}
+        </main>
 
         <SectionNav variant="tabs" />
       </div>

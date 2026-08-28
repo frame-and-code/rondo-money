@@ -6,7 +6,7 @@ The app shell is in place: a persistent navigation over its sections, sign-in an
 protection, the shadcn/ui base from `@rondo/ui`, the locale switcher and the typed API client
 `@rondo/api-client` (ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack
 Query. Server state lives in that cache, not in component state. Categories is a real screen:
-it draws a month of the budget and assigns money in place. Accounts, net worth and settings are
+it draws a month of the budget and moves money between its envelopes, assigning included. Accounts, net worth and settings are
 still slots.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
@@ -23,7 +23,11 @@ src/
                               # the app, where the gate reads which step they are on
     globals.css               # Tailwind entry point + the theme's CSS variables. `--font-sans`
                               # points at the variable `next/font` sets in layout.tsx, so a
-                              # font name written back into that line silently drops the font
+                              # font name written back into that line silently drops the font.
+                              # It also holds the two rules the app states over the primitives:
+                              # the pointer on menu and option roles, and the scroll lock under
+                              # an open overlay, which a primitive cannot apply because the
+                              # shell scrolls `main` rather than the document
     icon.svg                  # the app icon Next wires into every page; the same mark the
                               # onboarding screens draw, with the primary tokens written out
                               # because an asset cannot read a CSS variable
@@ -53,10 +57,10 @@ src/
                               # onboarding gate and what it shows while it decides, the
                               # section slot, the loading region, the Clerk provider wrapper,
                               # the locale switcher, the two onboarding forms, and the
-                              # categories screen: the month header, a group, a tile, its
-                              # spend ring, the field that assigns money, the amount whose
-                              # digits roll when it changes, and the banner that says a save
-                              # did not go through
+                              # categories screen: the month header, a group, a tile that
+                              # opens the move dialog, its spend ring, the fields that move
+                              # money between envelopes, the amount whose digits roll when it
+                              # changes, and the banner that says a save did not go through
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language
                               # from GET /user-settings back into the locale context
@@ -73,6 +77,9 @@ src/
                               # is drawn with. Today comes from the budget's timezone
   lib/category-look.ts        # a category's icon and colour name to a component and a token,
                               # with the money icon for a category nobody has given one
+  lib/move-target.ts          # the envelopes a move can name as its other side, built from
+                              # the month on screen: what is free first, then the categories,
+                              # never the one the money is leaving
   lib/save-failure.ts         # what a refused save was, read from the answer's reason rather
                               # than from its message, and what the screen does about each
   lib/sections.ts             # the sections in one place: route, message key, icon.

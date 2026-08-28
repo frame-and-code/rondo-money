@@ -70,15 +70,14 @@ const FADE_MS = 150;
 
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
+const SHEET_SEARCH = '**:data-[slot=input-group]:h-11!';
+
 const FIELD = cn(
   'bg-input/50 flex w-full items-center justify-between gap-2 border border-transparent text-start transition-colors',
   CONTROL,
 );
 
 const POPUP = 'min-w-(--anchor-width)';
-
-const SHEET = '**:data-[slot=input-group]:h-11! **:data-[slot=input-group]:rounded-full px-2';
-const SHEET_ITEM = 'min-h-12 rounded-2xl px-3 text-sm';
 
 const RESULT_LIMIT = 60;
 
@@ -222,13 +221,12 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
       open={languageOpen}
       onOpenChange={setLanguageOpen}
     >
-      <Command value={locale} label={t('newBudget.languageLabel')} className={SHEET}>
+      <Command value={locale} label={t('newBudget.languageLabel')}>
         <CommandList className="py-2">
           {locales.map((option) => (
             <CommandItem
               key={option}
               value={option}
-              className={SHEET_ITEM}
               onSelect={() => {
                 chooseLocale(option);
               }}
@@ -284,7 +282,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
         value={currency}
         shouldFilter={false}
         label={t('newBudget.searchPlaceholder')}
-        className={SHEET}
+        className={SHEET_SEARCH}
       >
         <CommandInput
           placeholder={t('newBudget.searchPlaceholder')}
@@ -297,7 +295,6 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
             <CommandItem
               key={option.code}
               value={option.code}
-              className={SHEET_ITEM}
               onSelect={() => {
                 chooseCurrency(option.code);
               }}

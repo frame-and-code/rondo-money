@@ -1,6 +1,6 @@
 import { isMoveRefusal, type MoveRefusal } from '@rondo/types';
 
-export type SaveFailureKind = 'conflict' | 'hidden' | 'budget' | 'network' | 'other';
+export type SaveFailureKind = 'conflict' | 'budget' | 'network' | 'other';
 
 export interface SaveFailure {
   kind: SaveFailureKind;
@@ -9,7 +9,6 @@ export interface SaveFailure {
 }
 
 const BY_REASON: Partial<Record<MoveRefusal, SaveFailureKind>> = {
-  CATEGORY_HIDDEN: 'hidden',
   NO_ACTIVE_BUDGET: 'budget',
 };
 
@@ -32,8 +31,8 @@ export function saveFailureKind(error: unknown): SaveFailureKind {
   return isMoveRefusal(reason) ? (BY_REASON[reason] ?? 'other') : 'other';
 }
 
-export function keepsTheFieldOpen(kind: SaveFailureKind): boolean {
-  return kind === 'network' || kind === 'conflict';
+export function keepsThePopoverOpen(kind: SaveFailureKind): boolean {
+  return kind !== 'budget';
 }
 
 export function keepsTheKey(kind: SaveFailureKind): boolean {

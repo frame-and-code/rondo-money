@@ -30,16 +30,21 @@ export const en: Record<MessageKey, string> = {
   'categories.emptyBody':
     'There is nowhere to put money yet. Add the first group and category, and the month appears.',
   'categories.unavailable': 'The month could not be read. Reload the page.',
-  'categories.assignEdit': 'Change what "{{category}}" is assigned',
-  'categories.assignSave': 'Save',
-  'categories.assignCancel': 'Cancel',
-  'categories.assignField': 'Assigned this month',
-  'categories.assignFieldShort': 'assigned this month',
+  'categories.moveOpen': 'Move money for "{{category}}"',
+  'categories.moveAmountFor': 'Amount for the "{{envelope}}" envelope',
+  'categories.moveOther': 'The other envelope, currently "{{envelope}}"',
+  'categories.moveSwapIn': 'Turn it around: money comes into this category',
+  'categories.moveSwapOut': 'Turn it around: money leaves this category',
+  'categories.moveSearch': 'Find a category',
+  'categories.moveNothing': 'Nothing found',
+  'categories.moveSubmit': 'Move',
+  'categories.moveAssign': 'Assign',
+  'categories.moveSubmitting': 'Saving',
+  'categories.moveCancel': 'Cancel',
+  'categories.moveClose': 'Close the move',
   'categories.failTitle': 'Not saved',
   'categories.failConflict':
     'An operation under this key is already written, and it was written with a different amount. The screen shows what the server holds.',
-  'categories.failHidden':
-    'The "{{category}}" category was hidden while this screen was open. The month has been re-read and the amount is unchanged.',
   'categories.failBudget':
     'The active budget changed in another window. This screen shows a budget that is no longer in use, so there is nothing to assign in it.',
   'categories.failNetwork':

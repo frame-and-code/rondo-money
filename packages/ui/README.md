@@ -17,7 +17,7 @@ src/
   components/
     ui/                 # shadcn/ui primitives, generated: button, card, checkbox, combobox,
                         # command, dialog, drawer, dropdown-menu, input, input-group, label,
-                        # select, separator, skeleton, textarea, tooltip
+                        # popover, select, separator, skeleton, textarea, tooltip
     theme-provider.tsx  # next-themes provider (light/dark)
     theme-toggle.tsx    # theme switch used in the app header
   hooks/use-mobile.ts   # `useIsMobile`: the breakpoint a component branches on when the
@@ -47,9 +47,23 @@ defined there and consumed here.
 
 ### What the generator owns
 
-Every file under `components/ui` keeps the generator's markup and classes, and a regeneration
-overwrites the whole file. A colour or a cursor that feels wrong is a
-theme question, and the theme lives in `apps/web/src/app/globals.css`.
+Every file under `components/ui` keeps the generator's markup, and a regeneration overwrites the
+whole file. A colour that feels wrong is a theme question, and the theme lives in
+`apps/web/src/app/globals.css`; a cursor is a rule in the same file, which is why the pointer on
+menu and option roles is written there rather than in a primitive.
+
+**Three files carry hand edits, and a regeneration drops them.** `popover.tsx` gained two parts
+the generator leaves out: `Backdrop`, which lets a popover dim and blur the page behind it
+instead of merging into it, and `Close`, without which `modal` traps no focus at all, because
+base-ui gates the trap on that part being present. The two are separate props, so a popover
+asking for `backdrop` passes `closeLabel` as well or its `modal` stops the mouse and not the
+keyboard. `command.tsx` and
+`combobox.tsx` hold the shape of every picker this app draws: the height and radius of a row,
+the height and radius of the search field, the padding around the list, and the tint a row takes
+under the pointer. They live in the primitive because two screens need the same picker, and a
+value copied into both is a value that will differ by the next change. So after regenerating
+any of the three, put them back and look at both the onboarding currency sheet and the move
+dialog, which is where the difference shows.
 
 The one thing a new file gets afterwards is `eslint --fix` and Prettier. The generator writes
 double quotes, no semicolons and its own import order, all of which the gate refuses. That
