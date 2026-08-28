@@ -1,6 +1,6 @@
 ---
 name: testing-patterns
-description: Which level actually proves a claim in this repository, the traps that make a passing test prove nothing, probe controllers where no endpoint exists yet, and concurrency. Use when adding or fixing tests in apps/api, or when a test passes and you are not sure it proved anything.
+description: Which level actually proves a claim in this repository, the traps that make a passing test prove nothing, probe controllers where no endpoint exists yet, and concurrency. Use when adding or fixing tests in apps/api or apps/web, or when a test passes and you are not sure it proved anything.
 ---
 
 # Testing patterns
@@ -25,11 +25,11 @@ against a mocked client proves the mock.
   them.
 - A screen wired end to end is e2e, and one or two scenarios per feature is the budget.
 
-## The three ways a green run lies here
+## The four ways a green run lies here
 
-1. **The assertion that matches anything.** Every unit spec builds its client against an
-   unreachable database, so `rejects.toThrow()` with no argument is satisfied by a connection
-   error and proves nothing. Match the message the code under test produces. For the opposite
+1. **The assertion that matches anything.** A unit spec in `apps/api` that builds a client
+   builds it against an unreachable database, so `rejects.toThrow()` with no argument is
+   satisfied by a connection error and proves nothing. Match the message the code under test produces. For the opposite
    claim, that a call got past every rule, match `/reach database server|ECONNREFUSED/i`, which
    says it reached the driver. Where the message is not the point, capture the arguments with a
    second `$extends` that short-circuits the driver
@@ -40,6 +40,12 @@ against a mocked client proves the mock.
 3. **The test written after the code.** It can only mirror what was built, misreading
    included. Where one is unavoidable, break the production line it depends on, watch it fail,
    and put it back.
+4. **The class taken for a colour.** `toHaveClass('text-destructive')` proves the component
+   picked the class, which is the right unit assertion and the whole of what jsdom can answer:
+   it resolves no custom property, so a token that says nothing in one of the two themes passes
+   it. What the reader sees is an e2e claim, made by comparing the element's computed `color`
+   against the same token resolved on a probe element in that page, once per theme
+   ([`budget.ts`](../../../apps/web/e2e/budget.ts)).
 
 ## Where there is no endpoint yet
 

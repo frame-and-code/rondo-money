@@ -1,6 +1,32 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 import { en } from '../src/i18n/messages/en';
+
+export const colourOf = (locator: Locator): Promise<string> =>
+  locator.evaluate((node) => getComputedStyle(node).color);
+
+export const tokenColour = (page: Page, token: string): Promise<string> =>
+  page.evaluate((name) => {
+    if (getComputedStyle(document.documentElement).getPropertyValue(name).trim() === '') {
+      throw new Error(`The theme defines no ${name}, so its colour would read as the plain text.`);
+    }
+
+    const probe = document.createElement('span');
+
+    probe.style.color = `var(${name})`;
+    document.body.append(probe);
+
+    const value = getComputedStyle(probe).color;
+
+    probe.remove();
+
+    return value;
+  }, token);
+
+export async function turnTheDarkThemeOn(page: Page): Promise<void> {
+  await page.getByRole('button', { name: en['common.themeToggle.trigger'] }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+}
 
 export const cardOf = (page: Page, category: string) =>
   page.getByRole('button', {

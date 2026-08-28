@@ -240,6 +240,84 @@ describe('the month of the budget', () => {
   });
 });
 
+describe('what a number says by its colour', () => {
+  const tileOf = async (name: string): Promise<HTMLElement> =>
+    (await screen.findByText(name)).closest('[data-slot="category-tile"]') as HTMLElement;
+
+  it('reds an envelope that owes money, so the one to top up is found without reading', async () => {
+    view = oneCategory({ name: 'Транспорт', available: '-12500' });
+    draw();
+
+    expect(await screen.findByTestId('available-Транспорт')).toHaveClass('text-destructive');
+  });
+
+  it('greys an envelope holding nothing, since there is nothing there to look at', async () => {
+    view = oneCategory({ name: 'Подписки', available: '0' });
+    draw();
+
+    expect(await screen.findByTestId('available-Подписки')).toHaveClass('text-muted-foreground');
+  });
+
+  it('leaves an envelope with money in it plain, so red is the only colour that calls', async () => {
+    view = oneCategory({ available: '7660' });
+    draw();
+
+    const shown = await screen.findByTestId('available-Продукты');
+
+    expect(shown).not.toHaveClass('text-destructive');
+    expect(shown).not.toHaveClass('text-muted-foreground');
+  });
+
+  it('reds the ring of an overspent envelope rather than drawing it in its own colour', async () => {
+    view = oneCategory({ name: 'Транспорт', activity: '-72500', available: '-12500' });
+    draw();
+
+    const ring = (await tileOf('Транспорт')).querySelector(
+      '[data-slot="spend-ring"] circle + circle',
+    );
+
+    expect(ring).toHaveAttribute('stroke', 'var(--destructive)');
+  });
+
+  it('keeps the ring in the category colour while the envelope still holds money', async () => {
+    view = oneCategory();
+    draw();
+
+    const ring = (await tileOf('Продукты')).querySelector(
+      '[data-slot="spend-ring"] circle + circle',
+    );
+
+    expect(ring).not.toHaveAttribute('stroke', 'var(--destructive)');
+  });
+
+  it('reds both the pool and its explanation when more is assigned than exists', async () => {
+    view = { ...oneCategory(), readyToAssign: '-31000' };
+    draw();
+
+    expect(await screen.findByTestId('ready-to-assign')).toHaveClass('text-destructive');
+    expect(screen.getByText(ru['categories.readyToAssignOver'])).toHaveClass('text-destructive');
+  });
+
+  it('reds the pool in the island as well, which is the header once the list scrolls', async () => {
+    view = { ...oneCategory(), readyToAssign: '-31000' };
+    draw();
+
+    expect(await screen.findByTestId('ready-to-assign-island-amount')).toHaveClass(
+      'text-destructive',
+    );
+  });
+
+  it('leaves the explanation quiet while the pool is not in the red', async () => {
+    draw();
+
+    expect(await screen.findByTestId('ready-to-assign')).not.toHaveClass('text-destructive');
+    expect(screen.getByTestId('ready-to-assign-island-amount')).not.toHaveClass('text-destructive');
+    expect(screen.getByText(ru['categories.readyToAssignFree'])).toHaveClass(
+      'text-muted-foreground',
+    );
+  });
+});
+
 describe('moving between months', () => {
   it('reads the month written in the address', async () => {
     search = 'month=2026-09';
