@@ -1,3 +1,11 @@
+export function byId(left: string, right: string): number {
+  if (left === right) {
+    return 0;
+  }
+
+  return left < right ? -1 : 1;
+}
+
 export interface OrderedRow {
   id: string;
   sortOrder: number;
@@ -21,5 +29,5 @@ export function wholeOrder(asked: readonly string[], held: readonly HeldRow[]): 
 export function inWriteOrder(ids: readonly string[]): OrderedRow[] {
   return ids
     .map((id, sortOrder) => ({ id, sortOrder }))
-    .sort((left, right) => (left.id < right.id ? -1 : 1));
+    .sort((left, right) => byId(left.id, right.id));
 }

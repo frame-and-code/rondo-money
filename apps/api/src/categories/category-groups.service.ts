@@ -9,7 +9,7 @@ import {
 } from '@/categories/categories.dto';
 import { NO_ACTIVE_BUDGET, refuse } from '@/categories/category-refusal';
 import { CategoryGroupResponse } from '@/categories/category.response';
-import { inWriteOrder, wholeOrder } from '@/categories/write-order';
+import { byId, inWriteOrder, wholeOrder } from '@/categories/write-order';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
 import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
@@ -71,12 +71,7 @@ export class CategoryGroupsService {
     );
   }
 
-  async update(
-    userId: string,
-    id: string,
-    body: UpdateCategoryGroupDto,
-  ): Promise<CategoryGroupResponse> {
-    void userId;
+  async update(id: string, body: UpdateCategoryGroupDto): Promise<CategoryGroupResponse> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -96,8 +91,7 @@ export class CategoryGroupsService {
     );
   }
 
-  async hide(userId: string, id: string, key: string): Promise<CategoryGroupResponse> {
-    void userId;
+  async hide(id: string, key: string): Promise<CategoryGroupResponse> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -115,7 +109,7 @@ export class CategoryGroupsService {
         }
 
         const inside = await tx.category.findMany({ where: { groupId: id } });
-        const ids = inside.map((one) => one.id).sort();
+        const ids = inside.map((one) => one.id).sort(byId);
 
         const locked = await lockCategories(this.raw, tx, budget.id, ids);
         refuseWhatStillHoldsMoney(
@@ -127,7 +121,7 @@ export class CategoryGroupsService {
         const standing = locked
           .filter((one) => one.hiddenAt === null)
           .map((one) => one.id)
-          .sort();
+          .sort(byId);
 
         for (const categoryId of standing) {
           await tx.category.update({ where: { id: categoryId }, data: { hiddenAt } });
@@ -138,8 +132,7 @@ export class CategoryGroupsService {
     );
   }
 
-  async unhide(userId: string, id: string, key: string): Promise<CategoryGroupResponse> {
-    void userId;
+  async unhide(id: string, key: string): Promise<CategoryGroupResponse> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -152,7 +145,7 @@ export class CategoryGroupsService {
         const withTheGroup = inside
           .filter((one) => one.hiddenAt?.getTime() === group.hiddenAt?.getTime())
           .map((one) => one.id)
-          .sort();
+          .sort(byId);
 
         for (const categoryId of withTheGroup) {
           await tx.category.update({ where: { id: categoryId }, data: { hiddenAt: null } });
@@ -165,8 +158,7 @@ export class CategoryGroupsService {
     );
   }
 
-  async reorder(userId: string, body: ReorderCategoryGroupsDto): Promise<CategoryGroupResponse[]> {
-    void userId;
+  async reorder(body: ReorderCategoryGroupsDto): Promise<CategoryGroupResponse[]> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(

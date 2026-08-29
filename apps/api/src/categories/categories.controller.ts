@@ -74,11 +74,8 @@ export class CategoriesController {
   @ApiBadRequestResponse(REFUSED)
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
-  reorder(
-    @CurrentUserId() userId: string,
-    @Body() body: ReorderCategoriesDto,
-  ): Promise<CategoryResponse[]> {
-    return this.categories.reorder(userId, body);
+  reorder(@Body() body: ReorderCategoriesDto): Promise<CategoryResponse[]> {
+    return this.categories.reorder(body);
   }
 
   @Patch(':id')
@@ -93,11 +90,10 @@ export class CategoriesController {
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   update(
-    @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateCategoryDto,
   ): Promise<CategoryResponse> {
-    return this.categories.update(userId, id, body);
+    return this.categories.update(id, body);
   }
 
   @Post(':id/hide')
@@ -113,11 +109,10 @@ export class CategoriesController {
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   hide(
-    @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: IdempotentDto,
   ): Promise<CategoryResponse> {
-    return this.categories.hide(userId, id, body.idempotencyKey);
+    return this.categories.hide(id, body.idempotencyKey);
   }
 
   @Post(':id/unhide')
@@ -130,10 +125,9 @@ export class CategoriesController {
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   unhide(
-    @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: IdempotentDto,
   ): Promise<CategoryResponse> {
-    return this.categories.unhide(userId, id, body.idempotencyKey);
+    return this.categories.unhide(id, body.idempotencyKey);
   }
 }

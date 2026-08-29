@@ -98,8 +98,7 @@ export class CategoriesService {
     );
   }
 
-  async update(userId: string, id: string, body: UpdateCategoryDto): Promise<CategoryResponse> {
-    void userId;
+  async update(id: string, body: UpdateCategoryDto): Promise<CategoryResponse> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -144,8 +143,7 @@ export class CategoriesService {
     );
   }
 
-  async hide(userId: string, id: string, key: string): Promise<CategoryResponse> {
-    void userId;
+  async hide(id: string, key: string): Promise<CategoryResponse> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -178,8 +176,7 @@ export class CategoriesService {
     );
   }
 
-  async unhide(userId: string, id: string, key: string): Promise<CategoryResponse> {
-    void userId;
+  async unhide(id: string, key: string): Promise<CategoryResponse> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(
@@ -195,8 +192,7 @@ export class CategoriesService {
     );
   }
 
-  async reorder(userId: string, body: ReorderCategoriesDto): Promise<CategoryResponse[]> {
-    void userId;
+  async reorder(body: ReorderCategoriesDto): Promise<CategoryResponse[]> {
     const intended = await this.activeBudget(this.prisma);
 
     return this.mutations.run(

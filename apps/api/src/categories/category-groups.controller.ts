@@ -73,11 +73,8 @@ export class CategoryGroupsController {
   @ApiBadRequestResponse(REFUSED)
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
-  reorder(
-    @CurrentUserId() userId: string,
-    @Body() body: ReorderCategoryGroupsDto,
-  ): Promise<CategoryGroupResponse[]> {
-    return this.groups.reorder(userId, body);
+  reorder(@Body() body: ReorderCategoryGroupsDto): Promise<CategoryGroupResponse[]> {
+    return this.groups.reorder(body);
   }
 
   @Patch(':id')
@@ -87,11 +84,10 @@ export class CategoryGroupsController {
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   update(
-    @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateCategoryGroupDto,
   ): Promise<CategoryGroupResponse> {
-    return this.groups.update(userId, id, body);
+    return this.groups.update(id, body);
   }
 
   @Post(':id/hide')
@@ -108,11 +104,10 @@ export class CategoryGroupsController {
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   hide(
-    @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: IdempotentDto,
   ): Promise<CategoryGroupResponse> {
-    return this.groups.hide(userId, id, body.idempotencyKey);
+    return this.groups.hide(id, body.idempotencyKey);
   }
 
   @Post(':id/unhide')
@@ -125,10 +120,9 @@ export class CategoryGroupsController {
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   unhide(
-    @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: IdempotentDto,
   ): Promise<CategoryGroupResponse> {
-    return this.groups.unhide(userId, id, body.idempotencyKey);
+    return this.groups.unhide(id, body.idempotencyKey);
   }
 }
