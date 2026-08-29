@@ -9,7 +9,6 @@ import {
 } from '@nestjs/swagger';
 
 import { CurrentUserId } from '@/auth/current-user.decorator';
-import { UnauthorizedResponse } from '@/auth/unauthorized.response';
 import {
   CreateCategoryDto,
   IdempotentDto,
@@ -17,26 +16,8 @@ import {
   UpdateCategoryDto,
 } from '@/categories/categories.dto';
 import { CategoriesService } from '@/categories/categories.service';
-import { CategoryRefusedResponse } from '@/categories/category-refused.response';
+import { ANONYMOUS, CLAIMED, REFUSED } from '@/categories/category-responses';
 import { CategoryResponse } from '@/categories/category.response';
-import { ConflictResponse } from '@/mutations/conflict.response';
-
-const REFUSED = {
-  description:
-    'The body was refused, or the change names something the caller cannot reach. A refusal ' +
-    'from the domain carries the reason it was refused for.',
-  type: CategoryRefusedResponse,
-};
-
-const CLAIMED = {
-  description: 'The idempotency key was claimed by a different request.',
-  type: ConflictResponse,
-};
-
-const ANONYMOUS = {
-  description: 'The token was missing, malformed, expired or not minted for this app.',
-  type: UnauthorizedResponse,
-};
 
 @Controller('categories')
 export class CategoriesController {

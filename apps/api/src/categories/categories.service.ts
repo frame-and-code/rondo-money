@@ -184,6 +184,7 @@ export class CategoriesService {
       async (tx) => {
         await this.activeBudget(tx, intended.id);
         const current = await this.knownCategory(tx, id);
+        await this.openGroup(tx, current.groupId);
 
         return serialize(
           await tx.category.update({ where: { id: current.id }, data: { hiddenAt: null } }),

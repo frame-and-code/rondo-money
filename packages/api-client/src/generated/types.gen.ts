@@ -256,6 +256,10 @@ export type CategoryRefusedResponse = {
      */
     reason?: CategoryRefusal;
     /**
+     * Which category held the money, present with the amount. A group is refused by one of its categories, so the screen would otherwise have to guess which row to point at.
+     */
+    categoryId?: string;
+    /**
      * What the category still holds over every month, present only when that is what blocked the hide. The screen names this amount rather than the one the open month shows.
      */
     available?: string;

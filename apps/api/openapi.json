@@ -1794,6 +1794,11 @@
               }
             ]
           },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Which category held the money, present with the amount. A group is refused by one of its categories, so the screen would otherwise have to guess which row to point at."
+          },
           "available": {
             "type": "string",
             "pattern": "^(0|-?[1-9]\\d*)$",

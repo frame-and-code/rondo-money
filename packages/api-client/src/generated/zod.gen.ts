@@ -229,6 +229,7 @@ export const zCategoryRefusedResponse = z.object({
         z.array(z.string())
     ]),
     reason: zCategoryRefusal.optional(),
+    categoryId: z.uuid().optional(),
     available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/).optional()
 });
 

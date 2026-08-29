@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { type CategoryColor, type CategoryIcon } from '@rondo/types';
 import { Transform } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsOptional, IsString, IsUUID, Length } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsString, IsUUID, Length, ValidateIf } from 'class-validator';
 
 import { ApiCategoryColorProperty } from '@/validation/color.decorator';
 import { ApiCategoryIconProperty } from '@/validation/icon.decorator';
@@ -67,34 +67,34 @@ export class CreateCategoryDto extends KeyedDto {
   name!: string;
 
   @ApiCategoryIconProperty({ required: false, description: 'Which icon it is drawn with.' })
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   icon?: CategoryIcon;
 
   @ApiCategoryColorProperty({ required: false, description: 'Which colour it is drawn in.' })
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   color?: CategoryColor;
 }
 
 export class UpdateCategoryDto extends KeyedDto {
   @ApiProperty({ format: 'uuid', required: false, description: 'The group to move it into.' })
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   @Transform(lowercased)
   @IsUUID()
   groupId?: string;
 
   @ApiProperty({ required: false, maxLength: NAME_MAX, description: 'What to call it now.' })
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   @IsString()
   @Transform(trimmed)
   @Length(1, NAME_MAX)
   name?: string;
 
   @ApiCategoryIconProperty({ required: false, description: 'Which icon it is drawn with.' })
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   icon?: CategoryIcon;
 
   @ApiCategoryColorProperty({ required: false, description: 'Which colour it is drawn in.' })
-  @IsOptional()
+  @ValidateIf((_, value) => value !== undefined)
   color?: CategoryColor;
 }
 

@@ -133,6 +133,13 @@ describe('/categories and /category-groups (integration)', () => {
       idempotencyKey: 'bad-color',
     }).expect(400);
 
+    await post(userId, '/categories', {
+      groupId: group.id,
+      name: 'Аренда',
+      icon: null,
+      idempotencyKey: 'null-icon',
+    }).expect(400);
+
     expect(await harness.prisma.category.count({ where: { userId } })).toBe(0);
   });
 

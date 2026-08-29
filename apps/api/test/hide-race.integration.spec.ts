@@ -55,7 +55,9 @@ describe('hiding a category while money is moving into it (integration)', () => 
         _sum: { amount: true },
       });
 
-      expect([hide.status, move.status]).not.toEqual([201, 201]);
+      const accepted = [hide.status, move.status].filter((status) => status === 201);
+
+      expect(accepted).toHaveLength(1);
       expect(row.hiddenAt === null || (held._sum.amount ?? 0n) === 0n).toBe(true);
     }
   });

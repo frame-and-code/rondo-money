@@ -145,7 +145,9 @@ export function CategoryTile({
     className: 'relative h-full',
   };
 
-  const grab = { ...listeners };
+  const { onKeyDown: _startsByKeyboard, ...byPointer } = listeners ?? {};
+
+  const grab = byPointer;
 
   if (!moveInPopover) {
     return (

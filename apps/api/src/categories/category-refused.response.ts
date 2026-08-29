@@ -16,6 +16,15 @@ export class CategoryRefusedResponse extends BadRequestResponse {
   })
   reason?: CategoryRefusal;
 
+  @ApiProperty({
+    format: 'uuid',
+    required: false,
+    description:
+      'Which category held the money, present with the amount. A group is refused by one of ' +
+      'its categories, so the screen would otherwise have to guess which row to point at.',
+  })
+  categoryId?: string;
+
   @ApiMoneyProperty({
     required: false,
     description:

@@ -66,7 +66,11 @@ describe('hiding a category and a group (integration)', () => {
       idempotencyKey: 'hide-positive',
     }).expect(400);
 
-    expect(refused.body).toMatchObject({ reason: 'AVAILABLE_NOT_ZERO', available: '40000' });
+    expect(refused.body).toMatchObject({
+      reason: 'AVAILABLE_NOT_ZERO',
+      available: '40000',
+      categoryId: category.id,
+    });
     expect(
       (await harness.prisma.category.findUniqueOrThrow({ where: { id: category.id } })).hiddenAt,
     ).toBeNull();
@@ -188,6 +192,35 @@ describe('hiding a category and a group (integration)', () => {
     expect(
       (await harness.prisma.category.findUniqueOrThrow({ where: { id: inside.id } })).hiddenAt,
     ).toBeNull();
+  });
+
+  it('refuses to bring a category back into a group that is still hidden', async () => {
+    const userId = user('BackIntoHidden');
+    const budget = await harness.seedBudget(userId);
+    const group = await harness.seedGroup(
+      userId,
+      budget.id,
+      'Стройка',
+      0,
+      new Date('2026-01-05T12:00:00Z'),
+    );
+    const inside = await harness.seedCategory(
+      userId,
+      budget.id,
+      group.id,
+      'Материалы',
+      0,
+      new Date('2026-01-05T12:00:00Z'),
+    );
+
+    const refused = await post(userId, `/categories/${inside.id}/unhide`, {
+      idempotencyKey: 'back-alone',
+    }).expect(400);
+
+    expect(refused.body).toMatchObject({ reason: 'GROUP_HIDDEN' });
+    expect(
+      (await harness.prisma.category.findUniqueOrThrow({ where: { id: inside.id } })).hiddenAt,
+    ).not.toBeNull();
   });
 
   it('brings a category back when the marker is taken off', async () => {
