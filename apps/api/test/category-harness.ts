@@ -96,7 +96,7 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
   }).compile();
 
   const app: INestApplication = moduleRef.createNestApplication();
-  await app.init();
+  await app.listen(0);
 
   const prisma = app.get(PrismaService);
   const webOrigin = resolveWebOrigin(app.get(ConfigService));

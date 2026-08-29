@@ -84,7 +84,7 @@ describe('the single write point (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
 
     prisma = app.get(PrismaService);
     scoped = app.get<ScopedPrismaClient>(SCOPED_PRISMA);

@@ -252,6 +252,12 @@ That failure means a missing test, never a lowered threshold.
 ## Conventions
 
 - Integration tests run **sequentially** (`--runInBand`); the DB is shared, so no races.
+- **A suite that fires concurrent requests listens for itself** (`await app.listen(0)` in
+  `beforeAll` rather than `app.init()`). Supertest starts the server on the first request that
+  finds it unbound and **closes it again** when that request ends, so several requests issued at
+  once from a cold server tear each other's sockets down and one of them fails with
+  `read ECONNRESET`. Which of them loses is a matter of timing, so the suite passes on one
+  machine and fails on another with nothing in the diff to explain it.
 - Test files must be in the `include` of the corresponding `tsconfig.json`, or
   `typecheck` and type-aware lint (`no-floating-promises` in api) won't see them.
 - Jest globals (`describe` / `it` / `expect`) are registered for test files in the shared
