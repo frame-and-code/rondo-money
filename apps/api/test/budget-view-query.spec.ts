@@ -57,6 +57,34 @@ describe('the budget view statement', () => {
     expect(read.filter((entry) => !entry.scoped)).toEqual([]);
   });
 
+  it('keeps both visibility filters when the caller has not asked for the hidden ones', () => {
+    const { text } = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS);
+
+    expect([...text.matchAll(/hidden_at\s+is\s+null/gi)]).toHaveLength(2);
+  });
+
+  it('drops both visibility filters when the caller asks for the hidden ones, and nothing else', () => {
+    const closed = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS);
+    const open = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS, { includeHidden: true });
+
+    expect(open.text).not.toMatch(/hidden_at\s+is\s+null/i);
+    expect(open.text.replace(/\s+/g, ' ')).not.toBe(closed.text.replace(/\s+/g, ' '));
+    expect(scopeOfEachTable(open.text).filter((entry) => !entry.scoped)).toEqual([]);
+  });
+
+  it('reports whether each row is hidden in the month it was asked about', () => {
+    const { text } = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS, { includeHidden: true });
+
+    expect(text).toContain('"groupHidden"');
+    expect(text).toContain('"categoryHidden"');
+  });
+
+  it('answers what a category holds over every month, which is what blocks a hide', () => {
+    const { text } = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS);
+
+    expect(text).toContain('"availableAllTime"');
+  });
+
   it('binds the month window as calendar dates and the visibility boundary as its own instant', () => {
     const { text, values } = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS);
 

@@ -39,6 +39,6 @@ export class BudgetViewController {
     @CurrentUserId() userId: string,
     @Query() query: BudgetViewQueryDto,
   ): Promise<BudgetViewResponse> {
-    return this.view.read(userId, parseCalendarMonth(query.month));
+    return this.view.read(userId, parseCalendarMonth(query.month), query.includeHidden ?? false);
   }
 }

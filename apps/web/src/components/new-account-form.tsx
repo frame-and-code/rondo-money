@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from '@rondo/ui/components/ui/card';
 import { Input } from '@rondo/ui/components/ui/input';
+import { InputGroupInput } from '@rondo/ui/components/ui/input-group';
 import { Label } from '@rondo/ui/components/ui/label';
 import { cn } from '@rondo/ui/lib/utils';
 import {
@@ -238,7 +239,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                     )}
                   >
                     {money.symbolFirst ? symbol : null}
-                    <input
+                    <InputGroupInput
                       id="account-balance"
                       inputMode="decimal"
                       value={amount}
@@ -251,7 +252,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                         edited();
                       }}
                       disabled={create.isPending}
-                      className="placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent outline-none disabled:opacity-50"
+                      className="h-auto min-w-0 flex-1 p-0"
                     />
                     {money.symbolFirst ? null : symbol}
                   </div>

@@ -5,9 +5,20 @@ import {
   budgetViewControllerReadOptions,
   budgetViewControllerReadQueryKey,
   budgetsControllerListOptions,
+  categoriesControllerCreateMutation,
+  categoriesControllerHideMutation,
+  categoriesControllerReorderMutation,
+  categoriesControllerUpdateMutation,
+  categoryGroupsControllerHideMutation,
   movesControllerMoveMutation,
 } from '@rondo/api-client/react-query';
 import { parseMoney, toDecimalString, type CalendarMonth } from '@rondo/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@rondo/ui/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@rondo/ui/components/ui/drawer';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
@@ -18,13 +29,20 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { BudgetMonthHeader } from '@/components/budget-month-header';
 import { BudgetMonthLoading } from '@/components/budget-month-loading';
+import { CategoryActions } from '@/components/category-actions';
+import { CategoryDialog } from '@/components/category-dialog';
 import { CategoryGroup } from '@/components/category-group';
 import { CategoryTile } from '@/components/category-tile';
+import { HideCategoryDialog } from '@/components/hide-category-dialog';
+import { HideGroupDialog } from '@/components/hide-group-dialog';
 import { MoveFields } from '@/components/move-fields';
 import { SaveFailureBanner } from '@/components/save-failure-banner';
 import { SpendRing } from '@/components/spend-ring';
 import { useTranslations } from '@/i18n/locale-context';
+import type { MessageKey } from '@/i18n/messages';
 import { monthFromUrl, monthLabel, monthNow, spendRing } from '@/lib/budget-month';
+import { categoryFailure } from '@/lib/category-failure';
+import { reorderedView } from '@/lib/category-order';
 import { moneyOf } from '@/lib/money';
 import { moveTargets, POOL, type MoveTarget } from '@/lib/move-target';
 import {
@@ -45,6 +63,12 @@ interface Moving {
   picking: boolean;
   key: string;
 }
+
+type Managing =
+  | { kind: 'newCategory'; groupId: string }
+  | { kind: 'editCategory'; categoryId: string }
+  | { kind: 'hideCategory'; categoryId: string }
+  | { kind: 'hideGroup'; groupId: string };
 
 const STEP_MS = 500;
 
@@ -114,12 +138,16 @@ export function BudgetMonth() {
   );
 
   const [moving, setMoving] = useState<Moving | null>(null);
+  const [managing, setManaging] = useState<Managing | null>(null);
+  const [refused, setRefused] = useState<MessageKey | null>(null);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [sent, setSent] = useState<CreateMoveDto | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [settling, setSettling] = useState(false);
   const reading = useRef(false);
   const target = useRef<{ categoryId: string; categoryName: string } | null>(null);
+  const swept = useRef<{ categoryId: string; categoryName: string } | null>(null);
+  const intents = useRef(new Map<string, string>());
 
   const shownData = held ?? view.data;
   const [turned, setTurned] = useState<{ month: string; forward: boolean }>({
@@ -184,6 +212,66 @@ export function BudgetMonth() {
     },
   });
 
+  const closeManaging = (): void => {
+    setRefused(null);
+    setManaging(null);
+  };
+
+  const emptyIntoPool = (categoryId: string, categoryName: string, amount: bigint): void => {
+    if (amount === 0n || month === null) return;
+
+    swept.current = { categoryId, categoryName };
+
+    const envelope = { kind: 'CATEGORY' as const, categoryId };
+    const pool = { kind: 'READY_TO_ASSIGN' as const };
+    const outgoing = amount > 0n;
+
+    sweep.mutate({
+      body: {
+        month,
+        amount: (outgoing ? amount : -amount).toString(10),
+        from: outgoing ? envelope : pool,
+        to: outgoing ? pool : envelope,
+        idempotencyKey: keyFor(`release:${categoryId}`),
+      },
+    });
+  };
+
+  const managed = {
+    onSuccess: async () => {
+      closeManaging();
+      await reread();
+    },
+    onError: (error: unknown) => setRefused(categoryFailure(error)),
+  };
+
+  const createCategory = useMutation({ ...categoriesControllerCreateMutation(), ...managed });
+  const editCategory = useMutation({ ...categoriesControllerUpdateMutation(), ...managed });
+  const hideCategory = useMutation({ ...categoriesControllerHideMutation(), ...managed });
+  const hideGroup = useMutation({ ...categoryGroupsControllerHideMutation(), ...managed });
+  const sweep = useMutation({
+    ...movesControllerMoveMutation(),
+    onSettled: () => reread(),
+    onError: (error) => {
+      if (managing !== null) {
+        setRefused(categoryFailure(error));
+        return;
+      }
+
+      setFailure({
+        kind: saveFailureKind(error),
+        categoryId: swept.current?.categoryId ?? '',
+        categoryName: swept.current?.categoryName ?? '',
+      });
+    },
+  });
+
+  const reorderCategories = useMutation({
+    ...categoriesControllerReorderMutation(),
+    onError: () => setFailure({ kind: 'other', categoryId: '', categoryName: '' }),
+    onSettled: () => reread(),
+  });
+
   const empty = budget === null || money === null || month === null || today === null || !shownData;
 
   if (budgets.isError) {
@@ -229,6 +317,25 @@ export function BudgetMonth() {
         setSettling(false);
       });
     }
+  };
+
+  const manage = (next: Managing): void => {
+    discard();
+    intents.current = new Map();
+    setRefused(null);
+    setManaging(next);
+  };
+
+  const keyFor = (intent: string): string => {
+    const held = intents.current.get(intent);
+    if (held !== undefined) {
+      return held;
+    }
+
+    const minted = mintKey();
+    intents.current.set(intent, minted);
+
+    return minted;
   };
 
   const goToMonth = (next: CalendarMonth): void => {
@@ -421,6 +528,161 @@ export function BudgetMonth() {
     );
   };
 
+  const managePanel = (categoryId: string): ReactNode => {
+    const shown = categories.find((one) => one.id === categoryId);
+    if (!shown) return null;
+
+    return (
+      <CategoryActions
+        category={shown}
+        onEdit={() => manage({ kind: 'editCategory', categoryId })}
+        onHide={() => manage({ kind: 'hideCategory', categoryId })}
+      />
+    );
+  };
+
+  const managedCategory =
+    managing !== null && 'categoryId' in managing
+      ? (categories.find((one) => one.id === managing.categoryId) ?? null)
+      : null;
+
+  const managedGroup =
+    managing?.kind === 'hideGroup'
+      ? (shownData.groups.find((one) => one.id === managing.groupId) ?? null)
+      : null;
+
+  const groupOf = (categoryId: string): { id: string; name: string } | null =>
+    shownData.groups.find((one) => one.categories.some((each) => each.id === categoryId)) ?? null;
+
+  const groupList = shownData.groups.map((one) => ({ id: one.id, name: one.name }));
+
+  const manageDialog = (): ReactNode => {
+    if (managing === null) return null;
+
+    if (managing.kind === 'newCategory' || managing.kind === 'editCategory') {
+      const editing =
+        managing.kind === 'newCategory' || managedCategory === null
+          ? null
+          : {
+              id: managedCategory.id,
+              name: managedCategory.name,
+              groupId: groupOf(managedCategory.id)?.id ?? '',
+              icon: managedCategory.icon,
+              color: managedCategory.color,
+            };
+
+      return (
+        <CategoryDialog
+          category={editing}
+          failed={refused}
+          groupId={managing.kind === 'newCategory' ? managing.groupId : (editing?.groupId ?? '')}
+          groups={groupList}
+          onCancel={closeManaging}
+          onSave={(draft) =>
+            editing === null
+              ? createCategory.mutate({
+                  body: {
+                    groupId: draft.groupId,
+                    name: draft.name,
+                    ...(draft.icon === null ? {} : { icon: draft.icon }),
+                    ...(draft.color === null ? {} : { color: draft.color }),
+                    idempotencyKey: draft.idempotencyKey,
+                  },
+                })
+              : editCategory.mutate({
+                  path: { id: editing.id },
+                  body: {
+                    groupId: draft.groupId,
+                    name: draft.name,
+                    ...(draft.icon === null ? {} : { icon: draft.icon }),
+                    ...(draft.color === null ? {} : { color: draft.color }),
+                    idempotencyKey: draft.idempotencyKey,
+                  },
+                })
+          }
+        />
+      );
+    }
+
+    if (managing.kind === 'hideCategory' && managedCategory !== null) {
+      return (
+        <HideCategoryDialog
+          category={{
+            id: managedCategory.id,
+            name: managedCategory.name,
+            available: parseMoney(managedCategory.available),
+            availableAllTime: parseMoney(managedCategory.availableAllTime),
+          }}
+          money={money}
+          failed={refused}
+          busy={sweep.isPending || hideCategory.isPending}
+          onCancel={closeManaging}
+          onMoveOut={() =>
+            emptyIntoPool(
+              managedCategory.id,
+              managedCategory.name,
+              parseMoney(managedCategory.availableAllTime),
+            )
+          }
+          onHide={() =>
+            hideCategory.mutate({
+              path: { id: managedCategory.id },
+              body: { idempotencyKey: keyFor('hide') },
+            })
+          }
+        />
+      );
+    }
+
+    if (managing.kind === 'hideGroup' && managedGroup !== null) {
+      return (
+        <HideGroupDialog
+          group={{
+            id: managedGroup.id,
+            name: managedGroup.name,
+            categories: managedGroup.categories.map((one) => ({
+              id: one.id,
+              name: one.name,
+              availableAllTime: parseMoney(one.availableAllTime),
+            })),
+          }}
+          money={money}
+          failed={refused}
+          busy={sweep.isPending || hideGroup.isPending}
+          onCancel={closeManaging}
+          onMoveOut={(categoryId) => {
+            const one = managedGroup.categories.find((each) => each.id === categoryId);
+
+            if (one) {
+              emptyIntoPool(one.id, one.name, parseMoney(one.availableAllTime));
+            }
+          }}
+          onHide={() =>
+            hideGroup.mutate({
+              path: { id: managedGroup.id },
+              body: { idempotencyKey: keyFor('hide') },
+            })
+          }
+        />
+      );
+    }
+
+    return null;
+  };
+
+  const reorder = (groupId: string, categoryIds: string[]): void => {
+    const key = budgetViewControllerReadQueryKey({ query: { month } });
+
+    queryClient.setQueryData(key, (current: typeof shownData) =>
+      current === undefined ? current : reorderedView(current, groupId, categoryIds),
+    );
+    setHeld((current) =>
+      current === undefined ? current : reorderedView(current, groupId, categoryIds),
+    );
+
+    reorderCategories.mutate({ body: { groupId, categoryIds, idempotencyKey: mintKey() } });
+  };
+
   if (shownData.groups.length === 0) {
     return (
       <div className="flex h-full items-center justify-center rounded-xl border border-dashed p-6">
@@ -444,6 +706,7 @@ export function BudgetMonth() {
       ) : null}
 
       <BudgetMonthHeader
+        covered={managing !== null}
         month={showing}
         stepping={stepping}
         floating={moveDrawerOpen || moveDialogOpen}
@@ -476,6 +739,10 @@ export function BudgetMonth() {
               available={money.format(
                 group.categories.reduce((total, one) => total + parseMoney(one.available), 0n),
               )}
+              onAdd={() => manage({ kind: 'newCategory', groupId: group.id })}
+              onHide={() => manage({ kind: 'hideGroup', groupId: group.id })}
+              onReorder={(categoryIds) => reorder(group.id, categoryIds)}
+              categoryIds={group.categories.map((one) => one.id)}
             >
               {group.categories.map((category) => (
                 <CategoryTile
@@ -483,7 +750,14 @@ export function BudgetMonth() {
                   category={category}
                   money={money}
                   moveOpen={moveDialogOpen && moving?.categoryId === category.id}
-                  movePanel={moving?.categoryId === category.id ? movePanel() : null}
+                  movePanel={
+                    moving?.categoryId === category.id ? (
+                      <>
+                        {movePanel()}
+                        {managePanel(category.id)}
+                      </>
+                    ) : null
+                  }
                   moveInPopover={!isMobile}
                   onMoveOpen={() => openMove(category.id)}
                   onMoveClose={cancel}
@@ -519,9 +793,20 @@ export function BudgetMonth() {
             </span>
           </DrawerHeader>
 
-          <div className="p-4">{movePanel()}</div>
+          <div className="flex flex-col gap-2 p-4">
+            {movePanel()}
+            {moved === null ? null : managePanel(moved.id)}
+          </div>
         </DrawerContent>
       </Drawer>
+
+      <Dialog open={managing !== null} onOpenChange={(next) => (next ? null : closeManaging())}>
+        <DialogContent className="max-h-[85dvh] gap-0 overflow-x-hidden overflow-y-auto rounded-[24px] p-6 sm:max-w-[480px]">
+          <DialogTitle className="sr-only">{t('categories.dialogTitle')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('categories.manage')}</DialogDescription>
+          {manageDialog()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

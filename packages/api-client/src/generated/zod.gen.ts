@@ -92,31 +92,84 @@ export const zAccountResponse = z.object({
 export const zCategoryIcon = z.enum([
     'home',
     'bolt',
+    'droplet',
+    'flame',
     'wifi',
-    'cart',
-    'car',
+    'phone',
+    'tool',
+    'sofa',
+    'wash',
+    'shopping-cart',
+    'restaurant',
     'coffee',
+    'pizza',
+    'beer',
+    'car',
+    'gas-station',
+    'bus',
+    'parking',
+    'bike',
+    'plane',
+    'beach',
+    'heartbeat',
+    'pill',
+    'stethoscope',
+    'dental',
+    'barbell',
+    'shirt',
+    'scissors',
+    'perfume',
+    'mood-smile',
+    'baby-carriage',
+    'school',
+    'book',
+    'paw',
+    'gift',
+    'tv',
+    'movie',
+    'gamepad',
     'music',
-    'heart',
+    'ticket',
     'repeat',
-    'shield',
-    'dots'
+    'cloud',
+    'laptop',
+    'pig-money',
+    'credit-card',
+    'receipt-tax',
+    'shield-check',
+    'building-bank',
+    'heart-handshake',
+    'tag'
 ]);
 
 /**
  * Which colour this category is drawn in, on the same terms as its icon.
  */
 export const zCategoryColor = z.enum([
-    'blue',
-    'cyan',
-    'teal',
-    'green',
-    'amber',
+    'scarlet',
+    'vermilion',
     'orange',
-    'rose',
+    'amber',
+    'gold',
+    'yellow',
+    'lime',
+    'green',
+    'emerald',
+    'mint',
+    'teal',
+    'cyan',
+    'sky',
+    'blue',
+    'indigo',
     'violet',
-    'plum',
-    'slate'
+    'purple',
+    'orchid',
+    'magenta',
+    'pink',
+    'rose',
+    'brown',
+    'graphite',
+    'gray'
 ]);
 
 export const zBudgetViewCategoryResponse = z.object({
@@ -126,12 +179,15 @@ export const zBudgetViewCategoryResponse = z.object({
     color: zCategoryColor.nullable(),
     assigned: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     activity: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
-    available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
+    available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    availableAllTime: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    hidden: z.boolean()
 });
 
 export const zBudgetViewGroupResponse = z.object({
     id: z.uuid(),
     name: z.string(),
+    hidden: z.boolean(),
     categories: z.array(zBudgetViewCategoryResponse)
 });
 
@@ -139,6 +195,87 @@ export const zBudgetViewResponse = z.object({
     month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
     readyToAssign: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     groups: z.array(zBudgetViewGroupResponse)
+});
+
+export const zCreateCategoryGroupDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    name: z.string().max(60)
+});
+
+export const zCategoryGroupResponse = z.object({
+    id: z.uuid(),
+    name: z.string(),
+    sortOrder: z.number(),
+    hidden: z.boolean()
+});
+
+/**
+ * Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export const zCategoryRefusal = z.enum([
+    'ALREADY_HIDDEN',
+    'AVAILABLE_NOT_ZERO',
+    'GROUP_HIDDEN',
+    'NO_ACTIVE_BUDGET',
+    'UNKNOWN_CATEGORY',
+    'UNKNOWN_GROUP'
+]);
+
+export const zCategoryRefusedResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    reason: zCategoryRefusal.optional(),
+    available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/).optional()
+});
+
+export const zReorderCategoryGroupsDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    groupIds: z.array(z.uuid())
+});
+
+export const zUpdateCategoryGroupDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    name: z.string().max(60)
+});
+
+export const zIdempotentDto = z.object({
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zCreateCategoryDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    groupId: z.uuid(),
+    name: z.string().max(60),
+    icon: zCategoryIcon.optional(),
+    color: zCategoryColor.optional()
+});
+
+export const zCategoryResponse = z.object({
+    id: z.uuid(),
+    groupId: z.uuid(),
+    name: z.string(),
+    sortOrder: z.number(),
+    icon: zCategoryIcon.nullable(),
+    color: zCategoryColor.nullable(),
+    hidden: z.boolean()
+});
+
+export const zReorderCategoriesDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    groupId: z.uuid(),
+    categoryIds: z.array(z.uuid())
+});
+
+export const zUpdateCategoryDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    groupId: z.uuid().optional(),
+    name: z.string().max(60).optional(),
+    icon: zCategoryIcon.optional(),
+    color: zCategoryColor.optional()
 });
 
 /**
@@ -235,13 +372,108 @@ export const zAccountsControllerCreateBody = zCreateAccountDto;
 export const zAccountsControllerCreateResponse = zAccountResponse;
 
 export const zBudgetViewControllerReadQuery = z.object({
-    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/)
+    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    includeHidden: z.boolean().optional().default(false)
 });
 
 /**
  * The month as it stands now.
  */
 export const zBudgetViewControllerReadResponse = zBudgetViewResponse;
+
+export const zCategoryGroupsControllerCreateBody = zCreateCategoryGroupDto;
+
+/**
+ * The group that was created.
+ */
+export const zCategoryGroupsControllerCreateResponse = zCategoryGroupResponse;
+
+export const zCategoryGroupsControllerReorderBody = zReorderCategoryGroupsDto;
+
+/**
+ * The groups in their new order.
+ */
+export const zCategoryGroupsControllerReorderResponse = z.array(zCategoryGroupResponse);
+
+export const zCategoryGroupsControllerUpdateBody = zUpdateCategoryGroupDto;
+
+export const zCategoryGroupsControllerUpdatePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The group as it stands now.
+ */
+export const zCategoryGroupsControllerUpdateResponse = zCategoryGroupResponse;
+
+export const zCategoryGroupsControllerHideBody = zIdempotentDto;
+
+export const zCategoryGroupsControllerHidePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The group, now hidden.
+ */
+export const zCategoryGroupsControllerHideResponse = zCategoryGroupResponse;
+
+export const zCategoryGroupsControllerUnhideBody = zIdempotentDto;
+
+export const zCategoryGroupsControllerUnhidePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The group, visible again.
+ */
+export const zCategoryGroupsControllerUnhideResponse = zCategoryGroupResponse;
+
+export const zCategoriesControllerCreateBody = zCreateCategoryDto;
+
+/**
+ * The category that was created.
+ */
+export const zCategoriesControllerCreateResponse = zCategoryResponse;
+
+export const zCategoriesControllerReorderBody = zReorderCategoriesDto;
+
+/**
+ * The categories in their new order.
+ */
+export const zCategoriesControllerReorderResponse = z.array(zCategoryResponse);
+
+export const zCategoriesControllerUpdateBody = zUpdateCategoryDto;
+
+export const zCategoriesControllerUpdatePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The category as it stands now.
+ */
+export const zCategoriesControllerUpdateResponse = zCategoryResponse;
+
+export const zCategoriesControllerHideBody = zIdempotentDto;
+
+export const zCategoriesControllerHidePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The category, now hidden.
+ */
+export const zCategoriesControllerHideResponse = zCategoryResponse;
+
+export const zCategoriesControllerUnhideBody = zIdempotentDto;
+
+export const zCategoriesControllerUnhidePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The category, visible again.
+ */
+export const zCategoriesControllerUnhideResponse = zCategoryResponse;
 
 export const zMovesControllerMoveBody = zCreateMoveDto;
 

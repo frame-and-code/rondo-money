@@ -19,7 +19,7 @@ const food: MoveTarget = {
   id: 'food',
   name: 'Продукты',
   available: 48000n,
-  icon: 'cart',
+  icon: 'shopping-cart',
   color: 'green',
 };
 

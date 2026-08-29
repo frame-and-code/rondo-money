@@ -52,18 +52,23 @@ whole file. A colour that feels wrong is a theme question, and the theme lives i
 `apps/web/src/app/globals.css`; a cursor is a rule in the same file, which is why the pointer on
 menu and option roles is written there rather than in a primitive.
 
-**Three files carry hand edits, and a regeneration drops them.** `popover.tsx` gained two parts
+**Several files carry hand edits, and a regeneration drops them.** `popover.tsx` gained two parts
 the generator leaves out: `Backdrop`, which lets a popover dim and blur the page behind it
 instead of merging into it, and `Close`, without which `modal` traps no focus at all, because
 base-ui gates the trap on that part being present. The dependency is `modal`'s and not the
 backdrop's, so every `modal` popover passes `closeLabel`, with or without a backdrop, and one
-that skips it stops the mouse and not the keyboard. `command.tsx` and
+that skips it stops the mouse and not the keyboard. It also forwards `collisionAvoidance`, so a
+popover whose content grows while it is open can be told to slide rather than jump to the other
+side of its trigger. `command.tsx` and
 `combobox.tsx` hold the shape of every picker this app draws: the height and radius of a row,
 the height and radius of the search field, the padding around the list, and the tint a row takes
 under the pointer. They live in the primitive because two screens need the same picker, and a
-value copied into both is a value that will differ by the next change. So after regenerating
-any of the three, put them back and look at both the onboarding currency sheet and the move
-dialog, which is where the difference shows.
+value copied into both is a value that will differ by the next change. `select.tsx` opens its
+popup under the trigger rather than over the selected item, so the list lines up with the box it
+came from. And `select.tsx`, `dropdown-menu.tsx` and `combobox.tsx` keep their open and close
+animations, which the generator suppresses outright; here they are suppressed only for a reader
+who asked for reduced motion. So after regenerating any of these, put them back and look at both
+the onboarding currency sheet and the move dialog, which is where the difference shows.
 
 The one thing a new file gets afterwards is `eslint --fix` and Prettier. The generator writes
 double quotes, no semicolons and its own import order, all of which the gate refuses. That

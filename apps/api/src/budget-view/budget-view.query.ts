@@ -18,18 +18,33 @@ export interface BudgetViewRow {
   categoryName: string | null;
   categoryIcon: string | null;
   categoryColor: string | null;
+  groupHidden: boolean;
+  categoryHidden: boolean;
+  availableAllTime: bigint;
   assigned: bigint;
   activity: bigint;
   available: bigint;
+}
+
+export interface BudgetViewOptions {
+  includeHidden: boolean;
 }
 
 export function budgetViewStatement(
   scope: RawQueryScope,
   budgetId: string,
   bounds: BudgetViewBounds,
+  options: BudgetViewOptions = { includeHidden: false },
 ): Prisma.Sql {
   const { userId } = scope;
   const { monthStart, nextMonthStart, hiddenFrom } = bounds;
+
+  const visibleGroup = options.includeHidden
+    ? Prisma.empty
+    : Prisma.sql`AND (g.hidden_at IS NULL OR g.hidden_at >= ${hiddenFrom})`;
+  const visibleCategory = options.includeHidden
+    ? Prisma.empty
+    : Prisma.sql`AND (c.hidden_at IS NULL OR c.hidden_at >= ${hiddenFrom})`;
 
   return Prisma.sql`
     WITH activity AS (
@@ -69,17 +84,20 @@ export function budgetViewStatement(
       c.color AS "categoryColor",
       COALESCE(assigned.in_month, 0)::bigint AS "assigned",
       COALESCE(activity.in_month, 0)::bigint AS "activity",
-      (COALESCE(assigned.to_date, 0) + COALESCE(activity.to_date, 0))::bigint AS "available"
+      (COALESCE(assigned.to_date, 0) + COALESCE(activity.to_date, 0))::bigint AS "available",
+      (COALESCE(assigned.all_time, 0) + COALESCE(activity.all_time, 0))::bigint AS "availableAllTime",
+      COALESCE(g.hidden_at < ${hiddenFrom}, false) AS "groupHidden",
+      COALESCE(c.hidden_at < ${hiddenFrom}, false) AS "categoryHidden"
     FROM pool
     LEFT JOIN category_group g
       ON g.user_id = ${userId}
       AND g.budget_id = ${budgetId}::uuid
-      AND (g.hidden_at IS NULL OR g.hidden_at >= ${hiddenFrom})
+      ${visibleGroup}
     LEFT JOIN category c
       ON c.group_id = g.id
       AND c.user_id = ${userId}
       AND c.budget_id = ${budgetId}::uuid
-      AND (c.hidden_at IS NULL OR c.hidden_at >= ${hiddenFrom})
+      ${visibleCategory}
     LEFT JOIN assigned ON assigned.category_id = c.id
     LEFT JOIN activity ON activity.category_id = c.id
     ORDER BY g.sort_order, g.name, c.sort_order, c.name

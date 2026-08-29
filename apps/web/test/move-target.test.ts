@@ -13,18 +13,26 @@ const category = (
 ): BudgetViewGroupDto['categories'][number] => ({
   id,
   name,
-  icon: 'cart',
+  icon: 'shopping-cart',
   color: 'green',
   assigned: '0',
   activity: '0',
   available,
+  availableAllTime: available,
+  hidden: false,
 });
 
 const groups: BudgetViewGroupDto[] = [
-  { id: 'g1', name: 'Обязательные', categories: [category(RENT, 'Аренда', '4500000')] },
+  {
+    id: 'g1',
+    name: 'Обязательные',
+    hidden: false,
+    categories: [category(RENT, 'Аренда', '4500000')],
+  },
   {
     id: 'g2',
     name: 'Автомобиль',
+    hidden: false,
     categories: [category(FOOD, 'Продукты', '420000'), category(CAR, 'Транспорт', '-125000')],
   },
 ];

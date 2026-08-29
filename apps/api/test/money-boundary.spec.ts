@@ -31,6 +31,11 @@ class TransferBody {
   amount!: string;
 }
 
+class TipBody {
+  @ApiMoneyProperty({ required: false, description: 'What was added on top, if anything.' })
+  amount?: string;
+}
+
 @Controller('payments')
 class PaymentsController {
   @Post()
@@ -49,6 +54,15 @@ class TopUpsController {
   }
 }
 
+@Controller('tips')
+class TipsController {
+  @Post()
+  @ApiOkResponse({ type: PaymentResponse })
+  record(@Body() body: TipBody): PaymentResponse {
+    return { amount: body.amount ?? '0' };
+  }
+}
+
 @Controller('transfers')
 class TransfersController {
   @Post()
@@ -63,7 +77,7 @@ describe('money at the API boundary', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [PaymentsController, TopUpsController, TransfersController],
+      controllers: [PaymentsController, TopUpsController, TransfersController, TipsController],
       providers: [{ provide: APP_PIPE, useValue: VALIDATION_PIPE }],
     }).compile();
 
@@ -227,6 +241,23 @@ describe('money at the API boundary', () => {
     expect(providers).toContainEqual({ provide: APP_PIPE, useValue: VALIDATION_PIPE });
   });
 
+  describe('an amount a body may leave out', () => {
+    const tip = (body: Record<string, unknown>) =>
+      request(app.getHttpServer() as Server)
+        .post('/tips')
+        .send(body);
+
+    it('accepts a body that leaves the amount out', async () => {
+      await tip({}).expect(201, { amount: '0' });
+    });
+
+    it('still refuses a value that is there and malformed', async () => {
+      await tip({ amount: '4.50' }).expect(400);
+      await tip({ amount: 450 }).expect(400);
+      await tip({ amount: null }).expect(400);
+    });
+  });
+
   describe('the published contract', () => {
     let document: OpenAPIObject;
 
@@ -270,6 +301,16 @@ describe('money at the API boundary', () => {
       expect(document.components?.schemas?.['PaymentBody']).toMatchObject({
         required: ['amount'],
         properties: { amount: { description: 'The amount to record, in minor units.' } },
+      });
+    });
+
+    it('publishes an optional amount as optional, so the pipe and the schema agree', () => {
+      const published = document.components?.schemas?.['TipBody'];
+      const required = published && 'required' in published ? (published.required ?? []) : [];
+
+      expect(required).not.toContain('amount');
+      expect(published).toMatchObject({
+        properties: { amount: { type: 'string', pattern: '^(0|-?[1-9]\\d*)$' } },
       });
     });
 

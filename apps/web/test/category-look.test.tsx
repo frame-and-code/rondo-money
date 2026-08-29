@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import {
   CATEGORY_COLORS,
   CATEGORY_ICONS,
@@ -38,6 +41,54 @@ describe('the look the screen draws a category with', () => {
     const drawn = CATEGORY_COLORS.map((color) => categoryLook(null, color).color);
 
     expect(new Set(drawn).size).toBe(CATEGORY_COLORS.length);
+  });
+
+  it('takes every colour from a theme token, because a literal is wrong in one of the two themes', () => {
+    for (const color of CATEGORY_COLORS) {
+      expect(categoryLook(null, color).color).toBe(`var(--cat-${color})`);
+    }
+  });
+
+  it('declares every colour in both themes, so nothing draws with an unset property', () => {
+    const theme = readFileSync(join(__dirname, '..', 'src', 'app', 'globals.css'), 'utf8');
+    const blockOf = (selector: string): string => {
+      const opened = theme.indexOf(`${selector} {`);
+      if (opened < 0) {
+        throw new Error(`The theme declares no ${selector} block`);
+      }
+
+      return theme.slice(opened, theme.indexOf('\n}', opened));
+    };
+
+    const light = blockOf(':root');
+    const dark = blockOf('.dark');
+
+    for (const color of CATEGORY_COLORS) {
+      expect(light).toContain(`--cat-${color}:`);
+      expect(dark).toContain(`--cat-${color}:`);
+    }
+  });
+
+  it('names the icon it draws after the library, except the five the domain renamed', () => {
+    const renamed: Record<string, string> = {
+      phone: 'DeviceMobile',
+      restaurant: 'ToolsKitchen2',
+      tv: 'DeviceTv',
+      gamepad: 'DeviceGamepad2',
+      laptop: 'DeviceLaptop',
+    };
+
+    const pascal = (name: string): string =>
+      name
+        .split('-')
+        .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
+        .join('');
+
+    for (const icon of CATEGORY_ICONS) {
+      const { Icon } = categoryLook(icon, null);
+
+      expect(Icon.displayName).toBe(renamed[icon] ?? pascal(icon));
+    }
   });
 
   it('falls back on a name a newer API knows and this bundle does not, rather than crashing', () => {

@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, userSettingsControllerRead } from '../sdk.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
+import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, userSettingsControllerRead } from '../sdk.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -196,6 +196,194 @@ export const budgetViewControllerReadOptions = (options: Options<BudgetViewContr
     },
     queryKey: budgetViewControllerReadQueryKey(options)
 });
+
+/**
+ * Create a category group
+ *
+ * Adds an empty group at the end of the active budget.
+ */
+export const categoryGroupsControllerCreateMutation = (options?: Partial<Options<CategoryGroupsControllerCreateData>>): UseMutationOptions<CategoryGroupsControllerCreateResponse, CategoryGroupsControllerCreateError, Options<CategoryGroupsControllerCreateData>> => {
+    const mutationOptions: UseMutationOptions<CategoryGroupsControllerCreateResponse, CategoryGroupsControllerCreateError, Options<CategoryGroupsControllerCreateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoryGroupsControllerCreate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Rewrite the order of the groups
+ *
+ * Takes the groups of the budget in the order the user left them, on the same terms as the categories of a group: fewer than the budget holds is allowed, and the rest keep their order behind the named ones.
+ */
+export const categoryGroupsControllerReorderMutation = (options?: Partial<Options<CategoryGroupsControllerReorderData>>): UseMutationOptions<CategoryGroupsControllerReorderResponse, CategoryGroupsControllerReorderError, Options<CategoryGroupsControllerReorderData>> => {
+    const mutationOptions: UseMutationOptions<CategoryGroupsControllerReorderResponse, CategoryGroupsControllerReorderError, Options<CategoryGroupsControllerReorderData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoryGroupsControllerReorder({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Rename a group
+ */
+export const categoryGroupsControllerUpdateMutation = (options?: Partial<Options<CategoryGroupsControllerUpdateData>>): UseMutationOptions<CategoryGroupsControllerUpdateResponse, CategoryGroupsControllerUpdateError, Options<CategoryGroupsControllerUpdateData>> => {
+    const mutationOptions: UseMutationOptions<CategoryGroupsControllerUpdateResponse, CategoryGroupsControllerUpdateError, Options<CategoryGroupsControllerUpdateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoryGroupsControllerUpdate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Hide a group with everything in it
+ *
+ * Marks the group and each of its categories hidden in one transaction. A category is never left without a group, so the two cannot be hidden apart. It is refused unless every category of the group holds nothing over every month, the already hidden ones included.
+ */
+export const categoryGroupsControllerHideMutation = (options?: Partial<Options<CategoryGroupsControllerHideData>>): UseMutationOptions<CategoryGroupsControllerHideResponse, CategoryGroupsControllerHideError, Options<CategoryGroupsControllerHideData>> => {
+    const mutationOptions: UseMutationOptions<CategoryGroupsControllerHideResponse, CategoryGroupsControllerHideError, Options<CategoryGroupsControllerHideData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoryGroupsControllerHide({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Bring a hidden group back
+ *
+ * Takes the marker off the group and off the categories it was put on with.
+ */
+export const categoryGroupsControllerUnhideMutation = (options?: Partial<Options<CategoryGroupsControllerUnhideData>>): UseMutationOptions<CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUnhideError, Options<CategoryGroupsControllerUnhideData>> => {
+    const mutationOptions: UseMutationOptions<CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUnhideError, Options<CategoryGroupsControllerUnhideData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoryGroupsControllerUnhide({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Create a category
+ *
+ * Adds a category to a group of the active budget, at the end of that group.
+ */
+export const categoriesControllerCreateMutation = (options?: Partial<Options<CategoriesControllerCreateData>>): UseMutationOptions<CategoriesControllerCreateResponse, CategoriesControllerCreateError, Options<CategoriesControllerCreateData>> => {
+    const mutationOptions: UseMutationOptions<CategoriesControllerCreateResponse, CategoriesControllerCreateError, Options<CategoriesControllerCreateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoriesControllerCreate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Rewrite the order of one group
+ *
+ * Takes the categories of the group in the order the user left them. The list may name fewer than the group holds, because the month it came from lists only what is visible in that month, and the rest keep their order behind the named ones. A duplicate or an id the group does not hold is refused.
+ */
+export const categoriesControllerReorderMutation = (options?: Partial<Options<CategoriesControllerReorderData>>): UseMutationOptions<CategoriesControllerReorderResponse, CategoriesControllerReorderError, Options<CategoriesControllerReorderData>> => {
+    const mutationOptions: UseMutationOptions<CategoriesControllerReorderResponse, CategoriesControllerReorderError, Options<CategoriesControllerReorderData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoriesControllerReorder({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Rename a category, move it or change its look
+ *
+ * Every field is optional and only what is sent is written. Moving a category into a hidden group is refused: the money it holds would leave the screen with it.
+ */
+export const categoriesControllerUpdateMutation = (options?: Partial<Options<CategoriesControllerUpdateData>>): UseMutationOptions<CategoriesControllerUpdateResponse, CategoriesControllerUpdateError, Options<CategoriesControllerUpdateData>> => {
+    const mutationOptions: UseMutationOptions<CategoriesControllerUpdateResponse, CategoriesControllerUpdateError, Options<CategoriesControllerUpdateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoriesControllerUpdate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Hide a category
+ *
+ * Marks the category hidden from this moment on, which takes it out of every month after that one and out of none before it. The row and its transactions are untouched, so its past activity keeps counting. A category holding money over any month is refused.
+ */
+export const categoriesControllerHideMutation = (options?: Partial<Options<CategoriesControllerHideData>>): UseMutationOptions<CategoriesControllerHideResponse, CategoriesControllerHideError, Options<CategoriesControllerHideData>> => {
+    const mutationOptions: UseMutationOptions<CategoriesControllerHideResponse, CategoriesControllerHideError, Options<CategoriesControllerHideData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoriesControllerHide({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Bring a hidden category back
+ *
+ * Takes the hidden marker off, and the category is in every month again.
+ */
+export const categoriesControllerUnhideMutation = (options?: Partial<Options<CategoriesControllerUnhideData>>): UseMutationOptions<CategoriesControllerUnhideResponse, CategoriesControllerUnhideError, Options<CategoriesControllerUnhideData>> => {
+    const mutationOptions: UseMutationOptions<CategoriesControllerUnhideResponse, CategoriesControllerUnhideError, Options<CategoriesControllerUnhideData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoriesControllerUnhide({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 /**
  * Move money between two envelopes

@@ -15,12 +15,18 @@ export interface BudgetViewCategoryDto {
   activity: string;
 
   available: string;
+
+  availableAllTime: string;
+
+  hidden: boolean;
 }
 
 export interface BudgetViewGroupDto {
   id: string;
 
   name: string;
+
+  hidden: boolean;
 
   categories: BudgetViewCategoryDto[];
 }

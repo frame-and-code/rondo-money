@@ -52,6 +52,11 @@ jest.mock('@rondo/api-client/react-query', () => ({
   budgetViewControllerReadQueryKey: ({ query }: { query: { month: string } }) => [
     { _id: 'budgetViewControllerRead', baseUrl: 'http://api', query },
   ],
+  categoriesControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoriesControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoriesControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoriesControllerReorderMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),
@@ -73,7 +78,7 @@ const monthOf = (over: Record<string, unknown> = {}) => ({
         {
           id: FOOD,
           name: 'Продукты',
-          icon: 'cart',
+          icon: 'shopping-cart',
           color: 'green',
           assigned: '48000',
           activity: '0',
@@ -521,6 +526,36 @@ describe('the island above an open dialog', () => {
 
     expect(island).toHaveTextContent(/850,00/);
     expect(within(island).queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('takes the island away once a dialog covers the screen, since nothing behind it is usable', async () => {
+    const user = setup();
+    draw();
+
+    await openMove(user);
+
+    const island = screen.getByTestId('ready-to-assign-island');
+    expect(island.parentElement).toHaveClass('opacity-100');
+
+    await user.click(screen.getByRole('button', { name: ru['categories.manage'] }));
+    await user.click(screen.getByRole('button', { name: ru['categories.edit'] }));
+
+    expect(await screen.findByLabelText(ru['categories.nameLabel'])).toBeInTheDocument();
+    expect(screen.getByTestId('ready-to-assign-island').parentElement).toHaveClass('opacity-0');
+  });
+
+  it('takes the move surface away with it, so one screen is not covered by two', async () => {
+    const user = setup();
+    draw();
+
+    await openMove(user);
+    expect(screen.getByTestId('move-dialog')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: ru['categories.manage'] }));
+    await user.click(screen.getByRole('button', { name: ru['categories.edit'] }));
+
+    expect(await screen.findByLabelText(ru['categories.nameLabel'])).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('move-dialog')).not.toBeInTheDocument());
   });
 });
 
@@ -1068,7 +1103,7 @@ describe('a currency that is not counted in hundredths', () => {
             {
               id: FOOD,
               name: 'Продукты',
-              icon: 'cart',
+              icon: 'shopping-cart',
               color: 'green',
               assigned: '480',
               activity: '0',
@@ -1102,7 +1137,7 @@ describe('a currency that is not counted in hundredths', () => {
             {
               id: FOOD,
               name: 'Продукты',
-              icon: 'cart',
+              icon: 'shopping-cart',
               color: 'green',
               assigned: '480',
               activity: '0',

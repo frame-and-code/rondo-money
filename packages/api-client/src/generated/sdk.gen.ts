@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -108,6 +108,154 @@ export const budgetViewControllerRead = <ThrowOnError extends boolean = false>(o
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/budget-view',
     ...options
+});
+
+/**
+ * Create a category group
+ *
+ * Adds an empty group at the end of the active budget.
+ */
+export const categoryGroupsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<CategoryGroupsControllerCreateData, ThrowOnError>): RequestResult<CategoryGroupsControllerCreateResponses, CategoryGroupsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<CategoryGroupsControllerCreateResponses, CategoryGroupsControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/category-groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Rewrite the order of the groups
+ *
+ * Takes the groups of the budget in the order the user left them, on the same terms as the categories of a group: fewer than the budget holds is allowed, and the rest keep their order behind the named ones.
+ */
+export const categoryGroupsControllerReorder = <ThrowOnError extends boolean = false>(options: Options<CategoryGroupsControllerReorderData, ThrowOnError>): RequestResult<CategoryGroupsControllerReorderResponses, CategoryGroupsControllerReorderErrors, ThrowOnError> => (options.client ?? client).post<CategoryGroupsControllerReorderResponses, CategoryGroupsControllerReorderErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/category-groups/reorder',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Rename a group
+ */
+export const categoryGroupsControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<CategoryGroupsControllerUpdateData, ThrowOnError>): RequestResult<CategoryGroupsControllerUpdateResponses, CategoryGroupsControllerUpdateErrors, ThrowOnError> => (options.client ?? client).patch<CategoryGroupsControllerUpdateResponses, CategoryGroupsControllerUpdateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/category-groups/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Hide a group with everything in it
+ *
+ * Marks the group and each of its categories hidden in one transaction. A category is never left without a group, so the two cannot be hidden apart. It is refused unless every category of the group holds nothing over every month, the already hidden ones included.
+ */
+export const categoryGroupsControllerHide = <ThrowOnError extends boolean = false>(options: Options<CategoryGroupsControllerHideData, ThrowOnError>): RequestResult<CategoryGroupsControllerHideResponses, CategoryGroupsControllerHideErrors, ThrowOnError> => (options.client ?? client).post<CategoryGroupsControllerHideResponses, CategoryGroupsControllerHideErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/category-groups/{id}/hide',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Bring a hidden group back
+ *
+ * Takes the marker off the group and off the categories it was put on with.
+ */
+export const categoryGroupsControllerUnhide = <ThrowOnError extends boolean = false>(options: Options<CategoryGroupsControllerUnhideData, ThrowOnError>): RequestResult<CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUnhideErrors, ThrowOnError> => (options.client ?? client).post<CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUnhideErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/category-groups/{id}/unhide',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create a category
+ *
+ * Adds a category to a group of the active budget, at the end of that group.
+ */
+export const categoriesControllerCreate = <ThrowOnError extends boolean = false>(options: Options<CategoriesControllerCreateData, ThrowOnError>): RequestResult<CategoriesControllerCreateResponses, CategoriesControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<CategoriesControllerCreateResponses, CategoriesControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/categories',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Rewrite the order of one group
+ *
+ * Takes the categories of the group in the order the user left them. The list may name fewer than the group holds, because the month it came from lists only what is visible in that month, and the rest keep their order behind the named ones. A duplicate or an id the group does not hold is refused.
+ */
+export const categoriesControllerReorder = <ThrowOnError extends boolean = false>(options: Options<CategoriesControllerReorderData, ThrowOnError>): RequestResult<CategoriesControllerReorderResponses, CategoriesControllerReorderErrors, ThrowOnError> => (options.client ?? client).post<CategoriesControllerReorderResponses, CategoriesControllerReorderErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/categories/reorder',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Rename a category, move it or change its look
+ *
+ * Every field is optional and only what is sent is written. Moving a category into a hidden group is refused: the money it holds would leave the screen with it.
+ */
+export const categoriesControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<CategoriesControllerUpdateData, ThrowOnError>): RequestResult<CategoriesControllerUpdateResponses, CategoriesControllerUpdateErrors, ThrowOnError> => (options.client ?? client).patch<CategoriesControllerUpdateResponses, CategoriesControllerUpdateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/categories/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Hide a category
+ *
+ * Marks the category hidden from this moment on, which takes it out of every month after that one and out of none before it. The row and its transactions are untouched, so its past activity keeps counting. A category holding money over any month is refused.
+ */
+export const categoriesControllerHide = <ThrowOnError extends boolean = false>(options: Options<CategoriesControllerHideData, ThrowOnError>): RequestResult<CategoriesControllerHideResponses, CategoriesControllerHideErrors, ThrowOnError> => (options.client ?? client).post<CategoriesControllerHideResponses, CategoriesControllerHideErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/categories/{id}/hide',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Bring a hidden category back
+ *
+ * Takes the hidden marker off, and the category is in every month again.
+ */
+export const categoriesControllerUnhide = <ThrowOnError extends boolean = false>(options: Options<CategoriesControllerUnhideData, ThrowOnError>): RequestResult<CategoriesControllerUnhideResponses, CategoriesControllerUnhideErrors, ThrowOnError> => (options.client ?? client).post<CategoriesControllerUnhideResponses, CategoriesControllerUnhideErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/categories/{id}/unhide',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

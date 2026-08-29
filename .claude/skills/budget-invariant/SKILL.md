@@ -44,10 +44,12 @@ which is the correct outcome under this rule and an accident under any other one
 activity keeps counting and the pool stays whole. What hiding decides is only which rows the
 screen lists. So the sum over the rows one month **lists** is not the whole of Σ available: a
 category the month leaves out still holds what it holds. The invariant is therefore read over
-every category, never over one month's list, and the property test generates no hiding at all,
-which is what keeps its two sides comparable. Nothing in the aggregates depends on that, and
-what keeps the screen itself whole is a separate decision, recorded in the ticket: a category
-holding a non-zero available may not be hidden, which the code that hides one will enforce.
+every category, never over one month's list. The property test does generate hiding, and reads
+the all-time month twice, once asking for the hidden rows and once not, asserting the equation
+on both. The second reading only balances because of the rule that keeps the screen whole: a
+category holding a non-zero available may not be hidden, and the mutation that hides one refuses
+it, so a hidden category's available is always zero. A counterexample carrying a `hide` step is
+therefore about the rows the reading listed, not about a hidden category holding money.
 
 ## Invariant 5.5
 

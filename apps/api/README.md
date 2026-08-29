@@ -20,6 +20,10 @@ all: the budget numbers are aggregates over many rows, so they are hand-written 
 raw-SQL repository, which supplies the caller and leaves the budget to the service.
 [`src/moves`](src/moves) is a write and nothing else, and it is the only code that may **write**
 the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
+[`src/categories`](src/categories) is the fourth shape, writes that first have to read an
+aggregate: hiding a category is refused while it still holds money over any month, so the
+mutation locks the rows with `SELECT ... FOR UPDATE` and sums them inside its own transaction.
+A move locks the same rows for the same reason, which is what stops the two crossing.
 
 ## Endpoints
 
@@ -46,6 +50,9 @@ the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
   answers with null and so does a stored name this app no longer draws. The month is required, because a default would make the answer depend on a
   clock rather than on what the user is looking at. A category or a group hidden later than the
   month asked for is still listed in it, and a hidden one counts in the totals regardless.
+  `includeHidden` asks for the hidden rows as well, which changes what is listed and never what
+  is counted. Every category also carries what it holds over every month, not only up to the one
+  asked for, because that is the amount that has to be zero before it can be hidden.
 - `POST /budgets` creates a budget and, when asked for, the starter groups and categories, each
   carrying an icon and a colour so the screen has something to draw before the user chooses. One
   transaction covers all of it, the caller's interface language included: the category names
@@ -63,6 +70,20 @@ the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
   ever. A caller with no active budget gets a 400 from both of these rather than a 500, in the
   shape [`BadRequestResponse`](src/openapi/bad-request.response.ts) publishes: it covers the
   pipe's list of field failures and a handler's single sentence alike.
+- `POST /categories`, `PATCH /categories/:id`, `POST /categories/:id/hide`, `/unhide` and
+  `POST /categories/reorder` are the category's own operations, and the five under
+  `/category-groups` are the group's. There is no way to delete either: a category is hidden and
+  its row, its transactions and its place in every aggregate stay where they were. Hiding is
+  refused while the category holds anything over any month, in either direction of the sign, and
+  the refusal carries that amount so the screen can name it. A group is hidden with its
+  categories in one transaction and only when each of them holds nothing, the already hidden
+  ones included, because a category is never left without a group. Refusals name a reason:
+  `AVAILABLE_NOT_ZERO`, `ALREADY_HIDDEN`, `GROUP_HIDDEN`, `UNKNOWN_CATEGORY`, `UNKNOWN_GROUP`,
+  `NO_ACTIVE_BUDGET`. Hiding what is already hidden is refused rather than repeated: a second
+  marker would move the first, and the months that had stopped showing the row would show it
+  again.
+  A reordering may name fewer rows than the group holds, because the month it came from lists
+  only what is visible in it; the rest keep their order behind the named ones.
 - `POST /moves` moves an amount out of one envelope and into another for one month, where Ready
   to Assign is an envelope too. Assigning money is this operation with the pool as the source,
   so nothing else in the contract sets what a category holds. A side names a category or the
@@ -112,10 +133,12 @@ together, so an amount that may not go below zero (`nonNegative`) or one that wo
 nothing at zero (`positive`) states that bound once; `test/money-boundary.spec.ts` is what
 proves both halves move.
 
-**A currency, a time zone and a calendar month are declared the same way**, with
-[`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts),
-[`@ApiTimeZoneProperty()`](src/validation/timezone.decorator.ts) and
-[`@ApiCalendarMonthProperty()`](src/validation/month.decorator.ts). Each publishes the field and
+**A currency, a time zone, a calendar month and a category's look are declared the same way**,
+with [`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts),
+[`@ApiTimeZoneProperty()`](src/validation/timezone.decorator.ts),
+[`@ApiCalendarMonthProperty()`](src/validation/month.decorator.ts),
+[`@ApiCategoryIconProperty()`](src/validation/icon.decorator.ts) and
+[`@ApiCategoryColorProperty()`](src/validation/color.decorator.ts). Each publishes the field and
 refuses a value the app cannot use, in one decorator, for the reason above. The month lands on
 a `@Query()` DTO as readily as on a body, and the same global pipe validates both. The range it
 takes is narrower than what a month can be, and

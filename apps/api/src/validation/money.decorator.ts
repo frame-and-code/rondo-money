@@ -31,10 +31,12 @@ interface MoneyPropertyOptions {
   example?: string;
 
   sign?: MoneySign;
+
+  required?: boolean;
 }
 
 export function ApiMoneyProperty(options: MoneyPropertyOptions = {}) {
-  const { sign = 'signed', ...published } = options;
+  const { sign = 'signed', required = true, ...published } = options;
   const bound = BOUNDS[sign];
 
   return applyDecorators(
@@ -43,13 +45,14 @@ export function ApiMoneyProperty(options: MoneyPropertyOptions = {}) {
       pattern: bound.pattern.source,
       maxLength: MONEY_MAX_LENGTH,
       example: bound.example,
+      required,
       ...published,
     }),
-    IsMoneyString(sign),
+    IsMoneyString(sign, required),
   );
 }
 
-function IsMoneyString(sign: MoneySign): PropertyDecorator {
+function IsMoneyString(sign: MoneySign, required: boolean): PropertyDecorator {
   const bound = BOUNDS[sign];
 
   return (target, propertyKey): void => {
@@ -59,6 +62,7 @@ function IsMoneyString(sign: MoneySign): PropertyDecorator {
       propertyName: propertyKey.toString(),
       validator: {
         validate(value: unknown): boolean {
+          if (!required && value === undefined) return true;
           if (typeof value !== 'string' || value.length > MONEY_MAX_LENGTH) return false;
           if (!bound.pattern.test(value)) return false;
 

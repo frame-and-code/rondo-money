@@ -189,6 +189,30 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+  --cat-scarlet: oklch(0.58 0.16 15);
+  --cat-vermilion: oklch(0.58 0.16 30);
+  --cat-orange: oklch(0.58 0.16 45);
+  --cat-amber: oklch(0.58 0.16 60);
+  --cat-gold: oklch(0.66 0.16 75);
+  --cat-yellow: oklch(0.66 0.16 92);
+  --cat-lime: oklch(0.66 0.16 110);
+  --cat-green: oklch(0.58 0.16 130);
+  --cat-emerald: oklch(0.58 0.16 145);
+  --cat-mint: oklch(0.58 0.16 160);
+  --cat-teal: oklch(0.58 0.16 175);
+  --cat-cyan: oklch(0.58 0.16 190);
+  --cat-sky: oklch(0.58 0.16 208);
+  --cat-blue: oklch(0.58 0.16 225);
+  --cat-indigo: oklch(0.58 0.16 258);
+  --cat-violet: oklch(0.58 0.16 275);
+  --cat-purple: oklch(0.58 0.16 290);
+  --cat-orchid: oklch(0.58 0.16 305);
+  --cat-magenta: oklch(0.58 0.16 320);
+  --cat-pink: oklch(0.58 0.16 335);
+  --cat-rose: oklch(0.58 0.16 350);
+  --cat-brown: oklch(0.58 0.05 55);
+  --cat-graphite: oklch(0.58 0.02 250);
+  --cat-gray: oklch(0.58 0 0);
 }
 
 .dark {
@@ -223,6 +247,30 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+  --cat-scarlet: oklch(0.74 0.14 15);
+  --cat-vermilion: oklch(0.74 0.14 30);
+  --cat-orange: oklch(0.74 0.14 45);
+  --cat-amber: oklch(0.74 0.14 60);
+  --cat-gold: oklch(0.8 0.14 75);
+  --cat-yellow: oklch(0.8 0.14 92);
+  --cat-lime: oklch(0.8 0.14 110);
+  --cat-green: oklch(0.74 0.14 130);
+  --cat-emerald: oklch(0.74 0.14 145);
+  --cat-mint: oklch(0.74 0.14 160);
+  --cat-teal: oklch(0.74 0.14 175);
+  --cat-cyan: oklch(0.74 0.14 190);
+  --cat-sky: oklch(0.74 0.14 208);
+  --cat-blue: oklch(0.74 0.14 225);
+  --cat-indigo: oklch(0.74 0.14 258);
+  --cat-violet: oklch(0.74 0.14 275);
+  --cat-purple: oklch(0.74 0.14 290);
+  --cat-orchid: oklch(0.74 0.14 305);
+  --cat-magenta: oklch(0.74 0.14 320);
+  --cat-pink: oklch(0.74 0.14 335);
+  --cat-rose: oklch(0.74 0.14 350);
+  --cat-brown: oklch(0.74 0.05 55);
+  --cat-graphite: oklch(0.74 0.02 250);
+  --cat-gray: oklch(0.74 0 0);
 }
 
 @layer base {
