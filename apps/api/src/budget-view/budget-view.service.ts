@@ -45,6 +45,7 @@ function assemble(rows: BudgetViewRow[]): BudgetViewGroupResponse[] {
     const group = groups.get(row.groupId) ?? {
       id: row.groupId,
       name: row.groupName,
+      hidden: row.groupHidden,
       categories: [],
     };
     groups.set(row.groupId, group);
@@ -58,6 +59,8 @@ function assemble(rows: BudgetViewRow[]): BudgetViewGroupResponse[] {
         assigned: serializeMoney(row.assigned),
         activity: serializeMoney(row.activity),
         available: serializeMoney(row.available),
+        availableAllTime: serializeMoney(row.availableAllTime),
+        hidden: row.categoryHidden,
       });
     }
   }
@@ -72,12 +75,16 @@ export class BudgetViewService {
     private readonly raw: ScopedRawRepository,
   ) {}
 
-  async read(userId: string, month: CalendarMonth): Promise<BudgetViewResponse> {
+  async read(
+    userId: string,
+    month: CalendarMonth,
+    includeHidden = false,
+  ): Promise<BudgetViewResponse> {
     const budget = await this.activeBudget(userId);
     const bounds = this.boundsOf(month, budget.timezone);
 
     const rows = await this.raw.query<BudgetViewRow>((scope) =>
-      budgetViewStatement(scope, budget.id, bounds),
+      budgetViewStatement(scope, budget.id, bounds, { includeHidden }),
     );
 
     const [pool] = rows;

@@ -1,5 +1,7 @@
 'use client';
 
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { parseMoney, type BudgetViewCategoryDto } from '@rondo/types';
 import {
   Popover,
@@ -8,6 +10,7 @@ import {
   PopoverTrigger,
 } from '@rondo/ui/components/ui/popover';
 import { cn } from '@rondo/ui/lib/utils';
+import { IconGripVertical } from '@tabler/icons-react';
 
 import { RollingAmount } from '@/components/rolling-amount';
 import { SpendRing } from '@/components/spend-ring';
@@ -37,6 +40,22 @@ export function CategoryTile({
   onMoveClose: () => void;
 }) {
   const { t } = useTranslations();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: category.id,
+  });
+
+  const handle = (
+    <button
+      type="button"
+      data-testid={`reorder-${category.name}`}
+      aria-label={t('categories.reorder', { category: category.name })}
+      className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted/60 absolute inset-y-1 right-1 flex w-7 cursor-grab items-center justify-center rounded-2xl transition-colors duration-[120ms]"
+      {...attributes}
+      {...listeners}
+    >
+      <IconGripVertical aria-hidden className="size-4" />
+    </button>
+  );
 
   const assigned = parseMoney(category.assigned);
   const activity = parseMoney(category.activity);
@@ -46,7 +65,10 @@ export function CategoryTile({
   const card = (
     <>
       <span className="flex items-start justify-between gap-3">
-        <span className="pt-0.5 text-left text-base leading-tight font-medium">
+        <span
+          data-testid="category-name"
+          className="pt-0.5 text-left text-base leading-tight font-medium"
+        >
           {category.name}
         </span>
         <span className="flex shrink-0 flex-col items-end">
@@ -81,7 +103,7 @@ export function CategoryTile({
             </span>
             <span
               className={cn(
-                'pe-1.5 text-[15px] font-medium tabular-nums md:text-[13px]',
+                'text-[15px] font-medium tabular-nums md:text-[13px]',
                 activity === 0n && 'text-muted-foreground',
               )}
             >
@@ -96,7 +118,7 @@ export function CategoryTile({
             <span
               data-testid={`assigned-${category.name}`}
               className={cn(
-                'pe-1.5 text-[15px] font-medium tabular-nums md:text-[13px]',
+                'text-[15px] font-medium tabular-nums md:text-[13px]',
                 assigned === 0n && 'text-muted-foreground',
                 assigned < 0n && 'text-destructive',
               )}
@@ -110,41 +132,60 @@ export function CategoryTile({
   );
 
   const look = cn(
-    'bg-card flex w-full cursor-pointer flex-col gap-3.5 rounded-[20px] p-4 text-left',
+    'bg-card flex h-full w-full cursor-pointer flex-col gap-3.5 rounded-[20px] p-4 pe-11 text-left',
     'shadow-xs ring-1 ring-black/5 dark:ring-white/10',
     'transition-shadow duration-[120ms] hover:shadow-md',
     'aria-expanded:ring-ring/60 aria-expanded:ring-2',
     failed && 'ring-destructive/45',
   );
 
+  const frame = {
+    ref: setNodeRef,
+    style: { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 1 : 0 },
+    className: 'relative h-full',
+  };
+
+  const { onKeyDown: _startsByKeyboard, ...byPointer } = listeners ?? {};
+
+  const grab = byPointer;
+
   if (!moveInPopover) {
     return (
-      <button
-        type="button"
-        data-slot="category-tile"
-        data-failed={failed ? 'true' : undefined}
-        aria-expanded={moveOpen}
-        aria-label={t('categories.moveOpen', { category: category.name })}
-        onClick={onMoveOpen}
-        className={look}
-      >
-        {card}
-      </button>
+      <div {...frame}>
+        <button
+          type="button"
+          data-slot="category-tile"
+          data-failed={failed ? 'true' : undefined}
+          aria-expanded={moveOpen}
+          aria-label={t('categories.moveOpen', { category: category.name })}
+          onClick={onMoveOpen}
+          className={look}
+          {...grab}
+        >
+          {card}
+        </button>
+        {handle}
+      </div>
     );
   }
 
   return (
     <Popover modal open={moveOpen} onOpenChange={(next) => (next ? onMoveOpen() : onMoveClose())}>
-      <PopoverTrigger
-        data-slot="category-tile"
-        data-failed={failed ? 'true' : undefined}
-        aria-label={t('categories.moveOpen', { category: category.name })}
-        className={look}
-      >
-        {card}
-      </PopoverTrigger>
+      <div {...frame}>
+        <PopoverTrigger
+          data-slot="category-tile"
+          data-failed={failed ? 'true' : undefined}
+          aria-label={t('categories.moveOpen', { category: category.name })}
+          className={look}
+          {...grab}
+        >
+          {card}
+        </PopoverTrigger>
+        {handle}
+      </div>
       <PopoverContent
         backdrop
+        collisionAvoidance={{ side: 'shift', align: 'shift', fallbackAxisSide: 'none' }}
         closeLabel={t('categories.moveClose')}
         data-testid="move-dialog"
         align="start"

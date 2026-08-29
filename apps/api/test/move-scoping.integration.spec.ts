@@ -84,7 +84,7 @@ describe('moves across tenants', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
     prisma = app.get(PrismaService);
     webOrigin = resolveWebOrigin(app.get(ConfigService));
   });

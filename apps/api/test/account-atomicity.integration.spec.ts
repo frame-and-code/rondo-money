@@ -62,7 +62,7 @@ describe('POST /accounts when the opening income fails to write', () => {
       .compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
     prisma = app.get(PrismaService);
     webOrigin = resolveWebOrigin(app.get(ConfigService));
     await removeFixtures();

@@ -56,7 +56,7 @@ describe('Clerk auth guard (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
     webOrigin = resolveWebOrigin(app.get(ConfigService));
   });
 

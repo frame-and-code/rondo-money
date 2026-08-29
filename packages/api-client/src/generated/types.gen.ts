@@ -147,12 +147,12 @@ export type AccountResponse = {
 /**
  * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
  */
-export type CategoryIcon = 'home' | 'bolt' | 'wifi' | 'cart' | 'car' | 'coffee' | 'music' | 'heart' | 'repeat' | 'shield' | 'dots';
+export type CategoryIcon = 'home' | 'bolt' | 'droplet' | 'flame' | 'wifi' | 'phone' | 'tool' | 'sofa' | 'wash' | 'shopping-cart' | 'restaurant' | 'coffee' | 'pizza' | 'beer' | 'car' | 'gas-station' | 'bus' | 'parking' | 'bike' | 'plane' | 'beach' | 'heartbeat' | 'pill' | 'stethoscope' | 'dental' | 'barbell' | 'shirt' | 'scissors' | 'perfume' | 'mood-smile' | 'baby-carriage' | 'school' | 'book' | 'paw' | 'gift' | 'tv' | 'movie' | 'gamepad' | 'music' | 'ticket' | 'repeat' | 'cloud' | 'laptop' | 'pig-money' | 'credit-card' | 'receipt-tax' | 'shield-check' | 'building-bank' | 'heart-handshake' | 'tag';
 
 /**
  * Which colour this category is drawn in, on the same terms as its icon.
  */
-export type CategoryColor = 'blue' | 'cyan' | 'teal' | 'green' | 'amber' | 'orange' | 'rose' | 'violet' | 'plum' | 'slate';
+export type CategoryColor = 'scarlet' | 'vermilion' | 'orange' | 'amber' | 'gold' | 'yellow' | 'lime' | 'green' | 'emerald' | 'mint' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'orchid' | 'magenta' | 'pink' | 'rose' | 'brown' | 'graphite' | 'gray';
 
 export type BudgetViewCategoryResponse = {
     id: string;
@@ -180,6 +180,14 @@ export type BudgetViewCategoryResponse = {
      * Assigned and activity from the beginning of time up to and including this month. It goes below zero on an overspend, which is a signal rather than an error.
      */
     available: string;
+    /**
+     * The same sum over every month rather than up to this one, so a later month is counted too. This is the amount that has to be zero before the category can be hidden.
+     */
+    availableAllTime: string;
+    /**
+     * Whether this category is hidden in the month that was asked about. A category hidden in February is not hidden in January, and only shows up here when the caller asked for the hidden ones.
+     */
+    hidden: boolean;
 };
 
 export type BudgetViewGroupResponse = {
@@ -188,6 +196,10 @@ export type BudgetViewGroupResponse = {
      * What the user calls this group.
      */
     name: string;
+    /**
+     * Whether this group is hidden in the month that was asked about.
+     */
+    hidden: boolean;
     categories: Array<BudgetViewCategoryResponse>;
 };
 
@@ -201,6 +213,174 @@ export type BudgetViewResponse = {
      */
     readyToAssign: string;
     groups: Array<BudgetViewGroupResponse>;
+};
+
+export type CreateCategoryGroupDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * What the user calls this group.
+     */
+    name: string;
+};
+
+export type CategoryGroupResponse = {
+    id: string;
+    /**
+     * What the user calls this group.
+     */
+    name: string;
+    /**
+     * Where the group sits in the list, counted from zero.
+     */
+    sortOrder: number;
+    /**
+     * Whether the group carries a hidden marker at all. Which months stop showing it is the month endpoint answer, because that depends on the month being read.
+     */
+    hidden: boolean;
+};
+
+/**
+ * Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export type CategoryRefusal = 'ALREADY_HIDDEN' | 'AVAILABLE_NOT_ZERO' | 'GROUP_HIDDEN' | 'NO_ACTIVE_BUDGET' | 'UNKNOWN_CATEGORY' | 'UNKNOWN_GROUP';
+
+export type CategoryRefusedResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+    /**
+     * Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+     */
+    reason?: CategoryRefusal;
+    /**
+     * Which category held the money, present with the amount. A group is refused by one of its categories, so the screen would otherwise have to guess which row to point at.
+     */
+    categoryId?: string;
+    /**
+     * What the category still holds over every month, present only when that is what blocked the hide. The screen names this amount rather than the one the open month shows.
+     */
+    available?: string;
+};
+
+export type ReorderCategoryGroupsDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * The groups of the budget, in the order the user left them. Fewer than the budget holds is allowed; the rest keep their order behind the named ones.
+     */
+    groupIds: Array<string>;
+};
+
+export type UpdateCategoryGroupDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * What the user calls this group.
+     */
+    name: string;
+};
+
+export type IdempotentDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+};
+
+export type CreateCategoryDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * The group the category is created in.
+     */
+    groupId: string;
+    /**
+     * What the user calls this category.
+     */
+    name: string;
+    /**
+     * Which icon it is drawn with.
+     */
+    icon?: CategoryIcon;
+    /**
+     * Which colour it is drawn in.
+     */
+    color?: CategoryColor;
+};
+
+export type CategoryResponse = {
+    id: string;
+    /**
+     * The group this category sits in.
+     */
+    groupId: string;
+    /**
+     * What the user calls this category.
+     */
+    name: string;
+    /**
+     * Where the category sits in its group, counted from zero.
+     */
+    sortOrder: number;
+    /**
+     * Which icon this category is drawn with, or null when nobody picked one.
+     */
+    icon: CategoryIcon | null;
+    /**
+     * Which colour this category is drawn in, on the same terms as its icon.
+     */
+    color: CategoryColor | null;
+    /**
+     * Whether the category carries a hidden marker at all.
+     */
+    hidden: boolean;
+};
+
+export type ReorderCategoriesDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * The group whose order is being rewritten.
+     */
+    groupId: string;
+    /**
+     * The categories of that group, in the order the user left them. Fewer than the group holds is allowed; the rest keep their order behind the named ones.
+     */
+    categoryIds: Array<string>;
+};
+
+export type UpdateCategoryDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * The group to move it into.
+     */
+    groupId?: string;
+    /**
+     * What to call it now.
+     */
+    name?: string;
+    /**
+     * Which icon it is drawn with.
+     */
+    icon?: CategoryIcon;
+    /**
+     * Which colour it is drawn in.
+     */
+    color?: CategoryColor;
 };
 
 /**
@@ -487,6 +667,10 @@ export type BudgetViewControllerReadData = {
          * The month the screen is showing. Required: a default here would make the answer depend on a clock rather than on what the user is looking at.
          */
         month: string;
+        /**
+         * Whether the answer carries the groups and categories hidden by this month. They stay in every aggregate either way, so this changes what is listed and never what is counted.
+         */
+        includeHidden?: boolean;
     };
     url: '/budget-view';
 };
@@ -512,6 +696,348 @@ export type BudgetViewControllerReadResponses = {
 };
 
 export type BudgetViewControllerReadResponse = BudgetViewControllerReadResponses[keyof BudgetViewControllerReadResponses];
+
+export type CategoryGroupsControllerCreateData = {
+    body: CreateCategoryGroupDto;
+    path?: never;
+    query?: never;
+    url: '/category-groups';
+};
+
+export type CategoryGroupsControllerCreateErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryGroupsControllerCreateError = CategoryGroupsControllerCreateErrors[keyof CategoryGroupsControllerCreateErrors];
+
+export type CategoryGroupsControllerCreateResponses = {
+    /**
+     * The group that was created.
+     */
+    201: CategoryGroupResponse;
+};
+
+export type CategoryGroupsControllerCreateResponse = CategoryGroupsControllerCreateResponses[keyof CategoryGroupsControllerCreateResponses];
+
+export type CategoryGroupsControllerReorderData = {
+    body: ReorderCategoryGroupsDto;
+    path?: never;
+    query?: never;
+    url: '/category-groups/reorder';
+};
+
+export type CategoryGroupsControllerReorderErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryGroupsControllerReorderError = CategoryGroupsControllerReorderErrors[keyof CategoryGroupsControllerReorderErrors];
+
+export type CategoryGroupsControllerReorderResponses = {
+    /**
+     * The groups in their new order.
+     */
+    201: Array<CategoryGroupResponse>;
+};
+
+export type CategoryGroupsControllerReorderResponse = CategoryGroupsControllerReorderResponses[keyof CategoryGroupsControllerReorderResponses];
+
+export type CategoryGroupsControllerUpdateData = {
+    body: UpdateCategoryGroupDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/category-groups/{id}';
+};
+
+export type CategoryGroupsControllerUpdateErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryGroupsControllerUpdateError = CategoryGroupsControllerUpdateErrors[keyof CategoryGroupsControllerUpdateErrors];
+
+export type CategoryGroupsControllerUpdateResponses = {
+    /**
+     * The group as it stands now.
+     */
+    200: CategoryGroupResponse;
+};
+
+export type CategoryGroupsControllerUpdateResponse = CategoryGroupsControllerUpdateResponses[keyof CategoryGroupsControllerUpdateResponses];
+
+export type CategoryGroupsControllerHideData = {
+    body: IdempotentDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/category-groups/{id}/hide';
+};
+
+export type CategoryGroupsControllerHideErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryGroupsControllerHideError = CategoryGroupsControllerHideErrors[keyof CategoryGroupsControllerHideErrors];
+
+export type CategoryGroupsControllerHideResponses = {
+    /**
+     * The group, now hidden.
+     */
+    201: CategoryGroupResponse;
+};
+
+export type CategoryGroupsControllerHideResponse = CategoryGroupsControllerHideResponses[keyof CategoryGroupsControllerHideResponses];
+
+export type CategoryGroupsControllerUnhideData = {
+    body: IdempotentDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/category-groups/{id}/unhide';
+};
+
+export type CategoryGroupsControllerUnhideErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryGroupsControllerUnhideError = CategoryGroupsControllerUnhideErrors[keyof CategoryGroupsControllerUnhideErrors];
+
+export type CategoryGroupsControllerUnhideResponses = {
+    /**
+     * The group, visible again.
+     */
+    201: CategoryGroupResponse;
+};
+
+export type CategoryGroupsControllerUnhideResponse = CategoryGroupsControllerUnhideResponses[keyof CategoryGroupsControllerUnhideResponses];
+
+export type CategoriesControllerCreateData = {
+    body: CreateCategoryDto;
+    path?: never;
+    query?: never;
+    url: '/categories';
+};
+
+export type CategoriesControllerCreateErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoriesControllerCreateError = CategoriesControllerCreateErrors[keyof CategoriesControllerCreateErrors];
+
+export type CategoriesControllerCreateResponses = {
+    /**
+     * The category that was created.
+     */
+    201: CategoryResponse;
+};
+
+export type CategoriesControllerCreateResponse = CategoriesControllerCreateResponses[keyof CategoriesControllerCreateResponses];
+
+export type CategoriesControllerReorderData = {
+    body: ReorderCategoriesDto;
+    path?: never;
+    query?: never;
+    url: '/categories/reorder';
+};
+
+export type CategoriesControllerReorderErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoriesControllerReorderError = CategoriesControllerReorderErrors[keyof CategoriesControllerReorderErrors];
+
+export type CategoriesControllerReorderResponses = {
+    /**
+     * The categories in their new order.
+     */
+    201: Array<CategoryResponse>;
+};
+
+export type CategoriesControllerReorderResponse = CategoriesControllerReorderResponses[keyof CategoriesControllerReorderResponses];
+
+export type CategoriesControllerUpdateData = {
+    body: UpdateCategoryDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/categories/{id}';
+};
+
+export type CategoriesControllerUpdateErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoriesControllerUpdateError = CategoriesControllerUpdateErrors[keyof CategoriesControllerUpdateErrors];
+
+export type CategoriesControllerUpdateResponses = {
+    /**
+     * The category as it stands now.
+     */
+    200: CategoryResponse;
+};
+
+export type CategoriesControllerUpdateResponse = CategoriesControllerUpdateResponses[keyof CategoriesControllerUpdateResponses];
+
+export type CategoriesControllerHideData = {
+    body: IdempotentDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/categories/{id}/hide';
+};
+
+export type CategoriesControllerHideErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoriesControllerHideError = CategoriesControllerHideErrors[keyof CategoriesControllerHideErrors];
+
+export type CategoriesControllerHideResponses = {
+    /**
+     * The category, now hidden.
+     */
+    201: CategoryResponse;
+};
+
+export type CategoriesControllerHideResponse = CategoriesControllerHideResponses[keyof CategoriesControllerHideResponses];
+
+export type CategoriesControllerUnhideData = {
+    body: IdempotentDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/categories/{id}/unhide';
+};
+
+export type CategoriesControllerUnhideErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoriesControllerUnhideError = CategoriesControllerUnhideErrors[keyof CategoriesControllerUnhideErrors];
+
+export type CategoriesControllerUnhideResponses = {
+    /**
+     * The category, visible again.
+     */
+    201: CategoryResponse;
+};
+
+export type CategoriesControllerUnhideResponse = CategoriesControllerUnhideResponses[keyof CategoriesControllerUnhideResponses];
 
 export type MovesControllerMoveData = {
     body: CreateMoveDto;

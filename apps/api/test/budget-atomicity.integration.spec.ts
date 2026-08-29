@@ -62,7 +62,7 @@ describe('POST /budgets when a write fails part way through', () => {
       .compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
     prisma = app.get(PrismaService);
     webOrigin = resolveWebOrigin(app.get(ConfigService));
     await removeFixtures();

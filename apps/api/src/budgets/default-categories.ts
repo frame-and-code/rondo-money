@@ -15,17 +15,17 @@ const LOOK: ReadonlyArray<ReadonlyArray<readonly [CategoryIcon, CategoryColor]>>
     ['wifi', 'cyan'],
   ],
   [
-    ['cart', 'green'],
+    ['shopping-cart', 'green'],
     ['car', 'orange'],
-    ['coffee', 'rose'],
-    ['dots', 'slate'],
+    ['restaurant', 'vermilion'],
+    ['tag', 'gray'],
   ],
   [
-    ['music', 'violet'],
-    ['heart', 'plum'],
+    ['movie', 'violet'],
+    ['heartbeat', 'rose'],
     ['repeat', 'teal'],
   ],
-  [['shield', 'blue']],
+  [['pig-money', 'emerald']],
 ];
 
 function lookOf(

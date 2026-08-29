@@ -36,6 +36,21 @@ describe('an amount that changes', () => {
     expect(rolled().textContent).toBe(amount);
   });
 
+  it('stands still on arrival unless it is asked to count itself in', () => {
+    const amount = '1\u00a0234,56\u00a0zł';
+    render(<RollingAmount data-testid="amount" amount={amount} value={123456n} />);
+
+    expect(classesOf()).not.toContain('animate-roll-in');
+  });
+
+  it('counts itself in on arrival when asked, and reads as the amount while it does', () => {
+    const amount = '1\u00a0234,56\u00a0zł';
+    render(<RollingAmount rollOnMount data-testid="amount" amount={amount} value={123456n} />);
+
+    expect(classesOf()).toContain('animate-roll-in-up');
+    expect(rolled().textContent).toBe(amount);
+  });
+
   it('rolls up when it grows and down when it shrinks, deciding once for the whole number', () => {
     render(
       <Stage

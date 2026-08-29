@@ -30,6 +30,8 @@ export {
   isCategoryColor,
   isCategoryIcon,
 } from './category-look.js';
+export type { CategoryDto, CategoryGroupDto, CategoryRefusal } from './category.js';
+export { CATEGORY_REFUSALS, isCategoryRefusal } from './category.js';
 export type { BudgetViewCategoryDto, BudgetViewDto, BudgetViewGroupDto } from './budget-view.js';
 export type { MoveDto, MoveRefusal, MoveSideDto, MoveSideKind } from './move.js';
 export { MOVE_REFUSALS, MOVE_SIDE_KINDS, isMoveRefusal, isMoveSideKind } from './move.js';

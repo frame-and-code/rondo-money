@@ -331,6 +331,16 @@
               "example": "2026-02",
               "type": "string"
             }
+          },
+          {
+            "name": "includeHidden",
+            "required": false,
+            "in": "query",
+            "description": "Whether the answer carries the groups and categories hidden by this month. They stay in every aggregate either way, so this changes what is listed and never what is counted.",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -368,6 +378,695 @@
         "summary": "One month of the budget screen",
         "tags": [
           "BudgetView"
+        ]
+      }
+    },
+    "/category-groups": {
+      "post": {
+        "description": "Adds an empty group at the end of the active budget.",
+        "operationId": "CategoryGroupsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The group that was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryGroupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a category group",
+        "tags": [
+          "CategoryGroups"
+        ]
+      }
+    },
+    "/category-groups/reorder": {
+      "post": {
+        "description": "Takes the groups of the budget in the order the user left them, on the same terms as the categories of a group: fewer than the budget holds is allowed, and the rest keep their order behind the named ones.",
+        "operationId": "CategoryGroupsController_reorder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderCategoryGroupsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The groups in their new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryGroupResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rewrite the order of the groups",
+        "tags": [
+          "CategoryGroups"
+        ]
+      }
+    },
+    "/category-groups/{id}": {
+      "patch": {
+        "operationId": "CategoryGroupsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The group as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryGroupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rename a group",
+        "tags": [
+          "CategoryGroups"
+        ]
+      }
+    },
+    "/category-groups/{id}/hide": {
+      "post": {
+        "description": "Marks the group and each of its categories hidden in one transaction. A category is never left without a group, so the two cannot be hidden apart. It is refused unless every category of the group holds nothing over every month, the already hidden ones included.",
+        "operationId": "CategoryGroupsController_hide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The group, now hidden.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryGroupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Hide a group with everything in it",
+        "tags": [
+          "CategoryGroups"
+        ]
+      }
+    },
+    "/category-groups/{id}/unhide": {
+      "post": {
+        "description": "Takes the marker off the group and off the categories it was put on with.",
+        "operationId": "CategoryGroupsController_unhide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The group, visible again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryGroupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bring a hidden group back",
+        "tags": [
+          "CategoryGroups"
+        ]
+      }
+    },
+    "/categories": {
+      "post": {
+        "description": "Adds a category to a group of the active budget, at the end of that group.",
+        "operationId": "CategoriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The category that was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a category",
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
+    "/categories/reorder": {
+      "post": {
+        "description": "Takes the categories of the group in the order the user left them. The list may name fewer than the group holds, because the month it came from lists only what is visible in that month, and the rest keep their order behind the named ones. A duplicate or an id the group does not hold is refused.",
+        "operationId": "CategoriesController_reorder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderCategoriesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The categories in their new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rewrite the order of one group",
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
+    "/categories/{id}": {
+      "patch": {
+        "description": "Every field is optional and only what is sent is written. Moving a category into a hidden group is refused: the money it holds would leave the screen with it.",
+        "operationId": "CategoriesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The category as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rename a category, move it or change its look",
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
+    "/categories/{id}/hide": {
+      "post": {
+        "description": "Marks the category hidden from this moment on, which takes it out of every month after that one and out of none before it. The row and its transactions are untouched, so its past activity keeps counting. A category holding money over any month is refused.",
+        "operationId": "CategoriesController_hide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The category, now hidden.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Hide a category",
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
+    "/categories/{id}/unhide": {
+      "post": {
+        "description": "Takes the hidden marker off, and the category is in every month again.",
+        "operationId": "CategoriesController_unhide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The category, visible again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Bring a hidden category back",
+        "tags": [
+          "Categories"
         ]
       }
     },
@@ -785,31 +1484,84 @@
         "enum": [
           "home",
           "bolt",
+          "droplet",
+          "flame",
           "wifi",
-          "cart",
-          "car",
+          "phone",
+          "tool",
+          "sofa",
+          "wash",
+          "shopping-cart",
+          "restaurant",
           "coffee",
+          "pizza",
+          "beer",
+          "car",
+          "gas-station",
+          "bus",
+          "parking",
+          "bike",
+          "plane",
+          "beach",
+          "heartbeat",
+          "pill",
+          "stethoscope",
+          "dental",
+          "barbell",
+          "shirt",
+          "scissors",
+          "perfume",
+          "mood-smile",
+          "baby-carriage",
+          "school",
+          "book",
+          "paw",
+          "gift",
+          "tv",
+          "movie",
+          "gamepad",
           "music",
-          "heart",
+          "ticket",
           "repeat",
-          "shield",
-          "dots"
+          "cloud",
+          "laptop",
+          "pig-money",
+          "credit-card",
+          "receipt-tax",
+          "shield-check",
+          "building-bank",
+          "heart-handshake",
+          "tag"
         ],
         "description": "Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws."
       },
       "CategoryColor": {
         "type": "string",
         "enum": [
-          "blue",
-          "cyan",
-          "teal",
-          "green",
-          "amber",
+          "scarlet",
+          "vermilion",
           "orange",
-          "rose",
+          "amber",
+          "gold",
+          "yellow",
+          "lime",
+          "green",
+          "emerald",
+          "mint",
+          "teal",
+          "cyan",
+          "sky",
+          "blue",
+          "indigo",
           "violet",
-          "plum",
-          "slate"
+          "purple",
+          "orchid",
+          "magenta",
+          "pink",
+          "rose",
+          "brown",
+          "graphite",
+          "gray"
         ],
         "description": "Which colour this category is drawn in, on the same terms as its icon."
       },
@@ -825,8 +1577,9 @@
             "description": "What the user calls this category."
           },
           "icon": {
-            "description": "Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.",
+            "example": "home",
             "nullable": true,
+            "description": "Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/CategoryIcon"
@@ -834,8 +1587,9 @@
             ]
           },
           "color": {
-            "description": "Which colour this category is drawn in, on the same terms as its icon.",
+            "example": "blue",
             "nullable": true,
+            "description": "Which colour this category is drawn in, on the same terms as its icon.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/CategoryColor"
@@ -862,6 +1616,17 @@
             "maxLength": 20,
             "example": "-4500",
             "description": "Assigned and activity from the beginning of time up to and including this month. It goes below zero on an overspend, which is a signal rather than an error."
+          },
+          "availableAllTime": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "The same sum over every month rather than up to this one, so a later month is counted too. This is the amount that has to be zero before the category can be hidden."
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether this category is hidden in the month that was asked about. A category hidden in February is not hidden in January, and only shows up here when the caller asked for the hidden ones."
           }
         },
         "required": [
@@ -871,7 +1636,9 @@
           "color",
           "assigned",
           "activity",
-          "available"
+          "available",
+          "availableAllTime",
+          "hidden"
         ]
       },
       "BudgetViewGroupResponse": {
@@ -885,6 +1652,10 @@
             "type": "string",
             "description": "What the user calls this group."
           },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether this group is hidden in the month that was asked about."
+          },
           "categories": {
             "type": "array",
             "items": {
@@ -895,6 +1666,7 @@
         "required": [
           "id",
           "name",
+          "hidden",
           "categories"
         ]
       },
@@ -926,6 +1698,357 @@
           "readyToAssign",
           "groups"
         ]
+      },
+      "CreateCategoryGroupDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this group.",
+            "maxLength": 60
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "CategoryGroupResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this group."
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Where the group sits in the list, counted from zero."
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether the group carries a hidden marker at all. Which months stop showing it is the month endpoint answer, because that depends on the month being read."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sortOrder",
+          "hidden"
+        ]
+      },
+      "CategoryRefusal": {
+        "type": "string",
+        "enum": [
+          "ALREADY_HIDDEN",
+          "AVAILABLE_NOT_ZERO",
+          "GROUP_HIDDEN",
+          "NO_ACTIVE_BUDGET",
+          "UNKNOWN_CATEGORY",
+          "UNKNOWN_GROUP"
+        ],
+        "description": "Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
+      },
+      "CategoryRefusedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          },
+          "reason": {
+            "description": "Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryRefusal"
+              }
+            ]
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Which category held the money, present with the amount. A group is refused by one of its categories, so the screen would otherwise have to guess which row to point at."
+          },
+          "available": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the category still holds over every month, present only when that is what blocked the hide. The screen names this amount rather than the one the open month shows."
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ReorderCategoryGroupsDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "groupIds": {
+            "description": "The groups of the budget, in the order the user left them. Fewer than the budget holds is allowed; the rest keep their order behind the named ones.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "groupIds"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateCategoryGroupDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this group.",
+            "maxLength": 60
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "IdempotentDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "groupId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The group the category is created in."
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this category.",
+            "maxLength": 60
+          },
+          "icon": {
+            "example": "home",
+            "nullable": false,
+            "description": "Which icon it is drawn with.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryIcon"
+              }
+            ]
+          },
+          "color": {
+            "example": "blue",
+            "nullable": false,
+            "description": "Which colour it is drawn in.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryColor"
+              }
+            ]
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "groupId",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The group this category sits in."
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this category."
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Where the category sits in its group, counted from zero."
+          },
+          "icon": {
+            "example": "home",
+            "nullable": true,
+            "description": "Which icon this category is drawn with, or null when nobody picked one.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryIcon"
+              }
+            ]
+          },
+          "color": {
+            "example": "blue",
+            "nullable": true,
+            "description": "Which colour this category is drawn in, on the same terms as its icon.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryColor"
+              }
+            ]
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "Whether the category carries a hidden marker at all."
+          }
+        },
+        "required": [
+          "id",
+          "groupId",
+          "name",
+          "sortOrder",
+          "icon",
+          "color",
+          "hidden"
+        ]
+      },
+      "ReorderCategoriesDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "groupId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The group whose order is being rewritten."
+          },
+          "categoryIds": {
+            "description": "The categories of that group, in the order the user left them. Fewer than the group holds is allowed; the rest keep their order behind the named ones.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "groupId",
+          "categoryIds"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "groupId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The group to move it into."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "What to call it now."
+          },
+          "icon": {
+            "example": "home",
+            "nullable": false,
+            "description": "Which icon it is drawn with.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryIcon"
+              }
+            ]
+          },
+          "color": {
+            "example": "blue",
+            "nullable": false,
+            "description": "Which colour it is drawn in.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryColor"
+              }
+            ]
+          }
+        },
+        "required": [
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
       },
       "MoveSideKind": {
         "type": "string",

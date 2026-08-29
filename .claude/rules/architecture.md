@@ -79,8 +79,11 @@ itself is published with no response shape at all, and the generated client type
   as a `string` carrying `MONEY_PATTERN` _and_ refuses anything else at the pipe. The two must
   never be written separately, because with no Swagger CLI plugin here a validation decorator
   adds nothing to the spec and nothing would catch the drift. Its options type is deliberately
-  narrow. `required` and `nullable` would reach `@ApiProperty` and not the validator, so they
-  would publish a field the client may omit while the pipe answers 400. The conversion to
+  narrow, and `required` is the one bound that moves both halves: it publishes the field as
+  optional _and_ lets the validator accept its absence, so the spec and the pipe cannot say
+  different things. `nullable` has no such pair and is therefore not an option, because it
+  would reach `@ApiProperty` alone and publish a field the client may send as null while the
+  pipe answers 400. The conversion to
   `bigint` is explicit, at `serializeMoney` / `parseMoney` in the service, and **never** a
   global interceptor, which would leave the code and the published schema saying different
   things. The bound an amount lives under is one option, `sign`, reading `nonNegative` for one
@@ -237,7 +240,10 @@ specification, and prose describing it is a summary rather than a replacement.
    a mock's snapshot never becomes a second icon library.
 3. **Look for the component before inventing one**, in this order: `packages/ui`, then the
    shadcn registry (the paragraph below has the command), then a composition of primitives
-   rather than bare markup. What
+   rather than bare markup. Not left to memory: `@rondo/config/eslint/ui-primitives` fails the
+   gate on a bare form control in `apps/web` and names the primitive to use instead, including
+   the one to reach for inside a composed field. Which elements it covers is
+   [`packages/config`](../../packages/config/README.md); do not restate the list here. What
    the ladder buys is that radii, icons and spacing arrive right instead of being tuned by
    hand, and a hand-written trigger beside a generated one is how a design system stops being
    one. Reuse the tokens the neighbouring primitive carries rather than values that look

@@ -49,6 +49,7 @@ export function BudgetMonthHeader({
   first,
   readyToAssign,
   money,
+  covered,
   onMonth,
 }: {
   month: CalendarMonth;
@@ -58,6 +59,7 @@ export function BudgetMonthHeader({
   first: CalendarMonth;
   readyToAssign: bigint;
   money: MoneyReader;
+  covered: boolean;
   onMonth: (next: CalendarMonth) => void;
 }) {
   const { t, locale } = useTranslations();
@@ -84,7 +86,7 @@ export function BudgetMonthHeader({
     });
   });
 
-  const island = scrolled || floating;
+  const island = !covered && (scrolled || floating);
   const switcherInIsland = island && !isMobile && !floating;
 
   useEffect(() => {
@@ -183,7 +185,7 @@ export function BudgetMonthHeader({
     <>
       <div ref={mark} aria-hidden className="h-px" />
 
-      <div className={cn('sticky top-0 h-0', floating ? 'z-[60]' : 'z-20')}>
+      <div className={cn('sticky top-0 h-0', floating && !covered ? 'z-[60]' : 'z-20')}>
         <div
           className={cn(
             'absolute inset-x-0 top-2 transition-opacity duration-200 ease-out',
@@ -244,6 +246,7 @@ export function BudgetMonthHeader({
         <div className={RESTING_AMOUNT}>
           <span className="text-muted-foreground text-[13px]">{t('categories.readyToAssign')}</span>
           <RollingAmount
+            rollOnMount
             data-testid="ready-to-assign"
             amount={money.format(readyToAssign)}
             value={readyToAssign}

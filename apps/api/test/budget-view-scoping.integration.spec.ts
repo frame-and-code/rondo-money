@@ -139,7 +139,7 @@ describe('/budget-view keeps to one caller and one budget (integration)', () => 
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
 
     prisma = app.get(PrismaService);
     webOrigin = resolveWebOrigin(app.get(ConfigService));

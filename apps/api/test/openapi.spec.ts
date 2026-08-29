@@ -120,11 +120,27 @@ describe('OpenAPI document', () => {
       '/accounts',
       '/budget-view',
       '/budgets',
+      '/categories',
+      '/categories/reorder',
+      '/categories/{id}',
+      '/categories/{id}/hide',
+      '/categories/{id}/unhide',
+      '/category-groups',
+      '/category-groups/reorder',
+      '/category-groups/{id}',
+      '/category-groups/{id}/hide',
+      '/category-groups/{id}/unhide',
       '/health',
       '/me',
       '/moves',
       '/user-settings',
     ]);
+  });
+
+  it('publishes no operation that deletes, because deleting a category is not an operation', () => {
+    const deleting = Object.entries(document.paths).filter(([, item]) => item?.delete);
+
+    expect(deleting.map(([path]) => path)).toEqual([]);
   });
 
   it('gives every response a schema, so a client is typed rather than guessing', () => {
@@ -381,6 +397,7 @@ describe('OpenAPI document', () => {
         'activity',
         'assigned',
         'available',
+        'availableAllTime',
       ]);
     });
 

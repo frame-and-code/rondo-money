@@ -17,6 +17,9 @@ const row = (over: Partial<BudgetViewRow> = {}): BudgetViewRow => ({
   categoryName: null,
   categoryIcon: null,
   categoryColor: null,
+  groupHidden: false,
+  categoryHidden: false,
+  availableAllTime: 0n,
   assigned: 0n,
   activity: 0n,
   available: 0n,
@@ -54,6 +57,7 @@ describe('BudgetViewService', () => {
         assigned: 7_000n,
         activity: -2_500n,
         available: 4_500n,
+        availableAllTime: 4_500n,
       }),
       row({ groupId: 'g1', groupName: 'Дом', categoryId: 'c2', categoryName: 'Еда' }),
       row({ groupId: 'g2', groupName: 'Пустая' }),
@@ -68,6 +72,7 @@ describe('BudgetViewService', () => {
         {
           id: 'g1',
           name: 'Дом',
+          hidden: false,
           categories: [
             {
               id: 'c1',
@@ -77,6 +82,8 @@ describe('BudgetViewService', () => {
               assigned: '7000',
               activity: '-2500',
               available: '4500',
+              availableAllTime: '4500',
+              hidden: false,
             },
             {
               id: 'c2',
@@ -86,10 +93,12 @@ describe('BudgetViewService', () => {
               assigned: '0',
               activity: '0',
               available: '0',
+              availableAllTime: '0',
+              hidden: false,
             },
           ],
         },
-        { id: 'g2', name: 'Пустая', categories: [] },
+        { id: 'g2', name: 'Пустая', hidden: false, categories: [] },
       ],
     });
   });
@@ -136,7 +145,7 @@ describe('BudgetViewService', () => {
     ]);
 
     expect((await service.read(USER, '2026-02')).groups).toEqual([
-      { id: 'g2', name: 'Дом', categories: [] },
+      { id: 'g2', name: 'Дом', hidden: false, categories: [] },
     ]);
   });
 });

@@ -11,6 +11,10 @@ const SETTLE_MS = BASE_MS + PER_DIGIT_MS * 9 + STEP_MS * STEPS_MAX + 60;
 
 const DIGIT = /\d/;
 
+function zeroed(amount: string): string {
+  return amount.replace(/\d/g, '0');
+}
+
 function delayOf(at: number, width: number): string {
   return `${Math.min(width - 1 - at, STEPS_MAX) * STEP_MS}ms`;
 }
@@ -52,16 +56,18 @@ export function RollingAmount({
   amount,
   value,
   className,
+  rollOnMount = false,
   ...rest
 }: {
   amount: string;
   value: bigint;
   className?: string;
+  rollOnMount?: boolean;
 } & Omit<ComponentProps<'span'>, 'children'>) {
   const [rolling, setRolling] = useState<Rolling>({
     shown: amount,
     held: value,
-    leaving: null,
+    leaving: rollOnMount ? zeroed(amount) : null,
     up: true,
     turn: 0,
   });
@@ -113,7 +119,7 @@ export function RollingAmount({
           >
             {character === ' ' ? ' ' : character}
           </span>
-          {leaving === null ? null : (
+          {leaving === null || rolling.turn === 0 ? null : (
             <span
               aria-hidden
               style={{

@@ -10,10 +10,12 @@ import {
   type Money,
 } from '@rondo/types';
 
+import { categoryLockStatement, type CategoryLockRow } from '@/categories/category-available.query';
 import { CreateMoveDto, MoveSideDto } from '@/moves/create-move.dto';
 import { MoveResponse, MoveSideResponse } from '@/moves/move.response';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 
 const NO_ACTIVE_BUDGET =
   'The caller has no active budget, so there are no envelopes to move money between. Create ' +
@@ -100,6 +102,7 @@ export class MovesService {
   constructor(
     @Inject(SCOPED_PRISMA) private readonly prisma: ScopedPrismaClient,
     private readonly mutations: MutationService,
+    private readonly raw: ScopedRawRepository,
   ) {}
 
   async move(userId: string, body: CreateMoveDto): Promise<MoveResponse> {
@@ -138,7 +141,7 @@ export class MovesService {
           { categoryId: to, delta: amount },
         ]);
 
-        await this.refuseUnusableCategories(tx, moves);
+        await this.refuseUnusableCategories(tx, budget.id, moves);
 
         for (const { categoryId, delta } of moves) {
           await tx.assignment.upsert({
@@ -166,15 +169,22 @@ export class MovesService {
 
   private async refuseUnusableCategories(
     tx: MutationClient,
+    budgetId: string,
     moves: readonly CategoryMove[],
   ): Promise<void> {
     if (moves.length === 0) {
       return;
     }
 
-    const found = await tx.category.findMany({
-      where: { id: { in: moves.map((move) => move.categoryId) } },
-    });
+    const found = await this.raw.query<CategoryLockRow>(
+      (scope) =>
+        categoryLockStatement(
+          scope,
+          budgetId,
+          moves.map((move) => move.categoryId),
+        ),
+      tx,
+    );
 
     for (const { categoryId } of moves) {
       const category = found.find((candidate) => candidate.id === categoryId);

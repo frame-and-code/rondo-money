@@ -49,6 +49,13 @@ jest.mock('@rondo/api-client/react-query', () => ({
   budgetViewControllerReadQueryKey: ({ query }: { query: { month: string } }) => [
     { _id: 'budgetViewControllerRead', baseUrl: 'http://api', query },
   ],
+  categoriesControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoriesControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoriesControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoriesControllerReorderMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),
@@ -57,7 +64,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
 const category = (over: Record<string, unknown> = {}) => ({
   id: 'c1',
   name: 'Продукты',
-  icon: 'cart',
+  icon: 'shopping-cart',
   color: 'green',
   assigned: '22000',
   activity: '-14860',
@@ -184,7 +191,7 @@ describe('the month of the budget', () => {
     expect(await screen.findByText('Продукты')).toBeVisible();
 
     const toggle = screen.getByRole('button', {
-      name: /Повседневные расходы/,
+      name: ru['categories.groupToggle'].replace('{{group}}', 'Повседневные расходы'),
     });
 
     await user.click(toggle);
@@ -221,6 +228,7 @@ describe('the month of the budget', () => {
     draw();
 
     expect(await screen.findByText(ru['categories.emptyTitle'])).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: ru['categories.addGroup'] })).toBeInTheDocument();
   });
 
   it('says the month could not be read rather than showing an empty month', async () => {
@@ -386,7 +394,7 @@ describe('moving between months', () => {
     expect(screen.getByText(/август 2026/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: ru['categories.nextMonth'] })).toBeDisabled();
     expect(screen.getByRole('button', { name: ru['categories.previousMonth'] })).toBeDisabled();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: ru['common.loading'] })).not.toBeInTheDocument();
   });
 
   it('refuses to assign while the month on screen is not the month being asked for', async () => {

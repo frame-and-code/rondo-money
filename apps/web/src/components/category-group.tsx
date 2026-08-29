@@ -1,25 +1,68 @@
 'use client';
 
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconChevronDown } from '@tabler/icons-react';
+import { IconChevronDown, IconEyeOff, IconPencil, IconPlus } from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
+import { reordered } from '@/lib/category-order';
 
 export function CategoryGroup({
   id,
   name,
   available,
+  categoryIds,
+  onAdd,
+  onRename,
+  onHide,
+  onReorder,
   children,
 }: {
   id: string;
   name: string;
   available: string;
+  categoryIds: string[];
+  onAdd: () => void;
+  onRename: () => void;
+  onHide: () => void;
+  onReorder: (categoryIds: string[]) => void;
   children: ReactNode;
 }) {
   const { t } = useTranslations();
   const [open, setOpen] = useState(true);
   const body = useId();
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const dropped = (event: DragEndEvent): void => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const from = categoryIds.indexOf(String(active.id));
+    const to = categoryIds.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+
+    onReorder(reordered(categoryIds, from, to));
+  };
 
   return (
     <section className="flex flex-col gap-2.5">
@@ -50,6 +93,32 @@ export function CategoryGroup({
           </span>
         </button>
         <div aria-hidden className="h-px flex-1 bg-black/6 dark:bg-white/10" />
+        <span className="flex items-center gap-0.5">
+          <button
+            type="button"
+            aria-label={t('categories.addTo', { group: name })}
+            onClick={onAdd}
+            className="text-muted-foreground hover:bg-muted flex size-7 items-center justify-center rounded-lg transition-colors duration-[120ms]"
+          >
+            <IconPlus aria-hidden className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={t('categories.renameGroup', { group: name })}
+            onClick={onRename}
+            className="text-muted-foreground hover:bg-muted flex size-7 items-center justify-center rounded-lg transition-colors duration-[120ms]"
+          >
+            <IconPencil aria-hidden className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={t('categories.hideGroupTitle', { group: name })}
+            onClick={onHide}
+            className="text-muted-foreground hover:bg-muted flex size-7 items-center justify-center rounded-lg transition-colors duration-[120ms]"
+          >
+            <IconEyeOff aria-hidden className="size-4" />
+          </button>
+        </span>
         <span className="flex items-baseline gap-1.5">
           <span className="text-muted-foreground text-xs">{t('categories.available')}</span>
           <span
@@ -77,7 +146,11 @@ export function CategoryGroup({
             open ? 'opacity-100' : 'opacity-0',
           )}
         >
-          <div className="grid gap-4 px-1 py-1 md:grid-cols-2 xl:grid-cols-3">{children}</div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={dropped}>
+            <SortableContext items={categoryIds} strategy={rectSortingStrategy}>
+              <div className="grid gap-4 px-1 py-1 md:grid-cols-2 xl:grid-cols-3">{children}</div>
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
     </section>

@@ -26,11 +26,14 @@ interface ViewCategory {
   assigned: string;
   activity: string;
   available: string;
+  availableAllTime: string;
+  hidden: boolean;
 }
 
 interface ViewGroup {
   id: string;
   name: string;
+  hidden: boolean;
   categories: ViewCategory[];
 }
 
@@ -188,7 +191,7 @@ describe('/budget-view (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
 
     prisma = app.get(PrismaService);
     webOrigin = resolveWebOrigin(app.get(ConfigService));
@@ -613,6 +616,64 @@ describe('/budget-view (integration)', () => {
     expect(named(view, '家賃').assigned).toBe('2000');
   });
 
+  it('answers what a category holds over every month beside what it holds in this one', async () => {
+    const userId = user('AllTime');
+    const budget = await seedBudget(userId);
+    const group = await seedGroup(userId, budget.id, 'Дом');
+    const later = await seedCategory(userId, budget.id, group.id, 'Отпуск', 0);
+    const settled = await seedCategory(userId, budget.id, group.id, 'Аренда', 1);
+
+    await seedAssignment(userId, budget.id, later.id, '2026-09', 40_000n);
+    await seedAssignment(userId, budget.id, settled.id, '2026-02', 7_000n);
+
+    const view = await viewOf(userId, '2026-02');
+
+    expect(named(view, 'Отпуск')).toMatchObject({ available: '0', availableAllTime: '40000' });
+    expect(named(view, 'Аренда')).toMatchObject({ available: '7000', availableAllTime: '7000' });
+  });
+
+  it('speaks minor units in that all-month sum too, so a JPY budget is not divided', async () => {
+    const userId = user('YenAllTime');
+    const budget = await seedBudget(userId, { currency: 'JPY', minorDigits: 0 });
+    const group = await seedGroup(userId, budget.id, '家');
+    const category = await seedCategory(userId, budget.id, group.id, '旅行');
+
+    await seedAssignment(userId, budget.id, category.id, '2026-09', 5_000n);
+
+    expect(named(await viewOf(userId, '2026-02'), '旅行').availableAllTime).toBe('5000');
+  });
+
+  it('says whether a row is hidden in the month that was asked about, not whether it ever was', async () => {
+    const userId = user('HiddenFlag');
+    const budget = await seedBudget(userId);
+    const group = await seedGroup(userId, budget.id, 'Дом');
+    await seedCategory(userId, budget.id, group.id, 'Такси', 0, new Date('2026-02-10T12:00:00Z'));
+
+    const january = await read(userId, '2026-01&includeHidden=true').expect(200);
+    const february = await read(userId, '2026-02&includeHidden=true').expect(200);
+
+    expect(asView(january.body).groups[0]?.categories[0]).toMatchObject({ hidden: false });
+    expect(asView(february.body).groups[0]?.categories[0]).toMatchObject({ hidden: true });
+  });
+
+  it('reports a hidden group as hidden while a category inside it is not hidden itself', async () => {
+    const userId = user('HiddenGroupFlag');
+    const budget = await seedBudget(userId);
+    const group = await seedGroup(
+      userId,
+      budget.id,
+      'Стройка',
+      0,
+      new Date('2026-01-05T12:00:00Z'),
+    );
+    await seedCategory(userId, budget.id, group.id, 'Материалы');
+
+    const view = asView((await read(userId, '2026-02&includeHidden=true').expect(200)).body);
+
+    expect(view.groups[0]).toMatchObject({ hidden: true });
+    expect(view.groups[0]?.categories[0]).toMatchObject({ hidden: false });
+  });
+
   it('puts both legs of a transfer in the pool, where they cancel, and in no category', async () => {
     const userId = user('Transfer');
     const budget = await seedBudget(userId);
@@ -704,14 +765,14 @@ describe('/budget-view (integration)', () => {
           groupId: group.id,
           name: 'Продукты',
           sortOrder: 1,
-          icon: 'cart',
+          icon: 'shopping-cart',
           color: 'green',
         },
       });
 
       const view = await viewOf(userId, '2026-02');
 
-      expect(named(view, 'Продукты')).toMatchObject({ icon: 'cart', color: 'green' });
+      expect(named(view, 'Продукты')).toMatchObject({ icon: 'shopping-cart', color: 'green' });
       expect(named(view, 'Жильё')).toMatchObject({ icon: null, color: null });
     });
 

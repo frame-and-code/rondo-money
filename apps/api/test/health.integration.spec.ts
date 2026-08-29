@@ -18,7 +18,7 @@ describe('GET /health (integration)', () => {
 
     app = moduleRef.createNestApplication();
     enableWebCors(app);
-    await app.init();
+    await app.listen(0);
   });
 
   afterAll(async () => {

@@ -37,13 +37,17 @@ type Operation =
   | { kind: 'income'; amount: bigint; date: string }
   | { kind: 'expense'; amount: bigint; date: string; category: number }
   | { kind: 'assign'; amount: bigint; month: string; category: number }
-  | { kind: 'move'; amount: bigint; month: string; from: Side; to: Side };
+  | { kind: 'move'; amount: bigint; month: string; from: Side; to: Side }
+  | { kind: 'hide'; category: number };
 
 const CATEGORIES = 3;
 
 const SIDES: readonly Side[] = [POOL, 0, 1, 2];
 
 let movesApplied = 0;
+let movesLanded = 0;
+let hidesApplied = 0;
+let hidesLanded = 0;
 
 const operation = (): fc.Arbitrary<Operation> =>
   fc.oneof(
@@ -71,6 +75,10 @@ const operation = (): fc.Arbitrary<Operation> =>
       from: fc.constantFrom(...SIDES),
       to: fc.constantFrom(...SIDES),
     }),
+    fc.record({
+      kind: fc.constant<'hide'>('hide'),
+      category: fc.integer({ min: 0, max: CATEGORIES - 1 }),
+    }),
   );
 
 interface View {
@@ -95,9 +103,9 @@ describe('invariant 5.5 (integration)', () => {
     return key.signToken({ sub: USER, iat: now, exp: now + 60, azp: webOrigin });
   };
 
-  const allTimeView = async (): Promise<View> => {
+  const allTimeView = async (includeHidden = true): Promise<View> => {
     const response = await request(app.getHttpServer() as Server)
-      .get(`/budget-view?month=${ALL_TIME}`)
+      .get(`/budget-view?month=${ALL_TIME}&includeHidden=${includeHidden ? 'true' : 'false'}`)
       .set('Authorization', `Bearer ${tokenFor()}`)
       .expect(200);
 
@@ -115,6 +123,7 @@ describe('invariant 5.5 (integration)', () => {
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
     await prisma.idempotencyKey.deleteMany({ where: owned });
+    await prisma.category.updateMany({ where: owned, data: { hiddenAt: null } });
   };
 
   const sideOf = (side: Side): Record<string, unknown> =>
@@ -123,6 +132,21 @@ describe('invariant 5.5 (integration)', () => {
       : { kind: 'CATEGORY', categoryId: categoryIds[side] ?? '' };
 
   const apply = async (step: Operation): Promise<void> => {
+    if (step.kind === 'hide') {
+      hidesApplied += 1;
+      const hidden = await request(app.getHttpServer() as Server)
+        .post(`/categories/${categoryIds[step.category] ?? ''}/hide`)
+        .set('Authorization', `Bearer ${tokenFor()}`)
+        .send({ idempotencyKey: `invariant-hide-${hidesApplied}` });
+
+      expect([201, 400]).toContain(hidden.status);
+      if (hidden.status === 201) {
+        hidesLanded += 1;
+      }
+
+      return;
+    }
+
     if (step.kind === 'move') {
       const bothSidesAreOneEnvelope = step.from === step.to;
       if (bothSidesAreOneEnvelope) {
@@ -130,7 +154,7 @@ describe('invariant 5.5 (integration)', () => {
       }
 
       movesApplied += 1;
-      await request(app.getHttpServer() as Server)
+      const answer = await request(app.getHttpServer() as Server)
         .post('/moves')
         .set('Authorization', `Bearer ${tokenFor()}`)
         .send({
@@ -139,14 +163,23 @@ describe('invariant 5.5 (integration)', () => {
           from: sideOf(step.from),
           to: sideOf(step.to),
           idempotencyKey: `invariant-move-${movesApplied}`,
-        })
-        .expect(201);
+        });
+
+      expect([201, 400]).toContain(answer.status);
+      if (answer.status === 201) {
+        movesLanded += 1;
+      }
 
       return;
     }
 
     if (step.kind === 'assign') {
       const categoryId = categoryIds[step.category] ?? '';
+      const target = await prisma.category.findUniqueOrThrow({ where: { id: categoryId } });
+      if (target.hiddenAt !== null) {
+        return;
+      }
+
       await prisma.assignment.upsert({
         where: { categoryId_month: { categoryId, month: toDbMonth(step.month) } },
         create: {
@@ -162,6 +195,14 @@ describe('invariant 5.5 (integration)', () => {
       return;
     }
 
+    const spentOn = step.kind === 'income' ? null : (categoryIds[step.category] ?? null);
+    if (spentOn !== null) {
+      const target = await prisma.category.findUniqueOrThrow({ where: { id: spentOn } });
+      if (target.hiddenAt !== null) {
+        return;
+      }
+    }
+
     await prisma.transaction.create({
       data: {
         userId: USER,
@@ -170,7 +211,7 @@ describe('invariant 5.5 (integration)', () => {
         date: toDbDate(step.date),
         amount: step.kind === 'income' ? step.amount : -step.amount,
         type: step.kind === 'income' ? TransactionType.INCOME : TransactionType.EXPENSE,
-        categoryId: step.kind === 'income' ? null : (categoryIds[step.category] ?? null),
+        categoryId: spentOn,
       },
     });
   };
@@ -194,7 +235,7 @@ describe('invariant 5.5 (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
 
     prisma = app.get(PrismaService);
     webOrigin = resolveWebOrigin(app.get(ConfigService));
@@ -271,18 +312,28 @@ describe('invariant 5.5 (integration)', () => {
           for (const step of steps) {
             await apply(step);
 
-            const view = await allTimeView();
-            const available = view.groups
+            const held = await balances();
+
+            const withHidden = await allTimeView();
+            const all = withHidden.groups
               .flatMap((group) => group.categories)
               .reduce((total, category) => total + BigInt(category.available), 0n);
 
-            expect(BigInt(view.readyToAssign) + available).toBe(await balances());
+            expect(BigInt(withHidden.readyToAssign) + all).toBe(held);
+
+            const shown = await allTimeView(false);
+            const visible = shown.groups
+              .flatMap((group) => group.categories)
+              .reduce((total, category) => total + BigInt(category.available), 0n);
+
+            expect(BigInt(shown.readyToAssign) + visible).toBe(held);
           }
         })
         .beforeEach(clearMoney),
       { numRuns: 50 },
     );
 
-    expect(movesApplied).toBeGreaterThan(0);
+    expect(movesLanded).toBeGreaterThan(0);
+    expect(hidesLanded).toBeGreaterThan(0);
   }, 180_000);
 });

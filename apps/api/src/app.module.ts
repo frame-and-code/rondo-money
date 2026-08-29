@@ -6,6 +6,7 @@ import { AccountsModule } from '@/accounts/accounts.module';
 import { AuthModule } from '@/auth/auth.module';
 import { BudgetViewModule } from '@/budget-view/budget-view.module';
 import { BudgetsModule } from '@/budgets/budgets.module';
+import { CategoriesModule } from '@/categories/categories.module';
 import { HealthModule } from '@/health/health.module';
 import { MeModule } from '@/me/me.module';
 import { MovesModule } from '@/moves/moves.module';
@@ -30,6 +31,7 @@ import { VALIDATION_PIPE } from '@/validation/validation.options';
     BudgetsModule,
     AccountsModule,
     BudgetViewModule,
+    CategoriesModule,
     MovesModule,
   ],
   providers: [{ provide: APP_PIPE, useValue: VALIDATION_PIPE }],

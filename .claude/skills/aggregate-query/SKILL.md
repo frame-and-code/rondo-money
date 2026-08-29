@@ -7,10 +7,13 @@ description: Write a raw SQL aggregate in apps/api without walking around tenant
 
 The Prisma extension cannot express a budget aggregate, so these queries are hand-written SQL
 and the isolation the extension gives everything else is **not** on this path (ADR-005). The
-statement that exists is
+statement to copy is
 [`budget-view.query.ts`](../../../apps/api/src/budget-view/budget-view.query.ts), with
 [`budget-view.service.ts`](../../../apps/api/src/budget-view/budget-view.service.ts) beside it.
-Read both; everything below is visible in them.
+Read both; everything below is visible in them. An aggregate a **write** has to consult first is
+a shape of its own, and
+[`refuse-a-write-on-an-aggregate`](../refuse-a-write-on-an-aggregate/SKILL.md) holds what
+changes when the statement runs inside a mutation.
 
 ## The scope is two ids, and only one of them arrives on its own
 

@@ -31,7 +31,11 @@ what each category holds, what it spent, what is left in it and what has no job 
 of them computed from transactions and assignments rather than stored anywhere. Money moves between envelopes from one dialog: a card opens it, the two envelopes are named
 in rows with an arrow between them, and assigning is the same move with the pool on the
 giving side rather than an operation of its own. The month lives in the address, so a link
-and the back button both work. What does not exist yet is entering transactions by hand.
+and the back button both work. The categories themselves are the user's to arrange: a category is
+created, renamed, given an icon and a colour, dragged into a new place, moved into another group
+and hidden. A group is created with its own categories, renamed, reordered and hidden with
+everything in it. Deleting is not an operation at all, so no expense ever loses the
+category it was spent on. What does not exist yet is entering transactions by hand.
 
 ## What it is
 

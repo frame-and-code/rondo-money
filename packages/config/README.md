@@ -16,6 +16,12 @@ truth. Every app and package inherits from here, no local copies of rules.
   export default base;
   ```
 
+- `@rondo/config/eslint/ui-primitives` refuses a bare `<select>`, `<input>`, `<textarea>` or
+  `<dialog>` in JSX and names the `@rondo/ui` component to use instead. It is composed on top of
+  the base in `apps/web`, where the screens live. A field inside a composed control is no
+  exception: `InputGroupInput` and `InputGroupTextarea` are the ones that strip the primitive's
+  own frame, which is what a hand-written element was reaching for.
+
 - `@rondo/config/tsconfig/base.json` is the strict (`strict: true`) TypeScript base. Consume
   it from a workspace `tsconfig.json`, declaring the `@/*` → `src/*` alias locally
   (TS resolves `paths` relative to the file that declares them, so it can't live in the

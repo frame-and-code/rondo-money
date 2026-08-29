@@ -10,6 +10,7 @@ import {
   ComboboxList,
   ComboboxTrigger,
 } from '@rondo/ui/components/ui/combobox';
+import { InputGroupInput } from '@rondo/ui/components/ui/input-group';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconArrowDown, IconLoader, IconWallet } from '@tabler/icons-react';
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
@@ -94,7 +95,7 @@ export function MoveFields({
     'transition-colors disabled:pointer-events-none disabled:opacity-50',
   );
   const amountField = (envelope: MoveTarget, ref?: typeof field) => (
-    <input
+    <InputGroupInput
       ref={ref}
       type="text"
       size={7}
@@ -111,10 +112,9 @@ export function MoveFields({
         }
       }}
       className={cn(
-        'field-sizing-content max-w-44 min-w-10 shrink border-0 bg-transparent p-0',
-        'text-right text-lg font-semibold',
-        'placeholder:text-muted-foreground tabular-nums outline-none',
-        'disabled:opacity-50',
+        'field-sizing-content h-auto w-auto max-w-44 min-w-10 flex-initial p-0',
+        'text-right text-lg font-semibold md:text-base',
+        'tabular-nums',
       )}
     />
   );

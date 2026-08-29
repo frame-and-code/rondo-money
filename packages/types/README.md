@@ -75,7 +75,9 @@ time rather than picking a day for you.
 with a guard for each. A name says what the category is, not what draws it: the API stores and
 publishes the name, and the screen decides which component and which colour token it becomes.
 So a redraw touches one map in `apps/web` and no rows. Both are nullable everywhere, because a
-category the user made carries neither until they choose.
+category the user made carries neither until they choose. A few icon names deliberately differ
+from the library's, for the same reason: the name says what the category is, and the library is
+free to rename its component without a migration.
 
 ## Build
 

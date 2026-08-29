@@ -57,7 +57,7 @@ The other side is chosen from what the month on screen answered with, never from
 assembled anywhere else. That answer leaves out an envelope hidden before the end of the month
 being looked at, and keeps one hidden after it, which is correct for the month and means an
 older month can offer a side the endpoint will refuse. Expect that refusal rather than
-defending against it: the browser has no hidden flag to filter on.
+defending against it: the flag the month carries says whether the row was hidden by the month being looked at, not whether it is hidden now, so an older month answers `false` for a category hidden today and the refusal is still the only truth.
 
 ## One key per intent, and the intent is the opening
 
