@@ -56,6 +56,8 @@ jest.mock('@rondo/api-client/react-query', () => ({
   categoriesControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoriesControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoriesControllerReorderMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoryGroupsControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,

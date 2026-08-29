@@ -117,6 +117,7 @@ export function CategoryDialog({
                       key={one}
                       type="button"
                       data-testid={`icon-${one}`}
+                      aria-label={t(`categoryIcon.${one}`)}
                       aria-pressed={icon === one}
                       onClick={() => setIcon(one)}
                       className={cn(
@@ -140,6 +141,7 @@ export function CategoryDialog({
                     key={one}
                     type="button"
                     data-testid={`color-${one}`}
+                    aria-label={t(`categoryColor.${one}`)}
                     aria-pressed={color === one}
                     onClick={() => setColor(one)}
                     className="size-[26px] rounded-full"

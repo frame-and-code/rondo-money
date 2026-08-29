@@ -53,6 +53,8 @@ jest.mock('@rondo/api-client/react-query', () => ({
   categoriesControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoriesControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoriesControllerReorderMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoryGroupsControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
@@ -226,6 +228,7 @@ describe('the month of the budget', () => {
     draw();
 
     expect(await screen.findByText(ru['categories.emptyTitle'])).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: ru['categories.addGroup'] })).toBeInTheDocument();
   });
 
   it('says the month could not be read rather than showing an empty month', async () => {

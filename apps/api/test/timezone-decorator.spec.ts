@@ -43,7 +43,7 @@ describe('a time zone at the API boundary', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
   });
 
   afterAll(async () => {

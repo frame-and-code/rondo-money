@@ -16,7 +16,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconChevronDown, IconEyeOff, IconPlus } from '@tabler/icons-react';
+import { IconChevronDown, IconEyeOff, IconPencil, IconPlus } from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
@@ -28,6 +28,7 @@ export function CategoryGroup({
   available,
   categoryIds,
   onAdd,
+  onRename,
   onHide,
   onReorder,
   children,
@@ -37,6 +38,7 @@ export function CategoryGroup({
   available: string;
   categoryIds: string[];
   onAdd: () => void;
+  onRename: () => void;
   onHide: () => void;
   onReorder: (categoryIds: string[]) => void;
   children: ReactNode;
@@ -99,6 +101,14 @@ export function CategoryGroup({
             className="text-muted-foreground hover:bg-muted flex size-7 items-center justify-center rounded-lg transition-colors duration-[120ms]"
           >
             <IconPlus aria-hidden className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={t('categories.renameGroup', { group: name })}
+            onClick={onRename}
+            className="text-muted-foreground hover:bg-muted flex size-7 items-center justify-center rounded-lg transition-colors duration-[120ms]"
+          >
+            <IconPencil aria-hidden className="size-4" />
           </button>
           <button
             type="button"

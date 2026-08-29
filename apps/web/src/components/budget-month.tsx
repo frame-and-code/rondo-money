@@ -9,10 +9,13 @@ import {
   categoriesControllerHideMutation,
   categoriesControllerReorderMutation,
   categoriesControllerUpdateMutation,
+  categoryGroupsControllerCreateMutation,
   categoryGroupsControllerHideMutation,
+  categoryGroupsControllerUpdateMutation,
   movesControllerMoveMutation,
 } from '@rondo/api-client/react-query';
 import { parseMoney, toDecimalString, type CalendarMonth } from '@rondo/types';
+import { Button } from '@rondo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +25,7 @@ import {
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@rondo/ui/components/ui/drawer';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconWallet } from '@tabler/icons-react';
+import { IconPlus, IconWallet } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -33,6 +36,7 @@ import { CategoryActions } from '@/components/category-actions';
 import { CategoryDialog } from '@/components/category-dialog';
 import { CategoryGroup } from '@/components/category-group';
 import { CategoryTile } from '@/components/category-tile';
+import { GroupDialog } from '@/components/group-dialog';
 import { HideCategoryDialog } from '@/components/hide-category-dialog';
 import { HideGroupDialog } from '@/components/hide-group-dialog';
 import { MoveFields } from '@/components/move-fields';
@@ -65,6 +69,8 @@ interface Moving {
 }
 
 type Managing =
+  | { kind: 'newGroup' }
+  | { kind: 'editGroup'; groupId: string }
   | { kind: 'newCategory'; groupId: string }
   | { kind: 'editCategory'; categoryId: string }
   | { kind: 'hideCategory'; categoryId: string }
@@ -249,6 +255,8 @@ export function BudgetMonth() {
   const editCategory = useMutation({ ...categoriesControllerUpdateMutation(), ...managed });
   const hideCategory = useMutation({ ...categoriesControllerHideMutation(), ...managed });
   const hideGroup = useMutation({ ...categoryGroupsControllerHideMutation(), ...managed });
+  const createGroup = useMutation({ ...categoryGroupsControllerCreateMutation(), ...managed });
+  const editGroup = useMutation({ ...categoryGroupsControllerUpdateMutation(), ...managed });
   const sweep = useMutation({
     ...movesControllerMoveMutation(),
     onSettled: () => reread(),
@@ -547,7 +555,7 @@ export function BudgetMonth() {
       : null;
 
   const managedGroup =
-    managing?.kind === 'hideGroup'
+    managing !== null && 'groupId' in managing
       ? (shownData.groups.find((one) => one.id === managing.groupId) ?? null)
       : null;
 
@@ -558,6 +566,24 @@ export function BudgetMonth() {
 
   const manageDialog = (): ReactNode => {
     if (managing === null) return null;
+
+    if (managing.kind === 'newGroup' || managing.kind === 'editGroup') {
+      const renaming = managing.kind === 'editGroup' ? managedGroup : null;
+
+      return (
+        <GroupDialog
+          group={renaming}
+          failed={refused}
+          busy={createGroup.isPending || editGroup.isPending}
+          onCancel={closeManaging}
+          onSave={(draft) =>
+            renaming === null
+              ? createGroup.mutate({ body: draft })
+              : editGroup.mutate({ path: { id: renaming.id }, body: draft })
+          }
+        />
+      );
+    }
 
     if (managing.kind === 'newCategory' || managing.kind === 'editCategory') {
       const editing =
@@ -683,19 +709,31 @@ export function BudgetMonth() {
     reorderCategories.mutate({ body: { groupId, categoryIds, idempotencyKey: mintKey() } });
   };
 
-  if (shownData.groups.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-dashed p-6">
-        <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-          <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
-            <IconWallet className="size-5" />
-          </div>
-          <p className="text-base font-semibold">{t('categories.emptyTitle')}</p>
-          <p className="text-muted-foreground text-sm">{t('categories.emptyBody')}</p>
+  const addGroup = (
+    <div className="mt-5.5 flex justify-end">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => manage({ kind: 'newGroup' })}
+        className="h-8 rounded-2xl px-3"
+      >
+        <IconPlus aria-hidden className="size-4" />
+        {t('categories.addGroup')}
+      </Button>
+    </div>
+  );
+
+  const nothingYet = (
+    <div className="flex items-center justify-center rounded-xl border border-dashed p-6">
+      <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+        <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
+          <IconWallet className="size-5" />
         </div>
+        <p className="text-base font-semibold">{t('categories.emptyTitle')}</p>
+        <p className="text-muted-foreground text-sm">{t('categories.emptyBody')}</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div>
@@ -731,6 +769,8 @@ export function BudgetMonth() {
               : 'motion-safe:animate-page-in-left',
           )}
         >
+          {shownData.groups.length === 0 ? nothingYet : null}
+
           {shownData.groups.map((group) => (
             <CategoryGroup
               key={group.id}
@@ -740,6 +780,7 @@ export function BudgetMonth() {
                 group.categories.reduce((total, one) => total + parseMoney(one.available), 0n),
               )}
               onAdd={() => manage({ kind: 'newCategory', groupId: group.id })}
+              onRename={() => manage({ kind: 'editGroup', groupId: group.id })}
               onHide={() => manage({ kind: 'hideGroup', groupId: group.id })}
               onReorder={(categoryIds) => reorder(group.id, categoryIds)}
               categoryIds={group.categories.map((one) => one.id)}
@@ -766,6 +807,8 @@ export function BudgetMonth() {
               ))}
             </CategoryGroup>
           ))}
+
+          {addGroup}
         </div>
       </div>
 

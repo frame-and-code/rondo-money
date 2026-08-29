@@ -89,7 +89,7 @@ describe('the assignment table (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.init();
+    await app.listen(0);
 
     prisma = app.get(PrismaService);
     scoped = app.get<MutatorPrismaClient>(MUTATOR_PRISMA);

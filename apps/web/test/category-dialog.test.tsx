@@ -55,6 +55,21 @@ describe('the dialog a category is set up in', () => {
     expect((field as HTMLInputElement).selectionStart).toBe('Кафе'.length);
   });
 
+  it('names every option, so the picker is usable without seeing it', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await openTheLook(user);
+
+    for (const one of CATEGORY_ICONS) {
+      expect(screen.getByTestId(`icon-${one}`)).toHaveAccessibleName(en[`categoryIcon.${one}`]);
+    }
+
+    for (const one of CATEGORY_COLORS) {
+      expect(screen.getByTestId(`color-${one}`)).toHaveAccessibleName(en[`categoryColor.${one}`]);
+    }
+  });
+
   it('offers every icon and every colour the API accepts', async () => {
     const user = userEvent.setup();
     draw();

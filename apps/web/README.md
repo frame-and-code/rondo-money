@@ -62,8 +62,8 @@ src/
                               # categories screen: the month header, a group, a tile that
                               # opens the move dialog, its spend ring, the fields that move
                               # money between envelopes, the actions folded under them, the
-                              # dialog a category is set up in, the two that hide a category
-                              # and a group, the amount whose digits roll when it changes,
+                              # dialog a category is set up in, the one a group is, the two
+                              # that hide a category and a group, the amount whose digits roll when it changes,
                               # and the banner that says a save did not go through
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language

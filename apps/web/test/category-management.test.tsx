@@ -10,6 +10,8 @@ const createCategory = jest.fn();
 const updateCategory = jest.fn();
 const hideCategory = jest.fn();
 const hideGroup = jest.fn();
+const createGroup = jest.fn();
+const editGroup = jest.fn();
 const move = jest.fn();
 
 let hideRefuses = false;
@@ -103,6 +105,12 @@ jest.mock('@rondo/api-client/react-query', () => ({
     },
   }),
   categoriesControllerReorderMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerCreateMutation: () => ({
+    mutationFn: (options: unknown) => createGroup(options) as unknown,
+  }),
+  categoryGroupsControllerUpdateMutation: () => ({
+    mutationFn: (options: unknown) => editGroup(options) as unknown,
+  }),
   categoryGroupsControllerHideMutation: () => ({
     mutationFn: (options: unknown) => hideGroup(options) as unknown,
   }),
@@ -173,6 +181,47 @@ describe('setting up a category from the month', () => {
     expect(updateCategory.mock.calls[0]?.[0]).toMatchObject({
       path: { id: HOME },
       body: { name: 'Квартира', groupId: 'g1' },
+    });
+  });
+});
+
+describe('the groups themselves', () => {
+  it('offers to add one under the list, on a month that already has some', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await screen.findByText('Дом');
+    await user.click(screen.getByRole('button', { name: en['categories.addGroup'] }));
+
+    await user.type(await screen.findByLabelText(en['categories.nameLabel']), 'Отпуск');
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    await waitFor(() => expect(createGroup).toHaveBeenCalledTimes(1));
+    expect(createGroup.mock.calls[0]?.[0]).toMatchObject({ body: { name: 'Отпуск' } });
+  });
+
+  it('renames one from its own header, with the name already in the field', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await screen.findByText('Досуг');
+    await user.click(
+      screen.getByRole('button', {
+        name: en['categories.renameGroup'].replace('{{group}}', 'Досуг'),
+      }),
+    );
+
+    const field = await screen.findByLabelText(en['categories.nameLabel']);
+    expect(field).toHaveValue('Досуг');
+
+    await user.clear(field);
+    await user.type(field, 'Развлечения');
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    await waitFor(() => expect(editGroup).toHaveBeenCalledTimes(1));
+    expect(editGroup.mock.calls[0]?.[0]).toMatchObject({
+      path: { id: 'g2' },
+      body: { name: 'Развлечения' },
     });
   });
 });
