@@ -29,7 +29,7 @@ test('a category is created, emptied, hidden, and another is dragged into a new 
   await page
     .getByRole('button', { name: en['categories.addTo'].replace('{{group}}', 'Bills') })
     .click();
-  await page.getByLabel(en['categories.nameLabel']).fill(NEW_CATEGORY);
+  await page.getByLabel(en['categories.nameLabel'], { exact: true }).fill(NEW_CATEGORY);
   await page.getByRole('button', { name: en['categories.lookPick'] }).click();
   await page.getByTestId('icon-beach').click();
   await page.getByTestId('color-teal').click();
