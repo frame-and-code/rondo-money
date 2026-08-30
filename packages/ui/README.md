@@ -59,7 +59,10 @@ instead of merging into it, `Close`, without which `modal` traps no focus at all
 base-ui gates the trap on that part being present, and an opt-in `Arrow`, so a popover opened
 from one small control can point back at it rather than floating loose. The arrow takes its
 colour with `bg-inherit`, which is what lets a caller repaint the popup without repainting the
-arrow separately. The dependency is `modal`'s and not the
+arrow separately. `calendar.tsx` carries one too: the generator declares a ref for the focused
+day and never attaches it, so `ref.current` stays null and arrow keys move the day picker's
+own focus without moving the browser's. Attaching it is one word, and losing it again would
+take the keyboard out of the calendar. The dependency is `modal`'s and not the
 backdrop's, so every `modal` popover passes `closeLabel`, with or without a backdrop, and one
 that skips it stops the mouse and not the keyboard. It also forwards `collisionAvoidance`, so a
 popover whose content grows while it is open can be told to slide rather than jump to the other

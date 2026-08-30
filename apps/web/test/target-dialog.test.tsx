@@ -211,6 +211,22 @@ describe('the form a goal is set in', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it('refuses an amount that is still being typed, the way the move field does', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await pick(user, en['categories.goalContribute']);
+    await user.type(amountField(), '300+');
+
+    expect(save()).toBeDisabled();
+
+    await user.type(amountField(), '50');
+    expect(save()).toBeEnabled();
+
+    await user.click(save());
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ amount: '35000' }));
+  });
+
   it('refuses to save a deadline goal that has no deadline yet', async () => {
     const user = userEvent.setup();
     draw();

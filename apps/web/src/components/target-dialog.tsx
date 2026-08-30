@@ -106,7 +106,8 @@ export function TargetDialog({
   const due = dueMonth === null ? undefined : firstOfMonth(dueMonth);
   const opens = firstOfMonth(month);
   const horizon = new Date(opens.getFullYear() + HORIZON_YEARS, 11, 31);
-  const minor = money.read(amount).minor;
+  const typed = money.read(amount);
+  const minor = typed.partial || typed.fault !== null ? null : typed.minor;
   const ready =
     kind === null
       ? true

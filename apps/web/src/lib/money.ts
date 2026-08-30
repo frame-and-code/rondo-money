@@ -223,6 +223,11 @@ export function moneyOf(
   const symbol = parts[symbolAt]?.value ?? currency;
   const marks = marksOf(locale);
   const withSymbol = (amount: string): string => `${amount}\u00a0${symbol}`;
+  const exactly = (minor: bigint): string => {
+    const decimal = toDecimalString(minor, digits);
+
+    return digits > 0 && whole(minor) ? decimal.slice(0, -(digits + 1)) : decimal;
+  };
 
   return {
     format: (minor) => {
@@ -230,7 +235,7 @@ export function moneyOf(
       const asNumber = Number(decimal);
 
       if (asNumber.toFixed(digits) !== decimal) {
-        return withSymbol(decimal);
+        return withSymbol(exactly(minor));
       }
 
       return withSymbol(whole(minor) ? roundBare.format(asNumber) : bare.format(asNumber));
@@ -240,7 +245,7 @@ export function moneyOf(
       const asNumber = Number(decimal);
 
       if (asNumber.toFixed(digits) !== decimal) {
-        return decimal;
+        return exactly(minor);
       }
 
       return whole(minor) ? roundBare.format(asNumber) : bare.format(asNumber);

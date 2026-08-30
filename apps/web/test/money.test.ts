@@ -193,6 +193,15 @@ describe('an amount whose fraction is nothing', () => {
     expect(money.format(0n)).not.toContain(',');
   });
 
+  it('drops the zeros on a whole amount too big for a double to carry', () => {
+    const money = moneyOf('ru-RU', 'PLN', 2);
+    const huge = 900719925474099300n;
+
+    expect(money.plain(huge)).toBe('9007199254740993');
+    expect(money.format(huge)).not.toContain(',00');
+    expect(money.plain(huge + 7n)).toBe('9007199254740993.07');
+  });
+
   it('keeps every decimal the moment one of them is not a zero', () => {
     const money = moneyOf('ru-RU', 'PLN', 2);
 
