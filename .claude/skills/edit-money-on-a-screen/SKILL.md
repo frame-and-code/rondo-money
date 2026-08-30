@@ -77,6 +77,24 @@ body cannot change under a key the server has already claimed. That is longer th
 is in flight: a lost request keeps its key, so the field stays frozen until that one is retried
 or thrown away, and both surfaces of one field freeze together or the phone becomes the hole.
 
+## A form that names an amount without moving one
+
+Setting a category's goal writes money into a request and moves none. Everything above still
+holds, and the two things that change are worth stating so the next such form does not
+re-derive them.
+
+- **The amount is parsed at the edge the same way**, through
+  [`lib/money.ts`](../../../apps/web/src/lib/money.ts), and sent as minor units. Seed the field
+  with `typed`, never with `format`: a shown amount drops a fraction that is all zeros, and a
+  field opened on `500` instead of `500,00` loses the decimals the moment someone types.
+- **The refusals are the server's own**, so read them from `reason` rather than from the status
+  alone. A goal of nothing is refused by the pipe, so the form must not offer the save at zero;
+  a month already past is refused by the domain. Both belong in the form, beside the field,
+  not in the page banner: the reader is inside a dialog and the banner is behind it.
+
+One key still covers the whole life of the form, because one form is one intent whatever it
+writes.
+
 ## Every refusal has its own answer, read from the reason and never from the message
 
 Branching on the text of an error puts a server sentence into a UI branch and breaks the moment

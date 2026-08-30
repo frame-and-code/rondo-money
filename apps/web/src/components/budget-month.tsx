@@ -12,10 +12,13 @@ import {
   categoryGroupsControllerCreateMutation,
   categoryGroupsControllerHideMutation,
   categoryGroupsControllerUpdateMutation,
+  categoryTargetsControllerCloseMutation,
+  categoryTargetsControllerSetMutation,
   movesControllerMoveMutation,
 } from '@rondo/api-client/react-query';
-import { parseMoney, toDecimalString, type CalendarMonth } from '@rondo/types';
+import { parseMoney, type CalendarMonth } from '@rondo/types';
 import { Button } from '@rondo/ui/components/ui/button';
+import { Card, CardContent } from '@rondo/ui/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -42,9 +45,11 @@ import { HideGroupDialog } from '@/components/hide-group-dialog';
 import { MoveFields } from '@/components/move-fields';
 import { SaveFailureBanner } from '@/components/save-failure-banner';
 import { SpendRing } from '@/components/spend-ring';
+import { TargetDialog } from '@/components/target-dialog';
+import { TargetPanel } from '@/components/target-panel';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
-import { monthFromUrl, monthLabel, monthNow, spendRing } from '@/lib/budget-month';
+import { categoryRing, monthFromUrl, monthLabel, monthNow } from '@/lib/budget-month';
 import { categoryFailure } from '@/lib/category-failure';
 import { reorderedView } from '@/lib/category-order';
 import { moneyOf } from '@/lib/money';
@@ -74,7 +79,8 @@ type Managing =
   | { kind: 'newCategory'; groupId: string }
   | { kind: 'editCategory'; categoryId: string }
   | { kind: 'hideCategory'; categoryId: string }
-  | { kind: 'hideGroup'; groupId: string };
+  | { kind: 'hideGroup'; groupId: string }
+  | { kind: 'goal'; categoryId: string };
 
 const STEP_MS = 500;
 
@@ -176,6 +182,7 @@ export function BudgetMonth() {
   const categories = (shownData?.groups ?? []).flatMap((group) => group.categories);
   const moved = categories.find((candidate) => candidate.id === moving?.categoryId) ?? null;
 
+  const movedRing = moved === null ? null : categoryRing(moved);
   const reread = () => {
     const [named] = budgetViewControllerReadQueryKey({ query: { month: month ?? '' } });
 
@@ -274,6 +281,9 @@ export function BudgetMonth() {
     },
   });
 
+  const setGoal = useMutation({ ...categoryTargetsControllerSetMutation(), ...managed });
+  const closeGoal = useMutation({ ...categoryTargetsControllerCloseMutation(), ...managed });
+
   const reorderCategories = useMutation({
     ...categoriesControllerReorderMutation(),
     onError: () => setFailure({ kind: 'other', categoryId: '', categoryName: '' }),
@@ -306,9 +316,6 @@ export function BudgetMonth() {
   const showing = shownData.month;
   const stepping: 'forward' | 'back' | null =
     showing === month ? null : month > showing ? 'forward' : 'back';
-
-  const decimalOf = (minor: bigint): string =>
-    toDecimalString(minor, money.digits).replace('.', money.marks.decimal);
 
   const discard = (): void => {
     const outstanding = sent !== null;
@@ -430,14 +437,20 @@ export function BudgetMonth() {
 
     const opened = categories.find((candidate) => candidate.id === categoryId);
     const available = opened === undefined ? 0n : parseMoney(opened.available);
+    const asked = opened?.target?.needed === undefined ? 0n : parseMoney(opened.target.needed);
 
     discard();
     setMoving({
       categoryId,
       month,
       otherId: POOL,
-      outgoing: available > 0n,
-      draft: available === 0n ? '' : decimalOf(available < 0n ? -available : available),
+      outgoing: asked > 0n ? false : available > 0n,
+      draft:
+        asked > 0n
+          ? money.typed(asked)
+          : available === 0n
+            ? ''
+            : money.typed(available < 0n ? -available : available),
       query: '',
       picking: false,
       key: mintKey(),
@@ -536,6 +549,23 @@ export function BudgetMonth() {
     );
   };
 
+  const goalCard = (shown: (typeof categories)[number] | null): ReactNode => {
+    const goal = shown?.target ?? null;
+
+    if (shown === null || goal === null) return null;
+
+    return (
+      <>
+        <div aria-hidden className="bg-border/60 h-px w-full" />
+        <Card size="sm" className="bg-muted shadow-none ring-0 dark:ring-0">
+          <CardContent>
+            <TargetPanel target={goal} money={money} color={shown.color} />
+          </CardContent>
+        </Card>
+      </>
+    );
+  };
+
   const managePanel = (categoryId: string): ReactNode => {
     const shown = categories.find((one) => one.id === categoryId);
     if (!shown) return null;
@@ -543,8 +573,10 @@ export function BudgetMonth() {
     return (
       <CategoryActions
         category={shown}
+        currentMonth={showing === today}
         onEdit={() => manage({ kind: 'editCategory', categoryId })}
         onHide={() => manage({ kind: 'hideCategory', categoryId })}
+        onGoal={() => manage({ kind: 'goal', categoryId })}
       />
     );
   };
@@ -656,6 +688,46 @@ export function BudgetMonth() {
               body: { idempotencyKey: keyFor('hide') },
             })
           }
+        />
+      );
+    }
+
+    if (managing.kind === 'goal' && managedCategory !== null) {
+      const goal = managedCategory.target ?? null;
+
+      return (
+        <TargetDialog
+          category={{ id: managedCategory.id, name: managedCategory.name }}
+          target={goal}
+          month={month}
+          money={money}
+          failed={refused}
+          busy={setGoal.isPending || closeGoal.isPending}
+          onCancel={closeManaging}
+          onSave={(draft) => {
+            if (draft.kind === null) {
+              if (goal === null) {
+                closeManaging();
+                return;
+              }
+
+              closeGoal.mutate({
+                path: { id: managedCategory.id },
+                body: { idempotencyKey: draft.idempotencyKey },
+              });
+              return;
+            }
+
+            setGoal.mutate({
+              path: { id: managedCategory.id },
+              body: {
+                kind: draft.kind,
+                amount: draft.amount,
+                ...(draft.dueMonth === null ? {} : { dueMonth: draft.dueMonth }),
+                idempotencyKey: draft.idempotencyKey,
+              },
+            });
+          }}
         />
       );
     }
@@ -795,6 +867,7 @@ export function BudgetMonth() {
                     moving?.categoryId === category.id ? (
                       <>
                         {movePanel()}
+                        {goalCard(category)}
                         {managePanel(category.id)}
                       </>
                     ) : null
@@ -815,29 +888,35 @@ export function BudgetMonth() {
       <Drawer open={moveDrawerOpen} onOpenChange={(next) => (next ? null : cancel())}>
         <DrawerContent>
           <DrawerHeader className="flex-row items-center gap-3 pb-0">
-            {moved === null ? null : (
+            {moved === null || movedRing === null ? null : (
               <SpendRing
                 icon={moved.icon}
                 color={moved.color}
-                fraction={
-                  spendRing(parseMoney(moved.activity), parseMoney(moved.available)).fraction
-                }
-                overspent={parseMoney(moved.available) < 0n}
+                fill={movedRing.fill}
+                head={movedRing.head}
+                goalShare={movedRing.goalShare}
+                overspent={movedRing.overspent}
                 size={68}
               />
             )}
             <span className="flex flex-col items-start gap-0.5">
-              <DrawerTitle className="text-2xl leading-tight font-semibold">
+              <DrawerTitle className="text-xl leading-tight font-semibold">
                 {moved?.name ?? ''}
               </DrawerTitle>
-              <span className="text-muted-foreground text-[15px] leading-tight">
+              <span className="text-muted-foreground text-[13px] leading-tight">
                 {monthLabel(showing, locale)}
               </span>
             </span>
           </DrawerHeader>
 
-          <div className="flex flex-col gap-2 p-4">
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain p-4',
+              '[&>*]:shrink-0',
+            )}
+          >
             {movePanel()}
+            {goalCard(moved)}
             {moved === null ? null : managePanel(moved.id)}
           </div>
         </DrawerContent>

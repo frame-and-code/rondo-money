@@ -82,15 +82,15 @@ describe('the two envelopes a move names', () => {
     draw();
 
     expect(screen.getByText('Продукты')).toBeInTheDocument();
-    expect(screen.getByText(/850,00/)).toBeInTheDocument();
-    expect(screen.getByText(/480,00/)).toBeInTheDocument();
+    expect(screen.getByText(/850 /)).toBeInTheDocument();
+    expect(screen.getByText(/480 /)).toBeInTheDocument();
   });
 
   it('reds an overspent envelope on the row it stands on, by the rule the tiles follow', () => {
     draw({ category: car });
 
     expect(screen.getByText(/-12,50/)).toHaveClass('text-destructive');
-    expect(screen.getByText(/850,00/)).not.toHaveClass('text-destructive');
+    expect(screen.getByText(/850 /)).not.toHaveClass('text-destructive');
   });
 
   it('carries the amount on both rows, so either one can be typed into', () => {

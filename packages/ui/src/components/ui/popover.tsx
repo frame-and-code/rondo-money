@@ -39,6 +39,7 @@ function PopoverContent({
   collisionAvoidance,
   backdrop = false,
   closeLabel,
+  arrow = false,
   children,
   ...props
 }: PopoverPrimitive.Popup.Props &
@@ -48,6 +49,7 @@ function PopoverContent({
   > & {
     backdrop?: boolean;
     closeLabel?: string;
+    arrow?: boolean;
   }) {
   return (
     <PopoverPrimitive.Portal>
@@ -69,6 +71,9 @@ function PopoverContent({
           {...props}
         >
           {children}
+          {arrow ? (
+            <PopoverPrimitive.Arrow className="z-50 size-3 rotate-45 rounded-[2px] bg-inherit ring-1 ring-foreground/5 data-[side=bottom]:top-1.5 data-[side=left]:top-1/2! data-[side=left]:-right-1.5 data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1.5 data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-1.5 dark:ring-foreground/10" />
+          ) : null}
           {closeLabel === undefined ? null : (
             <PopoverClose className="sr-only">{closeLabel}</PopoverClose>
           )}

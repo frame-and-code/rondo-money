@@ -40,22 +40,22 @@ test('money moves between envelopes, and what fell below zero says so in both th
   await assign(page, '120', FROM);
   await assign(page, '80', TO);
 
-  await expect(availableOf(page, FROM)).toHaveText('$120.00');
-  await expect(availableOf(page, TO)).toHaveText('$80.00');
+  await expect(availableOf(page, FROM)).toHaveText('120 $');
+  await expect(availableOf(page, TO)).toHaveText('80 $');
 
   const beforeCategories = await freeMoney(page);
 
   await moveTo(page, { from: FROM, to: TO, amount: '30' });
 
-  await expect(availableOf(page, FROM)).toHaveText('$90.00');
-  await expect(availableOf(page, TO)).toHaveText('$110.00');
+  await expect(availableOf(page, FROM)).toHaveText('90 $');
+  await expect(availableOf(page, TO)).toHaveText('110 $');
   expect(await freeMoney(page)).toBe(beforeCategories);
 
   await moveTo(page, { from: FROM, to: en['categories.readyToAssign'], amount: '200' });
 
-  await expect(availableOf(page, FROM)).toHaveText('-$110.00');
-  await expect(assignedOf(page, FROM)).toHaveText('-$110.00');
-  await expect(readyToAssign(page)).toHaveText('$1,000.00');
+  await expect(availableOf(page, FROM)).toHaveText('-110 $');
+  await expect(assignedOf(page, FROM)).toHaveText('-110 $');
+  await expect(readyToAssign(page)).toHaveText('1,000 $');
 
   const light = await tokenColour(page, '--destructive');
 
@@ -65,7 +65,7 @@ test('money moves between envelopes, and what fell below zero says so in both th
 
   await assign(page, '1200', TO);
 
-  await expect(readyToAssign(page)).toHaveText('-$200.00');
+  await expect(readyToAssign(page)).toHaveText('-200 $');
   await expect(page.getByText(en['categories.readyToAssignOver'])).toBeVisible();
 
   expect(await colourOf(readyToAssign(page))).toBe(light);

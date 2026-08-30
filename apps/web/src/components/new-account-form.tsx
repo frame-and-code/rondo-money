@@ -5,7 +5,6 @@ import {
   accountsControllerListQueryKey,
   budgetsControllerListOptions,
 } from '@rondo/api-client/react-query';
-import { toDecimalString } from '@rondo/types';
 import type { AccountType } from '@rondo/types';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
 import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
@@ -238,15 +237,11 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                       read.fault !== null && 'border-destructive ring-destructive/20 ring-3',
                     )}
                   >
-                    {money.symbolFirst ? symbol : null}
                     <InputGroupInput
                       id="account-balance"
                       inputMode="decimal"
                       value={amount}
-                      placeholder={toDecimalString(0n, money.digits).replace(
-                        '.',
-                        money.marks.decimal,
-                      )}
+                      placeholder={money.typed(0n)}
                       onChange={(event) => {
                         setAmount(event.target.value);
                         edited();
@@ -254,7 +249,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                       disabled={create.isPending}
                       className="h-auto min-w-0 flex-1 p-0"
                     />
-                    {money.symbolFirst ? null : symbol}
+                    {symbol}
                   </div>
 
                   {read.fault === null ? null : (

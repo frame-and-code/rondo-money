@@ -62,6 +62,8 @@ jest.mock('@rondo/api-client/react-query', () => ({
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),
+  categoryTargetsControllerSetMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryTargetsControllerCloseMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
 }));
 
 const FOOD = '0199c1a8-9ecf-71c7-a617-c575df073700';
@@ -408,8 +410,8 @@ describe('which way the money goes', () => {
     expect(field).toHaveFocus();
     expect(surface()).toHaveTextContent('Продукты');
     expect(surface()).toHaveTextContent(POOL_ROW);
-    expect(surface()).toHaveTextContent('480,00');
-    expect(surface()).toHaveTextContent('850,00');
+    expect(surface()).toHaveTextContent('480 ');
+    expect(surface()).toHaveTextContent('850 ');
   });
 
   it('says what turning the arrow would do, in both directions', async () => {
@@ -526,7 +528,7 @@ describe('the island above an open dialog', () => {
 
     const island = screen.getByTestId('ready-to-assign-island');
 
-    expect(island).toHaveTextContent(/850,00/);
+    expect(island).toHaveTextContent(/850 /);
     expect(within(island).queryByRole('button')).not.toBeInTheDocument();
   });
 
@@ -773,9 +775,7 @@ describe('the key the move is written under', () => {
     await user.click(within(notice).getByRole('button', { name: ru['categories.failCancel'] }));
 
     await waitFor(() => expect(reads).toBeGreaterThan(before));
-    await waitFor(() =>
-      expect(screen.getByTestId('available-Продукты')).toHaveTextContent(/630,00/),
-    );
+    await waitFor(() => expect(screen.getByTestId('available-Продукты')).toHaveTextContent(/630 /));
   });
 
   it('writes nothing until that re-read lands', async () => {
@@ -934,10 +934,8 @@ describe('what the screen believes afterwards', () => {
     await submit(user);
 
     await waitFor(() => expect(screen.queryByTestId('move-dialog')).not.toBeInTheDocument());
-    await waitFor(() =>
-      expect(screen.getByTestId('available-Продукты')).toHaveTextContent(/999,00/),
-    );
-    expect(screen.getByTestId('ready-to-assign')).toHaveTextContent(/111,00/);
+    await waitFor(() => expect(screen.getByTestId('available-Продукты')).toHaveTextContent(/999 /));
+    expect(screen.getByTestId('ready-to-assign')).toHaveTextContent(/111 /);
   });
 
   it('leaves the tile alone until the answer arrives', async () => {
@@ -955,7 +953,7 @@ describe('what the screen believes afterwards', () => {
     await typeAmount(user, '150,00');
     await submit(user);
 
-    expect(screen.getByTestId('available-Продукты')).toHaveTextContent(/480,00/);
+    expect(screen.getByTestId('available-Продукты')).toHaveTextContent(/480 /);
 
     land();
   });

@@ -9,16 +9,18 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@rondo/ui/components/ui/popover';
+import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconGripVertical } from '@tabler/icons-react';
+import { useId, useState, type ReactNode } from 'react';
 
 import { RollingAmount } from '@/components/rolling-amount';
 import { SpendRing } from '@/components/spend-ring';
+import { TargetBadge } from '@/components/target-badge';
+import { TargetPanel } from '@/components/target-panel';
 import { useTranslations } from '@/i18n/locale-context';
-import { spendRing } from '@/lib/budget-month';
+import { categoryRing } from '@/lib/budget-month';
 import type { MoneyReader } from '@/lib/money';
-
-import type { ReactNode } from 'react';
 
 export function CategoryTile({
   category,
@@ -40,6 +42,9 @@ export function CategoryTile({
   onMoveClose: () => void;
 }) {
   const { t } = useTranslations();
+  const isMobile = useIsMobile();
+  const [explaining, setExplaining] = useState(false);
+  const spoken = useId();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
   });
@@ -60,14 +65,31 @@ export function CategoryTile({
   const assigned = parseMoney(category.assigned);
   const activity = parseMoney(category.activity);
   const available = parseMoney(category.available);
-  const ring = spendRing(activity, available);
+  const ring = categoryRing(category);
+  const target = category.target ?? null;
+  const monthTarget = target?.monthTarget === undefined ? null : parseMoney(target.monthTarget);
+  const needed = target?.needed === undefined ? null : parseMoney(target.needed);
+  const monthly = monthTarget !== null && needed !== null;
+  const laid = monthTarget !== null && needed !== null ? monthTarget - needed : assigned;
+
+  const disc = (
+    <SpendRing
+      icon={category.icon}
+      color={category.color}
+      fill={ring.fill}
+      head={ring.head}
+      goalShare={ring.goalShare}
+      overspent={ring.overspent}
+      size={isMobile ? 56 : 72}
+    />
+  );
 
   const card = (
     <>
       <span className="flex items-start justify-between gap-3">
         <span
           data-testid="category-name"
-          className="pt-0.5 text-left text-base leading-tight font-medium"
+          className="pt-0.5 text-left text-[15px] leading-tight font-medium md:text-base"
         >
           {category.name}
         </span>
@@ -77,7 +99,7 @@ export function CategoryTile({
             amount={money.format(available)}
             value={available}
             className={cn(
-              'text-[21px] leading-tight font-semibold tracking-tight',
+              'text-lg leading-tight font-semibold tracking-tight md:text-[21px]',
               available < 0n && 'text-destructive',
               available === 0n && 'text-muted-foreground',
             )}
@@ -88,22 +110,43 @@ export function CategoryTile({
         </span>
       </span>
 
-      <span className="flex items-center gap-4">
-        <SpendRing
-          icon={category.icon}
-          color={category.color}
-          fraction={ring.fraction}
-          overspent={ring.overspent}
-        />
+      <span className="flex items-center gap-3 md:gap-4">
+        {target === null || !moveInPopover ? (
+          disc
+        ) : (
+          <Popover open={explaining} onOpenChange={setExplaining}>
+            <PopoverTrigger
+              render={<span />}
+              nativeButton={false}
+              data-testid="target-hover"
+              aria-label={t('categories.goalExplain', { category: category.name })}
+              onClick={(event) => event.stopPropagation()}
+              onPointerEnter={() => setExplaining(true)}
+              onPointerLeave={() => setExplaining(false)}
+            >
+              {disc}
+            </PopoverTrigger>
+            <PopoverContent
+              arrow
+              side="top"
+              align="center"
+              sideOffset={10}
+              className="bg-background w-72 rounded-2xl border p-3.5 shadow-2xl"
+            >
+              <PopoverTitle className="sr-only">{category.name}</PopoverTitle>
+              <TargetPanel target={target} money={money} color={category.color} />
+            </PopoverContent>
+          </Popover>
+        )}
 
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex h-8 items-center justify-between gap-2">
-            <span className="text-muted-foreground text-sm md:text-xs">
+          <span className="flex min-h-8 flex-wrap items-center justify-between gap-x-2">
+            <span className="text-muted-foreground text-xs">
               {t(ring.incoming ? 'categories.incoming' : 'categories.spent')}
             </span>
             <span
               className={cn(
-                'text-[15px] font-medium tabular-nums md:text-[13px]',
+                'text-[13px] font-medium tabular-nums',
                 activity === 0n && 'text-muted-foreground',
               )}
             >
@@ -111,23 +154,41 @@ export function CategoryTile({
             </span>
           </span>
 
-          <span className="flex h-8 items-center justify-between gap-2">
-            <span className="text-muted-foreground text-sm md:text-xs">
-              {t('categories.assigned')}
+          <span className="flex min-h-8 flex-wrap items-center justify-between gap-x-2">
+            <span className="text-muted-foreground min-w-0 truncate text-xs">
+              {t(monthly ? 'categories.goalMonthlyTarget' : 'categories.assigned')}
             </span>
             <span
               data-testid={`assigned-${category.name}`}
               className={cn(
-                'text-[15px] font-medium tabular-nums md:text-[13px]',
-                assigned === 0n && 'text-muted-foreground',
-                assigned < 0n && 'text-destructive',
+                'inline-flex items-center justify-end whitespace-nowrap',
+                'text-[13px] font-medium tabular-nums',
+                !monthly && laid === 0n && 'text-muted-foreground',
+                laid < 0n && 'text-destructive',
               )}
             >
-              {money.format(assigned)}
+              {monthly ? (
+                <>
+                  <TargetBadge needed={needed} money={money} />
+                  <span className="font-semibold">{money.plain(laid)}</span>
+                  <span className="text-muted-foreground">{' / '}</span>
+                  <span className="text-muted-foreground font-normal">
+                    {money.format(monthTarget)}
+                  </span>
+                </>
+              ) : (
+                money.format(assigned)
+              )}
             </span>
           </span>
         </span>
       </span>
+
+      {target === null ? null : (
+        <span id={spoken}>
+          <TargetPanel spoken target={target} money={money} color={category.color} />
+        </span>
+      )}
     </>
   );
 
@@ -141,6 +202,7 @@ export function CategoryTile({
 
   const frame = {
     ref: setNodeRef,
+    'data-testid': `category-tile-${category.name}`,
     style: { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 1 : 0 },
     className: 'relative h-full',
   };
@@ -158,6 +220,7 @@ export function CategoryTile({
           data-failed={failed ? 'true' : undefined}
           aria-expanded={moveOpen}
           aria-label={t('categories.moveOpen', { category: category.name })}
+          aria-describedby={target === null ? undefined : spoken}
           onClick={onMoveOpen}
           className={look}
           {...grab}
@@ -176,6 +239,7 @@ export function CategoryTile({
           data-slot="category-tile"
           data-failed={failed ? 'true' : undefined}
           aria-label={t('categories.moveOpen', { category: category.name })}
+          aria-describedby={target === null ? undefined : spoken}
           className={look}
           {...grab}
         >

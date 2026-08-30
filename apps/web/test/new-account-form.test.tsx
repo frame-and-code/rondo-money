@@ -178,19 +178,19 @@ describe('the first account form', () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-  it('takes the symbol and the side it sits on from the locale, not from a fixed side', async () => {
+  it('puts the symbol after the amount, whatever the locale reads', async () => {
     budget = { id: 'b-1', currency: 'USD', minorDigits: 2, active: true };
 
     const inEnglish = draw('en');
     const english = await screen.findByLabelText(en['newAccount.balanceLabel']);
-    const before = await screen.findByText('$');
-    expect(before.compareDocumentPosition(english) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const beside = await screen.findByText('$');
+    expect(english.compareDocumentPosition(beside) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     inEnglish.unmount();
 
     draw('ru');
     const russian = await screen.findByLabelText(ru['newAccount.balanceLabel']);
     const after = await screen.findByText('$');
-    expect(after.compareDocumentPosition(russian) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(russian.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('refuses a repeated decimal mark instead of reading the first two parts', async () => {
