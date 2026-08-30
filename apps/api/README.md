@@ -14,7 +14,8 @@ request context, the auto-scoped Prisma client and the raw-SQL repository below.
 transaction. [`src/accounts`](src/accounts) is the same pair over a model a budget owns, so it
 is also where a handler asks for the active budget itself rather than letting the scoping
 extension refuse the read: without one the extension raises an internal error, and a user part
-way through onboarding would meet a 500 for an ordinary state.
+way through onboarding would meet a 500 for an ordinary state. Its read is a hand-written
+aggregate as well, because a balance is summed from transactions rather than stored.
 [`src/budget-view`](src/budget-view) is the third shape, a read the extension cannot express at
 all: the budget numbers are aggregates over many rows, so they are hand-written SQL through the
 raw-SQL repository, which supplies the caller and leaves the budget to the service.
@@ -78,8 +79,10 @@ two writers reading it at once would both insert.
   currency is chosen here and nowhere else, so no operation in the contract accepts one
   afterwards, and its minor digit count is frozen on the row. A user holds at most one active
   budget, so creating one deactivates the previous.
-- `GET /accounts` returns the active budget's accounts, oldest first. No balances: those are
-  computed from transactions rather than stored.
+- `GET /accounts` returns the active budget's accounts, oldest first, each with its balance,
+  and what they hold together. Nothing here is stored: a balance is the sum of the account's
+  transactions, over every date rather than up to today, and the total covers exactly the
+  accounts listed. An archived account is in neither, so the rows always add up to the total.
 - `POST /accounts` creates an account and its opening balance in one transaction. The balance
   is an income transaction dated today in the budget's timezone and carrying no category, so
   the money lands in Ready to Assign. It is written even when the amount is zero, because
@@ -87,6 +90,9 @@ two writers reading it at once would both insert.
   ever. A caller with no active budget gets a 400 from both of these rather than a 500, in the
   shape [`BadRequestResponse`](src/openapi/bad-request.response.ts) publishes: it covers the
   pipe's list of field failures and a handler's single sentence alike.
+- `PATCH /accounts/:id` renames an account and changes nothing else. The type is chosen when
+  the account is created and never afterwards, so no operation in the contract accepts one
+  again. An account the active budget does not hold is a 400 rather than a 500.
 - `POST /categories`, `PATCH /categories/:id`, `POST /categories/:id/hide`, `/unhide` and
   `POST /categories/reorder` are the category's own operations, and the five under
   `/category-groups` are the group's. There is no way to delete either: a category is hidden and

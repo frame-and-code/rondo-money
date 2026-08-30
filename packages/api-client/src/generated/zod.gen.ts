@@ -86,6 +86,23 @@ export const zAccountResponse = z.object({
     type: zAccountType
 });
 
+export const zAccountBalanceResponse = z.object({
+    id: z.uuid(),
+    name: z.string().max(60),
+    type: zAccountType,
+    balance: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
+});
+
+export const zAccountsResponse = z.object({
+    accounts: z.array(zAccountBalanceResponse),
+    total: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
+});
+
+export const zRenameAccountDto = z.object({
+    name: z.string().min(1).max(60),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
 /**
  * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
  */
@@ -398,9 +415,9 @@ export const zBudgetsControllerCreateBody = zCreateBudgetDto;
 export const zBudgetsControllerCreateResponse = zBudgetResponse;
 
 /**
- * The accounts that exist now.
+ * The accounts as they stand now.
  */
-export const zAccountsControllerListResponse = z.array(zAccountResponse);
+export const zAccountsControllerListResponse = zAccountsResponse;
 
 export const zAccountsControllerCreateBody = zCreateAccountDto;
 
@@ -408,6 +425,17 @@ export const zAccountsControllerCreateBody = zCreateAccountDto;
  * The account that now exists.
  */
 export const zAccountsControllerCreateResponse = zAccountResponse;
+
+export const zAccountsControllerRenameBody = zRenameAccountDto;
+
+export const zAccountsControllerRenamePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The account as it stands now.
+ */
+export const zAccountsControllerRenameResponse = zAccountResponse;
 
 export const zBudgetViewControllerReadQuery = z.object({
     month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),

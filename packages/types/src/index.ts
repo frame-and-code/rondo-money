@@ -20,7 +20,7 @@ export {
   minorDigits,
   supportedCurrencyCodes,
 } from './currency.js';
-export type { AccountDto, AccountType } from './account.js';
+export type { AccountBalanceDto, AccountDto, AccountsDto, AccountType } from './account.js';
 export { ACCOUNT_TYPES, isAccountType } from './account.js';
 export type { BudgetDto } from './budget.js';
 export type { CategoryColor, CategoryIcon } from './category-look.js';

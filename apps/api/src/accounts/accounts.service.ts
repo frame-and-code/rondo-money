@@ -1,11 +1,18 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { TransactionType, type Account, type Prisma } from '@rondo/db';
-import { isAccountType, parseMoney, toDbDate, todayIn } from '@rondo/types';
+import { isAccountType, parseMoney, serializeMoney, toDbDate, todayIn } from '@rondo/types';
 
+import {
+  accountBalancesStatement,
+  type AccountBalanceRow,
+} from '@/accounts/account-balances.query';
 import { AccountResponse } from '@/accounts/account.response';
+import { AccountBalanceResponse, AccountsResponse } from '@/accounts/accounts.response';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
+import { RenameAccountDto } from '@/accounts/rename-account.dto';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 
 const NO_ACTIVE_BUDGET =
   'The caller has no active budget, so there is nothing for an account to belong to. Create ' +
@@ -28,11 +35,24 @@ function decodeAccount(stored: Prisma.JsonValue): AccountResponse {
   return { id, name, type };
 }
 
+function listed(row: AccountBalanceRow, userId: string): AccountBalanceResponse {
+  const { accountId, name, type } = row;
+  if (accountId === null || name === null || !isAccountType(type)) {
+    throw new Error(
+      `An account of ${userId} came back from the balances statement without the fields every ` +
+        `listed row carries: ${JSON.stringify({ accountId, name, type })}`,
+    );
+  }
+
+  return { id: accountId, name, type, balance: serializeMoney(row.balance) };
+}
+
 @Injectable()
 export class AccountsService {
   constructor(
     @Inject(SCOPED_PRISMA) private readonly prisma: ScopedPrismaClient,
     private readonly mutations: MutationService,
+    private readonly raw: ScopedRawRepository,
   ) {}
 
   async create(userId: string, body: CreateAccountDto): Promise<AccountResponse> {
@@ -73,15 +93,49 @@ export class AccountsService {
     );
   }
 
-  async list(userId: string): Promise<AccountResponse[]> {
-    await this.activeBudget(this.prisma);
+  async list(userId: string): Promise<AccountsResponse> {
+    const budget = await this.activeBudget(this.prisma);
 
-    const accounts = await this.prisma.account.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'asc' },
-    });
+    const rows = await this.raw.query<AccountBalanceRow>((scope) =>
+      accountBalancesStatement(scope, budget.id),
+    );
 
-    return accounts.map((account) => decodeAccount(serialize(account)));
+    const [pool] = rows;
+    if (!pool) {
+      throw new Error(
+        'The account balances statement answered with no rows: it always returns at least one, ' +
+          'carrying the total, so an empty answer means the statement no longer starts from it.',
+      );
+    }
+
+    return {
+      accounts: rows.flatMap((row) => (row.accountId === null ? [] : [listed(row, userId)])),
+      total: serializeMoney(pool.total),
+    };
+  }
+
+  async rename(id: string, body: RenameAccountDto): Promise<AccountResponse> {
+    const intended = await this.activeBudget(this.prisma);
+
+    return this.mutations.run(
+      {
+        key: body.idempotencyKey,
+        request: { budgetId: intended.id, id, name: body.name },
+        decode: decodeAccount,
+      },
+      async (tx) => {
+        await this.activeBudget(tx, intended.id);
+
+        const current = await tx.account.findFirst({ where: { id } });
+        if (!current) {
+          throw new BadRequestException(`This budget holds no account ${id}.`);
+        }
+
+        return serialize(
+          await tx.account.update({ where: { id: current.id }, data: { name: body.name } }),
+        );
+      },
+    );
   }
 
   private async activeBudget(

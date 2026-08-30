@@ -8,7 +8,8 @@ protection, the shadcn/ui base from `@rondo/ui`, the locale switcher and the typ
 Query. Server state lives in that cache, not in component state. Categories is a real screen:
 it draws a month of the budget, moves money between its envelopes, assigning included, and lets
 the user arrange the categories themselves, creating, renaming, repainting, reordering and
-hiding them. Accounts, net worth and settings are
+hiding them. Accounts is a real screen too: it lists what each account holds and what they
+hold together, and takes a new account or a rename from a dialog. Net worth and settings are
 still slots.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
@@ -52,21 +53,24 @@ src/
       layout.tsx              # the gate over the app, and AppShell around every section
       categories/             # the month of the budget: page.tsx renders BudgetMonth, and
                               # loading.tsx the same skeleton the screen shows while it reads
-      accounts/               # the remaining sections are page.tsx (the slot) + loading.tsx
-      net-worth/
+      accounts/               # the accounts and what they hold: page.tsx renders AccountList,
+                              # and loading.tsx the skeleton it shows while it reads
+      net-worth/              # the remaining sections are page.tsx (the slot) + loading.tsx
       settings/
   components/                 # app-level components: the shell and its navigation, the
                               # onboarding gate and what it shows while it decides, the
                               # section slot, the loading region, the Clerk provider wrapper,
-                              # the locale switcher, the two onboarding forms, and the
-                              # categories screen: the month header, a group, a tile that
-                              # opens the move dialog, its spend ring, the fields that move
-                              # money between envelopes, the actions folded under them, the
-                              # dialog a category is set up in, the one a group is, the two
-                              # that hide a category and a group, the badge with its tooltip
-                              # and the panel that explain a goal, the form it is set in, the
-                              # amount whose digits roll when it changes, and the banner that
-                              # says a save did not go through
+                              # the locale switcher, the two onboarding forms, the field an
+                              # amount is typed into, which the onboarding form and the
+                              # accounts dialog share, the accounts screen and the dialog it
+                              # creates and renames from, and the categories screen: the month
+                              # header, a group, a tile that opens the move dialog, its spend
+                              # ring, the fields that move money between envelopes, the
+                              # actions folded under them, the dialog a category is set up in,
+                              # the one a group is, the two that hide a category and a group,
+                              # the badge with its tooltip and the panel that explain a goal,
+                              # the form it is set in, the amount whose digits roll when it
+                              # changes, and the banner that says a save did not go through
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language
                               # from GET /user-settings back into the locale context
@@ -76,8 +80,8 @@ src/
   lib/currencies.ts           # the currency list for a locale: codes from @rondo/types,
                               # names from Intl.DisplayNames, memoised per locale
   lib/money.ts                # reading an amount a person typed through their locale's own
-                              # marks, and showing one at the budget's digit count. Both
-                              # screens that touch money use it, so a sign is refused or
+                              # marks, and showing one at the budget's digit count. Every
+                              # screen that touches money uses it, so a sign is refused or
                               # allowed in one place. Three ways out, and the difference
                               # matters: `format` for a shown amount, which drops a fraction
                               # that is all zeros and puts the symbol after the number in

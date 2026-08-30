@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, categoryTargetsControllerClose, categoryTargetsControllerSet, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, userSettingsControllerRead } from '../sdk.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseError, CategoryTargetsControllerCloseResponse, CategoryTargetsControllerSetData, CategoryTargetsControllerSetError, CategoryTargetsControllerSetResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
+import { accountsControllerCreate, accountsControllerList, accountsControllerRename, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, categoryTargetsControllerClose, categoryTargetsControllerSet, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, userSettingsControllerRead } from '../sdk.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, AccountsControllerRenameData, AccountsControllerRenameError, AccountsControllerRenameResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseError, CategoryTargetsControllerCloseResponse, CategoryTargetsControllerSetData, CategoryTargetsControllerSetError, CategoryTargetsControllerSetResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -141,9 +141,9 @@ export const budgetsControllerCreateMutation = (options?: Partial<Options<Budget
 export const accountsControllerListQueryKey = (options?: Options<AccountsControllerListData>) => createQueryKey('accountsControllerList', options);
 
 /**
- * The active budget's accounts
+ * The active budget's accounts and what they hold
  *
- * The accounts of the budget the caller is working in, oldest first. Balances are not here: they are computed from transactions rather than stored.
+ * The accounts of the budget the caller is working in, oldest first, each with its balance, and what they hold together. Nothing here is stored: a balance is summed from the account's transactions when it is asked for. An archived account is in neither the list nor the total.
  */
 export const accountsControllerListOptions = (options?: Options<AccountsControllerListData>) => queryOptions<AccountsControllerListResponse, AccountsControllerListError, AccountsControllerListResponse, ReturnType<typeof accountsControllerListQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -167,6 +167,25 @@ export const accountsControllerCreateMutation = (options?: Partial<Options<Accou
     const mutationOptions: UseMutationOptions<AccountsControllerCreateResponse, AccountsControllerCreateError, Options<AccountsControllerCreateData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await accountsControllerCreate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Rename an account
+ *
+ * Changes what the account is called and nothing else. The type is chosen when the account is created and never afterwards, and the balance belongs to the transactions.
+ */
+export const accountsControllerRenameMutation = (options?: Partial<Options<AccountsControllerRenameData>>): UseMutationOptions<AccountsControllerRenameResponse, AccountsControllerRenameError, Options<AccountsControllerRenameData>> => {
+    const mutationOptions: UseMutationOptions<AccountsControllerRenameResponse, AccountsControllerRenameError, Options<AccountsControllerRenameData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await accountsControllerRename({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

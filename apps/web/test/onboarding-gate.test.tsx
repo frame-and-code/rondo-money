@@ -64,7 +64,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
         throw new Error('the caller has no active budget');
       }
 
-      return accounts;
+      return { accounts, total: '0' };
     },
   }),
 }));
@@ -136,7 +136,7 @@ describe('the onboarding gate', () => {
   it('does not decide on an answer an earlier mount left in the cache', async () => {
     const client = newClient();
     client.setQueryData(BUDGETS_KEY, [{ id: 'budget-1', active: true }]);
-    client.setQueryData(ACCOUNTS_KEY, [{ id: 'account-1' }]);
+    client.setQueryData(ACCOUNTS_KEY, { accounts: [{ id: 'account-1' }], total: '0' });
 
     budgets = [];
     let open = () => {};
@@ -159,7 +159,7 @@ describe('the onboarding gate', () => {
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
     client.setQueryData(BUDGETS_KEY, []);
-    client.setQueryData(ACCOUNTS_KEY, []);
+    client.setQueryData(ACCOUNTS_KEY, { accounts: [], total: '0' });
 
     budgets = [{ id: 'budget-1', active: true }];
     accounts = [{ id: 'account-1' }];
@@ -236,7 +236,9 @@ describe('the onboarding gate', () => {
     });
 
     await waitFor(() => expect(accountsAsked).toBe(1));
-    await waitFor(() => expect(client.getQueryData(ACCOUNTS_KEY)).toEqual([]));
+    await waitFor(() =>
+      expect(client.getQueryData(ACCOUNTS_KEY)).toEqual({ accounts: [], total: '0' }),
+    );
     await settle();
 
     expect(replace).not.toHaveBeenCalled();
@@ -255,7 +257,9 @@ describe('the onboarding gate', () => {
       await client.invalidateQueries({ queryKey: ACCOUNTS_KEY });
     });
 
-    await waitFor(() => expect(client.getQueryData(ACCOUNTS_KEY)).toEqual(accounts));
+    await waitFor(() =>
+      expect(client.getQueryData(ACCOUNTS_KEY)).toEqual({ accounts, total: '0' }),
+    );
     await settle();
 
     expect(replace).not.toHaveBeenCalled();

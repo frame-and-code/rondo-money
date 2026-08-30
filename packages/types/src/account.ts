@@ -13,3 +13,19 @@ export interface AccountDto {
 
   type: AccountType;
 }
+
+export interface AccountBalanceDto {
+  id: string;
+
+  name: string;
+
+  type: AccountType;
+
+  balance: string;
+}
+
+export interface AccountsDto {
+  accounts: AccountBalanceDto[];
+
+  total: string;
+}

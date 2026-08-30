@@ -19,6 +19,11 @@ export default function AccountsLoading() {
           <Skeleton className="h-4 w-20" />
         </div>
       ))}
+
+      <div className="flex max-w-xl items-baseline justify-between gap-3 pt-2">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-6 w-28" />
+      </div>
     </LoadingRegion>
   );
 }

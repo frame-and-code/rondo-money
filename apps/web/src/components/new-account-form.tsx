@@ -16,20 +16,14 @@ import {
   CardTitle,
 } from '@rondo/ui/components/ui/card';
 import { Input } from '@rondo/ui/components/ui/input';
-import { InputGroupInput } from '@rondo/ui/components/ui/input-group';
 import { Label } from '@rondo/ui/components/ui/label';
 import { cn } from '@rondo/ui/lib/utils';
-import {
-  IconAlertCircle,
-  IconCash,
-  IconCheck,
-  IconCreditCard,
-  IconLoader,
-} from '@tabler/icons-react';
+import { IconCash, IconCheck, IconCreditCard, IconLoader } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
 
+import { MoneyField } from '@/components/money-field';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
@@ -106,15 +100,6 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
   const read = money.read(amount);
 
-  const faultMessage = (): string => {
-    if (read.fault === 'negative') return t('newAccount.balanceNegative');
-    if (read.fault === 'shape') return t('newAccount.balanceDigitsOnly');
-
-    return money.digits === 0
-      ? t('newAccount.balanceNoDecimals', { currency: money.currency })
-      : t('newAccount.balanceDecimals', { currency: money.currency, digits: money.digits });
-  };
-
   const edited = (): void => {
     if (!failed) return;
 
@@ -135,8 +120,6 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
       },
     });
   };
-
-  const symbol = <span className="text-muted-foreground shrink-0 text-sm">{money.symbol}</span>;
 
   return (
     <>
@@ -231,41 +214,19 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="account-balance">{t('newAccount.balanceLabel')}</Label>
-                  <div
-                    className={cn(
-                      FIELD,
-                      read.fault !== null && 'border-destructive ring-destructive/20 ring-3',
-                    )}
-                  >
-                    <InputGroupInput
-                      id="account-balance"
-                      inputMode="decimal"
-                      value={amount}
-                      placeholder={money.typed(0n)}
-                      onChange={(event) => {
-                        setAmount(event.target.value);
-                        edited();
-                      }}
-                      disabled={create.isPending}
-                      className="h-auto min-w-0 flex-1 p-0"
-                    />
-                    {symbol}
-                  </div>
-
-                  {read.fault === null ? null : (
-                    <p role="alert" className="text-destructive flex items-center gap-1.5 text-xs">
-                      <IconAlertCircle className="size-3.5 shrink-0" />
-                      {faultMessage()}
-                    </p>
-                  )}
-                  {read.fault === null && !read.typed ? (
-                    <p className="text-muted-foreground text-xs">{t('newAccount.balanceHint')}</p>
-                  ) : null}
-                  {read.fault === null && read.typed && read.minor !== null ? (
-                    <p className="text-sm font-medium">
-                      {t('newAccount.balancePreview', { amount: money.format(read.minor) })}
-                    </p>
-                  ) : null}
+                  <MoneyField
+                    id="account-balance"
+                    money={money}
+                    amount={amount}
+                    read={read}
+                    disabled={create.isPending}
+                    hint={t('newAccount.balanceHint')}
+                    className={FIELD}
+                    onChange={(next) => {
+                      setAmount(next);
+                      edited();
+                    }}
+                  />
                 </div>
 
                 {failed ? (

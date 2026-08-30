@@ -22,6 +22,8 @@ export const MANAGE_TEST_EMAIL = 'e2e-manage+clerk_test@example.com';
 
 export const TARGET_TEST_EMAIL = 'e2e-target+clerk_test@example.com';
 
+export const ACCOUNTS_TEST_EMAIL = 'e2e-accounts+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }

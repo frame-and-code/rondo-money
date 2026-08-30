@@ -15,7 +15,7 @@ A subagent starts with **no conversation history**. It gets `CLAUDE.md` and the 
 rules, and nothing else, so it reads the change the way a reviewer on the PR will. It also
 keeps the reading out of this window: what returns is the findings, not the file dumps.
 
-This does not replace the generic pass (`/code-review`, CodeRabbit, Greptile on the PR). It
+This does not replace the generic pass (`/code-review`, CodeRabbit on the PR). It
 is the pass that knows ADR-005 exists.
 
 **Invoking this command _is_ the explicit request to spawn subagents**, whether you type it

@@ -144,6 +144,41 @@ export type AccountResponse = {
     type: AccountType;
 };
 
+export type AccountBalanceResponse = {
+    id: string;
+    /**
+     * What the user calls this account.
+     */
+    name: string;
+    /**
+     * Cash or a debit account.
+     */
+    type: AccountType;
+    /**
+     * What the account holds, summed from its transactions rather than stored. It goes below zero, which is a signal rather than an error.
+     */
+    balance: string;
+};
+
+export type AccountsResponse = {
+    accounts: Array<AccountBalanceResponse>;
+    /**
+     * What every account listed here holds together. An archived account is in neither the list nor this total, so the rows always add up to it.
+     */
+    total: string;
+};
+
+export type RenameAccountDto = {
+    /**
+     * What to call this account now.
+     */
+    name: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+};
+
 /**
  * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
  */
@@ -696,9 +731,9 @@ export type AccountsControllerListError = AccountsControllerListErrors[keyof Acc
 
 export type AccountsControllerListResponses = {
     /**
-     * The accounts that exist now.
+     * The accounts as they stand now.
      */
-    200: Array<AccountResponse>;
+    200: AccountsResponse;
 };
 
 export type AccountsControllerListResponse = AccountsControllerListResponses[keyof AccountsControllerListResponses];
@@ -735,6 +770,41 @@ export type AccountsControllerCreateResponses = {
 };
 
 export type AccountsControllerCreateResponse = AccountsControllerCreateResponses[keyof AccountsControllerCreateResponses];
+
+export type AccountsControllerRenameData = {
+    body: RenameAccountDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}';
+};
+
+export type AccountsControllerRenameErrors = {
+    /**
+     * The body was refused, or this budget holds no such account, or the caller has no active budget.
+     */
+    400: BadRequestResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AccountsControllerRenameError = AccountsControllerRenameErrors[keyof AccountsControllerRenameErrors];
+
+export type AccountsControllerRenameResponses = {
+    /**
+     * The account as it stands now.
+     */
+    200: AccountResponse;
+};
+
+export type AccountsControllerRenameResponse = AccountsControllerRenameResponses[keyof AccountsControllerRenameResponses];
 
 export type BudgetViewControllerReadData = {
     body?: never;

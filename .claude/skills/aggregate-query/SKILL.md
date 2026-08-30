@@ -58,6 +58,12 @@ so no part of the scope is baked in.
   one, and no test that only spends money mid-month will notice.
 - **One statement per screen.** A screen that costs a query per category is an N+1 that grows
   with the user's budget. The test that holds this counts the calls on the real repository.
+- **A total over the rows rides on every row.** A statement answering a list and a sum over the
+  same rows starts from the total and joins the rows onto it
+  ([`account-balances.query.ts`](../../../apps/api/src/accounts/account-balances.query.ts)), so a
+  caller holding nothing still gets one row and the service reads a zero total off it instead of
+  inventing one. A second statement for the total is a second scoping to get right, and an inner
+  join answers an empty budget with no rows at all.
 
 ## The tests that are not optional
 

@@ -21,9 +21,9 @@ Everything runs on its own on every `pull_request` event; nothing needs to be su
   uploads. The wait is switched off on pushes to `main`, so a green `gate` there says
   nothing about Sonar's **verdict** (see [`docs/ci.md`](../../docs/ci.md)). On the PR
   you are babysitting, red Sonar is red `gate`.
-- **Greptile Review** and **CodeRabbit** are AI reviewers that post review threads.
-  CodeRabbit reports `Review rate limited` under load; that is a wait, not a failure, and
-  not a reason to retrigger it.
+- **CodeRabbit** is the AI reviewer, and it posts review threads. It reports
+  `Review rate limited` under load; that is a wait, not a failure, and not a reason to
+  retrigger it.
 
 A PR opened from a fork is closed automatically by `close-pull-requests.yml`. This command
 is for the maintainer's own branches and for Dependabot.
@@ -57,19 +57,16 @@ If they cannot be resolved honestly, `git merge --abort`, tell the user why, and
 
 ### (b) Reviewer feedback
 
-**Where feedback arrives.** Each bot uses more than one channel, and how much they say
-depends on how much there is to say: PRs #31, #36, #37 and #39, all small config-and-docs
-changes, produced no review thread at all, while #40 produced two. Check every channel and
-treat none of them as the only one:
+**Where feedback arrives.** CodeRabbit uses two channels, and how much it says depends on
+how much there is to say: a small config-and-docs change often produces no review thread at
+all. Check both and treat neither as the only one:
 
-- **CodeRabbit** posts a walkthrough as one issue comment on the conversation tab (~4–5 KB,
-  collapsed `<details>` blocks, opening with the count of actionable comments). Read it
-  with `gh api repos/frame-and-code/rondo-money/issues/<PR#>/comments`.
-- **Greptile** posts a summary issue comment (confidence score, files needing attention, a
-  security section) **and** an inline review thread per finding, each badged with a
-  severity. Its `Greptile Review` check links to the same review on greptile.com.
-- **Review threads** are therefore a live channel: query them every tick, and read an empty
-  list as "nothing this time", never as "this channel is dead".
+- an issue comment on the conversation tab carries the walkthrough (collapsed `<details>`
+  blocks, opening with the count of actionable comments), and while the review is still
+  running that same comment says so. Read it with
+  `gh api repos/frame-and-code/rondo-money/issues/<PR#>/comments`;
+- a **review thread** carries each finding. Query them every tick, and read an empty list as
+  "nothing this time", never as "this channel is dead".
 
 Fetch every thread in one pass and act only on those that are neither resolved nor
 outdated:

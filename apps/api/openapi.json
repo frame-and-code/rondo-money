@@ -272,19 +272,16 @@
         ]
       },
       "get": {
-        "description": "The accounts of the budget the caller is working in, oldest first. Balances are not here: they are computed from transactions rather than stored.",
+        "description": "The accounts of the budget the caller is working in, oldest first, each with its balance, and what they hold together. Nothing here is stored: a balance is summed from the account's transactions when it is asked for. An archived account is in neither the list nor the total.",
         "operationId": "AccountsController_list",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "The accounts that exist now.",
+            "description": "The accounts as they stand now.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AccountResponse"
-                  }
+                  "$ref": "#/components/schemas/AccountsResponse"
                 }
               }
             }
@@ -310,7 +307,79 @@
             }
           }
         },
-        "summary": "The active budget's accounts",
+        "summary": "The active budget's accounts and what they hold",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/accounts/{id}": {
+      "patch": {
+        "description": "Changes what the account is called and nothing else. The type is chosen when the account is created and never afterwards, and the balance belongs to the transactions.",
+        "operationId": "AccountsController_rename",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or this budget holds no such account, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rename an account",
         "tags": [
           "Accounts"
         ]
@@ -1622,6 +1691,86 @@
           "name",
           "type"
         ]
+      },
+      "AccountBalanceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this account.",
+            "maxLength": 60
+          },
+          "type": {
+            "description": "Cash or a debit account.",
+            "example": "CASH",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountType"
+              }
+            ]
+          },
+          "balance": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the account holds, summed from its transactions rather than stored. It goes below zero, which is a signal rather than an error."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "balance"
+        ]
+      },
+      "AccountsResponse": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountBalanceResponse"
+            }
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What every account listed here holds together. An archived account is in neither the list nor this total, so the rows always add up to it."
+          }
+        },
+        "required": [
+          "accounts",
+          "total"
+        ]
+      },
+      "RenameAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What to call this account now.",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "name",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
       },
       "CategoryIcon": {
         "type": "string",
