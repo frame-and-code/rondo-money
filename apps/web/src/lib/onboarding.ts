@@ -2,7 +2,7 @@ export type OnboardingState = 'budget' | 'account' | 'app';
 
 export interface OnboardingReads {
   budgets: readonly { active: boolean }[] | null;
-  accounts: readonly unknown[] | null;
+  accounts: { accounts: readonly unknown[] } | null;
 }
 
 const ROUTES: Record<OnboardingState, string> = {
@@ -17,7 +17,7 @@ export function onboardingState({ budgets, accounts }: OnboardingReads): Onboard
 
   if (accounts === null) return null;
 
-  return accounts.length === 0 ? 'account' : 'app';
+  return accounts.accounts.length === 0 ? 'account' : 'app';
 }
 
 export function onboardingRoute(state: OnboardingState): string {

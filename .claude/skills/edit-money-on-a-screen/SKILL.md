@@ -11,7 +11,9 @@ someone's budget rather than a bad user experience.
 
 [`budget-month.tsx`](../../../apps/web/src/components/budget-month.tsx) is the worked example,
 [`move-fields.tsx`](../../../apps/web/src/components/move-fields.tsx) with
-[`move-target.ts`](../../../apps/web/src/lib/move-target.ts) is the surface itself, and
+[`move-target.ts`](../../../apps/web/src/lib/move-target.ts) is the surface itself,
+[`money-field.tsx`](../../../apps/web/src/components/money-field.tsx) is the field an amount is
+typed into, with the fault copy and the preview every form shares, and
 [`save-failure.ts`](../../../apps/web/src/lib/save-failure.ts) is the classifier. Read them
 beside this file.
 

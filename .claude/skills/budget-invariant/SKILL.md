@@ -70,6 +70,8 @@ The test is property-based with fast-check over random sequences of operations, 
 integration level because the arithmetic lives in SQL:
 [`budget-invariant.integration.spec.ts`](../../../apps/api/test/budget-invariant.integration.spec.ts).
 It reads the all-time aggregate by asking for a month far beyond any date it generates, and it
-takes the balances from Prisma rather than from the API, which publishes no balance yet. When
+sums the balances in Prisma rather than through the API. The two are not the same number on
+purpose: the accounts screen leaves an archived account out of its total, and this invariant
+counts every account the budget holds. When
 it goes red, [`invariant-debugger`](../../agents/invariant-debugger.md) reads the
 counterexample.

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -9,8 +9,10 @@ import {
 } from '@nestjs/swagger';
 
 import { AccountResponse } from '@/accounts/account.response';
+import { AccountsResponse } from '@/accounts/accounts.response';
 import { AccountsService } from '@/accounts/accounts.service';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
+import { RenameAccountDto } from '@/accounts/rename-account.dto';
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { UnauthorizedResponse } from '@/auth/unauthorized.response';
 import { ConflictResponse } from '@/mutations/conflict.response';
@@ -50,12 +52,14 @@ export class AccountsController {
 
   @Get()
   @ApiOperation({
-    summary: "The active budget's accounts",
+    summary: "The active budget's accounts and what they hold",
     description:
-      'The accounts of the budget the caller is working in, oldest first. Balances are not ' +
-      'here: they are computed from transactions rather than stored.',
+      'The accounts of the budget the caller is working in, oldest first, each with its ' +
+      'balance, and what they hold together. Nothing here is stored: a balance is summed from ' +
+      "the account's transactions when it is asked for. An archived account is in neither the " +
+      'list nor the total.',
   })
-  @ApiOkResponse({ description: 'The accounts that exist now.', type: [AccountResponse] })
+  @ApiOkResponse({ description: 'The accounts as they stand now.', type: AccountsResponse })
   @ApiBadRequestResponse({
     description: 'The caller has no active budget, so there are no accounts to scope to.',
     type: BadRequestResponse,
@@ -64,7 +68,36 @@ export class AccountsController {
     description: 'The token was missing, malformed, expired or not minted for this app.',
     type: UnauthorizedResponse,
   })
-  list(@CurrentUserId() userId: string): Promise<AccountResponse[]> {
+  list(@CurrentUserId() userId: string): Promise<AccountsResponse> {
     return this.accounts.list(userId);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Rename an account',
+    description:
+      'Changes what the account is called and nothing else. The type is chosen when the ' +
+      'account is created and never afterwards, and the balance belongs to the transactions.',
+  })
+  @ApiOkResponse({ description: 'The account as it stands now.', type: AccountResponse })
+  @ApiBadRequestResponse({
+    description:
+      'The body was refused, or this budget holds no such account, or the caller has no ' +
+      'active budget.',
+    type: BadRequestResponse,
+  })
+  @ApiConflictResponse({
+    description: 'The idempotency key was claimed by a different request.',
+    type: ConflictResponse,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The token was missing, malformed, expired or not minted for this app.',
+    type: UnauthorizedResponse,
+  })
+  rename(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: RenameAccountDto,
+  ): Promise<AccountResponse> {
+    return this.accounts.rename(id, body);
   }
 }

@@ -25,7 +25,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
   accountsControllerListOptions: () => ({
     queryKey: ['accountsControllerList'],
-    queryFn: () => Promise.resolve([]),
+    queryFn: () => Promise.resolve({ accounts: [], total: '0' }),
   }),
 }));
 

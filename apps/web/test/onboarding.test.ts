@@ -2,7 +2,8 @@ import { onboardingRoute, onboardingState } from '@/lib/onboarding';
 
 const active = { active: true };
 const inactive = { active: false };
-const anAccount = { id: 'account-1' };
+const holding = { accounts: [{ id: 'account-1' }], total: '1000' };
+const nothing = { accounts: [], total: '0' };
 
 describe('where a user stands in setup', () => {
   it('sends a user with no budget at all to step 1', () => {
@@ -14,16 +15,16 @@ describe('where a user stands in setup', () => {
   });
 
   it('sends a user who has a budget but no accounts to step 2', () => {
-    expect(onboardingState({ budgets: [active], accounts: [] })).toBe('account');
+    expect(onboardingState({ budgets: [active], accounts: nothing })).toBe('account');
   });
 
   it('lets a user who has both into the app', () => {
-    expect(onboardingState({ budgets: [active], accounts: [anAccount] })).toBe('app');
+    expect(onboardingState({ budgets: [active], accounts: holding })).toBe('app');
   });
 
   it('has no answer until this mount has read both halves', () => {
     expect(onboardingState({ budgets: null, accounts: null })).toBeNull();
-    expect(onboardingState({ budgets: null, accounts: [anAccount] })).toBeNull();
+    expect(onboardingState({ budgets: null, accounts: holding })).toBeNull();
     expect(onboardingState({ budgets: [active], accounts: null })).toBeNull();
   });
 

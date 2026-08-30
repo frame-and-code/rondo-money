@@ -25,8 +25,9 @@ caller's active budget.
 A budget can now be created: it is named, it takes a currency from the list the runtime
 knows and keeps it, and it can start with a set of categories. That write and everything after it goes
 through one point, so a user operation lands whole or not at all and a double submit writes
-once. The first account can be created too, and its opening balance is written as a transaction
-rather than stored on the account, so it stays correctable. A month of the budget can be read and worked in:
+once. Accounts can be created, renamed and read with what each one holds and what they hold
+together, and an opening balance is written as a transaction rather than stored on the account,
+so it stays correctable and every balance is summed on demand. A month of the budget can be read and worked in:
 what each category holds, what it spent, what is left in it and what has no job yet, every one
 of them computed from transactions and assignments rather than stored anywhere. Money moves between envelopes from one dialog: a card opens it, the two envelopes are named
 in rows with an arrow between them, and assigning is the same move with the pool on the

@@ -118,6 +118,7 @@ describe('OpenAPI document', () => {
   it('describes the endpoints the app actually serves', () => {
     expect(Object.keys(document.paths).sort()).toEqual([
       '/accounts',
+      '/accounts/{id}',
       '/budget-view',
       '/budgets',
       '/categories',
@@ -416,6 +417,31 @@ describe('OpenAPI document', () => {
         expect(JSON.stringify(properties[field])).toContain(`#/components/schemas/${name}`);
         expect(JSON.stringify(properties[field])).toContain('"nullable":true');
       }
+    });
+  });
+
+  describe('the accounts screen', () => {
+    it('publishes every amount it answers with as a string of minor units', () => {
+      const moneyOf = (name: string): string[] => {
+        const schema = document.components?.schemas?.[name];
+        const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+        return Object.entries(properties)
+          .filter(
+            ([, property]) => 'pattern' in property && property.pattern === MONEY_PATTERN.source,
+          )
+          .map(([field]) => field);
+      };
+
+      expect(moneyOf('AccountsResponse')).toEqual(['total']);
+      expect(moneyOf('AccountBalanceResponse')).toEqual(['balance']);
+    });
+
+    it('takes nothing but a name when an account is renamed, because the type never changes', () => {
+      const schema = requestSchemaOf(document, document.paths['/accounts/{id}']?.patch);
+      const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+      expect(Object.keys(properties).sort()).toEqual(['idempotencyKey', 'name']);
     });
   });
 

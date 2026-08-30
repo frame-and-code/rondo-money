@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, AccountsControllerRenameData, AccountsControllerRenameErrors, AccountsControllerRenameResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -74,9 +74,9 @@ export const budgetsControllerCreate = <ThrowOnError extends boolean = false>(op
 });
 
 /**
- * The active budget's accounts
+ * The active budget's accounts and what they hold
  *
- * The accounts of the budget the caller is working in, oldest first. Balances are not here: they are computed from transactions rather than stored.
+ * The accounts of the budget the caller is working in, oldest first, each with its balance, and what they hold together. Nothing here is stored: a balance is summed from the account's transactions when it is asked for. An archived account is in neither the list nor the total.
  */
 export const accountsControllerList = <ThrowOnError extends boolean = false>(options?: Options<AccountsControllerListData, ThrowOnError>): RequestResult<AccountsControllerListResponses, AccountsControllerListErrors, ThrowOnError> => (options?.client ?? client).get<AccountsControllerListResponses, AccountsControllerListErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -92,6 +92,21 @@ export const accountsControllerList = <ThrowOnError extends boolean = false>(opt
 export const accountsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<AccountsControllerCreateData, ThrowOnError>): RequestResult<AccountsControllerCreateResponses, AccountsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<AccountsControllerCreateResponses, AccountsControllerCreateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/accounts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Rename an account
+ *
+ * Changes what the account is called and nothing else. The type is chosen when the account is created and never afterwards, and the balance belongs to the transactions.
+ */
+export const accountsControllerRename = <ThrowOnError extends boolean = false>(options: Options<AccountsControllerRenameData, ThrowOnError>): RequestResult<AccountsControllerRenameResponses, AccountsControllerRenameErrors, ThrowOnError> => (options.client ?? client).patch<AccountsControllerRenameResponses, AccountsControllerRenameErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/accounts/{id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',
