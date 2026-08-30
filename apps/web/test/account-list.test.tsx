@@ -1,3 +1,4 @@
+import { type AccountsDto } from '@rondo/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
@@ -15,13 +16,7 @@ const budget = {
   active: true,
 };
 
-let answer: {
-  accounts: { id: string; name: string; type: string; balance: string }[];
-  total: string;
-} = {
-  accounts: [],
-  total: '0',
-};
+let answer: AccountsDto = { accounts: [], total: '0' };
 
 let readFails = false;
 

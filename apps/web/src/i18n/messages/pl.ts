@@ -211,6 +211,8 @@ export const pl: Record<MessageKey, string> = {
   'accounts.save': 'Zapisz',
   'accounts.cancel': 'Anuluj',
   'accounts.saveFailed': 'Konto nie zostało zapisane. Spróbuj ponownie.',
+  'accounts.saveLost':
+    'Odpowiedź nie dotarła, więc nie wiemy, czy zapis się udał. Naciśnij Zapisz jeszcze raz, aby wysłać to samo żądanie, albo anuluj.',
   'netWorth.slotTitle': 'Slot sekcji „Kapitał”',
   'netWorth.slotBody': 'Tu pojawi się wykres kapitału.',
   'settings.slotTitle': 'Slot sekcji „Ustawienia”',

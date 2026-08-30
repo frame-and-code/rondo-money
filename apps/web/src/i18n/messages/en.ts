@@ -212,6 +212,8 @@ export const en: Record<MessageKey, string> = {
   'accounts.save': 'Save',
   'accounts.cancel': 'Cancel',
   'accounts.saveFailed': 'The account was not saved. Try again.',
+  'accounts.saveLost':
+    'The answer never arrived, so we cannot say whether it was written. Press Save again to send the same request, or cancel.',
   'netWorth.slotTitle': 'The "Net worth" slot',
   'netWorth.slotBody': 'The net worth chart lands here.',
   'settings.slotTitle': 'The "Settings" slot',

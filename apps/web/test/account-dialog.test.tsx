@@ -156,6 +156,42 @@ describe('adding an account from the screen', () => {
   });
 });
 
+describe('a request whose answer never arrived', () => {
+  it('freezes the fields, so the body cannot change under a key the server may hold', async () => {
+    const user = userEvent.setup();
+    renameRefuses = new Error('the network was unkind');
+    draw();
+
+    await openRename(user);
+    await user.click(screen.getByRole('button', { name: en['accounts.save'] }));
+
+    expect(await screen.findByText(en['accounts.saveLost'])).toBeInTheDocument();
+    expect(screen.getByLabelText(en['newAccount.nameLabel'])).toBeDisabled();
+    expect(screen.getByRole('button', { name: en['accounts.save'] })).toBeEnabled();
+  });
+
+  it('re-reads the accounts when the dialog is dismissed after something was sent', async () => {
+    const user = userEvent.setup();
+    holdCreate = true;
+    draw();
+
+    await openCreate(user);
+    await user.type(await screen.findByLabelText(en['newAccount.nameLabel']), 'Savings');
+    await user.click(screen.getByRole('button', { name: en['accounts.save'] }));
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    invalidate.mockClear();
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalled());
+    const keys = invalidate.mock.calls.map((call) =>
+      JSON.stringify((call[0] as { queryKey: unknown }).queryKey),
+    );
+    expect(keys.some((key) => key.includes('accountsControllerList'))).toBe(true);
+  });
+});
+
 describe('a failure that lands after the dialog was dismissed', () => {
   it('does not carry a failure from a dialog nobody has open into the next one', async () => {
     const user = userEvent.setup();
@@ -216,7 +252,7 @@ describe('renaming an account from the screen', () => {
     await user.type(field, 'Cash');
     await user.click(screen.getByRole('button', { name: en['accounts.save'] }));
 
-    expect(await screen.findByText(en['accounts.saveFailed'])).toBeInTheDocument();
+    expect(await screen.findByText(en['accounts.saveLost'])).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: en['accounts.save'] }));
 

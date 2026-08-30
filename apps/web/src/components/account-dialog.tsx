@@ -48,6 +48,7 @@ export function AccountDialog({
   money,
   failure,
   busy,
+  frozen,
   onSave,
   onEdited,
   onCancel,
@@ -56,6 +57,7 @@ export function AccountDialog({
   money: MoneyReader;
   failure: SaveFailureKind | null;
   busy: boolean;
+  frozen: boolean;
   onSave: (draft: AccountDraft) => void;
   onEdited: () => void;
   onCancel: () => void;
@@ -79,12 +81,9 @@ export function AccountDialog({
   }, []);
 
   const edited = (): void => {
-    if (failure === null) return;
+    if (failure === null || keepsTheKey(failure)) return;
 
-    if (!keepsTheKey(failure)) {
-      setKey(mintKey());
-    }
-
+    setKey(mintKey());
     onEdited();
   };
 
@@ -116,7 +115,7 @@ export function AccountDialog({
           id={nameField}
           value={name}
           maxLength={60}
-          disabled={busy}
+          disabled={busy || frozen}
           onChange={(event) => {
             setName(event.target.value);
             edited();
@@ -134,7 +133,7 @@ export function AccountDialog({
                   key={option.id}
                   type="button"
                   aria-pressed={type === option.id}
-                  disabled={busy}
+                  disabled={busy || frozen}
                   onClick={() => {
                     setType(option.id);
                     edited();
@@ -170,7 +169,7 @@ export function AccountDialog({
               money={money}
               amount={amount}
               read={read}
-              disabled={busy}
+              disabled={busy || frozen}
               hint={t('newAccount.balanceHint')}
               className={FIELD}
               onChange={(next) => {
@@ -184,7 +183,7 @@ export function AccountDialog({
 
       {failure === null ? null : (
         <p role="alert" className="text-destructive text-sm">
-          {t('accounts.saveFailed')}
+          {t(frozen ? 'accounts.saveLost' : 'accounts.saveFailed')}
         </p>
       )}
 

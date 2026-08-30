@@ -33,6 +33,15 @@ const referencedName = (value: unknown): string | undefined => {
 const schemaNamed = (document: OpenAPIObject, name: string | undefined): Schema | undefined =>
   name === undefined ? undefined : document.components?.schemas?.[name];
 
+const moneyFieldsOf = (document: OpenAPIObject, name: string): string[] => {
+  const schema = document.components?.schemas?.[name];
+  const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+  return Object.entries(properties)
+    .filter(([, property]) => 'pattern' in property && property.pattern === MONEY_PATTERN.source)
+    .map(([field]) => field);
+};
+
 const requestSchemaOf = (document: OpenAPIObject, operation?: Operation): Schema | undefined => {
   const body = operation?.requestBody;
   const content = body && 'content' in body ? body.content['application/json']?.schema : undefined;
@@ -384,19 +393,8 @@ describe('OpenAPI document', () => {
     });
 
     it('publishes every amount it answers with as a string of minor units', () => {
-      const moneyOf = (name: string): string[] => {
-        const schema = document.components?.schemas?.[name];
-        const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
-
-        return Object.entries(properties)
-          .filter(
-            ([, property]) => 'pattern' in property && property.pattern === MONEY_PATTERN.source,
-          )
-          .map(([field]) => field);
-      };
-
-      expect(moneyOf('BudgetViewResponse')).toEqual(['readyToAssign']);
-      expect(moneyOf('BudgetViewCategoryResponse').sort()).toEqual([
+      expect(moneyFieldsOf(document, 'BudgetViewResponse')).toEqual(['readyToAssign']);
+      expect(moneyFieldsOf(document, 'BudgetViewCategoryResponse').sort()).toEqual([
         'activity',
         'assigned',
         'available',
@@ -422,19 +420,8 @@ describe('OpenAPI document', () => {
 
   describe('the accounts screen', () => {
     it('publishes every amount it answers with as a string of minor units', () => {
-      const moneyOf = (name: string): string[] => {
-        const schema = document.components?.schemas?.[name];
-        const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
-
-        return Object.entries(properties)
-          .filter(
-            ([, property]) => 'pattern' in property && property.pattern === MONEY_PATTERN.source,
-          )
-          .map(([field]) => field);
-      };
-
-      expect(moneyOf('AccountsResponse')).toEqual(['total']);
-      expect(moneyOf('AccountBalanceResponse')).toEqual(['balance']);
+      expect(moneyFieldsOf(document, 'AccountsResponse')).toEqual(['total']);
+      expect(moneyFieldsOf(document, 'AccountBalanceResponse')).toEqual(['balance']);
     });
 
     it('takes nothing but a name when an account is renamed, because the type never changes', () => {

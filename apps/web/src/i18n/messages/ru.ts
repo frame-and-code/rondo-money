@@ -210,6 +210,8 @@ export const ru = {
   'accounts.save': 'Сохранить',
   'accounts.cancel': 'Отмена',
   'accounts.saveFailed': 'Счёт не сохранился. Попробуйте ещё раз.',
+  'accounts.saveLost':
+    'Ответ не дошёл, и мы не знаем, записалось ли. Нажмите «Сохранить» ещё раз тем же запросом или отмените.',
   'netWorth.slotTitle': 'Слот раздела «Капитал»',
   'netWorth.slotBody': 'Сюда встанет график капитала.',
   'settings.slotTitle': 'Слот раздела «Настройки»',

@@ -26,7 +26,7 @@ import { AccountDialog, type AccountDraft } from '@/components/account-dialog';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
 import { moneyOf } from '@/lib/money';
-import { saveFailureKind, type SaveFailureKind } from '@/lib/save-failure';
+import { keepsTheKey, saveFailureKind, type SaveFailureKind } from '@/lib/save-failure';
 
 type Editing = { kind: 'create' } | { kind: 'rename'; id: string; name: string; type: AccountType };
 
@@ -46,6 +46,7 @@ export function AccountList() {
 
   const [editing, setEditing] = useState<Editing | null>(null);
   const [failure, setFailure] = useState<SaveFailureKind | null>(null);
+  const [sent, setSent] = useState(false);
 
   const money = useMemo(
     () => (budget === null ? null : moneyOf(locale, budget.currency, budget.minorDigits)),
@@ -62,6 +63,7 @@ export function AccountList() {
   const settled = async (): Promise<void> => {
     setEditing(null);
     setFailure(null);
+    setSent(false);
     await reread();
   };
 
@@ -101,6 +103,8 @@ export function AccountList() {
   const save = (draft: AccountDraft): void => {
     if (editing === null) return;
 
+    setSent(true);
+
     if (editing.kind === 'rename') {
       rename.mutate({
         path: { id: editing.id },
@@ -123,6 +127,11 @@ export function AccountList() {
   const close = (): void => {
     setEditing(null);
     setFailure(null);
+
+    if (sent) {
+      setSent(false);
+      void reread();
+    }
   };
 
   return (
@@ -221,6 +230,7 @@ export function AccountList() {
               money={money}
               failure={failure}
               busy={create.isPending || rename.isPending}
+              frozen={failure !== null && keepsTheKey(failure)}
               onSave={save}
               onEdited={() => setFailure(null)}
               onCancel={close}

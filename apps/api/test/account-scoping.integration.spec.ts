@@ -207,7 +207,6 @@ describe('accounts across tenants', () => {
     });
 
     expect(response.status).toBe(400);
-    expect(response.status).not.toBe(500);
 
     const stored = await prisma.account.findFirstOrThrow({ where: { id: walletA.id } });
     expect(stored.name).toBe('Кошелёк A');

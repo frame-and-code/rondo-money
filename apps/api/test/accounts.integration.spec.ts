@@ -535,7 +535,6 @@ describe('/accounts (integration)', () => {
       const response = await list(USER_NOBUDGET);
 
       expect(response.status).toBe(400);
-      expect(response.status).not.toBe(500);
     });
 
     it('answers with the shape the contract publishes', async () => {
@@ -722,7 +721,6 @@ describe('/accounts (integration)', () => {
       const response = await rename(USER_NAMED, '0199c1a8-9ecf-71c7-a617-c575df073999', renaming());
 
       expect(response.status).toBe(400);
-      expect(response.status).not.toBe(500);
     });
 
     it('refuses to rename when the caller has no active budget', async () => {
