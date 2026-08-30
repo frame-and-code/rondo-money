@@ -54,6 +54,7 @@ turn. They stay short deliberately. Detail belongs in `docs/`, and the rule link
 | [`budget-invariant/`](skills/budget-invariant/SKILL.md)                             | the four budget numbers, how each is computed, and the reconciliation that need not balance            |
 | [`edit-money-on-a-screen/`](skills/edit-money-on-a-screen/SKILL.md)                 | a screen in `apps/web` changes money: the amount it sends, the key it sends it under, each refusal     |
 | [`refuse-a-write-on-an-aggregate/`](skills/refuse-a-write-on-an-aggregate/SKILL.md) | a write is refused by a sum over many rows: the row lock both sides take, and what the refusal carries |
+| [`pick-the-active-row/`](skills/pick-the-active-row/SKILL.md)                       | a model keeps a history where a screen expects one row: the two predicates, and the join that picks it |
 
 A skill is grounded in code that exists. Every step names a real file to copy from, so it
 cannot drift into describing an API nobody wrote, and neither a skill nor an agent lands ahead

@@ -174,3 +174,13 @@ export function monthStartInstant(month: CalendarMonth, timeZone: string): Date 
 
   return new Date(real.length > 0 ? Math.min(...real) : Math.max(...candidates));
 }
+
+function monthIndex(month: CalendarMonth): number {
+  const current = parseCalendarMonth(month);
+
+  return Number(current.slice(0, 4)) * 12 + Number(current.slice(5, 7));
+}
+
+export function monthsInclusive(from: CalendarMonth, to: CalendarMonth): number {
+  return Math.max(1, monthIndex(to) - monthIndex(from) + 1);
+}

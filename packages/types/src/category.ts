@@ -3,8 +3,11 @@ import { type CategoryColor, type CategoryIcon } from './category-look.js';
 export const CATEGORY_REFUSALS = [
   'ALREADY_HIDDEN',
   'AVAILABLE_NOT_ZERO',
+  'CATEGORY_HIDDEN',
+  'DUE_MONTH_PAST',
   'GROUP_HIDDEN',
   'NO_ACTIVE_BUDGET',
+  'NO_TARGET',
   'UNKNOWN_CATEGORY',
   'UNKNOWN_GROUP',
 ] as const;

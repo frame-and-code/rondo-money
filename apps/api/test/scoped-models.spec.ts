@@ -65,6 +65,7 @@ describe('the budget-scoped-model registry', () => {
       'Assignment',
       'Category',
       'CategoryGroup',
+      'CategoryTarget',
       'Transaction',
     ]);
     expect(BUDGET_SCOPED_MODELS.has(Prisma.ModelName.Budget)).toBe(false);
@@ -100,6 +101,7 @@ describe('the mutation-guarded-model registry', () => {
       'Budget',
       'Category',
       'CategoryGroup',
+      'CategoryTarget',
       'Transaction',
     ]);
     expect([...MUTATION_EXEMPT_MODELS].sort()).toEqual(['IdempotencyKey', 'UserSettings']);

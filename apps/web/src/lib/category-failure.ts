@@ -6,8 +6,11 @@ import { saveFailureKind, type SaveFailureKind } from '@/lib/save-failure';
 const BY_REASON: Record<CategoryRefusal, MessageKey> = {
   ALREADY_HIDDEN: 'categories.failAlreadyHidden',
   AVAILABLE_NOT_ZERO: 'categories.hideBlocked',
+  CATEGORY_HIDDEN: 'categories.failOther',
+  DUE_MONTH_PAST: 'categories.failOther',
   GROUP_HIDDEN: 'categories.failGroupHidden',
   NO_ACTIVE_BUDGET: 'categories.failBudget',
+  NO_TARGET: 'categories.failOther',
   UNKNOWN_CATEGORY: 'categories.failOther',
   UNKNOWN_GROUP: 'categories.failOther',
 };

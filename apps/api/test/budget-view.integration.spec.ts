@@ -18,6 +18,17 @@ const USER_PREFIX = 'user_2rondoBudgetView';
 
 const user = (name: string): string => `${USER_PREFIX}${name}`;
 
+interface ViewTarget {
+  kind: string;
+  amount: string;
+  startMonth: string;
+  dueMonth?: string;
+  monthTarget?: string;
+  needed?: string;
+  progress: string;
+  remaining: string;
+}
+
 interface ViewCategory {
   id: string;
   name: string;
@@ -28,6 +39,7 @@ interface ViewCategory {
   available: string;
   availableAllTime: string;
   hidden: boolean;
+  target: ViewTarget | null;
 }
 
 interface ViewGroup {
@@ -93,6 +105,7 @@ describe('/budget-view (integration)', () => {
   const removeFixtures = async (): Promise<void> => {
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
+    await prisma.categoryTarget.deleteMany({ where: owned });
     await prisma.category.deleteMany({ where: owned });
     await prisma.categoryGroup.deleteMany({ where: owned });
     await prisma.account.deleteMany({ where: owned });
@@ -168,6 +181,31 @@ describe('/budget-view (integration)', () => {
         categoryId: over.categoryId ?? null,
         isSystem: over.isSystem ?? false,
         transferId: over.transferId ?? null,
+      },
+    });
+
+  const seedTarget = (
+    userId: string,
+    budgetId: string,
+    categoryId: string,
+    over: {
+      kind: 'REFILL_TO' | 'CONTRIBUTE' | 'BY_DATE' | 'ACCUMULATE';
+      amount: bigint;
+      startMonth: string;
+      dueMonth?: string;
+      endMonth?: string;
+    },
+  ) =>
+    prisma.categoryTarget.create({
+      data: {
+        userId,
+        budgetId,
+        categoryId,
+        kind: over.kind,
+        amount: over.amount,
+        startMonth: toDbMonth(over.startMonth),
+        dueMonth: over.dueMonth ? toDbMonth(over.dueMonth) : null,
+        endMonth: over.endMonth ? toDbMonth(over.endMonth) : null,
       },
     });
 
@@ -795,6 +833,275 @@ describe('/budget-view (integration)', () => {
       const view = await viewOf(userId, '2026-02');
 
       expect(named(view, 'Ракета')).toMatchObject({ icon: null, color: null });
+    });
+  });
+
+  describe('the goal a category carries', () => {
+    const saving = async (userId: string) => {
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Отпуск');
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'BY_DATE',
+        amount: 100_000n,
+        startMonth: '2026-01',
+        dueMonth: '2026-04',
+      });
+      await seedAssignment(userId, budget.id, category.id, '2026-01', 20_000n);
+      await seedAssignment(userId, budget.id, category.id, '2026-02', 20_000n);
+
+      return { budget, group, category };
+    };
+
+    it('rides with the category, carrying what the month asks and what it has gathered', async () => {
+      const userId = user('TargetRides');
+      await saving(userId);
+
+      const view = await viewOf(userId, '2026-02');
+
+      expect(named(view, 'Отпуск').target).toMatchObject({
+        kind: 'BY_DATE',
+        amount: '100000',
+        startMonth: '2026-01',
+        dueMonth: '2026-04',
+        monthTarget: '26666',
+        needed: '6666',
+        progress: '40000',
+        remaining: '60000',
+      });
+    });
+
+    it('answers with a goal even when the category was never assigned anything', async () => {
+      const userId = user('TargetNoAssignment');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Подушка');
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'ACCUMULATE',
+        amount: 300_000n,
+        startMonth: '2026-02',
+      });
+
+      const view = await viewOf(userId, '2026-02');
+
+      expect(named(view, 'Подушка').target).toMatchObject({
+        kind: 'ACCUMULATE',
+        progress: '0',
+        remaining: '300000',
+      });
+      expect(named(view, 'Подушка').target?.needed).toBeUndefined();
+    });
+
+    it('asks a refill goal for what the envelope carried in, not for what it holds all-time', async () => {
+      const userId = user('TargetRefill');
+      const budget = await seedBudget(userId);
+      const account = await seedAccount(userId, budget.id);
+      const group = await seedGroup(userId, budget.id, 'Дом');
+      const category = await seedCategory(userId, budget.id, group.id, 'Продукты');
+
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'REFILL_TO',
+        amount: 50_000n,
+        startMonth: '2026-01',
+      });
+      await seedAssignment(userId, budget.id, category.id, '2026-01', 40_000n);
+      await seedTransaction(userId, budget.id, account.id, {
+        date: '2026-01-20',
+        amount: -10_000n,
+        categoryId: category.id,
+      });
+      await seedTransaction(userId, budget.id, account.id, {
+        date: '2026-02-14',
+        amount: -5_000n,
+        categoryId: category.id,
+      });
+      await seedAssignment(userId, budget.id, category.id, '2026-03', 100_000n);
+
+      const view = await viewOf(userId, '2026-02');
+
+      expect(named(view, 'Продукты').target).toMatchObject({
+        kind: 'REFILL_TO',
+        amount: '50000',
+        monthTarget: '20000',
+        needed: '20000',
+        progress: '30000',
+        remaining: '20000',
+      });
+    });
+
+    it('follows the envelope when money is taken out of a month before the goal started', async () => {
+      const userId = user('TargetBaselineMoves');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Подушка');
+
+      await seedAssignment(userId, budget.id, category.id, '2026-01', 150_000n);
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'ACCUMULATE',
+        amount: 300_000n,
+        startMonth: '2026-02',
+      });
+
+      const withCarry = await viewOf(userId, '2026-02');
+
+      expect(named(withCarry, 'Подушка').available).toBe('150000');
+      expect(named(withCarry, 'Подушка').target).toMatchObject({
+        progress: '150000',
+        remaining: '150000',
+      });
+
+      await prisma.assignment.updateMany({
+        where: { categoryId: category.id, month: toDbMonth('2026-01') },
+        data: { amount: 0n },
+      });
+
+      const emptied = await viewOf(userId, '2026-02');
+
+      expect(named(emptied, 'Подушка').available).toBe('0');
+      expect(named(emptied, 'Подушка').target).toMatchObject({
+        progress: '0',
+        remaining: '300000',
+      });
+    });
+
+    it('returns a category with a history of goals exactly once', async () => {
+      const userId = user('TargetHistory');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Ремонт');
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'CONTRIBUTE',
+        amount: 10_000n,
+        startMonth: '2025-11',
+        endMonth: '2025-12',
+      });
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'CONTRIBUTE',
+        amount: 20_000n,
+        startMonth: '2026-01',
+      });
+      await seedAssignment(userId, budget.id, category.id, '2026-02', 5_000n);
+
+      const view = await viewOf(userId, '2026-02');
+
+      expect(categoriesOf(view).filter((one) => one.name === 'Ремонт')).toHaveLength(1);
+      expect(named(view, 'Ремонт').target).toMatchObject({ amount: '20000', needed: '15000' });
+      expect(view.readyToAssign).toBe('-5000');
+    });
+
+    it('carries no goal in a month between one that ended and the next', async () => {
+      const userId = user('TargetGap');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Пауза');
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'CONTRIBUTE',
+        amount: 10_000n,
+        startMonth: '2025-11',
+        endMonth: '2025-12',
+      });
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'CONTRIBUTE',
+        amount: 20_000n,
+        startMonth: '2026-03',
+      });
+
+      expect(named(await viewOf(userId, '2026-02'), 'Пауза').target).toBeNull();
+    });
+
+    it('drops a goal once its month is past, and writes nothing to replace it', async () => {
+      const userId = user('TargetDue');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Ноутбук');
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'BY_DATE',
+        amount: 100_000n,
+        startMonth: '2025-11',
+        dueMonth: '2026-01',
+      });
+
+      expect(named(await viewOf(userId, '2026-01'), 'Ноутбук').target).not.toBeNull();
+      expect(named(await viewOf(userId, '2026-02'), 'Ноутбук').target).toBeNull();
+      expect(await prisma.categoryTarget.count({ where: { categoryId: category.id } })).toBe(1);
+    });
+
+    it('shows the goal of a hidden category when the hidden ones are asked for', async () => {
+      const userId = user('TargetHidden');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(
+        userId,
+        budget.id,
+        group.id,
+        'Скрытая',
+        0,
+        new Date('2026-01-05T00:00:00Z'),
+      );
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'CONTRIBUTE',
+        amount: 10_000n,
+        startMonth: '2025-11',
+      });
+
+      const view = asView((await read(userId, '2026-02&includeHidden=true').expect(200)).body);
+
+      expect(named(view, 'Скрытая').target).toMatchObject({ amount: '10000' });
+    });
+
+    it('counts what the envelope carried in, and never a month after the one being read', async () => {
+      const userId = user('TargetWindow');
+      const { budget, category } = await saving(userId);
+      await seedAssignment(userId, budget.id, category.id, '2025-12', 50_000n);
+      await seedAssignment(userId, budget.id, category.id, '2026-03', 70_000n);
+
+      expect(named(await viewOf(userId, '2026-02'), 'Отпуск').target).toMatchObject({
+        progress: '90000',
+        monthTarget: '10000',
+        needed: '0',
+      });
+    });
+
+    it('does not raise what the month asks because the category was spent from', async () => {
+      const userId = user('TargetSpent');
+      const { budget, category } = await saving(userId);
+      const account = await seedAccount(userId, budget.id);
+      await seedTransaction(userId, budget.id, account.id, {
+        date: '2026-02-14',
+        amount: -15_000n,
+        categoryId: category.id,
+      });
+
+      expect(named(await viewOf(userId, '2026-02'), 'Отпуск').target).toMatchObject({
+        needed: '6666',
+        progress: '40000',
+      });
+    });
+
+    it('still costs one query when the budget is full of goals', async () => {
+      const userId = user('TargetOneQuery');
+      const budget = await seedBudget(userId);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+
+      for (const index of [0, 1, 2]) {
+        const category = await seedCategory(userId, budget.id, group.id, `Цель ${index}`, index);
+        await seedTarget(userId, budget.id, category.id, {
+          kind: 'CONTRIBUTE',
+          amount: 10_000n,
+          startMonth: '2026-01',
+        });
+      }
+
+      const counted = jest.spyOn(ScopedRawRepository.prototype, 'query');
+
+      try {
+        const view = await viewOf(userId, '2026-02');
+
+        expect(categoriesOf(view)).toHaveLength(3);
+        expect(counted).toHaveBeenCalledTimes(1);
+      } finally {
+        counted.mockRestore();
+      }
     });
   });
 });

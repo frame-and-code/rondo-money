@@ -23,7 +23,10 @@ the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
 [`src/categories`](src/categories) is the fourth shape, writes that first have to read an
 aggregate: hiding a category is refused while it still holds money over any month, so the
 mutation locks the rows with `SELECT ... FOR UPDATE` and sums them inside its own transaction.
-A move locks the same rows for the same reason, which is what stops the two crossing.
+A move locks the same rows for the same reason, which is what stops the two crossing. Goals
+live there too, and they take the same lock for a different reason: a category keeps a history
+of them, so a write reads that history and chooses between editing, replacing and closing, and
+two writers reading it at once would both insert.
 
 ## Endpoints
 
@@ -44,15 +47,29 @@ A move locks the same rows for the same reason, which is what stops the two cros
   created a budget yet gets an empty list rather than an error.
 - `GET /budget-view?month=YYYY-MM` returns one month of the categories screen: the groups and
   categories of the active budget with what each holds this month, plus the money that has no
-  job yet, and the icon and the colour each category is drawn with. Nothing in it is stored;
-  every number is computed from transactions and assignments in one statement. The look is a
+  job yet, and the icon and the colour each category is drawn with. What a month holds is
+  computed from transactions and assignments in one statement and cached nowhere; a goal's own
+  columns are read from its row, and a goal saving toward a total counts its progress from what
+  the envelope carried in when it started, summed the same way. The look is a
   domain name rather than the name of a component, so a category the user has not given one
   answers with null and so does a stored name this app no longer draws. The month is required, because a default would make the answer depend on a
   clock rather than on what the user is looking at. A category or a group hidden later than the
   month asked for is still listed in it, and a hidden one counts in the totals regardless.
   `includeHidden` asks for the hidden rows as well, which changes what is listed and never what
   is counted. Every category also carries what it holds over every month, not only up to the one
-  asked for, because that is the amount that has to be zero before it can be hidden.
+  asked for, because that is the amount that has to be zero before it can be hidden. A category
+  running a goal in that month also carries it, with what the goal asks of the month and what
+  it counts as gathered; a category running none carries null. Which goal a month gets is
+  decided by the month rather than by which goal was written last, because a category keeps
+  every goal it has run.
+- `POST /categories/{id}/target` sets the goal of a category. It starts one, or edits the one
+  the category is running. Changing the kind of a goal started in an earlier month closes that
+  one and starts a new one, so the history stays; changing the kind of a goal started in this
+  month replaces its row. The starting month comes from the budget's timezone and never from
+  the caller. What the envelope carried in when the goal started is not written down: the read
+  path sums it, so the goal keeps up with a correction to a month before it.
+- `POST /categories/{id}/target/close` ends the goal with the month the budget is living in.
+  It is still shown in that month and gone from the next one, and the row stays.
 - `POST /budgets` creates a budget and, when asked for, the starter groups and categories, each
   carrying an icon and a colour so the screen has something to draw before the user chooses. One
   transaction covers all of it, the caller's interface language included: the category names

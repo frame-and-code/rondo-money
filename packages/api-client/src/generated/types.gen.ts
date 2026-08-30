@@ -154,6 +154,40 @@ export type CategoryIcon = 'home' | 'bolt' | 'droplet' | 'flame' | 'wifi' | 'pho
  */
 export type CategoryColor = 'scarlet' | 'vermilion' | 'orange' | 'amber' | 'gold' | 'yellow' | 'lime' | 'green' | 'emerald' | 'mint' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'orchid' | 'magenta' | 'pink' | 'rose' | 'brown' | 'graphite' | 'gray';
 
+export type TargetKind = 'REFILL_TO' | 'CONTRIBUTE' | 'BY_DATE' | 'ACCUMULATE';
+
+export type BudgetViewTargetResponse = {
+    kind: TargetKind;
+    /**
+     * What the goal is aiming at.
+     */
+    amount: string;
+    /**
+     * The month this goal started in.
+     */
+    startMonth: string;
+    /**
+     * The month the amount is due, carried only by a goal saving by a date.
+     */
+    dueMonth?: string;
+    /**
+     * What the goal asks of this month in total. A goal saving with no date asks for nothing monthly and carries none.
+     */
+    monthTarget?: string;
+    /**
+     * What is still to be assigned this month for the goal to be met.
+     */
+    needed?: string;
+    /**
+     * What the goal counts as gathered. Spending in the month being read never lowers it. A goal that refills the envelope counts what earlier months left in it, so spending before this month does.
+     */
+    progress: string;
+    /**
+     * What is left between the progress and the amount.
+     */
+    remaining: string;
+};
+
 export type BudgetViewCategoryResponse = {
     id: string;
     /**
@@ -188,6 +222,10 @@ export type BudgetViewCategoryResponse = {
      * Whether this category is hidden in the month that was asked about. A category hidden in February is not hidden in January, and only shows up here when the caller asked for the hidden ones.
      */
     hidden: boolean;
+    /**
+     * The goal this category is running in the month that was asked about, and null when it runs none. A category keeps its goals, so which one appears here is decided by the month rather than by which was written last.
+     */
+    target: BudgetViewTargetResponse | null;
 };
 
 export type BudgetViewGroupResponse = {
@@ -245,7 +283,7 @@ export type CategoryGroupResponse = {
 /**
  * Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
-export type CategoryRefusal = 'ALREADY_HIDDEN' | 'AVAILABLE_NOT_ZERO' | 'GROUP_HIDDEN' | 'NO_ACTIVE_BUDGET' | 'UNKNOWN_CATEGORY' | 'UNKNOWN_GROUP';
+export type CategoryRefusal = 'ALREADY_HIDDEN' | 'AVAILABLE_NOT_ZERO' | 'CATEGORY_HIDDEN' | 'DUE_MONTH_PAST' | 'GROUP_HIDDEN' | 'NO_ACTIVE_BUDGET' | 'NO_TARGET' | 'UNKNOWN_CATEGORY' | 'UNKNOWN_GROUP';
 
 export type CategoryRefusedResponse = {
     statusCode: number;
@@ -381,6 +419,45 @@ export type UpdateCategoryDto = {
      * Which colour it is drawn in.
      */
     color?: CategoryColor;
+};
+
+export type SetCategoryTargetDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * What the goal asks of the category. Only a goal saving by a date carries a due month; the other three run until they are replaced or closed.
+     */
+    kind: TargetKind;
+    /**
+     * What the goal is aiming at, in minor units. A goal of nothing would divide its own progress by zero.
+     */
+    amount: string;
+    /**
+     * The month the amount has to be saved by. Required by that kind, refused by the rest.
+     */
+    dueMonth?: string;
+};
+
+export type CategoryTargetResponse = {
+    kind: TargetKind;
+    /**
+     * What the goal is aiming at.
+     */
+    amount: string;
+    /**
+     * The month the goal started in. It is written when the goal is created and never moves, because it is what decides which months read this goal rather than another.
+     */
+    startMonth: string;
+    /**
+     * The month the amount is due, carried only by a goal saving by a date.
+     */
+    dueMonth?: string;
+    /**
+     * The month the goal was closed in. It is still shown in that month and gone from the next one.
+     */
+    endMonth?: string;
 };
 
 /**
@@ -1038,6 +1115,76 @@ export type CategoriesControllerUnhideResponses = {
 };
 
 export type CategoriesControllerUnhideResponse = CategoriesControllerUnhideResponses[keyof CategoriesControllerUnhideResponses];
+
+export type CategoryTargetsControllerSetData = {
+    body: SetCategoryTargetDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/categories/{id}/target';
+};
+
+export type CategoryTargetsControllerSetErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryTargetsControllerSetError = CategoryTargetsControllerSetErrors[keyof CategoryTargetsControllerSetErrors];
+
+export type CategoryTargetsControllerSetResponses = {
+    /**
+     * The goal as it stands now.
+     */
+    201: CategoryTargetResponse;
+};
+
+export type CategoryTargetsControllerSetResponse = CategoryTargetsControllerSetResponses[keyof CategoryTargetsControllerSetResponses];
+
+export type CategoryTargetsControllerCloseData = {
+    body: IdempotentDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/categories/{id}/target/close';
+};
+
+export type CategoryTargetsControllerCloseErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryTargetsControllerCloseError = CategoryTargetsControllerCloseErrors[keyof CategoryTargetsControllerCloseErrors];
+
+export type CategoryTargetsControllerCloseResponses = {
+    /**
+     * The goal, now closed.
+     */
+    201: CategoryTargetResponse;
+};
+
+export type CategoryTargetsControllerCloseResponse = CategoryTargetsControllerCloseResponses[keyof CategoryTargetsControllerCloseResponses];
 
 export type MovesControllerMoveData = {
     body: CreateMoveDto;

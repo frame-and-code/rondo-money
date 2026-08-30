@@ -20,6 +20,7 @@ const category = (
   available,
   availableAllTime: available,
   hidden: false,
+  target: null,
 });
 
 const groups: BudgetViewGroupDto[] = [

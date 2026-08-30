@@ -43,7 +43,9 @@ envelopes.
 budget's; `monthOf` buckets a date; `parseCalendarDate` refuses anything that is not a real
 day, so `2026-02-30` throws instead of rolling over into March the way `new Date` does.
 Nothing here reads the host's zone, and `new Date()` outside this module is how a
-transaction lands in the wrong month for anyone east or west of the server.
+transaction lands in the wrong month for anyone east or west of the server. `monthsInclusive`
+counts the months from one bucket to another with both ends inside the count, and never
+answers below one, so a schedule that has run out divides by one rather than by zero.
 
 The month bucket has the same pair of directions. `parseCalendarMonth` refuses anything that
 is not a real `YYYY-MM`, so `2026-00`, `2026-13` and a year below a thousand throw rather than

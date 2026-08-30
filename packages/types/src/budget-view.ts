@@ -1,5 +1,6 @@
 import { type CalendarMonth } from './calendar.js';
 import { type CategoryColor, type CategoryIcon } from './category-look.js';
+import { type BudgetViewTargetDto } from './target.js';
 
 export interface BudgetViewCategoryDto {
   id: string;
@@ -19,6 +20,8 @@ export interface BudgetViewCategoryDto {
   availableAllTime: string;
 
   hidden: boolean;
+
+  target: BudgetViewTargetDto | null;
 }
 
 export interface BudgetViewGroupDto {

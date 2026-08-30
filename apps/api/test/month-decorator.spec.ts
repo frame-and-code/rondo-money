@@ -12,11 +12,17 @@ import { VALIDATION_PIPE } from '@/validation/validation.options';
 class PageQuery {
   @ApiCalendarMonthProperty({ description: 'The month the screen is showing.' })
   month!: string;
+
+  @ApiCalendarMonthProperty({ required: false, description: 'The month it stops at.' })
+  until?: string;
 }
 
 class PageResponse {
   @ApiCalendarMonthProperty()
   month!: string;
+
+  @ApiCalendarMonthProperty({ required: false })
+  until?: string;
 }
 
 @Controller('pages')
@@ -34,6 +40,11 @@ describe('a calendar month at the API boundary', () => {
   const open = (month?: string) =>
     request(app.getHttpServer() as Server).get(
       month === undefined ? '/pages' : `/pages?month=${encodeURIComponent(month)}`,
+    );
+
+  const openUntil = (until: string) =>
+    request(app.getHttpServer() as Server).get(
+      `/pages?month=2026-02&until=${encodeURIComponent(until)}`,
     );
 
   beforeAll(async () => {
@@ -82,6 +93,28 @@ describe('a calendar month at the API boundary', () => {
 
       expect(JSON.stringify(response.body)).toContain('month');
       expect(JSON.stringify(response.body)).not.toMatch(/at .*\.ts:\d+|node_modules|\/Users\//);
+    });
+  });
+
+  describe('a month the caller may leave out', () => {
+    it('lets the request through when it is absent', async () => {
+      await open('2026-02').expect(200);
+    });
+
+    it('still refuses a month that is there and unusable', async () => {
+      await openUntil('2026-13').expect(400);
+      await openUntil('february').expect(400);
+    });
+
+    it('is published as optional rather than as required', () => {
+      const document = SwaggerModule.createDocument(app, {
+        openapi: '3.0.0',
+        info: { title: 'test', version: '0' },
+      });
+      const schema = document.components?.schemas?.['PageResponse'];
+
+      expect(schema).toMatchObject({ required: ['month'] });
+      expect(schema).toHaveProperty('properties.until.type', 'string');
     });
   });
 

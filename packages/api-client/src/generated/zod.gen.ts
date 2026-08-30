@@ -172,6 +172,24 @@ export const zCategoryColor = z.enum([
     'gray'
 ]);
 
+export const zTargetKind = z.enum([
+    'REFILL_TO',
+    'CONTRIBUTE',
+    'BY_DATE',
+    'ACCUMULATE'
+]);
+
+export const zBudgetViewTargetResponse = z.object({
+    kind: zTargetKind,
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    startMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    dueMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/).optional(),
+    monthTarget: z.string().max(20).regex(/^(0|[1-9]\d*)$/).optional(),
+    needed: z.string().max(20).regex(/^(0|[1-9]\d*)$/).optional(),
+    progress: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    remaining: z.string().max(20).regex(/^(0|[1-9]\d*)$/)
+});
+
 export const zBudgetViewCategoryResponse = z.object({
     id: z.uuid(),
     name: z.string(),
@@ -181,7 +199,8 @@ export const zBudgetViewCategoryResponse = z.object({
     activity: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     availableAllTime: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
-    hidden: z.boolean()
+    hidden: z.boolean(),
+    target: zBudgetViewTargetResponse.nullable()
 });
 
 export const zBudgetViewGroupResponse = z.object({
@@ -215,8 +234,11 @@ export const zCategoryGroupResponse = z.object({
 export const zCategoryRefusal = z.enum([
     'ALREADY_HIDDEN',
     'AVAILABLE_NOT_ZERO',
+    'CATEGORY_HIDDEN',
+    'DUE_MONTH_PAST',
     'GROUP_HIDDEN',
     'NO_ACTIVE_BUDGET',
+    'NO_TARGET',
     'UNKNOWN_CATEGORY',
     'UNKNOWN_GROUP'
 ]);
@@ -277,6 +299,21 @@ export const zUpdateCategoryDto = z.object({
     name: z.string().max(60).optional(),
     icon: zCategoryIcon.optional(),
     color: zCategoryColor.optional()
+});
+
+export const zSetCategoryTargetDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    kind: zTargetKind,
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    dueMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/).optional()
+});
+
+export const zCategoryTargetResponse = z.object({
+    kind: zTargetKind,
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    startMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    dueMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/).optional(),
+    endMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/).optional()
 });
 
 /**
@@ -475,6 +512,28 @@ export const zCategoriesControllerUnhidePath = z.object({
  * The category, visible again.
  */
 export const zCategoriesControllerUnhideResponse = zCategoryResponse;
+
+export const zCategoryTargetsControllerSetBody = zSetCategoryTargetDto;
+
+export const zCategoryTargetsControllerSetPath = z.object({
+    id: z.string()
+});
+
+/**
+ * The goal as it stands now.
+ */
+export const zCategoryTargetsControllerSetResponse = zCategoryTargetResponse;
+
+export const zCategoryTargetsControllerCloseBody = zIdempotentDto;
+
+export const zCategoryTargetsControllerClosePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The goal, now closed.
+ */
+export const zCategoryTargetsControllerCloseResponse = zCategoryTargetResponse;
 
 export const zMovesControllerMoveBody = zCreateMoveDto;
 

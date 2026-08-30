@@ -10,10 +10,16 @@ const BOUNDS: BudgetViewBounds = {
   hiddenFrom: new Date('2026-02-28T23:00:00Z'),
 };
 
-const TABLES = ['category_group', 'category', 'assignment', 'transaction'] as const;
+const TABLES = [
+  'category_group',
+  'category',
+  'assignment',
+  'transaction',
+  'category_target',
+] as const;
 
 const TABLE_REFERENCE =
-  /\b(?:from|join)\s+"?(category_group|category|assignment|transaction)"?\b/gi;
+  /\b(?:from|join)\s+"?(category_group|category_target|category|assignment|transaction)"?\b/gi;
 
 function scopeOfEachTable(text: string): { table: string; scoped: boolean }[] {
   const references = [...text.matchAll(TABLE_REFERENCE)];
@@ -53,7 +59,7 @@ describe('the budget view statement', () => {
     const { text } = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS);
     const read = scopeOfEachTable(text);
 
-    expect(read.map((entry) => entry.table).sort()).toEqual([...TABLES].sort());
+    expect([...new Set(read.map((entry) => entry.table))].sort()).toEqual([...TABLES].sort());
     expect(read.filter((entry) => !entry.scoped)).toEqual([]);
   });
 

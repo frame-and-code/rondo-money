@@ -103,11 +103,12 @@ model Budget {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  categoryGroups CategoryGroup[]
-  categories     Category[]
-  accounts       Account[]
-  transactions   Transaction[]
-  assignments    Assignment[]
+  categoryGroups  CategoryGroup[]
+  categories      Category[]
+  accounts        Account[]
+  transactions    Transaction[]
+  assignments     Assignment[]
+  categoryTargets CategoryTarget[]
 
   @@unique([userId, active], map: "budget_one_active_per_user", where: { active: true })
   /// The target of every child's `(budgetId, userId)` foreign key. Two independent keys would
@@ -165,10 +166,11 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  budget       Budget        @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
-  group        CategoryGroup @relation(fields: [groupId, budgetId], references: [id, budgetId], onDelete: Restrict)
+  budget       Budget           @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+  group        CategoryGroup    @relation(fields: [groupId, budgetId], references: [id, budgetId], onDelete: Restrict)
   transactions Transaction[]
   assignments  Assignment[]
+  targets      CategoryTarget[]
 
   /// The target of every child's `(categoryId, budgetId)` foreign key.
   @@unique([id, budgetId])
@@ -295,4 +297,58 @@ model IdempotencyKey {
 
   @@unique([userId, key])
   @@map("idempotency_key")
+}
+
+/// What each of the four goal kinds asks of a category. `REFILL_TO` wants the envelope to
+/// hold the amount every month, `CONTRIBUTE` wants the amount put in every month, `BY_DATE`
+/// wants the amount saved by a month, and `ACCUMULATE` wants it saved with no date.
+enum TargetKind {
+  REFILL_TO
+  CONTRIBUTE
+  BY_DATE
+  ACCUMULATE
+
+  @@map("target_kind")
+}
+
+/// One goal of one category. A category keeps its goals rather than overwriting them, so
+/// which row a month reads is decided by the window the three month columns describe: the
+/// goal is the last one started no later than that month, and it is gone once the month has
+/// passed `dueMonth` or `endMonth`.
+model CategoryTarget {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  categoryId String @map("category_id") @db.Uuid
+
+  kind   TargetKind
+  /// Minor units of the budget's currency, and above zero: a goal of nothing would divide
+  /// its own progress by zero.
+  amount BigInt
+
+  /// The month the goal starts in. What the envelope held when it did is not stored: it is
+  /// summed on read from the assignments and transactions before this month, so correcting a
+  /// past record corrects the goal's progress with it.
+  startMonth DateTime @map("start_month") @db.Date
+
+  /// The month a `BY_DATE` goal is due, and the month a goal was closed in. A goal is still
+  /// shown in either of those months and gone from the next one.
+  dueMonth DateTime? @map("due_month") @db.Date
+  endMonth DateTime? @map("end_month") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget   Budget   @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+  category Category @relation(fields: [categoryId, budgetId], references: [id, budgetId], onDelete: Restrict)
+
+  /// One goal per category and starting month, which is what makes a repeat in the same
+  /// month an edit of that row rather than a second goal beside it. The three month columns
+  /// are held to the first of their month by check constraints in the migration, because
+  /// Prisma has no way to declare one.
+  @@unique([categoryId, startMonth])
+  @@index([userId, budgetId])
+  @@map("category_target")
 }
