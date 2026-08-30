@@ -6,6 +6,7 @@ import {
   isTimeZone,
   monthOf,
   monthStartInstant,
+  monthsInclusive,
   nextCalendarMonth,
   parseCalendarDate,
   previousCalendarMonth,
@@ -332,5 +333,23 @@ describe('CALENDAR_MONTH_PATTERN', () => {
         expect(monthStartInstant(nextCalendarMonth(month), zone).getTime()).not.toBeNaN();
       }
     }
+  });
+});
+
+describe('monthsInclusive', () => {
+  it('counts a single month as one', () => {
+    expect(monthsInclusive('2026-08', '2026-08')).toBe(1);
+  });
+
+  it('counts a run of months with both ends inside it', () => {
+    expect(monthsInclusive('2026-08', '2026-10')).toBe(3);
+  });
+
+  it('counts across a year boundary', () => {
+    expect(monthsInclusive('2026-12', '2027-01')).toBe(2);
+  });
+
+  it('never answers below one, whichever way round the months come', () => {
+    expect(monthsInclusive('2026-10', '2026-08')).toBe(1);
   });
 });

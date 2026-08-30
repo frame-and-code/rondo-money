@@ -1070,6 +1070,150 @@
         ]
       }
     },
+    "/categories/{id}/target": {
+      "post": {
+        "description": "Starts a goal, or edits the one the category is running. Changing the kind of a goal started in an earlier month closes that one and starts a new one, so the category keeps its history.",
+        "operationId": "CategoryTargetsController_set",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCategoryTargetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The goal as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryTargetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Set the goal of a category",
+        "tags": [
+          "CategoryTargets"
+        ]
+      }
+    },
+    "/categories/{id}/target/close": {
+      "post": {
+        "description": "Marks the goal as ending with the month the budget is living in. It is still shown in that month and gone from the next one, and the row stays in the history.",
+        "operationId": "CategoryTargetsController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The goal, now closed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryTargetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Close the goal of a category",
+        "tags": [
+          "CategoryTargets"
+        ]
+      }
+    },
     "/moves": {
       "post": {
         "description": "Moves an amount out of one envelope and into another for one month, where ready to assign is an envelope too. Assigning money is this same operation with ready to assign as the source, so there is no separate way to set what a category holds.",
@@ -1565,6 +1709,82 @@
         ],
         "description": "Which colour this category is drawn in, on the same terms as its icon."
       },
+      "TargetKind": {
+        "type": "string",
+        "enum": [
+          "REFILL_TO",
+          "CONTRIBUTE",
+          "BY_DATE",
+          "ACCUMULATE"
+        ]
+      },
+      "BudgetViewTargetResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "example": "CONTRIBUTE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TargetKind"
+              }
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the goal is aiming at."
+          },
+          "startMonth": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month this goal started in."
+          },
+          "dueMonth": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month the amount is due, carried only by a goal saving by a date."
+          },
+          "monthTarget": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the goal asks of this month in total. A goal saving with no date asks for nothing monthly and carries none."
+          },
+          "needed": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What is still to be assigned this month for the goal to be met."
+          },
+          "progress": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the goal counts as gathered. Spending in the month being read never lowers it. A goal that refills the envelope counts what earlier months left in it, so spending before this month does."
+          },
+          "remaining": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What is left between the progress and the amount."
+          }
+        },
+        "required": [
+          "kind",
+          "amount",
+          "startMonth",
+          "progress",
+          "remaining"
+        ]
+      },
       "BudgetViewCategoryResponse": {
         "type": "object",
         "properties": {
@@ -1627,6 +1847,16 @@
           "hidden": {
             "type": "boolean",
             "description": "Whether this category is hidden in the month that was asked about. A category hidden in February is not hidden in January, and only shows up here when the caller asked for the hidden ones."
+          },
+          "target": {
+            "nullable": true,
+            "description": "The goal this category is running in the month that was asked about, and null when it runs none. A category keeps its goals, so which one appears here is decided by the month rather than by which was written last.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BudgetViewTargetResponse"
+              }
+            ]
           }
         },
         "required": [
@@ -1638,7 +1868,8 @@
           "activity",
           "available",
           "availableAllTime",
-          "hidden"
+          "hidden",
+          "target"
         ]
       },
       "BudgetViewGroupResponse": {
@@ -1752,8 +1983,11 @@
         "enum": [
           "ALREADY_HIDDEN",
           "AVAILABLE_NOT_ZERO",
+          "CATEGORY_HIDDEN",
+          "DUE_MONTH_PAST",
           "GROUP_HIDDEN",
           "NO_ACTIVE_BUDGET",
+          "NO_TARGET",
           "UNKNOWN_CATEGORY",
           "UNKNOWN_GROUP"
         ],
@@ -2049,6 +2283,88 @@
           "idempotencyKey"
         ],
         "additionalProperties": false
+      },
+      "SetCategoryTargetDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "kind": {
+            "description": "What the goal asks of the category. Only a goal saving by a date carries a due month; the other three run until they are replaced or closed.",
+            "example": "CONTRIBUTE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TargetKind"
+              }
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the goal is aiming at, in minor units. A goal of nothing would divide its own progress by zero."
+          },
+          "dueMonth": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month the amount has to be saved by. Required by that kind, refused by the rest."
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "kind",
+          "amount"
+        ],
+        "additionalProperties": false
+      },
+      "CategoryTargetResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "example": "CONTRIBUTE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TargetKind"
+              }
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the goal is aiming at."
+          },
+          "startMonth": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month the goal started in. It is written when the goal is created and never moves, because it is what decides which months read this goal rather than another."
+          },
+          "dueMonth": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month the amount is due, carried only by a goal saving by a date."
+          },
+          "endMonth": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month the goal was closed in. It is still shown in that month and gone from the next one."
+          }
+        },
+        "required": [
+          "kind",
+          "amount",
+          "startMonth"
+        ]
       },
       "MoveSideKind": {
         "type": "string",

@@ -5,8 +5,11 @@ describe('the reasons a change to a category is refused', () => {
     expect([...CATEGORY_REFUSALS]).toEqual([
       'ALREADY_HIDDEN',
       'AVAILABLE_NOT_ZERO',
+      'CATEGORY_HIDDEN',
+      'DUE_MONTH_PAST',
       'GROUP_HIDDEN',
       'NO_ACTIVE_BUDGET',
+      'NO_TARGET',
       'UNKNOWN_CATEGORY',
       'UNKNOWN_GROUP',
     ]);

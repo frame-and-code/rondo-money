@@ -6,8 +6,8 @@ The schema grows incrementally, one migration per phase. It starts as a datasour
 generator and an empty `0_init`. `UserSettings` is the first table, then the domain core
 arrives in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
 `Transaction`, `IdempotencyKey`. `Assignment` joins them later, with the two columns that give
-a category a look of its own. No table carries `deletedAt`. ADR-006 dropped soft-delete
-and the change-log journal alike.
+a category a look of its own, and `CategoryTarget` after it. No table carries `deletedAt`.
+ADR-006 dropped soft-delete and the change-log journal alike.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum with
 `RU` / `EN` / `PL`, defaulting to `EN`). It exists this early because the `userId` auto-scoping
@@ -64,6 +64,28 @@ answers or reads and writes inside its own transaction instead.
 `Category` carries an optional `icon` and `color`, each a short name of at most 32 characters
 rather than a component name or a hex value. A group carries neither, and a category without
 them is a normal row.
+
+`CategoryTarget` holds what a category is aiming at, and a category keeps every goal it has
+run rather than overwriting them. Three date columns describe when each one applies:
+`startMonth`, the month it began in; `dueMonth`, the month a goal saving by a date is due;
+and `endMonth`, the last month it is shown in, which is the month the user closed it in or
+the month before a replacement starts. A goal is read in a month when that month is not
+before its start and not after whichever of the other two it carries, so the month named by
+`dueMonth` or `endMonth` still shows it and the next one does not. All three are `date`
+columns carrying the first day, and check constraints in the migration hold them there, for
+the reason `Assignment.month` has one.
+
+`@@unique([categoryId, startMonth])` is what makes a second goal in the same month an edit of
+that row rather than a row beside it, and it is why a write picks its branch under the
+category's own lock: without the lock two concurrent writes both insert and the loser comes
+back as an idempotency conflict it never made
+([`pick-the-active-row`](../../.claude/skills/pick-the-active-row/SKILL.md)).
+
+What the envelope carried in when a goal started is summed on read rather than stored: the
+assignments and the transactions before the starting month. A goal saving toward a total
+counts its progress from that sum, and a goal asking for a monthly amount ignores it. So
+correcting a record in a month before the goal started corrects the goal's progress with it,
+and the envelope and the goal never drift apart.
 
 Three fields mean three different kinds of disappearance and they are not interchangeable.
 An account is archived (`archivedAt`), a category and its group are hidden (`hiddenAt`), a

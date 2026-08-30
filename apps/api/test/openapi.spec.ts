@@ -124,6 +124,8 @@ describe('OpenAPI document', () => {
       '/categories/reorder',
       '/categories/{id}',
       '/categories/{id}/hide',
+      '/categories/{id}/target',
+      '/categories/{id}/target/close',
       '/categories/{id}/unhide',
       '/category-groups',
       '/category-groups/reorder',
@@ -447,5 +449,28 @@ describe('OpenAPI document', () => {
     expect(description).toContain('is a JSON number');
     expect(description).toContain('rejected with 400');
     expect(description).toContain('no leading zeros and no `-0`');
+  });
+
+  it('publishes the goal a category carries, with the two month-only amounts optional', () => {
+    const required = (schema: unknown): string[] => {
+      const value = (schema as { required?: unknown } | undefined)?.required;
+
+      return Array.isArray(value)
+        ? value.filter((one): one is string => typeof one === 'string')
+        : [];
+    };
+
+    const category = document.components?.schemas?.['BudgetViewCategoryResponse'];
+    const goal = document.components?.schemas?.['BudgetViewTargetResponse'];
+
+    expect(required(category)).toContain('target');
+
+    for (const field of ['kind', 'amount', 'startMonth', 'progress', 'remaining']) {
+      expect(required(goal)).toContain(field);
+    }
+
+    for (const field of ['monthTarget', 'needed', 'dueMonth']) {
+      expect(required(goal)).not.toContain(field);
+    }
   });
 });

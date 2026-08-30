@@ -13,6 +13,17 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
+export interface ViewTarget {
+  kind: string;
+  amount: string;
+  startMonth: string;
+  dueMonth?: string;
+  monthTarget?: string;
+  needed?: string;
+  progress: string;
+  remaining: string;
+}
+
 export interface ViewCategory {
   id: string;
   name: string;
@@ -23,6 +34,7 @@ export interface ViewCategory {
   available: string;
   availableAllTime: string;
   hidden: boolean;
+  target: ViewTarget | null;
 }
 
 export interface ViewGroup {
@@ -75,6 +87,18 @@ export interface CategoryHarness {
     date: string,
     amount: bigint,
   ) => Promise<unknown>;
+  seedTarget: (
+    userId: string,
+    budgetId: string,
+    categoryId: string,
+    target: {
+      kind: 'REFILL_TO' | 'CONTRIBUTE' | 'BY_DATE' | 'ACCUMULATE';
+      amount: bigint;
+      startMonth: string;
+      dueMonth?: string | null;
+      endMonth?: string | null;
+    },
+  ) => Promise<{ id: string }>;
   seedAssignment: (
     userId: string,
     budgetId: string,
@@ -118,6 +142,7 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
     removeFixtures: async () => {
       await prisma.transaction.deleteMany({ where: owned });
       await prisma.assignment.deleteMany({ where: owned });
+      await prisma.categoryTarget.deleteMany({ where: owned });
       await prisma.category.deleteMany({ where: owned });
       await prisma.categoryGroup.deleteMany({ where: owned });
       await prisma.account.deleteMany({ where: owned });
@@ -168,6 +193,19 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
           date: toDbDate(parseCalendarDate(date)),
           amount,
           type: TransactionType.EXPENSE,
+        },
+      }),
+    seedTarget: (userId, budgetId, categoryId, target) =>
+      prisma.categoryTarget.create({
+        data: {
+          userId,
+          budgetId,
+          categoryId,
+          kind: target.kind,
+          amount: target.amount,
+          startMonth: toDbMonth(parseCalendarMonth(target.startMonth)),
+          dueMonth: target.dueMonth ? toDbMonth(parseCalendarMonth(target.dueMonth)) : null,
+          endMonth: target.endMonth ? toDbMonth(parseCalendarMonth(target.endMonth)) : null,
         },
       }),
     seedAssignment: (userId, budgetId, categoryId, month, amount) =>

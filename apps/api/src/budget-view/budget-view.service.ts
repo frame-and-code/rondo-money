@@ -2,6 +2,8 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
   isCategoryColor,
   isCategoryIcon,
+  isTargetKind,
+  parseCalendarMonth,
   monthStartInstant,
   nextCalendarMonth,
   parseCalendarDate,
@@ -19,7 +21,9 @@ import {
 import {
   BudgetViewResponse,
   type BudgetViewGroupResponse,
+  type BudgetViewTargetResponse,
 } from '@/budget-view/budget-view.response';
+import { targetProgress } from '@/budget-view/target-progress';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
 import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 
@@ -34,7 +38,43 @@ function colorOf(stored: string | null): CategoryColor | null {
   return isCategoryColor(stored) ? stored : null;
 }
 
-function assemble(rows: BudgetViewRow[]): BudgetViewGroupResponse[] {
+function targetOf(row: BudgetViewRow, month: CalendarMonth): BudgetViewTargetResponse | null {
+  if (!isTargetKind(row.targetKind) || row.targetAmount === null || row.targetStartMonth === null) {
+    return null;
+  }
+
+  const dueMonth = row.targetDueMonth === null ? null : parseCalendarMonth(row.targetDueMonth);
+  const answer = targetProgress(
+    {
+      kind: row.targetKind,
+      amount: row.targetAmount,
+      startMonth: parseCalendarMonth(row.targetStartMonth),
+      dueMonth,
+    },
+    month,
+    {
+      assigned: row.assigned,
+      activity: row.activity,
+      available: row.available,
+      fundedFromStart: row.targetFunded ?? 0n,
+      assignedBeforeStart: row.targetAssignedBefore ?? 0n,
+      activityBeforeStart: row.targetActivityBefore ?? 0n,
+    },
+  );
+
+  return {
+    kind: row.targetKind,
+    amount: serializeMoney(row.targetAmount),
+    startMonth: parseCalendarMonth(row.targetStartMonth),
+    ...(dueMonth === null ? {} : { dueMonth }),
+    ...(answer.monthTarget === null ? {} : { monthTarget: serializeMoney(answer.monthTarget) }),
+    ...(answer.needed === null ? {} : { needed: serializeMoney(answer.needed) }),
+    progress: serializeMoney(answer.progress),
+    remaining: serializeMoney(answer.remaining),
+  };
+}
+
+function assemble(rows: BudgetViewRow[], month: CalendarMonth): BudgetViewGroupResponse[] {
   const groups = new Map<string, BudgetViewGroupResponse>();
 
   for (const row of rows) {
@@ -61,6 +101,7 @@ function assemble(rows: BudgetViewRow[]): BudgetViewGroupResponse[] {
         available: serializeMoney(row.available),
         availableAllTime: serializeMoney(row.availableAllTime),
         hidden: row.categoryHidden,
+        target: targetOf(row, month),
       });
     }
   }
@@ -98,7 +139,7 @@ export class BudgetViewService {
     return {
       month,
       readyToAssign: serializeMoney(pool.readyToAssign),
-      groups: assemble(rows),
+      groups: assemble(rows, month),
     };
   }
 

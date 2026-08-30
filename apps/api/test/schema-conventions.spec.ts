@@ -1,6 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { $Enums, Prisma, PrismaClient } from '@rondo/db';
-import { ACCOUNT_TYPES } from '@rondo/types';
+import { ACCOUNT_TYPES, TARGET_KINDS } from '@rondo/types';
 
 import { fieldsOf, modelsCarrying } from './model-fields';
 
@@ -11,6 +11,7 @@ const DOMAIN_MODELS = [
   'Account',
   'Transaction',
   'Assignment',
+  'CategoryTarget',
   'IdempotencyKey',
 ] as const;
 
@@ -20,6 +21,7 @@ const BUDGET_OWNED_MODELS = [
   'Account',
   'Transaction',
   'Assignment',
+  'CategoryTarget',
 ] as const;
 
 describe('the domain core schema', () => {
@@ -49,6 +51,10 @@ describe('the domain core schema', () => {
 
   it('publishes exactly the account kinds the column holds', () => {
     expect([...ACCOUNT_TYPES].sort()).toEqual(Object.values($Enums.AccountType).sort());
+  });
+
+  it('publishes exactly the goal kinds the column holds', () => {
+    expect([...TARGET_KINDS].sort()).toEqual(Object.values($Enums.TargetKind).sort());
   });
 
   it('keeps the user-level models out of a budget', () => {

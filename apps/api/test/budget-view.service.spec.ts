@@ -23,6 +23,13 @@ const row = (over: Partial<BudgetViewRow> = {}): BudgetViewRow => ({
   assigned: 0n,
   activity: 0n,
   available: 0n,
+  targetKind: null,
+  targetAmount: null,
+  targetStartMonth: null,
+  targetDueMonth: null,
+  targetFunded: null,
+  targetAssignedBefore: null,
+  targetActivityBefore: null,
   ...over,
 });
 
@@ -84,6 +91,7 @@ describe('BudgetViewService', () => {
               available: '4500',
               availableAllTime: '4500',
               hidden: false,
+              target: null,
             },
             {
               id: 'c2',
@@ -95,6 +103,7 @@ describe('BudgetViewService', () => {
               available: '0',
               availableAllTime: '0',
               hidden: false,
+              target: null,
             },
           ],
         },

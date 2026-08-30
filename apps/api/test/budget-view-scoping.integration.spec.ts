@@ -24,6 +24,7 @@ interface ViewCategory {
   assigned: string;
   activity: string;
   available: string;
+  target: { amount: string } | null;
 }
 
 interface View {
@@ -40,7 +41,7 @@ const asView = (body: unknown): View => {
   return view;
 };
 
-const numbersOf = (view: View): Omit<ViewCategory, 'id'>[] =>
+const numbersOf = (view: View): Omit<ViewCategory, 'id' | 'target'>[] =>
   view.groups
     .flatMap((group) => group.categories)
     .map(({ name, assigned, activity, available }) => ({ name, assigned, activity, available }));
@@ -72,6 +73,7 @@ describe('/budget-view keeps to one caller and one budget (integration)', () => 
   const removeFixtures = async (): Promise<void> => {
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
+    await prisma.categoryTarget.deleteMany({ where: owned });
     await prisma.category.deleteMany({ where: owned });
     await prisma.categoryGroup.deleteMany({ where: owned });
     await prisma.account.deleteMany({ where: owned });
@@ -124,6 +126,16 @@ describe('/budget-view keeps to one caller and one budget (integration)', () => 
         categoryId: category.id,
         month: toDbMonth('2026-02'),
         amount: assigned,
+      },
+    });
+    await prisma.categoryTarget.create({
+      data: {
+        userId,
+        budgetId: budget.id,
+        categoryId: category.id,
+        kind: 'CONTRIBUTE',
+        amount: assigned * 10n,
+        startMonth: toDbMonth('2026-01'),
       },
     });
 
@@ -193,5 +205,18 @@ describe('/budget-view keeps to one caller and one budget (integration)', () => 
       view.groups.flatMap((group) => group.categories).map((category) => category.name),
     ).toEqual(['Категория A']);
     expect(JSON.stringify(view)).not.toContain('999999');
+  });
+
+  it('never lets a goal cross a caller or a budget through the join that reads it', async () => {
+    const forA = await viewOf(USER_A, '2026-02');
+    const forB = await viewOf(USER_B, '2026-02');
+
+    const targetsOf = (view: View): (string | null)[] =>
+      view.groups
+        .flatMap((group) => group.categories)
+        .map((category) => category.target?.amount ?? null);
+
+    expect(targetsOf(forA)).toEqual(['111110']);
+    expect(targetsOf(forB)).toEqual(['222220']);
   });
 });

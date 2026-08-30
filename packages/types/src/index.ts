@@ -31,6 +31,8 @@ export {
   isCategoryIcon,
 } from './category-look.js';
 export type { CategoryDto, CategoryGroupDto, CategoryRefusal } from './category.js';
+export type { BudgetViewTargetDto, CategoryTargetDto, TargetKind } from './target.js';
+export { TARGET_KINDS, isTargetKind } from './target.js';
 export { CATEGORY_REFUSALS, isCategoryRefusal } from './category.js';
 export type { BudgetViewCategoryDto, BudgetViewDto, BudgetViewGroupDto } from './budget-view.js';
 export type { MoveDto, MoveRefusal, MoveSideDto, MoveSideKind } from './move.js';
@@ -50,6 +52,7 @@ export {
   parseCalendarMonth,
   monthOf,
   monthStartInstant,
+  monthsInclusive,
   nextCalendarMonth,
   previousCalendarMonth,
 } from './calendar.js';

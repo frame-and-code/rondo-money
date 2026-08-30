@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -251,6 +251,36 @@ export const categoriesControllerHide = <ThrowOnError extends boolean = false>(o
 export const categoriesControllerUnhide = <ThrowOnError extends boolean = false>(options: Options<CategoriesControllerUnhideData, ThrowOnError>): RequestResult<CategoriesControllerUnhideResponses, CategoriesControllerUnhideErrors, ThrowOnError> => (options.client ?? client).post<CategoriesControllerUnhideResponses, CategoriesControllerUnhideErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/categories/{id}/unhide',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Set the goal of a category
+ *
+ * Starts a goal, or edits the one the category is running. Changing the kind of a goal started in an earlier month closes that one and starts a new one, so the category keeps its history.
+ */
+export const categoryTargetsControllerSet = <ThrowOnError extends boolean = false>(options: Options<CategoryTargetsControllerSetData, ThrowOnError>): RequestResult<CategoryTargetsControllerSetResponses, CategoryTargetsControllerSetErrors, ThrowOnError> => (options.client ?? client).post<CategoryTargetsControllerSetResponses, CategoryTargetsControllerSetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/categories/{id}/target',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Close the goal of a category
+ *
+ * Marks the goal as ending with the month the budget is living in. It is still shown in that month and gone from the next one, and the row stays in the history.
+ */
+export const categoryTargetsControllerClose = <ThrowOnError extends boolean = false>(options: Options<CategoryTargetsControllerCloseData, ThrowOnError>): RequestResult<CategoryTargetsControllerCloseResponses, CategoryTargetsControllerCloseErrors, ThrowOnError> => (options.client ?? client).post<CategoryTargetsControllerCloseResponses, CategoryTargetsControllerCloseErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/categories/{id}/target/close',
     ...options,
     headers: {
         'Content-Type': 'application/json',

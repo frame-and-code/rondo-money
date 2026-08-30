@@ -6,21 +6,26 @@ import { registerDecorator } from 'class-validator';
 interface CalendarMonthPropertyOptions {
   description?: string;
   example?: string;
+
+  required?: boolean;
 }
 
 export function ApiCalendarMonthProperty(options: CalendarMonthPropertyOptions = {}) {
+  const { required = true, ...published } = options;
+
   return applyDecorators(
     ApiProperty({
       type: String,
       pattern: CALENDAR_MONTH_PATTERN.source,
       example: '2026-02',
-      ...options,
+      required,
+      ...published,
     }),
-    IsCalendarMonth(),
+    IsCalendarMonth(required),
   );
 }
 
-function IsCalendarMonth(): PropertyDecorator {
+function IsCalendarMonth(required: boolean): PropertyDecorator {
   return (target, propertyKey): void => {
     registerDecorator({
       name: 'isCalendarMonth',
@@ -28,6 +33,10 @@ function IsCalendarMonth(): PropertyDecorator {
       propertyName: propertyKey.toString(),
       validator: {
         validate(value: unknown): boolean {
+          if (!required && value === undefined) {
+            return true;
+          }
+
           return typeof value === 'string' && CALENDAR_MONTH_PATTERN.test(value);
         },
         defaultMessage(): string {

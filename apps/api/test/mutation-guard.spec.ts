@@ -94,6 +94,14 @@ describe('the marker that keeps a domain write inside the mutation service', () 
     month: new Date('2026-02-01T00:00:00Z'),
     amount: 1000n,
   };
+  const targetRow = {
+    userId: USER,
+    budgetId: BUDGET,
+    categoryId: 'c1',
+    kind: 'CONTRIBUTE' as const,
+    amount: 1000n,
+    startMonth: new Date('2026-02-01T00:00:00Z'),
+  };
   const where = { id: 'r1' };
 
   const writesOf = (
@@ -181,6 +189,21 @@ describe('the marker that keeps a domain write inside the mutation service', () 
           delete: () => scoped.assignment.delete({ where }),
           deleteMany: () => scoped.assignment.deleteMany({}),
         };
+      case Prisma.ModelName.CategoryTarget:
+        return {
+          create: () => scoped.categoryTarget.create({ data: targetRow }),
+          createMany: () => scoped.categoryTarget.createMany({ data: [targetRow] }),
+          createManyAndReturn: () =>
+            scoped.categoryTarget.createManyAndReturn({ data: [targetRow] }),
+          update: () => scoped.categoryTarget.update({ where, data: { amount: 1n } }),
+          updateMany: () => scoped.categoryTarget.updateMany({ data: { amount: 1n } }),
+          updateManyAndReturn: () =>
+            scoped.categoryTarget.updateManyAndReturn({ data: { amount: 1n } }),
+          upsert: () =>
+            scoped.categoryTarget.upsert({ where, create: targetRow, update: { amount: 1n } }),
+          delete: () => scoped.categoryTarget.delete({ where }),
+          deleteMany: () => scoped.categoryTarget.deleteMany({}),
+        };
       default:
         throw new Error(
           `No writes are spelled out for ${model}, so this spec would silently test another ` +
@@ -196,6 +219,7 @@ describe('the marker that keeps a domain write inside the mutation service', () 
     Prisma.ModelName.Account,
     Prisma.ModelName.Transaction,
     Prisma.ModelName.Assignment,
+    Prisma.ModelName.CategoryTarget,
   ];
 
   const inRequest = <T>(work: () => Promise<T>): Promise<T> =>

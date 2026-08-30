@@ -3,8 +3,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, userSettingsControllerRead } from '../sdk.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
+import { accountsControllerCreate, accountsControllerList, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, categoryTargetsControllerClose, categoryTargetsControllerSet, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, userSettingsControllerRead } from '../sdk.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseError, CategoryTargetsControllerCloseResponse, CategoryTargetsControllerSetData, CategoryTargetsControllerSetError, CategoryTargetsControllerSetResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -375,6 +375,44 @@ export const categoriesControllerUnhideMutation = (options?: Partial<Options<Cat
     const mutationOptions: UseMutationOptions<CategoriesControllerUnhideResponse, CategoriesControllerUnhideError, Options<CategoriesControllerUnhideData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await categoriesControllerUnhide({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Set the goal of a category
+ *
+ * Starts a goal, or edits the one the category is running. Changing the kind of a goal started in an earlier month closes that one and starts a new one, so the category keeps its history.
+ */
+export const categoryTargetsControllerSetMutation = (options?: Partial<Options<CategoryTargetsControllerSetData>>): UseMutationOptions<CategoryTargetsControllerSetResponse, CategoryTargetsControllerSetError, Options<CategoryTargetsControllerSetData>> => {
+    const mutationOptions: UseMutationOptions<CategoryTargetsControllerSetResponse, CategoryTargetsControllerSetError, Options<CategoryTargetsControllerSetData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoryTargetsControllerSet({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Close the goal of a category
+ *
+ * Marks the goal as ending with the month the budget is living in. It is still shown in that month and gone from the next one, and the row stays in the history.
+ */
+export const categoryTargetsControllerCloseMutation = (options?: Partial<Options<CategoryTargetsControllerCloseData>>): UseMutationOptions<CategoryTargetsControllerCloseResponse, CategoryTargetsControllerCloseError, Options<CategoryTargetsControllerCloseData>> => {
+    const mutationOptions: UseMutationOptions<CategoryTargetsControllerCloseResponse, CategoryTargetsControllerCloseError, Options<CategoryTargetsControllerCloseData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await categoryTargetsControllerClose({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
