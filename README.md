@@ -35,7 +35,11 @@ and the back button both work. The categories themselves are the user's to arran
 created, renamed, given an icon and a colour, dragged into a new place, moved into another group
 and hidden. A group is created with its own categories, renamed, reordered and hidden with
 everything in it. Deleting is not an operation at all, so no expense ever loses the
-category it was spent on. What does not exist yet is entering transactions by hand.
+category it was spent on. A category can also be given a goal, one of four kinds: hold an
+amount, set one aside every month, reach one by a chosen month, or save towards one with no
+deadline. The card then says how much of what the goal asks for this month is already inside,
+and clicking it opens the move form with the rest of it filled in. What does not exist yet is the screen a
+transaction is written down on.
 
 ## What it is
 

@@ -41,9 +41,9 @@ describe('the dialog that hides a category', () => {
     const later = screen.getByTestId('hide-future');
     const now = screen.getByTestId('hide-this-month');
 
-    expect(now).toHaveTextContent('0,00');
-    expect(later).toHaveTextContent('400,00');
-    expect(total).toHaveTextContent('400,00');
+    expect(now).toHaveTextContent('0 ');
+    expect(later).toHaveTextContent('400 ');
+    expect(total).toHaveTextContent('400 ');
   });
 
   it('offers to move the remainder out before it offers to hide anything', () => {
@@ -121,7 +121,7 @@ describe('the dialog that hides a category', () => {
   it('blocks the hide on an overspend the same way it blocks it on a remainder', () => {
     draw({ available: -3_000n, availableAllTime: -3_000n });
 
-    expect(screen.getByTestId('hide-total')).toHaveTextContent('-30,00');
+    expect(screen.getByTestId('hide-total')).toHaveTextContent('-30 ');
     expect(screen.getByRole('button', { name: en['categories.hide'] })).toBeDisabled();
   });
 

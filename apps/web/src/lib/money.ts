@@ -16,8 +16,9 @@ export interface Amount {
 
 export interface MoneyReader {
   format: (minor: bigint) => string;
+  plain: (minor: bigint) => string;
+  typed: (minor: bigint) => string;
   symbol: string;
-  symbolFirst: boolean;
   digits: number;
   currency: string;
   marks: Marks;
@@ -203,20 +204,54 @@ export function moneyOf(
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+  const bare = new Intl.NumberFormat(locale, {
+    style: 'decimal',
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    useGrouping: true,
+  });
+  const roundBare = new Intl.NumberFormat(locale, {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    useGrouping: true,
+  });
+  const scale = 10n ** BigInt(digits);
+  const whole = (minor: bigint): boolean => minor % scale === 0n;
   const parts = formatter.formatToParts(0);
   const symbolAt = parts.findIndex((part) => part.type === 'currency');
-  const numberAt = parts.findIndex((part) => part.type === 'integer');
+  const symbol = parts[symbolAt]?.value ?? currency;
   const marks = marksOf(locale);
+  const withSymbol = (amount: string): string => `${amount}\u00a0${symbol}`;
+  const exactly = (minor: bigint): string => {
+    const decimal = toDecimalString(minor, digits);
+
+    return digits > 0 && whole(minor) ? decimal.slice(0, -(digits + 1)) : decimal;
+  };
 
   return {
     format: (minor) => {
       const decimal = toDecimalString(minor, digits);
       const asNumber = Number(decimal);
 
-      return asNumber.toFixed(digits) === decimal ? formatter.format(asNumber) : decimal;
+      if (asNumber.toFixed(digits) !== decimal) {
+        return withSymbol(exactly(minor));
+      }
+
+      return withSymbol(whole(minor) ? roundBare.format(asNumber) : bare.format(asNumber));
     },
-    symbol: parts[symbolAt]?.value ?? currency,
-    symbolFirst: symbolAt < numberAt,
+    plain: (minor) => {
+      const decimal = toDecimalString(minor, digits);
+      const asNumber = Number(decimal);
+
+      if (asNumber.toFixed(digits) !== decimal) {
+        return exactly(minor);
+      }
+
+      return whole(minor) ? roundBare.format(asNumber) : bare.format(asNumber);
+    },
+    typed: (minor) => toDecimalString(minor, digits).replace('.', marks.decimal),
+    symbol,
     digits,
     currency,
     marks,

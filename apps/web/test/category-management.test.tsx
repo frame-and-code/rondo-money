@@ -117,6 +117,8 @@ jest.mock('@rondo/api-client/react-query', () => ({
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),
+  categoryTargetsControllerSetMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryTargetsControllerCloseMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
 }));
 
 const draw = () => {

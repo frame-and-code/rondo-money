@@ -7,6 +7,8 @@ import { LocaleProvider } from '@/i18n/locale-context';
 import { ru } from '@/i18n/messages/ru';
 
 const move = jest.fn();
+const setTarget = jest.fn();
+const closeTarget = jest.fn();
 const push = jest.fn();
 const replace = jest.fn();
 
@@ -59,6 +61,12 @@ jest.mock('@rondo/api-client/react-query', () => ({
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),
+  categoryTargetsControllerSetMutation: () => ({
+    mutationFn: (options: unknown) => setTarget(options) as unknown,
+  }),
+  categoryTargetsControllerCloseMutation: () => ({
+    mutationFn: (options: unknown) => closeTarget(options) as unknown,
+  }),
 }));
 
 const category = (over: Record<string, unknown> = {}) => ({
@@ -69,6 +77,8 @@ const category = (over: Record<string, unknown> = {}) => ({
   assigned: '22000',
   activity: '-14860',
   available: '7660',
+  hidden: false,
+  target: null,
   ...over,
 });
 
@@ -99,6 +109,8 @@ beforeEach(() => {
   search = '';
   reads = 0;
   viewFails = false;
+  setTarget.mockResolvedValue({});
+  closeTarget.mockResolvedValue({});
   budget = {
     id: 'b1',
     currency: 'PLN',
@@ -125,7 +137,7 @@ describe('the month of the budget', () => {
 
     const shown = within(tile as HTMLElement);
     expect(shown.getByTestId('available-Продукты')).toHaveTextContent(/76,60/);
-    expect(shown.getByText(/220,00/)).toBeInTheDocument();
+    expect(shown.getByText(/220 /)).toBeInTheDocument();
     expect(shown.getByText(/148,60/)).toBeInTheDocument();
     expect(shown.getByText(ru['categories.spent'])).toBeInTheDocument();
   });
@@ -133,7 +145,7 @@ describe('the month of the budget', () => {
   it('shows what has no job yet, and says which of its three states that is', async () => {
     draw();
 
-    expect(await screen.findByTestId('ready-to-assign')).toHaveTextContent(/850,00/);
+    expect(await screen.findByTestId('ready-to-assign')).toHaveTextContent(/850 /);
     expect(screen.getByText(ru['categories.readyToAssignFree'])).toBeInTheDocument();
   });
 
@@ -158,8 +170,8 @@ describe('the month of the budget', () => {
     const tile = (await screen.findByText('Здоровье')).closest('[data-slot="category-tile"]');
     const shown = within(tile as HTMLElement);
 
-    expect(shown.getByTestId('available-Здоровье')).toHaveTextContent(/600,00/);
-    expect(shown.getByTestId('assigned-Здоровье')).toHaveTextContent(/^0,00/);
+    expect(shown.getByTestId('available-Здоровье')).toHaveTextContent(/600 /);
+    expect(shown.getByTestId('assigned-Здоровье')).toHaveTextContent(/^0 /);
   });
 
   it('renders every amount at the digit count the budget was frozen at', async () => {
@@ -220,7 +232,7 @@ describe('the month of the budget', () => {
 
     const header = await screen.findByTestId('group-total-g1');
 
-    expect(header).toHaveTextContent(/128,00/);
+    expect(header).toHaveTextContent(/128 /);
   });
 
   it('says the budget holds no categories rather than drawing an empty grid', async () => {
@@ -287,9 +299,7 @@ describe('what a number says by its colour', () => {
     view = oneCategory({ name: 'Транспорт', activity: '-72500', available: '-12500' });
     draw();
 
-    const ring = (await tileOf('Транспорт')).querySelector(
-      '[data-slot="spend-ring"] circle + circle',
-    );
+    const ring = (await tileOf('Транспорт')).querySelector('[data-testid="month-arc"]');
 
     expect(ring).toHaveAttribute('stroke', 'var(--destructive)');
   });
@@ -298,9 +308,7 @@ describe('what a number says by its colour', () => {
     view = oneCategory();
     draw();
 
-    const ring = (await tileOf('Продукты')).querySelector(
-      '[data-slot="spend-ring"] circle + circle',
-    );
+    const ring = (await tileOf('Продукты')).querySelector('[data-testid="month-arc"]');
 
     expect(ring).not.toHaveAttribute('stroke', 'var(--destructive)');
   });
@@ -476,5 +484,223 @@ describe('moving between months', () => {
     await screen.findByText('Продукты');
 
     expect(screen.queryByText(ru['categories.futureMonth'])).not.toBeInTheDocument();
+  });
+
+  it('carries what the goal still asks into the move form, and leaves the covered one alone', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = {
+      month: '2026-08',
+      readyToAssign: '85000',
+      groups: [
+        {
+          id: 'g1',
+          name: 'Повседневные расходы',
+          hidden: false,
+          categories: [
+            category({
+              target: {
+                kind: 'CONTRIBUTE',
+                amount: '40000',
+                startMonth: '2026-08',
+                monthTarget: '40000',
+                needed: '18000',
+                progress: '22000',
+                remaining: '18000',
+              },
+            }),
+            category({
+              id: 'c2',
+              name: 'Кафе',
+              target: {
+                kind: 'CONTRIBUTE',
+                amount: '20000',
+                startMonth: '2026-08',
+                monthTarget: '20000',
+                needed: '0',
+                progress: '22000',
+                remaining: '0',
+              },
+            }),
+          ],
+        },
+      ],
+    };
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+
+    expect(
+      screen.getByLabelText(ru['categories.moveAmountFor'].replace('{{envelope}}', 'Продукты')),
+    ).toHaveValue('180,00');
+    expect(screen.getByTestId('move-arrow')).toHaveClass('rotate-180');
+
+    await user.keyboard('{Escape}');
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Кафе'),
+      }),
+    );
+
+    expect(
+      screen.getByLabelText(ru['categories.moveAmountFor'].replace('{{envelope}}', 'Кафе')),
+    ).toHaveValue('76,60');
+  });
+
+  it('shows the month the server sent back after a goal is saved, not one it worked out', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+    await user.click(await screen.findByRole('button', { name: ru['categories.manage'] }));
+    await user.click(await screen.findByRole('button', { name: ru['categories.goal'] }));
+
+    view = oneCategory({
+      target: {
+        kind: 'CONTRIBUTE',
+        amount: '40000',
+        startMonth: '2026-08',
+        monthTarget: '12345',
+        needed: '0',
+        progress: '22000',
+        remaining: '18000',
+      },
+    });
+
+    await user.click(
+      screen.getByRole('radio', { name: new RegExp(ru['categories.goalContribute']) }),
+    );
+    await user.type(screen.getByLabelText(ru['categories.goalAmount']), '400');
+    await user.click(screen.getByRole('button', { name: ru['categories.save'] }));
+
+    expect(setTarget).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(screen.getByTestId('assigned-Продукты')).toHaveTextContent('123,45'),
+    );
+  });
+
+  it('refuses the goal form on a month the write would not land in', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    search = 'month=2026-09';
+    view = { ...oneCategory(), month: '2026-09' };
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+    await user.click(await screen.findByRole('button', { name: ru['categories.manage'] }));
+
+    expect(await screen.findByRole('button', { name: ru['categories.goal'] })).toBeDisabled();
+  });
+
+  it('reads the current month in the budget timezone rather than on the host clock', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    jest.setSystemTime(new Date('2026-08-31T23:30:00Z'));
+    view = { ...oneCategory(), month: '2026-09' };
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+    await user.click(await screen.findByRole('button', { name: ru['categories.manage'] }));
+
+    expect(await screen.findByRole('button', { name: ru['categories.goal'] })).toBeEnabled();
+  });
+
+  it('drops a half typed move when the goal form takes the surface, as the two rows beside it do', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+
+    const field = screen.getByLabelText(
+      ru['categories.moveAmountFor'].replace('{{envelope}}', 'Продукты'),
+    );
+    await user.clear(field);
+    await user.type(field, '99');
+
+    await user.click(await screen.findByRole('button', { name: ru['categories.manage'] }));
+    await user.click(await screen.findByRole('button', { name: ru['categories.goal'] }));
+
+    expect(
+      screen.queryByLabelText(ru['categories.moveAmountFor'].replace('{{envelope}}', 'Продукты')),
+    ).not.toBeInTheDocument();
+    expect(move).not.toHaveBeenCalled();
+  });
+
+  it('puts the goal numbers under the move fields on a desktop popover as well', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = oneCategory({
+      target: {
+        kind: 'BY_DATE',
+        amount: '100000',
+        startMonth: '2026-07',
+        dueMonth: '2026-10',
+        monthTarget: '26666',
+        needed: '6666',
+        progress: '40000',
+        remaining: '60000',
+      },
+    });
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+
+    const panel = await screen.findByTestId('target-panel');
+    const fields = screen.getByLabelText(
+      ru['categories.moveAmountFor'].replace('{{envelope}}', 'Продукты'),
+    );
+
+    expect(fields.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('puts the goal numbers under the move fields on a phone, where nothing can be hovered', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    window.innerWidth = 390;
+    view = oneCategory({
+      target: {
+        kind: 'BY_DATE',
+        amount: '100000',
+        startMonth: '2026-07',
+        dueMonth: '2026-10',
+        monthTarget: '26666',
+        needed: '6666',
+        progress: '40000',
+        remaining: '60000',
+      },
+    });
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+
+    const panel = await screen.findByTestId('target-panel');
+    const fields = screen.getByLabelText(
+      ru['categories.moveAmountFor'].replace('{{envelope}}', 'Продукты'),
+    );
+
+    expect(fields.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

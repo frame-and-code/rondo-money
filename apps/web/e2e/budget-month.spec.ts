@@ -29,38 +29,38 @@ test('money is distributed across months, a future one included', async ({ page 
 
   await assign(page, '120', CATEGORY);
 
-  await expect(assignedOf(page, CATEGORY)).toHaveText('$120.00');
-  await expect(availableOf(page, CATEGORY)).toHaveText('$120.00');
+  await expect(assignedOf(page, CATEGORY)).toHaveText('120 $');
+  await expect(availableOf(page, CATEGORY)).toHaveText('120 $');
   await expect.poll(() => freeMoney(page)).not.toBe(free);
   const afterFirst = await freeMoney(page);
 
   await page.getByRole('button', { name: en['categories.nextMonth'] }).click();
 
-  await expect(assignedOf(page, CATEGORY)).toHaveText('$0.00');
-  await expect(availableOf(page, CATEGORY)).toHaveText('$120.00');
+  await expect(assignedOf(page, CATEGORY)).toHaveText('0 $');
+  await expect(availableOf(page, CATEGORY)).toHaveText('120 $');
   await expect.poll(() => freeMoney(page)).toBe(afterFirst);
   expect(new URL(page.url()).searchParams.get('month')).not.toBe(thisMonth);
 
   await page.goBack();
-  await expect(assignedOf(page, CATEGORY)).toHaveText('$120.00');
+  await expect(assignedOf(page, CATEGORY)).toHaveText('120 $');
 
   await page.goForward();
-  await expect(assignedOf(page, CATEGORY)).toHaveText('$0.00');
+  await expect(assignedOf(page, CATEGORY)).toHaveText('0 $');
   await expect(page.getByText(en['categories.futureMonth'])).toBeVisible();
 
   await assign(page, '50', CATEGORY);
 
-  await expect(assignedOf(page, CATEGORY)).toHaveText('$50.00');
+  await expect(assignedOf(page, CATEGORY)).toHaveText('50 $');
   await expect.poll(() => freeMoney(page)).not.toBe(afterFirst);
   const afterFuture = await freeMoney(page);
 
   await page.getByRole('button', { name: en['categories.previousMonth'] }).click();
 
-  await expect(assignedOf(page, CATEGORY)).toHaveText('$120.00');
+  await expect(assignedOf(page, CATEGORY)).toHaveText('120 $');
   await expect.poll(() => freeMoney(page)).toBe(afterFuture);
 
   await moveTo(page, { from: CATEGORY, to: en['categories.readyToAssign'], amount: '150' });
 
-  await expect(assignedOf(page, CATEGORY)).toHaveText('-$30.00');
+  await expect(assignedOf(page, CATEGORY)).toHaveText('-30 $');
   await expect.poll(() => freeMoney(page)).not.toBe(afterFuture);
 });

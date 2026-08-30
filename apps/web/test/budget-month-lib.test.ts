@@ -1,4 +1,12 @@
-import { monthFromUrl, monthLabel, monthNow, spendRing } from '@/lib/budget-month';
+import type { BudgetViewTargetDto, TargetKind } from '@rondo/types';
+
+import {
+  categoryRing,
+  monthFromUrl,
+  monthLabel,
+  monthNow,
+  type RingSource,
+} from '@/lib/budget-month';
 
 describe('which month the screen is showing', () => {
   afterEach(() => {
@@ -38,39 +46,182 @@ describe('which month the screen is showing', () => {
   });
 });
 
+const envelope = (
+  assigned: number,
+  activity: number,
+  available: number,
+  target: BudgetViewTargetDto | null = null,
+): RingSource => ({
+  assigned: String(assigned),
+  activity: String(activity),
+  available: String(available),
+  target,
+});
+
+const goal = (
+  kind: TargetKind,
+  amount: number,
+  progress: number,
+  monthly: { monthTarget: number; needed: number } | null,
+): BudgetViewTargetDto => ({
+  kind,
+  amount: String(amount),
+  startMonth: '2026-07',
+  progress: String(progress),
+  remaining: String(Math.max(0, amount - progress)),
+  ...(kind === 'BY_DATE' ? { dueMonth: '2026-10' as const } : {}),
+  ...(monthly === null
+    ? {}
+    : { monthTarget: String(monthly.monthTarget), needed: String(monthly.needed) }),
+});
+
 describe('the ring a category is drawn with', () => {
-  it('is empty when nothing went out of the envelope this month', () => {
-    expect(spendRing(0n, 60000n)).toMatchObject({ fraction: 0, overspent: false, moved: 0n });
+  it('measures the month against what the goal asks, not against the envelope', () => {
+    const ring = categoryRing(
+      envelope(
+        20000,
+        0,
+        40000,
+        goal('BY_DATE', 100000, 40000, { monthTarget: 26666, needed: 6666 }),
+      ),
+    );
+
+    expect(ring.fill).toBeCloseTo(20000 / 26666, 5);
+    expect(ring.head).toBe(0);
   });
 
-  it('fills by the share of the envelope that was spent', () => {
-    expect(spendRing(-148600n, 76600n).fraction).toBeCloseTo(148600 / 225200, 5);
+  it('runs the spent head over the same denominator the goal set', () => {
+    const ring = categoryRing(
+      envelope(
+        40000,
+        -21600,
+        18400,
+        goal('CONTRIBUTE', 40000, 40000, { monthTarget: 40000, needed: 0 }),
+      ),
+    );
+
+    expect(ring.fill).toBe(1);
+    expect(ring.head).toBeCloseTo(21600 / 40000, 5);
   });
 
-  it('is full when the envelope was spent to nothing', () => {
-    expect(spendRing(-30000n, 0n)).toMatchObject({ fraction: 1, overspent: false });
+  it('never lets the head outgrow the arc, so it cannot eat what is still missing', () => {
+    const ring = categoryRing(
+      envelope(
+        1000,
+        -5000,
+        6000,
+        goal('CONTRIBUTE', 10000, 1000, { monthTarget: 10000, needed: 9000 }),
+      ),
+    );
+
+    expect(ring.head).toBeCloseTo(0.1, 5);
+    expect(ring.head).toBeLessThanOrEqual(ring.fill);
+    expect(ring.fill).toBeLessThanOrEqual(1);
   });
 
-  it('is full and marked over when more went out than was in it', () => {
-    expect(spendRing(-37200n, -7200n)).toMatchObject({ fraction: 1, overspent: true });
+  it('stays empty rather than negative when more was taken out than the goal asked for', () => {
+    const ring = categoryRing(
+      envelope(
+        -5000,
+        0,
+        15000,
+        goal('REFILL_TO', 30000, 15000, { monthTarget: 10000, needed: 15000 }),
+      ),
+    );
+
+    expect(ring.fill).toBe(0);
+    expect(ring.head).toBe(0);
   });
 
-  it('is full rather than dividing by zero when the envelope was empty and money still went out', () => {
-    expect(spendRing(-5000n, -5000n)).toMatchObject({ fraction: 1, overspent: true });
-    expect(spendRing(0n, 0n)).toMatchObject({ fraction: 0, overspent: false });
+  it('measures the envelope when the goal asks for nothing this month', () => {
+    const ring = categoryRing(
+      envelope(0, 0, 30000, goal('REFILL_TO', 30000, 30000, { monthTarget: 0, needed: 0 })),
+    );
+
+    expect(ring.fill).toBe(1);
+    expect(ring.head).toBe(0);
+  });
+
+  it('measures the envelope for a goal that asks for no month at all', () => {
+    const ring = categoryRing(envelope(3000, 0, 12000, goal('ACCUMULATE', 50000, 12000, null)));
+
+    expect(ring.fill).toBe(1);
+    expect(ring.head).toBe(0);
+    expect(ring.goalShare).toBeCloseTo(12000 / 50000, 5);
+  });
+
+  it('splits the envelope into spent and left when there is no goal', () => {
+    const ring = categoryRing(envelope(12000, -13400, 800));
+
+    expect(ring.fill).toBe(1);
+    expect(ring.head).toBeCloseTo(13400 / 14200, 5);
+    expect(ring.goalShare).toBeNull();
+  });
+
+  it('carries the whole goal only for the two kinds that have one', () => {
+    expect(
+      categoryRing(
+        envelope(
+          20000,
+          0,
+          40000,
+          goal('BY_DATE', 100000, 40000, { monthTarget: 26666, needed: 6666 }),
+        ),
+      ).goalShare,
+    ).toBeCloseTo(0.4, 5);
+    expect(
+      categoryRing(
+        envelope(0, 0, 30000, goal('REFILL_TO', 30000, 30000, { monthTarget: 0, needed: 0 })),
+      ).goalShare,
+    ).toBeNull();
+    expect(
+      categoryRing(
+        envelope(
+          40000,
+          0,
+          40000,
+          goal('CONTRIBUTE', 40000, 40000, { monthTarget: 40000, needed: 0 }),
+        ),
+      ).goalShare,
+    ).toBeNull();
+  });
+
+  it('leaves the whole goal empty rather than negative when the envelope was raided', () => {
+    const ring = categoryRing(envelope(20000, 0, -5200, goal('ACCUMULATE', 50000, -5200, null)));
+
+    expect(ring.goalShare).toBe(0);
+  });
+
+  it('is empty when nothing went in or out this month', () => {
+    expect(categoryRing(envelope(0, 0, 0))).toMatchObject({ fill: 0, head: 0, overspent: false });
+  });
+
+  it('is wholly filled and marked over when more went out than was in it', () => {
+    expect(categoryRing(envelope(10000, -12000, -2000))).toMatchObject({
+      fill: 1,
+      head: 1,
+      overspent: true,
+    });
+  });
+
+  it('fills rather than dividing by zero when the envelope was empty and money still went out', () => {
+    expect(categoryRing(envelope(0, -5000, -5000))).toMatchObject({
+      fill: 1,
+      head: 1,
+      overspent: true,
+    });
   });
 
   it('says money came in rather than went out when the month is positive', () => {
-    expect(spendRing(4500n, 64500n)).toMatchObject({
+    expect(categoryRing(envelope(60000, 4500, 64500))).toMatchObject({
       incoming: true,
       moved: 4500n,
-      fraction: 0,
+      head: 0,
     });
-    expect(spendRing(-4500n, 55500n)).toMatchObject({ incoming: false, moved: 4500n });
-    expect(spendRing(0n, 1000n).incoming).toBe(false);
-  });
-
-  it('never fills past full, whatever the overspend', () => {
-    expect(spendRing(-1000000n, -940000n).fraction).toBe(1);
+    expect(categoryRing(envelope(60000, -4500, 55500))).toMatchObject({
+      incoming: false,
+      moved: 4500n,
+    });
+    expect(categoryRing(envelope(1000, 0, 1000)).incoming).toBe(false);
   });
 });

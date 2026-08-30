@@ -119,11 +119,13 @@ export function CategoryGroup({
             <IconEyeOff aria-hidden className="size-4" />
           </button>
         </span>
-        <span className="flex items-baseline gap-1.5">
-          <span className="text-muted-foreground text-xs">{t('categories.available')}</span>
+        <span className="flex shrink-0 flex-col items-end md:flex-row md:items-baseline md:gap-1.5">
+          <span className="text-muted-foreground order-2 text-xs md:order-1">
+            {t('categories.available')}
+          </span>
           <span
             data-testid={`group-total-${id}`}
-            className="text-[15px] font-semibold tabular-nums"
+            className="order-1 text-[15px] leading-tight font-semibold tabular-nums md:order-2"
           >
             {available}
           </span>

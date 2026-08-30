@@ -2,16 +2,28 @@
 
 import { Button } from '@rondo/ui/components/ui/button';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconChevronDown, IconEyeOff, IconPencil } from '@tabler/icons-react';
+import { IconChevronDown, IconEyeOff, IconPencil, IconTarget } from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
+import type { MessageKey } from '@/i18n/messages';
 
-function Row({ label, icon, onClick }: { label: string; icon: ReactNode; onClick: () => void }) {
+function Row({
+  label,
+  icon,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  icon: ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
   return (
     <Button
       type="button"
       variant="ghost"
+      disabled={disabled}
       onClick={onClick}
       className="h-9 w-full justify-start gap-2.5 rounded-xl px-2.5 text-sm font-normal"
     >
@@ -23,14 +35,23 @@ function Row({ label, icon, onClick }: { label: string; icon: ReactNode; onClick
 
 export function CategoryActions({
   category,
+  currentMonth,
   onEdit,
   onHide,
+  onGoal,
 }: {
-  category: { id: string; name: string };
+  category: { id: string; name: string; hidden: boolean };
+  currentMonth: boolean;
   onEdit: () => void;
   onHide: () => void;
+  onGoal: () => void;
 }) {
   const { t } = useTranslations();
+  const shut: MessageKey | null = category.hidden
+    ? 'categories.goalHiddenCategory'
+    : currentMonth
+      ? null
+      : 'categories.goalOnlyThisMonth';
   const [open, setOpen] = useState(false);
   const body = useId();
 
@@ -65,6 +86,15 @@ export function CategoryActions({
         <div className="overflow-hidden">
           {open ? (
             <div className="flex flex-col gap-0.5 pt-1">
+              <Row
+                label={t('categories.goal')}
+                icon={<IconTarget />}
+                disabled={shut !== null}
+                onClick={onGoal}
+              />
+              {shut === null ? null : (
+                <p className="text-muted-foreground px-2.5 pb-1 text-xs leading-snug">{t(shut)}</p>
+              )}
               <Row label={t('categories.edit')} icon={<IconPencil />} onClick={onEdit} />
               <Row label={t('categories.hide')} icon={<IconEyeOff />} onClick={onHide} />
             </div>

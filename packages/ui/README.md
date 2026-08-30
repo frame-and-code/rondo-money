@@ -16,8 +16,9 @@ avoids a barrel file that pulls every primitive into every bundle.
 src/
   components/
     ui/                 # shadcn/ui primitives, generated: button, card, checkbox, combobox,
-                        # command, dialog, drawer, dropdown-menu, input, input-group, label,
-                        # popover, select, separator, skeleton, textarea, tooltip
+                        # calendar, command, dialog, drawer, dropdown-menu, input, input-group,
+                        # label, popover, radio-group, select, separator, skeleton, textarea,
+                        # tooltip
     theme-provider.tsx  # next-themes provider (light/dark)
     theme-toggle.tsx    # theme switch used in the app header
   hooks/use-mobile.ts   # `useIsMobile`: the breakpoint a component branches on when the
@@ -52,10 +53,16 @@ whole file. A colour that feels wrong is a theme question, and the theme lives i
 `apps/web/src/app/globals.css`; a cursor is a rule in the same file, which is why the pointer on
 menu and option roles is written there rather than in a primitive.
 
-**Several files carry hand edits, and a regeneration drops them.** `popover.tsx` gained two parts
+**Several files carry hand edits, and a regeneration drops them.** `popover.tsx` gained three parts
 the generator leaves out: `Backdrop`, which lets a popover dim and blur the page behind it
-instead of merging into it, and `Close`, without which `modal` traps no focus at all, because
-base-ui gates the trap on that part being present. The dependency is `modal`'s and not the
+instead of merging into it, `Close`, without which `modal` traps no focus at all, because
+base-ui gates the trap on that part being present, and an opt-in `Arrow`, so a popover opened
+from one small control can point back at it rather than floating loose. The arrow takes its
+colour with `bg-inherit`, which is what lets a caller repaint the popup without repainting the
+arrow separately. `calendar.tsx` carries one too: the generator declares a ref for the focused
+day and never attaches it, so `ref.current` stays null and arrow keys move the day picker's
+own focus without moving the browser's. Attaching it is one word, and losing it again would
+take the keyboard out of the calendar. The dependency is `modal`'s and not the
 backdrop's, so every `modal` popover passes `closeLabel`, with or without a backdrop, and one
 that skips it stops the mouse and not the keyboard. It also forwards `collisionAvoidance`, so a
 popover whose content grows while it is open can be told to slide rather than jump to the other

@@ -140,8 +140,8 @@ describe('showing an amount', () => {
   it('renders at the digit count the budget was frozen at, not at two', () => {
     expect(moneyOf('ru-RU', 'JPY', 0).format(1000n).replace(/\s/gu, ' ')).toContain('1 000');
     expect(moneyOf('ru-RU', 'JPY', 0).format(1000n)).not.toContain(',00');
-    expect(moneyOf('ru-RU', 'PLN', 2).format(1000n)).toContain('10,00');
-    expect(moneyOf('ru-RU', 'KWD', 3).format(1000n)).toContain('1,000');
+    expect(moneyOf('ru-RU', 'PLN', 2).format(1050n)).toContain('10,50');
+    expect(moneyOf('ru-RU', 'KWD', 3).format(1005n)).toContain('1,005');
   });
 
   it('keeps the sign of an amount that went below zero', () => {
@@ -165,5 +165,55 @@ describe('showing an amount', () => {
     const huge = 9_007_199_254_740_993n;
 
     expect(moneyOf('ru-RU', 'PLN', 2).format(huge)).toContain('90071992547409.93');
+  });
+});
+
+describe('showing an amount with no currency beside it', () => {
+  it('keeps the budget digit count rather than falling back to two', () => {
+    expect(moneyOf('ru-RU', 'JPY', 0).plain(1000n)).not.toContain(',');
+    expect(moneyOf('ru-RU', 'PLN', 2).plain(1050n)).toContain('10,50');
+    expect(moneyOf('ru-RU', 'KWD', 3).plain(1005n)).toContain('1,005');
+  });
+
+  it('leaves the currency out, so the pair beside it reads as one amount', () => {
+    const money = moneyOf('ru-RU', 'PLN', 2);
+
+    expect(money.plain(2000050n)).not.toContain(money.symbol);
+    expect(money.plain(2000050n).replace(/\s/gu, ' ')).toContain('20 000,50');
+  });
+});
+
+describe('an amount whose fraction is nothing', () => {
+  it('drops the decimals rather than printing zeros nobody reads', () => {
+    const money = moneyOf('ru-RU', 'PLN', 2);
+
+    expect(money.format(50000n)).not.toContain(',');
+    expect(money.format(50000n)).toContain('500');
+    expect(money.plain(50000n)).toBe('500');
+    expect(money.format(0n)).not.toContain(',');
+  });
+
+  it('drops the zeros on a whole amount too big for a double to carry', () => {
+    const money = moneyOf('ru-RU', 'PLN', 2);
+    const huge = 900719925474099300n;
+
+    expect(money.plain(huge)).toBe('9007199254740993');
+    expect(money.format(huge)).not.toContain(',00');
+    expect(money.plain(huge + 7n)).toBe('9007199254740993.07');
+  });
+
+  it('keeps every decimal the moment one of them is not a zero', () => {
+    const money = moneyOf('ru-RU', 'PLN', 2);
+
+    expect(money.format(50060n)).toContain('500,60');
+    expect(money.format(50006n)).toContain('500,06');
+  });
+
+  it('leaves a field being typed into alone, where a trimmed decimal would fight the caret', () => {
+    const money = moneyOf('ru-RU', 'PLN', 2);
+
+    expect(money.typed(50000n)).toBe('500,00');
+    expect(money.typed(0n)).toBe('0,00');
+    expect(money.typed(50060n)).toBe('500,60');
   });
 });

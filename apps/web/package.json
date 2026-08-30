@@ -26,6 +26,7 @@
     "@rondo/ui": "workspace:*",
     "@tabler/icons-react": "^3.46.0",
     "@tanstack/react-query": "^5.101.4",
+    "date-fns": "^4.4.0",
     "next": "^16.3.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

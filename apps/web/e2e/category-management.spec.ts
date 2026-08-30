@@ -39,20 +39,20 @@ test('a category is created, emptied, hidden, and another is dragged into a new 
   await expect(availableOf(page, NEW_CATEGORY)).toBeVisible();
 
   await assign(page, '30', NEW_CATEGORY);
-  await expect(availableOf(page, NEW_CATEGORY)).toHaveText('$30.00');
+  await expect(availableOf(page, NEW_CATEGORY)).toHaveText('30 $');
 
   await cardOf(page, NEW_CATEGORY).click();
   await page.getByRole('button', { name: en['categories.manage'] }).click();
   await page.getByRole('button', { name: en['categories.hide'], exact: true }).click();
 
-  await expect(page.getByTestId('hide-total')).toHaveText('$30.00');
+  await expect(page.getByTestId('hide-total')).toHaveText('30 $');
   await expect(
     page.getByRole('button', { name: en['categories.hide'], exact: true }),
   ).toBeDisabled();
 
   await page.getByRole('button', { name: en['categories.release'] }).click();
 
-  await expect(page.getByTestId('hide-total')).toHaveText('$0.00');
+  await expect(page.getByTestId('hide-total')).toHaveText('0 $');
   await expect(page.getByRole('button', { name: en['categories.release'] })).toHaveCount(0);
 
   await page.getByRole('button', { name: en['categories.hide'], exact: true }).click();

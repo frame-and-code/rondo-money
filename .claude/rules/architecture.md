@@ -248,17 +248,26 @@ specification, and prose describing it is a summary rather than a replacement.
    hand, and a hand-written trigger beside a generated one is how a design system stops being
    one. Reuse the tokens the neighbouring primitive carries rather than values that look
    close.
-4. **An amount below zero is red, and that is the only colour a sign buys.**
+4. **An amount below zero is red, and no other amount is.**
    `text-destructive`, on a category tile's Available and Assigned, on ready to assign in the
-   month header and in its island, and on both rows of the move surface and the list it picks
-   from. What belongs to a red amount reddens with it, the explanation under ready to assign
-   and the spend ring of an overspent tile, and a group's total is the one amount that stays
-   plain. A reader who learns the colour on one of them reads it on the next. Red is the one
-   thing the eye is meant to find, so nothing else competes: a tile greys an amount at zero and
-   leaves one above zero plain, and the move rows rest muted rather than plain. Ready to assign
-   is the single exception, `text-primary` above zero with `dark:text-chart-2` behind it, and it
-   can afford the colour because the screen carries one pool rather than one per row. Every one
-   of these is a theme token, because a literal is right in one theme and wrong in the other.
+   month header and in its island, on a goal's progress, and on both rows of the move surface
+   and the list it picks from. What belongs to a red amount reddens with it, the explanation
+   under ready to assign and the spend ring of an overspent tile, and a group's total is the one
+   amount that stays plain. A reader who learns the colour on one of them reads it on the next.
+   Red is the one thing the eye is meant to find, so amounts do not compete with it: a tile greys
+   an amount at zero and leaves one above zero plain, and the move rows rest muted rather than
+   plain. A pair of amounts is the exception to the greying, because the zero in it is half a
+   sentence rather than an amount on its own: a month with nothing in it yet reads plainly as
+   nought of what the goal asks. Ready to assign is the exception among amounts, `text-primary` above zero with
+   `dark:text-chart-2` behind it, and it can afford the colour because the screen carries one
+   pool rather than one per row. A category's ring keeps that category's own colour whatever its
+   goal is doing, and turns red only on an overspent envelope: the colour there names the
+   envelope, not its state.
+   **A glyph may carry a colour an amount may not.** The badge in the assigned row is one:
+   `warning` while the month is short of what a goal asks, `success` once it is covered. It says
+   in one mark what the two amounts beside it already say in text, so nothing rests on the colour
+   alone, and it never spreads to a number. Every colour here is a theme token, because a literal
+   is right in one theme and wrong in the other.
 
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in

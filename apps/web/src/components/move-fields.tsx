@@ -101,7 +101,7 @@ export function MoveFields({
       size={7}
       inputMode="text"
       aria-label={t('categories.moveAmountFor', { envelope: envelope.name })}
-      placeholder={money.format(0n).replace(money.symbol, '').trim()}
+      placeholder={money.typed(0n)}
       value={draft}
       disabled={locked}
       onChange={(event) => onDraft(event.target.value)}

@@ -63,8 +63,10 @@ src/
                               # opens the move dialog, its spend ring, the fields that move
                               # money between envelopes, the actions folded under them, the
                               # dialog a category is set up in, the one a group is, the two
-                              # that hide a category and a group, the amount whose digits roll when it changes,
-                              # and the banner that says a save did not go through
+                              # that hide a category and a group, the badge with its tooltip
+                              # and the panel that explain a goal, the form it is set in, the
+                              # amount whose digits roll when it changes, and the banner that
+                              # says a save did not go through
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
                               # the fallback (F1.6); settings-locale.tsx feeds the language
                               # from GET /user-settings back into the locale context
@@ -76,9 +78,18 @@ src/
   lib/money.ts                # reading an amount a person typed through their locale's own
                               # marks, and showing one at the budget's digit count. Both
                               # screens that touch money use it, so a sign is refused or
-                              # allowed in one place
-  lib/budget-month.ts         # which month the screen shows, its label, and the ring a tile
-                              # is drawn with. Today comes from the budget's timezone
+                              # allowed in one place. Three ways out, and the difference
+                              # matters: `format` for a shown amount, which drops a fraction
+                              # that is all zeros and puts the symbol after the number in
+                              # every locale, `plain` for one whose currency is carried by a
+                              # neighbour, and `typed` for a field, which keeps every decimal
+                              # because a trimmed one fights the caret
+  lib/calendar-locale.ts      # the app's language to the date-fns locale the calendar and the
+                              # month label are formatted with
+  lib/budget-month.ts         # which month the screen shows, its label, and the two arcs a
+                              # tile's ring is drawn with, from the goal when there is one and
+                              # from the envelope when there is not. Today comes from the
+                              # budget's timezone
   lib/category-look.ts        # a category's icon and colour name to a component and a token,
                               # with the money icon for a category nobody has given one
   lib/category-order.ts       # where a dragged category lands, as a pure list-to-list move,
