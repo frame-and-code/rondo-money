@@ -357,7 +357,7 @@ describe('monthsInclusive', () => {
 
 describe('the shape a calendar date is published under', () => {
   it('matches the days parseCalendarDate takes', () => {
-    for (const day of ['2026-08-31', '2026-02-29', '1970-01-01']) {
+    for (const day of ['2026-08-31', '2024-02-29', '1970-01-01']) {
       expect(CALENDAR_DATE_PATTERN.test(day)).toBe(true);
     }
   });

@@ -1,4 +1,4 @@
-import { parseMoney } from '@rondo/types';
+import { parseCalendarDate, parseMoney } from '@rondo/types';
 
 import {
   refuseDraft,
@@ -8,6 +8,7 @@ import {
   signedAmount,
   type BudgetClock,
   type EntryDraft,
+  type SystemEntry,
 } from '@/transactions/entry-rules';
 
 const ZONE = 'Europe/Warsaw';
@@ -112,11 +113,12 @@ describe('the records a person may change', () => {
 });
 
 describe('what may change on an opening balance', () => {
-  const held = {
+  const held: SystemEntry = {
     accountId: 'a1',
     categoryId: null,
-    date: '2026-06-01',
+    date: parseCalendarDate('2026-06-01'),
     payee: null,
+    type: 'INCOME',
   };
 
   it('takes a correction of the amount, which is the number a person guessed', () => {
@@ -137,5 +139,9 @@ describe('what may change on an opening balance', () => {
 
   it('refuses to name a payee on it, because the app wrote it rather than a shop', () => {
     expect(refuseSystemEdit(held, { ...held, payee: 'Corner cafe' })).toBe('NOT_EDITABLE');
+  });
+
+  it('refuses to turn it into an expense, which would negate the money the account opened with', () => {
+    expect(refuseSystemEdit(held, { ...held, type: 'EXPENSE' })).toBe('NOT_EDITABLE');
   });
 });

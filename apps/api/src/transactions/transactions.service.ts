@@ -22,6 +22,7 @@ import {
   refuseTarget,
   signedAmount,
   type EntryCategory,
+  type SystemEntry,
 } from '@/transactions/entry-rules';
 import { ListTransactionsQueryDto, PAGE_SIZE } from '@/transactions/list-transactions.query.dto';
 import { TransactionResponse } from '@/transactions/transaction.response';
@@ -235,17 +236,19 @@ export class TransactionsService {
         }
 
         if (current.isSystem) {
-          const held = {
+          const held: SystemEntry = {
             accountId: current.accountId,
             categoryId: current.categoryId,
             date: calendarDateOf(current.date),
             payee: current.payee,
+            type: current.amount < 0n ? 'EXPENSE' : 'INCOME',
           };
           const wanted = {
             accountId: body.accountId,
             categoryId: body.categoryId ?? null,
             date: parseCalendarDate(body.date),
             payee: body.payee ?? null,
+            type: body.type,
           };
 
           const kept = refuseSystemEdit(held, wanted);

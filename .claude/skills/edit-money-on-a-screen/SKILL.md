@@ -165,7 +165,7 @@ desktop layout gets wrong every time:
   of filters that sits in a panel on a wide screen is a switcher on a narrow one: one button
   naming the current choice, a menu holding the rest. Stacked, that panel eats the first screen
   and the content starts below the fold.
-- **a dialog becomes a sheet.** A form that fits a centred dialog on a desktop is a full height
+- **a dialog becomes a sheet.** A form that fits a centred dialog on a desktop is a full-height
   sheet on a phone. The pickers inside it stay popovers, because every one of them portals out
   of the sheet, and what changes is the size of what they open: a row a finger can hit on a
   phone, the ordinary row on a desktop.

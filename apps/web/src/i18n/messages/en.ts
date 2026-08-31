@@ -376,7 +376,8 @@ export const en: Record<MessageKey, string> = {
   'transactions.delete': 'Delete',
   'transactions.unavailable': 'The records could not be read. Reload the page.',
   'transactions.failFuture':
-    'That day is later than today. A record is written after the money moves.',
+    'The date is later than today. A record is written after the money moves.',
+
   'transactions.failBeforeAccount':
     'The record is dated before the account was opened. Choose another day or another account.',
   'transactions.failCategoryRequired': 'An expense needs a category.',

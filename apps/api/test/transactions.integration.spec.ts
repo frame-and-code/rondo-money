@@ -539,6 +539,27 @@ describe('/transactions (integration)', () => {
       expect(stored).toMatchObject({ amount: 133700n, isSystem: true, categoryId: null });
     });
 
+    it('refuses to turn the opening balance into an expense, which would negate it', async () => {
+      const { budget, account } = await budgetOf(USER_EDITS);
+      const opening = await openingOf(USER_EDITS, budget.id, account.id);
+
+      const answer = await patch(USER_EDITS, opening.id, {
+        accountId: account.id,
+        type: 'EXPENSE',
+        amount: '133700',
+        date: TODAY,
+        idempotencyKey: 'negate-the-opening-balance',
+      }).expect(400);
+
+      expect(answer.body).toMatchObject({ reason: 'NOT_EDITABLE' });
+
+      const stored = await harness.prisma.transaction.findUniqueOrThrow({
+        where: { id: opening.id },
+      });
+
+      expect(stored.amount > 0n).toBe(true);
+    });
+
     it('refuses every other field, or the account is left without an opening balance', async () => {
       const { budget, account, category } = await budgetOf(USER_EDITS);
       const other = await harness.seedAccount(USER_EDITS, budget.id, {

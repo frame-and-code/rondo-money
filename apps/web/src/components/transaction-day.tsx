@@ -6,15 +6,10 @@ import { type ReactNode } from 'react';
 
 import { TransactionRow, type CategoryLookOf } from '@/components/transaction-row';
 import { useTranslations } from '@/i18n/locale-context';
+import { dayOf } from '@/lib/calendar-day';
 import { calendarLocale } from '@/lib/calendar-locale';
 import { type MoneyReader } from '@/lib/money';
 import { type FeedDay } from '@/lib/transaction-feed';
-
-function dayOf(date: string): Date {
-  const [year = '', month = '', day = ''] = date.split('-');
-
-  return new Date(Number(year), Number(month) - 1, Number(day));
-}
 
 export function TransactionDay({
   day,

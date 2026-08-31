@@ -5,6 +5,7 @@ import {
   parseMoney,
   type CategoryColor,
   type CategoryIcon,
+  type Money,
   type TransactionDto,
 } from '@rondo/types';
 import { Button } from '@rondo/ui/components/ui/button';
@@ -29,11 +30,11 @@ import { useTranslations } from '@/i18n/locale-context';
 import { categoryLook } from '@/lib/category-look';
 import { type MoneyReader } from '@/lib/money';
 
-function iconOf(record: TransactionDto): typeof IconTrendingUp {
+function iconOf(record: TransactionDto, amount: Money): typeof IconTrendingUp {
   if (record.transferId !== null) return IconArrowsExchange;
   if (record.isSystem) return IconBuildingBank;
 
-  return record.amount.startsWith('-') ? IconTrendingDown : IconTrendingUp;
+  return amount < 0n ? IconTrendingDown : IconTrendingUp;
 }
 
 export interface CategoryLookOf {
@@ -71,7 +72,7 @@ export function TransactionRow({
 
   const category = record.categoryId === null ? null : categoryOf(record.categoryId);
   const look = category === null ? null : categoryLook(category.icon, category.color);
-  const Icon = look?.Icon ?? iconOf(record);
+  const Icon = look?.Icon ?? iconOf(record, amount);
 
   const counterpart =
     record.counterAccountId === null ? null : accountName(record.counterAccountId);

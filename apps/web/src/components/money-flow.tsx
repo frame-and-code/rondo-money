@@ -64,7 +64,7 @@ import { feedDays } from '@/lib/transaction-feed';
 type Editing =
   | { kind: 'create'; on?: string }
   | { kind: 'edit'; record: TransactionDto }
-  | { kind: 'delete'; record: TransactionDto }
+  | { kind: 'delete'; record: TransactionDto; key: string }
   | { kind: 'account' }
   | { kind: 'rename'; id: string; name: string; type: AccountType };
 
@@ -286,15 +286,15 @@ export function MoneyFlow(): ReactNode {
       return;
     }
 
-    const written: LastEntry = {
+    const entry: LastEntry = {
       date: draft.date,
       categoryId: draft.categoryId,
       payee: draft.payee,
     };
 
-    setLast(written);
+    setLast(entry);
     if (budgetId !== null) {
-      storeLastEntry(budgetId, written);
+      storeLastEntry(budgetId, entry);
     }
 
     write.mutate(
@@ -378,7 +378,9 @@ export function MoneyFlow(): ReactNode {
           onDelete={() => {
             setFailed(null);
             setEditing(
-              editing.kind === 'edit' ? { kind: 'delete', record: editing.record } : editing,
+              editing.kind === 'edit'
+                ? { kind: 'delete', record: editing.record, key: crypto.randomUUID() }
+                : editing,
             );
           }}
         />
@@ -395,7 +397,7 @@ export function MoneyFlow(): ReactNode {
           onDelete={() =>
             drop.mutate({
               path: { id: editing.record.id },
-              body: { idempotencyKey: crypto.randomUUID() },
+              body: { idempotencyKey: editing.key },
             })
           }
           onCancel={close}
@@ -512,7 +514,9 @@ export function MoneyFlow(): ReactNode {
                 categoryOf={(id) => looks.get(id) ?? null}
                 showAccount={accountId === null}
                 onOpen={(record) => setEditing({ kind: 'edit', record })}
-                onDelete={(record) => setEditing({ kind: 'delete', record })}
+                onDelete={(record) =>
+                  setEditing({ kind: 'delete', record, key: crypto.randomUUID() })
+                }
               />
             ))}
 

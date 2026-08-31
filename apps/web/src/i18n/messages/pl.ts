@@ -374,8 +374,8 @@ export const pl: Record<MessageKey, string> = {
   'transactions.deletePoolLine': 'Do wolnych pieniędzy wróci {{amount}}',
   'transactions.delete': 'Usuń',
   'transactions.unavailable': 'Nie udało się odczytać wpisów. Odśwież stronę.',
-  'transactions.failFuture':
-    'Ten dzień jest późniejszy niż dziś. Wpis powstaje po ruchu pieniędzy.',
+  'transactions.failFuture': 'Data jest późniejsza niż dzisiaj. Wpis powstaje po ruchu pieniędzy.',
+
   'transactions.failBeforeAccount':
     'Data wpisu jest wcześniejsza niż otwarcie konta. Wybierz inny dzień albo inne konto.',
   'transactions.failCategoryRequired': 'Wydatek potrzebuje kategorii.',

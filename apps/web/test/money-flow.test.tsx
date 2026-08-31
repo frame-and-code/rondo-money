@@ -239,7 +239,9 @@ describe('the money flow screen', () => {
     draw();
     await screen.findByText('Corner cafe');
 
-    await userEvent.click(screen.getByRole('button', { name: /Filter/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: new RegExp(en['transactions.filter']) }),
+    );
     await pickCategory('Coffee');
     await pickType(en['transactions.typeIncome']);
 
@@ -250,7 +252,9 @@ describe('the money flow screen', () => {
     draw();
     await screen.findByText('Corner cafe');
 
-    await userEvent.click(screen.getByRole('button', { name: /Filter/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: new RegExp(en['transactions.filter']) }),
+    );
     await pickCategory('Coffee');
 
     expect(screen.getByTestId('filter-count')).toHaveTextContent('1');
@@ -266,7 +270,9 @@ describe('the money flow screen', () => {
 
     const today = todayIn(budget.timezone);
 
-    await userEvent.click(screen.getByRole('button', { name: /Filter/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: new RegExp(en['transactions.filter']) }),
+    );
     await userEvent.click(screen.getByRole('button', { name: en['transactions.periodLabel'] }));
     await userEvent.click(await screen.findByRole('button', { name: dayName(today) }));
 
@@ -280,7 +286,9 @@ describe('the money flow screen', () => {
     const today = todayIn(budget.timezone);
     const first = `${today.slice(0, 7)}-01`;
 
-    await userEvent.click(screen.getByRole('button', { name: /Filter/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: new RegExp(en['transactions.filter']) }),
+    );
     await userEvent.click(screen.getByRole('button', { name: en['transactions.periodLabel'] }));
     await userEvent.click(await screen.findByRole('button', { name: dayName(first) }));
     await userEvent.click(await screen.findByRole('button', { name: dayName(today) }));
@@ -402,7 +410,9 @@ describe('the money flow screen', () => {
     draw();
     await screen.findByText('Wallet');
 
-    await userEvent.click(screen.getByRole('button', { name: /Filter/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: new RegExp(en['transactions.filter']) }),
+    );
     await pickCategory('Coffee');
 
     expect(await screen.findByText(en['transactions.emptyFiltered'])).toBeInTheDocument();

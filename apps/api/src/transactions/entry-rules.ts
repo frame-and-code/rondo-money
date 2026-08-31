@@ -66,6 +66,7 @@ export interface SystemEntry {
   categoryId: string | null;
   date: CalendarDate;
   payee: string | null;
+  type: TransactionEntryType;
 }
 
 export function refuseSystemEdit(held: SystemEntry, next: SystemEntry): TransactionRefusal | null {
@@ -73,7 +74,8 @@ export function refuseSystemEdit(held: SystemEntry, next: SystemEntry): Transact
     held.accountId === next.accountId &&
     held.categoryId === next.categoryId &&
     held.date === next.date &&
-    held.payee === next.payee;
+    held.payee === next.payee &&
+    held.type === next.type;
 
   return same ? null : 'NOT_EDITABLE';
 }

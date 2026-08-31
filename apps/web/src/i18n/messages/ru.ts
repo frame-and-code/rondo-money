@@ -374,7 +374,8 @@ export const ru = {
   'transactions.deletePoolLine': 'В свободные деньги вернётся {{amount}}',
   'transactions.delete': 'Удалить',
   'transactions.unavailable': 'Не удалось прочитать движения. Обновите страницу.',
-  'transactions.failFuture': 'Дата позже сегодняшней. Запись делается после того, как деньги ушли.',
+  'transactions.failFuture':
+    'Дата позже сегодняшней. Запись создаётся после того, как деньги двинулись.',
   'transactions.failBeforeAccount':
     'Дата движения раньше даты открытия счёта. Выберите другую дату или счёт.',
   'transactions.failCategoryRequired': 'У расхода нужна категория.',

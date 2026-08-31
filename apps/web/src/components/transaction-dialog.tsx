@@ -206,6 +206,12 @@ export function TransactionDialog({
     }))
     .filter((group) => group.categories.length > 0);
 
+  const edited = (): void => {
+    if (failed === null || failed === 'transactions.failNetwork') return;
+
+    setKey(crypto.randomUUID());
+  };
+
   const draftOf = (): TransactionDraft => ({
     accountId,
     type,
@@ -285,7 +291,10 @@ export function TransactionDialog({
                     ? 'border-success text-success bg-success/10'
                     : 'border-primary text-primary bg-primary/10'),
               )}
-              onClick={() => setType(kind)}
+              onClick={() => {
+                setType(kind);
+                edited();
+              }}
             >
               <span
                 className={cn(
@@ -312,7 +321,10 @@ export function TransactionDialog({
           money={money}
           amount={amount}
           read={typed}
-          onChange={setAmount}
+          onChange={(next) => {
+            setAmount(next);
+            edited();
+          }}
           disabled={busy}
           className={cn(MONEY_FIELD, FIELD_SHAPE)}
         />
@@ -362,6 +374,7 @@ export function TransactionDialog({
               onSelect={(picked) => {
                 if (picked) {
                   setDate(dateOf(picked));
+                  edited();
                   setPicking(false);
                 }
               }}
@@ -375,9 +388,10 @@ export function TransactionDialog({
         <Combobox
           items={query.trim() === '' ? pickable : matching.flatMap((group) => group.categories)}
           value={named ?? (type === 'INCOME' ? pool : null)}
-          onValueChange={(next: PickableCategory | null) =>
-            setCategoryId(next === null || next.id === '' ? null : next.id)
-          }
+          onValueChange={(next: PickableCategory | null) => {
+            setCategoryId(next === null || next.id === '' ? null : next.id);
+            edited();
+          }}
           itemToStringLabel={(category: PickableCategory) => category.name}
           isItemEqualToValue={(left: PickableCategory, right: PickableCategory) =>
             left.id === right.id
@@ -438,13 +452,22 @@ export function TransactionDialog({
           payees={payees}
           disabled={busy}
           className={cn(MONEY_FIELD, FIELD_SHAPE)}
-          onChange={setPayee}
+          onChange={(next) => {
+            setPayee(next);
+            edited();
+          }}
         />
       </div>
 
       <div hidden={locked} className="flex flex-col gap-1.5">
         <Label>{t('transactions.accountLabel')}</Label>
-        <Select value={accountId} onValueChange={(next: string | null) => setAccountId(next ?? '')}>
+        <Select
+          value={accountId}
+          onValueChange={(next: string | null) => {
+            setAccountId(next ?? '');
+            edited();
+          }}
+        >
           <SelectTrigger
             aria-label={t('transactions.accountLabel')}
             className={cn(FIELD_SHAPE, 'w-full border-transparent data-[size=default]:h-11')}
