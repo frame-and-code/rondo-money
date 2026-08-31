@@ -93,6 +93,26 @@ two writers reading it at once would both insert.
 - `PATCH /accounts/:id` renames an account and changes nothing else. The type is chosen when
   the account is created and never afterwards, so no operation in the contract accepts one
   again. An account the active budget does not hold is a 400 rather than a 500.
+- `POST /transactions`, `PATCH /transactions/:id` and `POST /transactions/:id/delete` are how
+  an income or an expense is written, corrected and removed. The amount arrives without a sign
+  and the server writes one from the type, so an expense always leaves the account. Deletion is
+  physical, and it is addressed with POST because the idempotency key travels in the body.
+  Refusals name a reason: `DATE_IN_FUTURE`, `DATE_BEFORE_ACCOUNT`, `CATEGORY_REQUIRED`,
+  `CATEGORY_HIDDEN`, `ACCOUNT_ARCHIVED`, `NOT_EDITABLE`, `UNKNOWN_TRANSACTION`,
+  `UNKNOWN_ACCOUNT`, `UNKNOWN_CATEGORY`, `NO_ACTIVE_BUDGET`. An opening balance takes a
+  correction of its amount and carries `NOT_EDITABLE` for every other field, since the rest of
+  it belongs to the account. A transfer leg carries it whatever the change: it belongs to an
+  operation of its own.
+- `GET /transactions` is the feed, newest day first and, inside a day, the last record entered
+  first. It pages by an opaque `cursor` naming the day, the moment and the record, and it
+  carries the total of every day it touches. Each total covers the whole day under the same
+  filter, so a day split across two pages reads the same on both. Filters are `accountId`,
+  `categoryId`, `payee`, `type`, `from` and `to`, and they narrow together. With no account
+  named the feed covers the accounts the budget still uses, and an archived one is in none of
+  them.
+- `GET /transactions/payees` answers with every name a person has typed in this budget, once
+  each and in alphabetical order, so a field searches them in the browser rather than asking
+  per keystroke. The names the app wrote itself are not among them.
 - `POST /categories`, `PATCH /categories/:id`, `POST /categories/:id/hide`, `/unhide` and
   `POST /categories/reorder` are the category's own operations, and the five under
   `/category-groups` are the group's. There is no way to delete either: a category is hidden and
@@ -156,14 +176,16 @@ together, so an amount that may not go below zero (`nonNegative`) or one that wo
 nothing at zero (`positive`) states that bound once; `test/money-boundary.spec.ts` is what
 proves both halves move.
 
-**A currency, a time zone, a calendar month and a category's look are declared the same way**,
-with [`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts),
+**A currency, a time zone, a calendar day, a calendar month and a category's look are declared
+the same way**, with [`@ApiCurrencyProperty()`](src/validation/currency.decorator.ts),
 [`@ApiTimeZoneProperty()`](src/validation/timezone.decorator.ts),
+[`@ApiCalendarDateProperty()`](src/validation/date.decorator.ts),
 [`@ApiCalendarMonthProperty()`](src/validation/month.decorator.ts),
 [`@ApiCategoryIconProperty()`](src/validation/icon.decorator.ts) and
 [`@ApiCategoryColorProperty()`](src/validation/color.decorator.ts). Each publishes the field and
-refuses a value the app cannot use, in one decorator, for the reason above. The month lands on
-a `@Query()` DTO as readily as on a body, and the same global pipe validates both. The range it
+refuses a value the app cannot use, in one decorator, for the reason above. A day carries the
+shape in the schema and the calendar in the pipe, so `2026-02-30` is refused although it reads
+like a date. The month lands on a `@Query()` DTO as readily as on a body, and the same global pipe validates both. The range it
 takes is narrower than what a month can be, and
 [`@rondo/types`](../../packages/types/README.md) owns both the range and the reason. What a currency
 publishes is the **shape** of a code and not the list of them: the codes come from the

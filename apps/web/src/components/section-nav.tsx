@@ -35,7 +35,7 @@ export function SectionNav({ variant, collapsed = false }: SectionNavProps) {
           variant === 'sidebar' && 'flex flex-col gap-1',
           variant === 'sidebar' && (collapsed ? 'items-center py-2' : 'p-2'),
           variant === 'tabs' &&
-            'grid shrink-0 grid-flow-col auto-cols-fr border-t bg-card px-2 pt-2 pb-6 md:hidden',
+            'grid shrink-0 grid-flow-col auto-cols-fr border-t bg-card px-2 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:hidden',
         )}
       >
         {sections.map(({ href, labelKey, Icon }) => {
@@ -49,12 +49,14 @@ export function SectionNav({ variant, collapsed = false }: SectionNavProps) {
                 href={href}
                 aria-current={isCurrent ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-12 flex-col items-center justify-center gap-1 text-xs leading-tight',
+                  'flex min-h-11 flex-col items-center justify-start gap-0.5 text-xs leading-tight',
                   isCurrent ? 'font-medium text-foreground' : 'text-muted-foreground',
                 )}
               >
-                <Icon className="size-5" />
-                <span>{label}</span>
+                <span className="flex h-5 items-center">
+                  <Icon className="size-5" />
+                </span>
+                <span className="text-center text-balance">{label}</span>
               </Link>
             );
           }

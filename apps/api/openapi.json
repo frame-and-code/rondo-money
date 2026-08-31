@@ -1345,6 +1345,380 @@
           "Moves"
         ]
       }
+    },
+    "/transactions": {
+      "post": {
+        "description": "Writes one record in one database transaction. The amount arrives without a sign and the server writes one from the type, so an expense always leaves the account.",
+        "operationId": "TransactionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The record that now exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Record an income or an expense",
+        "tags": [
+          "Transactions"
+        ]
+      },
+      "get": {
+        "description": "One page of the feed, ordered by day and then by the moment each record was entered, with the total of every day it touches. Each total covers the whole day under the same filter, so a day split across two pages reads the same on both.",
+        "operationId": "TransactionsController_list",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "The account to read. Left out, the feed covers every account the budget still uses, and an archived one is in none of them.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "description": "The envelope to read.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "payee",
+            "required": false,
+            "in": "query",
+            "description": "One payee exactly as it was recorded.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "One kind of record. An opening balance is income like any other, so it is in that answer too.",
+            "schema": {
+              "$ref": "#/components/schemas/TransactionType"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "The first day to read, included.",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-08-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "The last day to read, included.",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-08-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Where the previous page stopped. It is opaque: it names a day, a moment and a record, so a page boundary neither repeats a row nor skips one.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "How many records to answer with.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The page and where to carry on from.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The records of a budget, newest first",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/transactions/payees": {
+      "get": {
+        "description": "Every name a person has typed, once each and in alphabetical order. The names the app wrote itself are not among them.",
+        "operationId": "TransactionsController_payees",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The names, for a field to search in the browser.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayeesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The payees this budget has recorded",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/transactions/{id}": {
+      "patch": {
+        "description": "Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all.",
+        "operationId": "TransactionsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The record as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change a record",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/transactions/{id}/delete": {
+      "post": {
+        "description": "Deletes the row rather than marking it, and the balance, the activity and ready to assign follow at once. It is a POST because the idempotency key travels in the body.",
+        "operationId": "TransactionsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTransactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The record that was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove a record",
+        "tags": [
+          "Transactions"
+        ]
+      }
     }
   },
   "info": {
@@ -2696,6 +3070,355 @@
           "error",
           "message"
         ]
+      },
+      "TransactionEntryType": {
+        "type": "string",
+        "enum": [
+          "INCOME",
+          "EXPENSE"
+        ],
+        "description": "What the record is. A transfer is not one of them: it exists only as a pair of legs and is written by its own operation."
+      },
+      "CreateTransactionDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money moved on."
+          },
+          "type": {
+            "description": "What the record is. A transfer is not one of them: it exists only as a pair of legs and is written by its own operation.",
+            "example": "EXPENSE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionEntryType"
+              }
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What moved, in minor units and without a sign. The direction is the type, and the server writes the sign, so an expense carrying a positive amount cannot land as income."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the account was opened."
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The envelope the money left. An expense names one; income may leave it out, and then the money stays ready to assign."
+          },
+          "payee": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Who was paid or who paid. A name of spaces is no name at all."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two records again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "accountId",
+          "type",
+          "amount",
+          "date",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "TransactionType": {
+        "type": "string",
+        "enum": [
+          "INCOME",
+          "EXPENSE",
+          "TRANSFER",
+          "ADJUSTMENT"
+        ],
+        "description": "What the record is."
+      },
+      "TransactionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money moved on."
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The envelope the money left, absent on income that stays ready to assign."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day the money moved, in the budget timezone."
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What moved, in minor units and signed: money that left the account is below zero. The server writes the sign from the type."
+          },
+          "type": {
+            "description": "What the record is.",
+            "example": "EXPENSE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionType"
+              }
+            ]
+          },
+          "payee": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "description": "Who was paid or who paid."
+          },
+          "isSystem": {
+            "type": "boolean",
+            "description": "True for a record the app wrote itself, such as an opening balance. It counts like any other, takes a correction of its amount and is never deleted."
+          },
+          "transferId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Shared by the two legs of one transfer."
+          },
+          "counterAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The account at the other end of a transfer, so a leg reads as a sentence."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the record was entered, which is not the day the money moved. It orders the records of one day."
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "categoryId",
+          "date",
+          "amount",
+          "type",
+          "payee",
+          "isSystem",
+          "transferId",
+          "counterAccountId",
+          "createdAt"
+        ]
+      },
+      "TransactionRefusal": {
+        "type": "string",
+        "enum": [
+          "ACCOUNT_ARCHIVED",
+          "CATEGORY_HIDDEN",
+          "CATEGORY_REQUIRED",
+          "DATE_BEFORE_ACCOUNT",
+          "DATE_IN_FUTURE",
+          "NOT_EDITABLE",
+          "NO_ACTIVE_BUDGET",
+          "UNKNOWN_ACCOUNT",
+          "UNKNOWN_CATEGORY",
+          "UNKNOWN_TRANSACTION"
+        ],
+        "description": "Why the record was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
+      },
+      "TransactionRefusedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          },
+          "reason": {
+            "description": "Why the record was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "TransactionDayResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day these records belong to."
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the whole day comes to under the filter that was asked for, not what this page of it happens to hold. A day cut by a page boundary reads the same on both pages."
+          }
+        },
+        "required": [
+          "date",
+          "total"
+        ]
+      },
+      "TransactionPageResponse": {
+        "type": "object",
+        "properties": {
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionResponse"
+            }
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionDayResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to carry on from, and null once the feed has reached its end."
+          }
+        },
+        "required": [
+          "transactions",
+          "days",
+          "nextCursor"
+        ]
+      },
+      "PayeesResponse": {
+        "type": "object",
+        "properties": {
+          "payees": {
+            "description": "Every name this budget has recorded, once each and in alphabetical order. The list is small enough to be held and searched in the browser.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "payees"
+        ]
+      },
+      "UpdateTransactionDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money moved on."
+          },
+          "type": {
+            "description": "What the record is. A transfer is not one of them: it exists only as a pair of legs and is written by its own operation.",
+            "example": "EXPENSE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionEntryType"
+              }
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What moved, in minor units and without a sign. The direction is the type, and the server writes the sign, so an expense carrying a positive amount cannot land as income."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the account was opened."
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The envelope the money left. An expense names one; income may leave it out, and then the money stays ready to assign."
+          },
+          "payee": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Who was paid or who paid. A name of spaces is no name at all."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two records again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "accountId",
+          "type",
+          "amount",
+          "date",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "DeleteTransactionDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the confirmation opens. A repeat under the same key is answered with the record that was removed rather than with a refusal.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
       }
     }
   },

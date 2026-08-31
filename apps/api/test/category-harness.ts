@@ -71,7 +71,11 @@ export interface CategoryHarness {
     sortOrder?: number,
     hiddenAt?: Date | null,
   ) => Promise<{ id: string }>;
-  seedAccount: (userId: string, budgetId: string) => Promise<{ id: string }>;
+  seedAccount: (
+    userId: string,
+    budgetId: string,
+    over?: Record<string, unknown>,
+  ) => Promise<{ id: string; createdAt: Date }>;
   seedIncome: (
     userId: string,
     budgetId: string,
@@ -168,9 +172,9 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
       prisma.category.create({
         data: { userId, budgetId, groupId, name, sortOrder, hiddenAt },
       }),
-    seedAccount: (userId, budgetId) =>
+    seedAccount: (userId, budgetId, over = {}) =>
       prisma.account.create({
-        data: { userId, budgetId, name: 'Кошелёк', type: 'CASH' },
+        data: { userId, budgetId, name: 'Кошелёк', type: 'CASH', ...over },
       }),
     seedIncome: (userId, budgetId, accountId, date, amount) =>
       prisma.transaction.create({

@@ -96,10 +96,13 @@ stop**. Never quietly substitute a single-context read and report it as a review
    nothing" is unreadable. It could mean the claim collapsed, or that the refuter had nothing
    to add to it.
 
-   **How a claim is refuted depends on what it claims.** A behaviour claim ("this returns
-   another user's rows") is refuted by failing to reproduce it. A missing-thing claim ("no
-   cross-tenant test", "no `@ApiProperty`", "this sentence in `docs/` is now false") has no
-   reproduction to fail. It is refuted only by naming the thing that does exist. Applying the
+   **How a claim is refuted depends on what it claims.** A reviewer has no shell, so a
+   behaviour claim ("this returns another user's rows") is refuted by reading the path it
+   names and showing what stops it, and it is **unproven** when reading cannot settle it. Running the code to settle one is **yours**, not theirs, and it is one narrow spec
+   rather than the gate: the gate ran before this command and runs again in CI. A
+   missing-thing claim ("no cross-tenant test", "no `@ApiProperty`", "this sentence in
+   `docs/` is now false") has no reproduction to fail. It is refuted only by naming the thing
+   that does exist. Applying the
    reproduction test to those would default them all to refuted by construction, and they are
    the findings this project most needs, since they are what the generic reviewers never
    raise.

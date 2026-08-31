@@ -1,4 +1,5 @@
 import {
+  CALENDAR_DATE_PATTERN,
   CALENDAR_MONTH_PATTERN,
   calendarDateIn,
   calendarDateOf,
@@ -351,5 +352,19 @@ describe('monthsInclusive', () => {
 
   it('never answers below one, whichever way round the months come', () => {
     expect(monthsInclusive('2026-10', '2026-08')).toBe(1);
+  });
+});
+
+describe('the shape a calendar date is published under', () => {
+  it('matches the days parseCalendarDate takes', () => {
+    for (const day of ['2026-08-31', '2024-02-29', '1970-01-01']) {
+      expect(CALENDAR_DATE_PATTERN.test(day)).toBe(true);
+    }
+  });
+
+  it('refuses anything that is not year-month-day', () => {
+    for (const day of ['2026-8-1', '31.08.2026', '20260831', '2026-08', '']) {
+      expect(CALENDAR_DATE_PATTERN.test(day)).toBe(false);
+    }
   });
 });

@@ -171,6 +171,7 @@ export function AccountDialog({
               read={read}
               disabled={busy || frozen}
               hint={t('newAccount.balanceHint')}
+              preview={(minor) => t('newAccount.balancePreview', { amount: money.format(minor) })}
               className={FIELD}
               onChange={(next) => {
                 setAmount(next);

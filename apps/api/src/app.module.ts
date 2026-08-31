@@ -14,6 +14,7 @@ import { MutationsModule } from '@/mutations/mutations.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { RawSqlModule } from '@/raw-sql/raw-sql.module';
 import { RequestContextModule } from '@/request-context/request-context.module';
+import { TransactionsModule } from '@/transactions/transactions.module';
 import { UserSettingsModule } from '@/user-settings/user-settings.module';
 import { VALIDATION_PIPE } from '@/validation/validation.options';
 
@@ -33,6 +34,7 @@ import { VALIDATION_PIPE } from '@/validation/validation.options';
     BudgetViewModule,
     CategoriesModule,
     MovesModule,
+    TransactionsModule,
   ],
   providers: [{ provide: APP_PIPE, useValue: VALIDATION_PIPE }],
 })

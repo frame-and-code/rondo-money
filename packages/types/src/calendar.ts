@@ -2,7 +2,7 @@ export type CalendarDate = string;
 
 export type CalendarMonth = string;
 
-const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+export const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const CALENDAR_MONTH = /^[1-9]\d{3}-(0[1-9]|1[0-2])$/;
 
@@ -46,7 +46,7 @@ function requireInstant(instant: Date): number {
 export function parseCalendarDate(value: string): CalendarDate {
   const instant = new Date(`${value}T00:00:00Z`);
   if (
-    !CALENDAR_DATE.test(value) ||
+    !CALENDAR_DATE_PATTERN.test(value) ||
     Number.isNaN(instant.getTime()) ||
     !instant.toISOString().startsWith(value)
   ) {

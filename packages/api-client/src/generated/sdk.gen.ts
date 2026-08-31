@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, AccountsControllerRenameData, AccountsControllerRenameErrors, AccountsControllerRenameResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, AccountsControllerRenameData, AccountsControllerRenameErrors, AccountsControllerRenameResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, TransactionsControllerCreateData, TransactionsControllerCreateErrors, TransactionsControllerCreateResponses, TransactionsControllerListData, TransactionsControllerListErrors, TransactionsControllerListResponses, TransactionsControllerPayeesData, TransactionsControllerPayeesErrors, TransactionsControllerPayeesResponses, TransactionsControllerRemoveData, TransactionsControllerRemoveErrors, TransactionsControllerRemoveResponses, TransactionsControllerUpdateData, TransactionsControllerUpdateErrors, TransactionsControllerUpdateResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -311,6 +311,73 @@ export const categoryTargetsControllerClose = <ThrowOnError extends boolean = fa
 export const movesControllerMove = <ThrowOnError extends boolean = false>(options: Options<MovesControllerMoveData, ThrowOnError>): RequestResult<MovesControllerMoveResponses, MovesControllerMoveErrors, ThrowOnError> => (options.client ?? client).post<MovesControllerMoveResponses, MovesControllerMoveErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/moves',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The records of a budget, newest first
+ *
+ * One page of the feed, ordered by day and then by the moment each record was entered, with the total of every day it touches. Each total covers the whole day under the same filter, so a day split across two pages reads the same on both.
+ */
+export const transactionsControllerList = <ThrowOnError extends boolean = false>(options?: Options<TransactionsControllerListData, ThrowOnError>): RequestResult<TransactionsControllerListResponses, TransactionsControllerListErrors, ThrowOnError> => (options?.client ?? client).get<TransactionsControllerListResponses, TransactionsControllerListErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transactions',
+    ...options
+});
+
+/**
+ * Record an income or an expense
+ *
+ * Writes one record in one database transaction. The amount arrives without a sign and the server writes one from the type, so an expense always leaves the account.
+ */
+export const transactionsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<TransactionsControllerCreateData, ThrowOnError>): RequestResult<TransactionsControllerCreateResponses, TransactionsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<TransactionsControllerCreateResponses, TransactionsControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transactions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The payees this budget has recorded
+ *
+ * Every name a person has typed, once each and in alphabetical order. The names the app wrote itself are not among them.
+ */
+export const transactionsControllerPayees = <ThrowOnError extends boolean = false>(options?: Options<TransactionsControllerPayeesData, ThrowOnError>): RequestResult<TransactionsControllerPayeesResponses, TransactionsControllerPayeesErrors, ThrowOnError> => (options?.client ?? client).get<TransactionsControllerPayeesResponses, TransactionsControllerPayeesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transactions/payees',
+    ...options
+});
+
+/**
+ * Change a record
+ *
+ * Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all.
+ */
+export const transactionsControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<TransactionsControllerUpdateData, ThrowOnError>): RequestResult<TransactionsControllerUpdateResponses, TransactionsControllerUpdateErrors, ThrowOnError> => (options.client ?? client).patch<TransactionsControllerUpdateResponses, TransactionsControllerUpdateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transactions/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove a record
+ *
+ * Deletes the row rather than marking it, and the balance, the activity and ready to assign follow at once. It is a POST because the idempotency key travels in the body.
+ */
+export const transactionsControllerRemove = <ThrowOnError extends boolean = false>(options: Options<TransactionsControllerRemoveData, ThrowOnError>): RequestResult<TransactionsControllerRemoveResponses, TransactionsControllerRemoveErrors, ThrowOnError> => (options.client ?? client).post<TransactionsControllerRemoveResponses, TransactionsControllerRemoveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transactions/{id}/delete',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -1,7 +1,7 @@
 'use client';
 
-import { AccountList } from '@/components/account-list';
+import { MoneyFlow } from '@/components/money-flow';
 
-export default function AccountsPage() {
-  return <AccountList />;
+export default function MoneyFlowPage() {
+  return <MoneyFlow />;
 }
