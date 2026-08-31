@@ -27,15 +27,17 @@ test('the accounts screen carries the balances, takes another account and rename
   await onboard(page);
   await page.goto('/accounts');
 
-  await expect(page.getByText(OPENED)).toBeVisible();
+  const panel = page.getByTestId('account-panel');
+
+  await expect(panel.getByText(OPENED)).toBeVisible();
   await expect(page.getByTestId('accounts-total')).toContainText('1,000');
 
-  await page.getByRole('button', { name: en['accounts.add'] }).click();
+  await page.getByRole('button', { name: en['transactions.addAccount'] }).click();
   await page.getByLabel(en['newAccount.nameLabel'], { exact: true }).fill(ADDED);
   await page.getByLabel(en['newAccount.balanceLabel'], { exact: true }).fill('250');
   await page.getByRole('button', { name: en['accounts.save'] }).click();
 
-  await expect(page.getByText(ADDED)).toBeVisible();
+  await expect(panel.getByText(ADDED)).toBeVisible();
   await expect(page.getByTestId('accounts-total')).toContainText('1,250');
 
   await page
@@ -46,7 +48,7 @@ test('the accounts screen carries the balances, takes another account and rename
   await field.fill(RENAMED);
   await page.getByRole('button', { name: en['accounts.save'] }).click();
 
-  await expect(page.getByText(RENAMED)).toBeVisible();
-  await expect(page.getByText(OPENED)).toHaveCount(0);
+  await expect(panel.getByText(RENAMED)).toBeVisible();
+  await expect(panel.getByText(OPENED)).toHaveCount(0);
   await expect(page.getByTestId('accounts-total')).toContainText('1,250');
 });

@@ -570,6 +570,171 @@ export type MoveRefusedResponse = {
     reason?: MoveRefusal;
 };
 
+/**
+ * What the record is. A transfer is not one of them: it exists only as a pair of legs and is written by its own operation.
+ */
+export type TransactionEntryType = 'INCOME' | 'EXPENSE';
+
+export type CreateTransactionDto = {
+    /**
+     * The account the money moved on.
+     */
+    accountId: string;
+    /**
+     * What the record is. A transfer is not one of them: it exists only as a pair of legs and is written by its own operation.
+     */
+    type: TransactionEntryType;
+    /**
+     * What moved, in minor units and without a sign. The direction is the type, and the server writes the sign, so an expense carrying a positive amount cannot land as income.
+     */
+    amount: string;
+    /**
+     * The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the account was opened.
+     */
+    date: string;
+    /**
+     * The envelope the money left. An expense names one; income may leave it out, and then the money stays ready to assign.
+     */
+    categoryId?: string;
+    /**
+     * Who was paid or who paid. A name of spaces is no name at all.
+     */
+    payee?: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two records again.
+     */
+    idempotencyKey: string;
+};
+
+/**
+ * What the record is.
+ */
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER' | 'ADJUSTMENT';
+
+export type TransactionResponse = {
+    id: string;
+    /**
+     * The account the money moved on.
+     */
+    accountId: string;
+    /**
+     * The envelope the money left, absent on income that stays ready to assign.
+     */
+    categoryId: string | null;
+    /**
+     * The day the money moved, in the budget timezone.
+     */
+    date: string;
+    /**
+     * What moved, in minor units and signed: money that left the account is below zero. The server writes the sign from the type.
+     */
+    amount: string;
+    /**
+     * What the record is.
+     */
+    type: TransactionType;
+    /**
+     * Who was paid or who paid.
+     */
+    payee: string | null;
+    /**
+     * True for a record the app wrote itself, such as an opening balance. It counts like any other, takes a correction of its amount and is never deleted.
+     */
+    isSystem: boolean;
+    /**
+     * Shared by the two legs of one transfer.
+     */
+    transferId: string | null;
+    /**
+     * The account at the other end of a transfer, so a leg reads as a sentence.
+     */
+    counterAccountId: string | null;
+    /**
+     * When the record was entered, which is not the day the money moved. It orders the records of one day.
+     */
+    createdAt: string;
+};
+
+/**
+ * Why the record was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export type TransactionRefusal = 'ACCOUNT_ARCHIVED' | 'CATEGORY_HIDDEN' | 'CATEGORY_REQUIRED' | 'DATE_BEFORE_ACCOUNT' | 'DATE_IN_FUTURE' | 'NOT_EDITABLE' | 'NO_ACTIVE_BUDGET' | 'UNKNOWN_ACCOUNT' | 'UNKNOWN_CATEGORY' | 'UNKNOWN_TRANSACTION';
+
+export type TransactionRefusedResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+    /**
+     * Why the record was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+     */
+    reason?: TransactionRefusal;
+};
+
+export type TransactionDayResponse = {
+    /**
+     * The day these records belong to.
+     */
+    date: string;
+    /**
+     * What the whole day comes to under the filter that was asked for, not what this page of it happens to hold. A day cut by a page boundary reads the same on both pages.
+     */
+    total: string;
+};
+
+export type TransactionPageResponse = {
+    transactions: Array<TransactionResponse>;
+    days: Array<TransactionDayResponse>;
+    /**
+     * Where to carry on from, and null once the feed has reached its end.
+     */
+    nextCursor: string | null;
+};
+
+export type PayeesResponse = {
+    /**
+     * Every name this budget has recorded, once each and in alphabetical order. The list is small enough to be held and searched in the browser.
+     */
+    payees: Array<string>;
+};
+
+export type UpdateTransactionDto = {
+    /**
+     * The account the money moved on.
+     */
+    accountId: string;
+    /**
+     * What the record is. A transfer is not one of them: it exists only as a pair of legs and is written by its own operation.
+     */
+    type: TransactionEntryType;
+    /**
+     * What moved, in minor units and without a sign. The direction is the type, and the server writes the sign, so an expense carrying a positive amount cannot land as income.
+     */
+    amount: string;
+    /**
+     * The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the account was opened.
+     */
+    date: string;
+    /**
+     * The envelope the money left. An expense names one; income may leave it out, and then the money stays ready to assign.
+     */
+    categoryId?: string;
+    /**
+     * Who was paid or who paid. A name of spaces is no name at all.
+     */
+    payee?: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two records again.
+     */
+    idempotencyKey: string;
+};
+
+export type DeleteTransactionDto = {
+    /**
+     * Minted once when the confirmation opens. A repeat under the same key is answered with the record that was removed rather than with a refusal.
+     */
+    idempotencyKey: string;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -1288,3 +1453,197 @@ export type MovesControllerMoveResponses = {
 };
 
 export type MovesControllerMoveResponse = MovesControllerMoveResponses[keyof MovesControllerMoveResponses];
+
+export type TransactionsControllerListData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * The account to read. Left out, the feed covers every account the budget still uses, and an archived one is in none of them.
+         */
+        accountId?: string;
+        /**
+         * The envelope to read.
+         */
+        categoryId?: string;
+        /**
+         * One payee exactly as it was recorded.
+         */
+        payee?: string;
+        /**
+         * One kind of record. An opening balance is income like any other, so it is in that answer too.
+         */
+        type?: TransactionType;
+        /**
+         * The first day to read, included.
+         */
+        from?: string;
+        /**
+         * The last day to read, included.
+         */
+        to?: string;
+        /**
+         * Where the previous page stopped. It is opaque: it names a day, a moment and a record, so a page boundary neither repeats a row nor skips one.
+         */
+        cursor?: string;
+        /**
+         * How many records to answer with.
+         */
+        limit?: number;
+    };
+    url: '/transactions';
+};
+
+export type TransactionsControllerListErrors = {
+    /**
+     * The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransactionRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type TransactionsControllerListError = TransactionsControllerListErrors[keyof TransactionsControllerListErrors];
+
+export type TransactionsControllerListResponses = {
+    /**
+     * The page and where to carry on from.
+     */
+    200: TransactionPageResponse;
+};
+
+export type TransactionsControllerListResponse = TransactionsControllerListResponses[keyof TransactionsControllerListResponses];
+
+export type TransactionsControllerCreateData = {
+    body: CreateTransactionDto;
+    path?: never;
+    query?: never;
+    url: '/transactions';
+};
+
+export type TransactionsControllerCreateErrors = {
+    /**
+     * The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransactionRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type TransactionsControllerCreateError = TransactionsControllerCreateErrors[keyof TransactionsControllerCreateErrors];
+
+export type TransactionsControllerCreateResponses = {
+    /**
+     * The record that now exists.
+     */
+    201: TransactionResponse;
+};
+
+export type TransactionsControllerCreateResponse = TransactionsControllerCreateResponses[keyof TransactionsControllerCreateResponses];
+
+export type TransactionsControllerPayeesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/transactions/payees';
+};
+
+export type TransactionsControllerPayeesErrors = {
+    /**
+     * The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransactionRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type TransactionsControllerPayeesError = TransactionsControllerPayeesErrors[keyof TransactionsControllerPayeesErrors];
+
+export type TransactionsControllerPayeesResponses = {
+    /**
+     * The names, for a field to search in the browser.
+     */
+    200: PayeesResponse;
+};
+
+export type TransactionsControllerPayeesResponse = TransactionsControllerPayeesResponses[keyof TransactionsControllerPayeesResponses];
+
+export type TransactionsControllerUpdateData = {
+    body: UpdateTransactionDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/transactions/{id}';
+};
+
+export type TransactionsControllerUpdateErrors = {
+    /**
+     * The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransactionRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type TransactionsControllerUpdateError = TransactionsControllerUpdateErrors[keyof TransactionsControllerUpdateErrors];
+
+export type TransactionsControllerUpdateResponses = {
+    /**
+     * The record as it stands now.
+     */
+    200: TransactionResponse;
+};
+
+export type TransactionsControllerUpdateResponse = TransactionsControllerUpdateResponses[keyof TransactionsControllerUpdateResponses];
+
+export type TransactionsControllerRemoveData = {
+    body: DeleteTransactionDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/transactions/{id}/delete';
+};
+
+export type TransactionsControllerRemoveErrors = {
+    /**
+     * The body was refused, or the record cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransactionRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type TransactionsControllerRemoveError = TransactionsControllerRemoveErrors[keyof TransactionsControllerRemoveErrors];
+
+export type TransactionsControllerRemoveResponses = {
+    /**
+     * The record that was removed.
+     */
+    200: TransactionResponse;
+};
+
+export type TransactionsControllerRemoveResponse = TransactionsControllerRemoveResponses[keyof TransactionsControllerRemoveResponses];

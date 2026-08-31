@@ -28,11 +28,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     document.title = wanted;
 
-    const again = requestAnimationFrame(() => {
-      document.title = wanted;
+    const head = document.querySelector('head');
+    if (head === null) {
+      return;
+    }
+
+    const holdIt = new MutationObserver(() => {
+      if (document.title !== wanted) {
+        document.title = wanted;
+      }
     });
 
-    return () => cancelAnimationFrame(again);
+    holdIt.observe(head, { childList: true, subtree: true, characterData: true });
+
+    return () => holdIt.disconnect();
   }, [current, t]);
 
   return (

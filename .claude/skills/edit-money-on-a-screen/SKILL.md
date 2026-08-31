@@ -154,6 +154,35 @@ const [named] = xxxControllerReadQueryKey({ query: { month } });
 queryClient.invalidateQueries({ queryKey: [{ _id: named._id }] });
 ```
 
+## The phone artboard is a second screen, not the desktop one folded
+
+A design carries one artboard per width, and the narrow one is a different arrangement rather
+than the wide one with the columns stacked. Build both, and treat the screen as unfinished
+while only one of them exists. What the phone artboard usually moves, and what a stacked
+desktop layout gets wrong every time:
+
+- **a column beside the content becomes a control above it.** A list of accounts, of months or
+  of filters that sits in a panel on a wide screen is a switcher on a narrow one: one button
+  naming the current choice, a menu holding the rest. Stacked, that panel eats the first screen
+  and the content starts below the fold.
+- **a dialog becomes a sheet.** A form that fits a centred dialog on a desktop is a full height
+  sheet on a phone. The pickers inside it stay popovers, because every one of them portals out
+  of the sheet, and what changes is the size of what they open: a row a finger can hit on a
+  phone, the ordinary row on a desktop.
+- **a row drops what it can spare.** Secondary marks and columns move to a second line or leave
+  the phone entirely, because the line has to keep the one thing that identifies the row.
+  A badge next to a name takes the width the name needed.
+
+Build a layout variant the way the accounts panel does: one component, a `variant` prop, the
+parent rendering both and hiding one by width
+([`money-flow.tsx`](../../../apps/web/src/components/money-flow.tsx)). Two components drift.
+An overlay is the exception, and it has to be: a dialog and a drawer cannot both be mounted,
+because each traps focus and each would hold its own copy of the form. So the parent picks one
+with `useIsMobile()` and renders the body into whichever it picked.
+
+**A screen is not done when it renders on a phone without overflowing.** It is done when it
+matches the phone artboard.
+
 ## The tests, in the same change
 
 Unit, rendering the screen against a mocked client. **Mock the query key in the shape the
@@ -171,6 +200,8 @@ Cover, at least:
   request;
 - each refusal: where the surface goes, what the amount reads, and that the notice stays;
 - the notice reaches the reader on a phone as well as on a desktop;
+- each width renders its own arrangement: the narrow variant is asserted directly, by the prop
+  that selects it, since a CSS-hidden variant is still in the DOM and a query matches both;
 - the failing field is named even when the answer arrives after it was closed;
 - throwing an unretried request away re-reads, nothing can be written until that re-read
   lands, and a re-read that fails leaves the month up;

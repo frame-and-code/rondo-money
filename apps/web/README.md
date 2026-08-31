@@ -8,8 +8,9 @@ protection, the shadcn/ui base from `@rondo/ui`, the locale switcher and the typ
 Query. Server state lives in that cache, not in component state. Categories is a real screen:
 it draws a month of the budget, moves money between its envelopes, assigning included, and lets
 the user arrange the categories themselves, creating, renaming, repainting, reordering and
-hiding them. Accounts is a real screen too: it lists what each account holds and what they
-hold together, and takes a new account or a rename from a dialog. Net worth and settings are
+hiding them. Money flow is a real screen too: the accounts sit on the left with what each of them
+holds and what they hold together, the records run beside them as a feed by days, and the
+screen takes an account, a rename and an income or an expense from its dialogs. Net worth and settings are
 still slots.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
@@ -53,8 +54,8 @@ src/
       layout.tsx              # the gate over the app, and AppShell around every section
       categories/             # the month of the budget: page.tsx renders BudgetMonth, and
                               # loading.tsx the same skeleton the screen shows while it reads
-      accounts/               # the accounts and what they hold: page.tsx renders AccountList,
-                              # and loading.tsx the skeleton it shows while it reads
+      accounts/               # money flow: page.tsx renders MoneyFlow, the accounts panel
+                              # beside the feed, and loading.tsx the skeleton it shows
       net-worth/              # the remaining sections are page.tsx (the slot) + loading.tsx
       settings/
   components/                 # app-level components: the shell and its navigation, the
@@ -62,8 +63,11 @@ src/
                               # section slot, the loading region, the Clerk provider wrapper,
                               # the locale switcher, the two onboarding forms, the field an
                               # amount is typed into, which the onboarding form and the
-                              # accounts dialog share, the accounts screen and the dialog it
-                              # creates and renames from, and the categories screen: the month
+                              # accounts dialog share, the money flow screen and everything on
+                              # it (the accounts panel, the feed by days and its rows, the
+                              # record form, the payee field, the filters, the empty states and
+                              # the delete confirmation), the dialog an account is created and
+                              # renamed from, and the categories screen: the month
                               # header, a group, a tile that opens the move dialog, its spend
                               # ring, the fields that move money between envelopes, the
                               # actions folded under them, the dialog a category is set up in,
@@ -90,6 +94,11 @@ src/
                               # because a trimmed one fights the caret
   lib/calendar-locale.ts      # the app's language to the date-fns locale the calendar and the
                               # month label are formatted with
+  lib/calendar-day.ts         # a calendar date to the Date a picker works in and back, built
+                              # from local parts so a day never shifts across a timezone
+  lib/last-entry.ts           # what the last record was written with, kept per budget in the
+                              # browser, so the next form opens on the same day, envelope and
+                              # counterparty
   lib/budget-month.ts         # which month the screen shows, its label, and the two arcs a
                               # tile's ring is drawn with, from the goal when there is one and
                               # from the envelope when there is not. Today comes from the
@@ -103,6 +112,10 @@ src/
                               # never the one the money is leaving
   lib/save-failure.ts         # what a refused save was, read from the answer's reason rather
                               # than from its message, and what the screen does about each
+  lib/transaction-failure.ts  # the same for a refused record, one message per reason the API
+                              # names, and one fallback for a reason it does not
+  lib/transaction-feed.ts     # the records of one page cut into days, each with the total the
+                              # server counted for the whole day rather than for the page
   lib/sections.ts             # the sections in one place: route, message key, icon.
                               # The navigation, the header title and the browser tab all
                               # read it, so a section is named the same in every one

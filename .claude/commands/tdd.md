@@ -39,7 +39,11 @@ cannot, because the code it would mirror does not exist yet.
    - before building a component, look in `packages/ui`, then in the shadcn registry
      (`pnpm dlx shadcn@latest add <component>`), which generates it with this project's
      settings;
-   - only if it is in neither, compose it from the primitives, never from bare markup.
+   - only if it is in neither, compose it from the primitives, never from bare markup;
+   - **the control plan comes before the first component file**, one line per control naming
+     its artboard, its width and its primitive, as [architecture](../rules/architecture.md)
+     asks. It is written into the session, not kept in your head: an unwritten plan is how a
+     hand-rolled picker reaches review.
 
    A scenario written against a screen you invented passes against that invention.
 
@@ -81,7 +85,12 @@ cannot, because the code it would mirror does not exist yet.
      the code. They are listed in [`docs/testing.md`](../../docs/testing.md). E2E is the level
      to run once at the end rather than every round.
 
-6. **Implement to green, one scenario at a time.**
+6. **Implement to green, one scenario at a time.** The loop runs to the end without asking
+   again. Step 4 is the only gate this command has: once the list is confirmed, red tests,
+   implementation, the next layer and the level's own run follow one after another, and a
+   layer finishing is a milestone rather than a place to stop. Report at the end, or when
+   something genuinely needs the user: a test that turns out to demand the wrong behaviour, a
+   decision the ticket never took, a refusal that is not yours to overrule.
    - Take them in dependency order, `packages/types` → `packages/db` → `apps/api` →
      `packages/api-client` → `apps/web`, the same order [`/plan`](plan.md) sequences work in.
    - The smallest change that turns the current test green, then re-run **that level**, the

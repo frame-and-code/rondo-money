@@ -1,4 +1,4 @@
-import { IconBuildingBank, IconSettings, IconTrendingUp, IconWallet } from '@tabler/icons-react';
+import { IconCoins, IconSettings, IconTrendingUp, IconWallet } from '@tabler/icons-react';
 
 import type { MessageKey } from '@/i18n/messages';
 
@@ -12,7 +12,7 @@ export interface Section {
 
 export const sections: Section[] = [
   { href: '/categories', labelKey: 'nav.categories', Icon: IconWallet },
-  { href: '/accounts', labelKey: 'nav.accounts', Icon: IconBuildingBank },
+  { href: '/accounts', labelKey: 'nav.accounts', Icon: IconCoins },
   { href: '/net-worth', labelKey: 'nav.netWorth', Icon: IconTrendingUp },
   { href: '/settings', labelKey: 'nav.settings', Icon: IconSettings },
 ];

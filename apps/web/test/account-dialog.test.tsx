@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { AccountList } from '@/components/account-list';
+import { MoneyFlow } from '@/components/money-flow';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { en } from '@/i18n/messages/en';
 
@@ -39,6 +39,27 @@ jest.mock('@rondo/api-client/react-query', () => ({
     queryFn: () => Promise.resolve(answer),
   }),
   accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList', baseUrl: 'http://api' }],
+  budgetViewControllerReadOptions: () => ({
+    queryKey: [{ _id: 'budgetViewControllerRead', baseUrl: 'http://api' }],
+    queryFn: () => Promise.resolve({ month: '2026-08', readyToAssign: '0', groups: [] }),
+  }),
+  transactionsControllerPayeesOptions: () => ({
+    queryKey: [{ _id: 'transactionsControllerPayees', baseUrl: 'http://api' }],
+    queryFn: () => Promise.resolve({ payees: [] }),
+  }),
+  transactionsControllerPayeesQueryKey: () => [
+    { _id: 'transactionsControllerPayees', baseUrl: 'http://api' },
+  ],
+  transactionsControllerListInfiniteOptions: () => ({
+    queryKey: [{ _id: 'transactionsControllerList', baseUrl: 'http://api' }],
+    queryFn: () => Promise.resolve({ transactions: [], days: [], nextCursor: null }),
+  }),
+  transactionsControllerListQueryKey: () => [
+    { _id: 'transactionsControllerList', baseUrl: 'http://api' },
+  ],
+  transactionsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transactionsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transactionsControllerRemoveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   budgetViewControllerReadQueryKey: () => [
     { _id: 'budgetViewControllerRead', baseUrl: 'http://api' },
   ],
@@ -75,7 +96,7 @@ const draw = () => {
   return render(
     <QueryClientProvider client={client}>
       <LocaleProvider>
-        <AccountList />
+        <MoneyFlow />
       </LocaleProvider>
     </QueryClientProvider>,
   );
@@ -89,7 +110,9 @@ const bodyOf = (call: jest.Mock, index: number): Record<string, unknown> => {
 
 const openCreate = async (user: ReturnType<typeof userEvent.setup>) => {
   await screen.findByText('Wallet');
-  await user.click(screen.getByRole('button', { name: en['accounts.add'] }));
+  const panel = within(screen.getByTestId('account-panel'));
+
+  await user.click(panel.getByRole('button', { name: en['transactions.addAccount'] }));
 };
 
 const openRename = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -146,13 +169,14 @@ describe('adding an account from the screen', () => {
     await user.click(screen.getByRole('button', { name: en['accounts.save'] }));
 
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(4));
 
     const keys = invalidate.mock.calls.map((call) =>
       JSON.stringify((call[0] as { queryKey: unknown }).queryKey),
     );
     expect(keys.some((key) => key.includes('accountsControllerList'))).toBe(true);
     expect(keys.some((key) => key.includes('budgetViewControllerRead'))).toBe(true);
+    expect(keys.some((key) => key.includes('transactionsControllerList'))).toBe(true);
   });
 });
 
@@ -213,7 +237,9 @@ describe('a failure that lands after the dialog was dismissed', () => {
       heldCreate?.('the network was unkind');
     });
 
-    await user.click(screen.getByRole('button', { name: en['accounts.add'] }));
+    const panel = within(screen.getByTestId('account-panel'));
+
+    await user.click(panel.getByRole('button', { name: en['transactions.addAccount'] }));
 
     expect(await screen.findByLabelText(en['newAccount.nameLabel'])).toBeInTheDocument();
     expect(screen.queryByText(en['accounts.saveFailed'])).not.toBeInTheDocument();

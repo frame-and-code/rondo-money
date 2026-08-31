@@ -23,7 +23,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { MoneyField } from '@/components/money-field';
+import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
@@ -32,11 +32,7 @@ import { moneyOf } from '@/lib/money';
 
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
-const FIELD = cn(
-  'bg-input/50 flex w-full items-center gap-2 border border-transparent transition-colors',
-  'focus-within:border-ring focus-within:ring-ring/30 focus-within:ring-3',
-  CONTROL,
-);
+const FIELD = cn(MONEY_FIELD, CONTROL);
 
 const TYPES: ReadonlyArray<{
   id: AccountType;
@@ -221,6 +217,9 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                     read={read}
                     disabled={create.isPending}
                     hint={t('newAccount.balanceHint')}
+                    preview={(minor) =>
+                      t('newAccount.balancePreview', { amount: money.format(minor) })
+                    }
                     className={FIELD}
                     onChange={(next) => {
                       setAmount(next);

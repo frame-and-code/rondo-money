@@ -3,8 +3,7 @@ import { type Server } from 'node:http';
 import { type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { TransactionType } from '@rondo/db';
-import { toDbDate, toDbMonth } from '@rondo/types';
+import { toDbMonth } from '@rondo/types';
 import fc from 'fast-check';
 import request from 'supertest';
 
@@ -44,6 +43,8 @@ const CATEGORIES = 3;
 
 const SIDES: readonly Side[] = [POOL, 0, 1, 2];
 
+let entriesApplied = 0;
+let entriesLanded = 0;
 let movesApplied = 0;
 let movesLanded = 0;
 let hidesApplied = 0;
@@ -203,17 +204,21 @@ describe('invariant 5.5 (integration)', () => {
       }
     }
 
-    await prisma.transaction.create({
-      data: {
-        userId: USER,
-        budgetId,
+    entriesApplied += 1;
+    const written = await request(app.getHttpServer() as Server)
+      .post('/transactions')
+      .set('Authorization', `Bearer ${tokenFor()}`)
+      .send({
         accountId,
-        date: toDbDate(step.date),
-        amount: step.kind === 'income' ? step.amount : -step.amount,
-        type: step.kind === 'income' ? TransactionType.INCOME : TransactionType.EXPENSE,
-        categoryId: spentOn,
-      },
-    });
+        categoryId: spentOn ?? undefined,
+        type: step.kind === 'income' ? 'INCOME' : 'EXPENSE',
+        amount: step.amount.toString(10),
+        date: step.date,
+        idempotencyKey: `invariant-entry-${entriesApplied}`,
+      });
+
+    expect(written.status).toBe(201);
+    entriesLanded += 1;
   };
 
   const balances = async (): Promise<bigint> => {
@@ -262,7 +267,13 @@ describe('invariant 5.5 (integration)', () => {
     budgetId = budget.id;
 
     const account = await prisma.account.create({
-      data: { userId: USER, budgetId, name: 'Счёт', type: 'CASH' },
+      data: {
+        userId: USER,
+        budgetId,
+        name: 'Счёт',
+        type: 'CASH',
+        createdAt: new Date('2025-12-01T00:00:00Z'),
+      },
     });
     accountId = account.id;
 
@@ -333,6 +344,8 @@ describe('invariant 5.5 (integration)', () => {
       { numRuns: 50 },
     );
 
+    expect(entriesLanded).toBeGreaterThan(0);
+    expect(entriesLanded).toBe(entriesApplied);
     expect(movesLanded).toBeGreaterThan(0);
     expect(hidesLanded).toBeGreaterThan(0);
   }, 180_000);

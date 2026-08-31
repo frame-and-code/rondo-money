@@ -238,7 +238,19 @@ specification, and prose describing it is a summary rather than a replacement.
 2. **Icons come from `@tabler/icons-react`.** Never paste a raw `<svg>` out of a mock. Match
    the path data to the icon it is and import that one by name, so the set stays consistent and
    a mock's snapshot never becomes a second icon library.
-3. **Look for the component before inventing one**, in this order: `packages/ui`, then the
+3. **Before writing a screen, write the plan of its controls, and write it out loud.** One
+   line per control: what it is, which artboard and which width it comes from, and the
+   primitive from `packages/ui` it is built out of. A control with no primitive beside it is
+   the one about to be hand-rolled, and that is visible in a list of eight lines while it is
+   invisible in a finished file. The list is the deliverable of reading the design, because
+   reading it silently is indistinguishable from not reading it, and this list is what makes
+   the ladder below fire before the code rather than at review. Ask the user only where the
+   design and a recorded decision disagree; everything else the list settles on its own.
+   A picker of a value is `Select` or `Combobox`, never `DropdownMenu`, which is a menu of
+   actions and carries the wrong trigger icon; the double chevron of `IconSelector` means
+   "choose", the single chevron means "expand", and the icon a reader sees first is the one
+   that tells them which of the two this is.
+4. **Look for the component before inventing one**, in this order: `packages/ui`, then the
    shadcn registry (the paragraph below has the command), then a composition of primitives
    rather than bare markup. Not left to memory: `@rondo/config/eslint/ui-primitives` fails the
    gate on a bare form control in `apps/web` and names the primitive to use instead, including
@@ -248,7 +260,7 @@ specification, and prose describing it is a summary rather than a replacement.
    hand, and a hand-written trigger beside a generated one is how a design system stops being
    one. Reuse the tokens the neighbouring primitive carries rather than values that look
    close.
-4. **An amount below zero is red, and no other amount is.**
+5. **On the screens below, an amount below zero is red and no other amount carries a colour.**
    `text-destructive`, on a category tile's Available and Assigned, on ready to assign in the
    month header and in its island, on a goal's progress, and on both rows of the move surface
    and the list it picks from. What belongs to a red amount reddens with it, the explanation
@@ -268,6 +280,12 @@ specification, and prose describing it is a summary rather than a replacement.
    in one mark what the two amounts beside it already say in text, so nothing rests on the colour
    alone, and it never spreads to a number. Every colour here is a theme token, because a literal
    is right in one theme and wrong in the other.
+   **Money flow is the screen where both halves of that rule stop.** An expense there is the ordinary
+   case rather than a warning, so an amount below zero keeps the plain colour there, and income
+   takes `text-success`, the token the goal badge already carries. Red stays with an account
+   balance below zero wherever that screen shows one, the panel, its narrow switcher and the
+   picker in the form, and nowhere else on that screen. Painting every expense red would turn the one screen that is nothing
+   but expenses into a sheet of warnings, and the colour would stop naming anything.
 
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in

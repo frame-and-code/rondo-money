@@ -125,4 +125,12 @@ describe('section navigation', () => {
     );
     expect(screen.getAllByRole('link')).toHaveLength(4);
   });
+
+  it('centres a tab label, because one of them wraps onto a second line', async () => {
+    renderNav({ variant: 'tabs' });
+
+    const label = await screen.findByText(ru['nav.accounts']);
+
+    expect(label.className).toContain('text-center');
+  });
 });

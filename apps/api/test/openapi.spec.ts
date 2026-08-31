@@ -1,5 +1,12 @@
 import { type OpenAPIObject, type PathItemObject } from '@nestjs/swagger';
-import { CATEGORY_COLORS, CATEGORY_ICONS, MONEY_PATTERN, MOVE_REFUSALS } from '@rondo/types';
+import {
+  CATEGORY_COLORS,
+  CATEGORY_ICONS,
+  MONEY_PATTERN,
+  MONEY_POSITIVE_PATTERN,
+  MOVE_REFUSALS,
+  TRANSACTION_REFUSALS,
+} from '@rondo/types';
 
 import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
 import { HTTP_METHODS, SESSION_TOKEN_SCHEME } from '@/openapi/document';
@@ -117,6 +124,13 @@ const nestedSchemaNames = (
   return visited;
 };
 
+function membersOf(document: OpenAPIObject, name: string): string[] {
+  const schema = document.components?.schemas?.[name];
+  const members = schema && 'enum' in schema ? schema.enum : [];
+
+  return Array.isArray(members) ? members.map((member) => String(member)) : [];
+}
+
 describe('OpenAPI document', () => {
   let document: OpenAPIObject;
 
@@ -145,11 +159,15 @@ describe('OpenAPI document', () => {
       '/health',
       '/me',
       '/moves',
+      '/transactions',
+      '/transactions/payees',
+      '/transactions/{id}',
+      '/transactions/{id}/delete',
       '/user-settings',
     ]);
   });
 
-  it('publishes no operation that deletes, because deleting a category is not an operation', () => {
+  it('publishes no operation under the delete verb, because a key travels in the body', () => {
     const deleting = Object.entries(document.paths).filter(([, item]) => item?.delete);
 
     expect(deleting.map(([path]) => path)).toEqual([]);
@@ -485,5 +503,35 @@ describe('OpenAPI document', () => {
     for (const field of ['monthTarget', 'needed', 'dueMonth']) {
       expect(required(goal)).not.toContain(field);
     }
+  });
+
+  describe('the transactions screen', () => {
+    it('publishes every amount it answers with as a string of minor units', () => {
+      expect(moneyFieldsOf(document, 'TransactionResponse')).toEqual(['amount']);
+      expect(moneyFieldsOf(document, 'TransactionDayResponse')).toEqual(['total']);
+    });
+
+    it('takes an amount without a sign, because the direction is the type', () => {
+      const schema = requestSchemaOf(document, document.paths['/transactions']?.post);
+      const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+      expect(properties['amount']).toMatchObject({ pattern: MONEY_POSITIVE_PATTERN.source });
+    });
+
+    it('publishes the kinds a form may send apart from the kinds a row may be', () => {
+      expect(membersOf(document, 'TransactionEntryType')).toEqual(['INCOME', 'EXPENSE']);
+      expect(membersOf(document, 'TransactionType').sort()).toEqual([
+        'ADJUSTMENT',
+        'EXPENSE',
+        'INCOME',
+        'TRANSFER',
+      ]);
+    });
+
+    it('names the reason a refusal carries, so a screen answers each one differently', () => {
+      expect(membersOf(document, 'TransactionRefusal').sort()).toEqual(
+        [...TRANSACTION_REFUSALS].sort(),
+      );
+    });
   });
 });

@@ -15,10 +15,10 @@ avoids a barrel file that pulls every primitive into every bundle.
 ```text
 src/
   components/
-    ui/                 # shadcn/ui primitives, generated: button, card, checkbox, combobox,
-                        # calendar, command, dialog, drawer, dropdown-menu, input, input-group,
-                        # label, popover, radio-group, select, separator, skeleton, textarea,
-                        # tooltip
+    ui/                 # shadcn/ui primitives, generated: alert, button, card, checkbox,
+                        # combobox, calendar, command, dialog, drawer, dropdown-menu, input,
+                        # input-group, label, popover, radio-group, select, separator,
+                        # skeleton, textarea, tooltip
     theme-provider.tsx  # next-themes provider (light/dark)
     theme-toggle.tsx    # theme switch used in the app header
   hooks/use-mobile.ts   # `useIsMobile`: the breakpoint a component branches on when the
@@ -59,17 +59,20 @@ instead of merging into it, `Close`, without which `modal` traps no focus at all
 base-ui gates the trap on that part being present, and an opt-in `Arrow`, so a popover opened
 from one small control can point back at it rather than floating loose. The arrow takes its
 colour with `bg-inherit`, which is what lets a caller repaint the popup without repainting the
-arrow separately. `calendar.tsx` carries one too: the generator declares a ref for the focused
+arrow separately. `calendar.tsx` carries several: the generator declares a ref for the focused
 day and never attaches it, so `ref.current` stays null and arrow keys move the day picker's
 own focus without moving the browser's. Attaching it is one word, and losing it again would
-take the keyboard out of the calendar. The dependency is `modal`'s and not the
+take the keyboard out of the calendar. Beside it live the cell size the app draws a month at
+and the shape of a selection: a day is a circle, and so are both ends of a range, while the
+band between them stays square and caps at the end of a row. The dependency is `modal`'s and not the
 backdrop's, so every `modal` popover passes `closeLabel`, with or without a backdrop, and one
 that skips it stops the mouse and not the keyboard. It also forwards `collisionAvoidance`, so a
 popover whose content grows while it is open can be told to slide rather than jump to the other
 side of its trigger. `command.tsx` and
 `combobox.tsx` hold the shape of every picker this app draws: the height and radius of a row,
-the height and radius of the search field, the padding around the list, and the tint a row takes
-under the pointer. They live in the primitive because two screens need the same picker, and a
+the height and radius of the search field, the padding around the list, the tint a row takes
+under the pointer, the width the popup takes from its anchor, and the double chevron on the
+trigger, which is the mark that says a value is chosen here rather than a section expanded. They live in the primitive because two screens need the same picker, and a
 value copied into both is a value that will differ by the next change. `select.tsx` opens its
 popup under the trigger rather than over the selected item, so the list lines up with the box it
 came from. And `select.tsx`, `dropdown-menu.tsx` and `combobox.tsx` keep their open and close

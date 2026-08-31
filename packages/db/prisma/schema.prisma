@@ -237,8 +237,8 @@ model Transaction {
   account  Account   @relation(fields: [accountId, budgetId], references: [id, budgetId], onDelete: Restrict)
   category Category? @relation(fields: [categoryId, budgetId], references: [id, budgetId], onDelete: Restrict)
 
-  @@index([userId, budgetId, date])
-  @@index([accountId])
+  @@index([userId, budgetId, date, createdAt])
+  @@index([accountId, date, createdAt])
   @@index([categoryId])
   @@index([transferId])
   @@map("transaction")

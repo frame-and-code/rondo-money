@@ -6,7 +6,10 @@ description: Write a raw SQL aggregate in apps/api without walking around tenant
 # A raw aggregate
 
 The Prisma extension cannot express a budget aggregate, so these queries are hand-written SQL
-and the isolation the extension gives everything else is **not** on this path (ADR-005). The
+and the isolation the extension gives everything else is **not** on this path (ADR-005). One
+sum does not need any of it: a total per group over a single table is Prisma's own `groupBy`,
+which the extension allows once the `where` names the caller and the budget, and
+[`page-a-long-list`](../page-a-long-list/SKILL.md) covers that one. The
 statement to copy is
 [`budget-view.query.ts`](../../../apps/api/src/budget-view/budget-view.query.ts), with
 [`budget-view.service.ts`](../../../apps/api/src/budget-view/budget-view.service.ts) beside it.

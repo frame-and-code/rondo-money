@@ -37,9 +37,27 @@ export { CATEGORY_REFUSALS, isCategoryRefusal } from './category.js';
 export type { BudgetViewCategoryDto, BudgetViewDto, BudgetViewGroupDto } from './budget-view.js';
 export type { MoveDto, MoveRefusal, MoveSideDto, MoveSideKind } from './move.js';
 export { MOVE_REFUSALS, MOVE_SIDE_KINDS, isMoveRefusal, isMoveSideKind } from './move.js';
+export type {
+  PayeesDto,
+  TransactionDayDto,
+  TransactionDto,
+  TransactionEntryType,
+  TransactionPageDto,
+  TransactionRefusal,
+  TransactionType,
+} from './transaction.js';
+export {
+  TRANSACTION_ENTRY_TYPES,
+  TRANSACTION_REFUSALS,
+  TRANSACTION_TYPES,
+  isTransactionEntryType,
+  isTransactionRefusal,
+  isTransactionType,
+} from './transaction.js';
 export type { LanguageTag, UserSettingsDto } from './user-settings.js';
 export type { CalendarDate, CalendarMonth } from './calendar.js';
 export {
+  CALENDAR_DATE_PATTERN,
   CALENDAR_MONTH_PATTERN,
   isTimeZone,
   calendarDateIn,

@@ -384,6 +384,100 @@ export const zMoveRefusedResponse = z.object({
 });
 
 /**
+ * What the record is. A transfer is not one of them: it exists only as a pair of legs and is written by its own operation.
+ */
+export const zTransactionEntryType = z.enum(['INCOME', 'EXPENSE']);
+
+export const zCreateTransactionDto = z.object({
+    accountId: z.uuid(),
+    type: zTransactionEntryType,
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    categoryId: z.uuid().optional(),
+    payee: z.string().max(100).optional(),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+/**
+ * What the record is.
+ */
+export const zTransactionType = z.enum([
+    'INCOME',
+    'EXPENSE',
+    'TRANSFER',
+    'ADJUSTMENT'
+]);
+
+export const zTransactionResponse = z.object({
+    id: z.uuid(),
+    accountId: z.uuid(),
+    categoryId: z.uuid().nullable(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    amount: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    type: zTransactionType,
+    payee: z.string().max(100).nullable(),
+    isSystem: z.boolean(),
+    transferId: z.uuid().nullable(),
+    counterAccountId: z.uuid().nullable(),
+    createdAt: z.iso.datetime()
+});
+
+/**
+ * Why the record was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export const zTransactionRefusal = z.enum([
+    'ACCOUNT_ARCHIVED',
+    'CATEGORY_HIDDEN',
+    'CATEGORY_REQUIRED',
+    'DATE_BEFORE_ACCOUNT',
+    'DATE_IN_FUTURE',
+    'NOT_EDITABLE',
+    'NO_ACTIVE_BUDGET',
+    'UNKNOWN_ACCOUNT',
+    'UNKNOWN_CATEGORY',
+    'UNKNOWN_TRANSACTION'
+]);
+
+export const zTransactionRefusedResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    reason: zTransactionRefusal.optional()
+});
+
+export const zTransactionDayResponse = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    total: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
+});
+
+export const zTransactionPageResponse = z.object({
+    transactions: z.array(zTransactionResponse),
+    days: z.array(zTransactionDayResponse),
+    nextCursor: z.string().nullable()
+});
+
+export const zPayeesResponse = z.object({
+    payees: z.array(z.string())
+});
+
+export const zUpdateTransactionDto = z.object({
+    accountId: z.uuid(),
+    type: zTransactionEntryType,
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    categoryId: z.uuid().optional(),
+    payee: z.string().max(100).optional(),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zDeleteTransactionDto = z.object({
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+/**
  * The database answered.
  */
 export const zHealthControllerCheckResponse = zHealthResponse;
@@ -569,3 +663,53 @@ export const zMovesControllerMoveBody = zCreateMoveDto;
  * The move that was applied.
  */
 export const zMovesControllerMoveResponse = zMoveResponse;
+
+export const zTransactionsControllerListQuery = z.object({
+    accountId: z.uuid().optional(),
+    categoryId: z.uuid().optional(),
+    payee: z.string().max(100).optional(),
+    type: zTransactionType.optional(),
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    cursor: z.string().optional(),
+    limit: z.number().gte(1).lte(100).optional().default(50)
+});
+
+/**
+ * The page and where to carry on from.
+ */
+export const zTransactionsControllerListResponse = zTransactionPageResponse;
+
+export const zTransactionsControllerCreateBody = zCreateTransactionDto;
+
+/**
+ * The record that now exists.
+ */
+export const zTransactionsControllerCreateResponse = zTransactionResponse;
+
+/**
+ * The names, for a field to search in the browser.
+ */
+export const zTransactionsControllerPayeesResponse = zPayeesResponse;
+
+export const zTransactionsControllerUpdateBody = zUpdateTransactionDto;
+
+export const zTransactionsControllerUpdatePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The record as it stands now.
+ */
+export const zTransactionsControllerUpdateResponse = zTransactionResponse;
+
+export const zTransactionsControllerRemoveBody = zDeleteTransactionDto;
+
+export const zTransactionsControllerRemovePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The record that was removed.
+ */
+export const zTransactionsControllerRemoveResponse = zTransactionResponse;

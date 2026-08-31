@@ -7,6 +7,11 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import { useTranslations } from '@/i18n/locale-context';
 import { type Amount, type MoneyReader } from '@/lib/money';
 
+export const MONEY_FIELD = cn(
+  'bg-input/50 flex w-full items-center gap-2 border border-transparent transition-colors',
+  'focus-within:border-ring focus-within:ring-ring/30 focus-within:ring-3',
+);
+
 export function MoneyField({
   id,
   money,
@@ -15,6 +20,7 @@ export function MoneyField({
   onChange,
   disabled = false,
   hint,
+  preview,
   className,
 }: {
   id: string;
@@ -24,6 +30,7 @@ export function MoneyField({
   onChange: (next: string) => void;
   disabled?: boolean;
   hint?: string;
+  preview?: (amount: bigint) => string;
   className?: string;
 }) {
   const { t } = useTranslations();
@@ -52,7 +59,7 @@ export function MoneyField({
           placeholder={money.typed(0n)}
           onChange={(event) => onChange(event.target.value)}
           disabled={disabled}
-          className="h-auto min-w-0 flex-1 p-0"
+          className="h-auto min-w-0 flex-1 p-0 text-sm"
         />
         <span className="text-muted-foreground shrink-0 text-sm">{money.symbol}</span>
       </div>
@@ -66,10 +73,8 @@ export function MoneyField({
       {read.fault === null && !read.typed && hint !== undefined ? (
         <p className="text-muted-foreground text-xs">{hint}</p>
       ) : null}
-      {read.fault === null && read.typed && read.minor !== null ? (
-        <p className="text-sm font-medium">
-          {t('newAccount.balancePreview', { amount: money.format(read.minor) })}
-        </p>
+      {read.fault === null && read.typed && read.minor !== null && preview !== undefined ? (
+        <p className="text-sm font-medium">{preview(read.minor)}</p>
       ) : null}
     </>
   );

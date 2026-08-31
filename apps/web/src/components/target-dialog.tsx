@@ -220,7 +220,6 @@ export function TargetDialog({
                     formatters={{
                       formatMonthDropdown: (date) => date.toLocaleString(locale, { month: 'long' }),
                     }}
-                    className="p-4 [--cell-size:--spacing(10)]"
                     selected={due}
                     onSelect={(picked: Date) => {
                       setDueMonth(monthPicked(picked));
