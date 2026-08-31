@@ -32,14 +32,17 @@ and you have not, so nothing is "as discussed above". The project rules (`CLAUDE
 
 ## How to review
 
-1. **Read the diff, then read around it.** `git diff <range>` tells you what changed;
-   it does not tell you what the changed code is called from, what invariant the deleted
-   line was holding, or whether the new query is reachable from an unscoped path. Open the
-   files. A finding that could have been made without opening anything is usually a finding
-   about the diff rather than about the software.
+1. **Read the diff, then read around it.** The caller hands you a path to the diff; `Read`
+   it. It tells you what changed and nothing else: not what the changed code is called
+   from, not what invariant the deleted line was holding, not whether the new query is
+   reachable from an unscoped path. Open the files. A finding that could have been made
+   without opening anything is usually a finding about the diff rather than about the
+   software.
 2. **Prove it before you report it.** Name `file:line`. Say what input or sequence produces
-   the wrong behaviour. If you could not confirm it, either confirm it or drop it. A
-   maybe-bug costs the reader the same time as a real one and teaches them to skim.
+   the wrong behaviour, and show it in the code you read. What reading cannot settle is
+   reported as unproven, with the one command that would settle it, and the caller runs
+   that. A maybe-bug reported as a bug costs the reader the same time as a real one and
+   teaches them to skim.
 3. **Never invent version-dependent detail.** What a library does here is what is installed
    here: `node_modules/`, `pnpm-lock.yaml`, `.claude/config/external-docs.json`. "I believe
    the Prisma extension covers `$queryRaw`" is the sentence that ships a cross-tenant leak.
