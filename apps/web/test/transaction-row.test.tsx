@@ -136,6 +136,50 @@ describe('one row of the feed', () => {
     expect(screen.getByText(/Wallet/)).toBeInTheDocument();
   });
 
+  it('opens a transfer leg and offers to remove it, because a pair has its own operation now', async () => {
+    const onOpen = jest.fn();
+    const onDelete = jest.fn();
+    const written = record({
+      id: 'r7',
+      type: 'TRANSFER',
+      transferId: 't1',
+      counterAccountId: 'a2',
+      categoryId: null,
+      payee: null,
+      amount: '-50000',
+    });
+
+    render(
+      <LocaleProvider initialLocale="en">
+        <TransactionRow
+          record={written}
+          money={money}
+          timeZone={ZONE}
+          accountName={(id) => NAMES[id] ?? null}
+          categoryOf={(id) =>
+            NAMES[id] === undefined ? null : { name: NAMES[id], icon: null, color: null }
+          }
+          showAccount={false}
+          showAdded
+          onOpen={onOpen}
+          onDelete={onDelete}
+        />
+      </LocaleProvider>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Transfer to Card' }));
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'r7' }));
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: en['transactions.deleteOne'].replace('{{payee}}', 'Transfer to Card'),
+      }),
+    );
+    await userEvent.click(await screen.findByRole('menuitem', { name: en['transactions.delete'] }));
+
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'r7' }));
+  });
+
   it('shows the time a record was entered in the budget timezone', () => {
     show();
 

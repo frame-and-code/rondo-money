@@ -1,4 +1,4 @@
-import { parseCalendarDate } from '@rondo/types';
+import { parseCalendarDate, type CalendarDate } from '@rondo/types';
 
 export interface LastEntry {
   date: string | null;
@@ -30,7 +30,7 @@ function textOrNull(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null;
 }
 
-export function readLastEntry(budgetId: string): LastEntry {
+export function readLastEntry(budgetId: string, today: CalendarDate): LastEntry {
   let stored: string | null;
   try {
     stored = window.localStorage.getItem(storageKey(budgetId));
@@ -53,17 +53,21 @@ export function readLastEntry(budgetId: string): LastEntry {
     return NO_LAST_ENTRY;
   }
 
-  const { date, categoryId, payee } = held as Record<string, unknown>;
+  const { date, categoryId, payee, storedOn } = held as Record<string, unknown>;
+  const sameDay = dateOrNull(storedOn) === today;
 
   return {
-    date: dateOrNull(date),
+    date: sameDay ? dateOrNull(date) : null,
     categoryId: textOrNull(categoryId),
     payee: textOrNull(payee),
   };
 }
 
-export function storeLastEntry(budgetId: string, entry: LastEntry): void {
+export function storeLastEntry(budgetId: string, entry: LastEntry, today: CalendarDate): void {
   try {
-    window.localStorage.setItem(storageKey(budgetId), JSON.stringify(entry));
+    window.localStorage.setItem(
+      storageKey(budgetId),
+      JSON.stringify({ ...entry, storedOn: today }),
+    );
   } catch {} // eslint-disable-line no-empty -- best effort; storage may be unavailable
 }

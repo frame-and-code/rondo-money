@@ -104,7 +104,8 @@ export class TransactionsController {
     description:
       'Rewrites every field, the account and the type included, and runs the rules of the type ' +
       'it becomes. An opening balance takes a correction of its amount and refuses every other ' +
-      'change. A transfer leg is not changed here at all.',
+      'change. A transfer leg is not changed here at all: the pair it belongs to has its own ' +
+      'operations under /transfers.',
   })
   @ApiOkResponse({ description: 'The record as it stands now.', type: TransactionResponse })
   @ApiBadRequestResponse({ description: REFUSED, type: TransactionRefusedResponse })

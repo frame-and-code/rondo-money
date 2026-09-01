@@ -24,17 +24,11 @@ import {
 } from '@rondo/ui/components/ui/combobox';
 import { Label } from '@rondo/ui/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@rondo/ui/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@rondo/ui/components/ui/select';
 import { cn } from '@rondo/ui/lib/utils';
 import {
   IconAlertCircle,
   IconArrowDownLeft,
+  IconArrowsExchange,
   IconArrowUpRight,
   IconCalendar,
   IconSelector,
@@ -43,6 +37,8 @@ import {
 import { format } from 'date-fns';
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
+import { AccountField } from '@/components/account-field';
+import { FIELD_SHAPE } from '@/components/field-shape';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { PayeeField } from '@/components/payee-field';
 import { useTranslations } from '@/i18n/locale-context';
@@ -52,13 +48,31 @@ import { calendarLocale } from '@/lib/calendar-locale';
 import { categoryLook } from '@/lib/category-look';
 import type { MoneyReader } from '@/lib/money';
 
-const FIELD_SHAPE = 'h-11 rounded-full px-4 text-sm';
-
-const ITEM_SHAPE = 'h-11 rounded-full pl-4 text-sm';
-
-const POPUP_SHAPE = 'rounded-[1.75rem] p-1';
-
 export type EntryType = TransactionEntryType;
+
+type FormKind = EntryType | 'TRANSFER';
+
+const KINDS: readonly FormKind[] = ['EXPENSE', 'INCOME', 'TRANSFER'];
+
+const ENTRY_KINDS: readonly FormKind[] = ['EXPENSE', 'INCOME'];
+
+const KIND_ICONS: Record<FormKind, typeof IconArrowUpRight> = {
+  EXPENSE: IconArrowUpRight,
+  INCOME: IconArrowDownLeft,
+  TRANSFER: IconArrowsExchange,
+};
+
+const KIND_TONES: Record<FormKind, { chip: string; mark: string }> = {
+  EXPENSE: { chip: 'border-primary text-primary bg-primary/10', mark: 'bg-primary/15' },
+  INCOME: { chip: 'border-success text-success bg-success/10', mark: 'bg-success/15' },
+  TRANSFER: { chip: 'border-warning text-warning bg-warning/10', mark: 'bg-warning/15' },
+};
+
+const KIND_LABELS: Record<FormKind, MessageKey> = {
+  EXPENSE: 'transactions.kindExpense',
+  INCOME: 'transactions.kindIncome',
+  TRANSFER: 'transactions.kindTransfer',
+};
 
 export interface TransactionDraft {
   accountId: string;
@@ -67,6 +81,14 @@ export interface TransactionDraft {
   date: string;
   categoryId: string | null;
   payee: string | null;
+  idempotencyKey: string;
+}
+
+export interface TransferDraft {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: string;
+  date: string;
   idempotencyKey: string;
 }
 
@@ -127,6 +149,7 @@ export function TransactionDialog({
   busy,
   written,
   onSave,
+  onTransfer,
   onDelete,
 }: {
   record: TransactionDto | null;
@@ -141,6 +164,7 @@ export function TransactionDialog({
   busy: boolean;
   written: number;
   onSave: (draft: TransactionDraft, andMore: boolean) => void;
+  onTransfer: (draft: TransferDraft, andMore: boolean) => void;
   onDelete: () => void;
 }): ReactNode {
   const { t, locale } = useTranslations();
@@ -148,9 +172,12 @@ export function TransactionDialog({
   const categoryField = useId();
   const payeeField = useId();
 
+  const leg = record !== null && record.transferId !== null;
+  const leaving = record !== null && record.amount.startsWith('-');
+
   const [key, setKey] = useState(() => crypto.randomUUID());
-  const [type, setType] = useState<EntryType>(
-    record === null ? 'EXPENSE' : record.amount.startsWith('-') ? 'EXPENSE' : 'INCOME',
+  const [kind, setKind] = useState<FormKind>(
+    record === null ? 'EXPENSE' : leg ? 'TRANSFER' : leaving ? 'EXPENSE' : 'INCOME',
   );
   const [amount, setAmount] = useState(() => {
     if (record === null) return '';
@@ -166,7 +193,19 @@ export function TransactionDialog({
   const [payee, setPayee] = useState(
     record === null ? (defaults.payee ?? '') : (record.payee ?? ''),
   );
-  const [accountId, setAccountId] = useState(record?.accountId ?? defaults.accountId);
+  const otherThan = (held: string): string =>
+    accounts.find((account) => account.id !== held)?.id ?? '';
+
+  const [accountId, setAccountId] = useState(
+    (leg && !leaving ? record.counterAccountId : record?.accountId) ?? defaults.accountId,
+  );
+  const [toAccountId, setToAccountId] = useState(
+    (leg
+      ? leaving
+        ? record.counterAccountId
+        : record.accountId
+      : otherThan(record?.accountId ?? defaults.accountId)) ?? '',
+  );
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState('');
   const [flash, setFlash] = useState<string | null>(null);
@@ -174,7 +213,10 @@ export function TransactionDialog({
   const landed = useRef(written);
 
   const locked = record?.isSystem ?? false;
-  const spending = type === 'EXPENSE';
+  const transferring = kind === 'TRANSFER';
+  const type: EntryType = kind === 'TRANSFER' ? 'EXPENSE' : kind;
+  const spending = kind === 'EXPENSE';
+  const oneAccountTwice = transferring && toAccountId !== '' && toAccountId === accountId;
 
   const spelledDate = (() => {
     const spelled = format(dayOf(date), 'd MMMM yyyy', { locale: calendarLocale(locale) });
@@ -184,7 +226,10 @@ export function TransactionDialog({
 
   const typed = money.read(amount);
   const minor = typed.partial || typed.fault !== null ? null : typed.minor;
-  const ready = minor !== null && minor > 0n && (type === 'INCOME' || categoryId !== null);
+  const named = transferring
+    ? toAccountId !== '' && !oneAccountTwice
+    : kind === 'INCOME' || categoryId !== null;
+  const ready = minor !== null && minor > 0n && named;
 
   const pool: PickableCategory = { id: '', name: t('transactions.pool'), icon: null, color: null };
 
@@ -195,7 +240,7 @@ export function TransactionDialog({
       : [...listed, kept];
   const pickable = type === 'INCOME' ? [pool, ...held] : held;
 
-  const named = held.find((category) => category.id === categoryId) ?? null;
+  const chosen = held.find((category) => category.id === categoryId) ?? null;
 
   const matching = groups
     .map((group) => ({
@@ -222,9 +267,23 @@ export function TransactionDialog({
     idempotencyKey: key,
   });
 
+  const transferOf = (): TransferDraft => ({
+    fromAccountId: accountId,
+    toAccountId,
+    amount: (minor ?? 0n).toString(10),
+    date,
+    idempotencyKey: key,
+  });
+
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     if (busy || !ready) return;
+
+    if (transferring) {
+      onTransfer(transferOf(), false);
+
+      return;
+    }
 
     onSave(draftOf(), false);
   };
@@ -264,51 +323,49 @@ export function TransactionDialog({
         {t(
           locked
             ? 'transactions.openingTitle'
-            : record === null
-              ? spending
-                ? 'transactions.createExpense'
-                : 'transactions.createIncome'
-              : spending
-                ? 'transactions.kindExpense'
-                : 'transactions.kindIncome',
+            : transferring
+              ? record === null
+                ? 'transactions.createTransfer'
+                : 'transactions.editTransfer'
+              : record === null
+                ? spending
+                  ? 'transactions.createExpense'
+                  : 'transactions.createIncome'
+                : spending
+                  ? 'transactions.kindExpense'
+                  : 'transactions.kindIncome',
         )}
       </h2>
 
-      <div hidden={locked} className="flex gap-2">
-        {(['EXPENSE', 'INCOME'] as const).map((kind) => {
-          const Way = kind === 'EXPENSE' ? IconArrowUpRight : IconArrowDownLeft;
+      <div hidden={locked || leg} className="flex gap-2">
+        {(record === null && accounts.length > 1 ? KINDS : ENTRY_KINDS).map((one) => {
+          const Way = KIND_ICONS[one];
+          const chosenKind = kind === one;
 
           return (
             <Button
-              key={kind}
+              key={one}
               type="button"
               variant="outline"
-              aria-pressed={type === kind}
+              aria-pressed={chosenKind}
               className={cn(
-                'h-11 flex-1 justify-start gap-2 rounded-full',
-                type === kind &&
-                  (kind === 'INCOME'
-                    ? 'border-success text-success bg-success/10'
-                    : 'border-primary text-primary bg-primary/10'),
+                'h-11 flex-1 justify-start gap-2 rounded-full px-3',
+                chosenKind && KIND_TONES[one].chip,
               )}
               onClick={() => {
-                setType(kind);
+                setKind(one);
                 edited();
               }}
             >
               <span
                 className={cn(
-                  'grid size-6 place-items-center rounded-full',
-                  type === kind
-                    ? kind === 'INCOME'
-                      ? 'bg-success/15'
-                      : 'bg-primary/15'
-                    : 'bg-secondary',
+                  'grid size-6 shrink-0 place-items-center rounded-full',
+                  chosenKind ? KIND_TONES[one].mark : 'bg-secondary',
                 )}
               >
                 <Way className="size-3.5" />
               </span>
-              {t(kind === 'EXPENSE' ? 'transactions.kindExpense' : 'transactions.kindIncome')}
+              <span className="truncate">{t(KIND_LABELS[one])}</span>
             </Button>
           );
         })}
@@ -328,7 +385,7 @@ export function TransactionDialog({
           disabled={busy}
           className={cn(MONEY_FIELD, FIELD_SHAPE)}
         />
-        {!locked && minor !== null && minor > 0n ? (
+        {!locked && !transferring && minor !== null && minor > 0n ? (
           <p className="text-muted-foreground text-xs">
             {t(type === 'EXPENSE' ? 'transactions.willLeave' : 'transactions.willArrive', {
               amount: money.format(minor),
@@ -383,11 +440,11 @@ export function TransactionDialog({
         </Popover>
       </div>
 
-      <div hidden={locked} className="flex flex-col gap-1.5">
+      <div hidden={locked || transferring} className="flex flex-col gap-1.5">
         <Label>{t('transactions.categoryLabel')}</Label>
         <Combobox
           items={query.trim() === '' ? pickable : matching.flatMap((group) => group.categories)}
-          value={named ?? (type === 'INCOME' ? pool : null)}
+          value={chosen ?? (type === 'INCOME' ? pool : null)}
           onValueChange={(next: PickableCategory | null) => {
             setCategoryId(next === null || next.id === '' ? null : next.id);
             edited();
@@ -405,7 +462,7 @@ export function TransactionDialog({
             aria-label={t('transactions.categoryLabel')}
             className={cn(MONEY_FIELD, FIELD_SHAPE, 'gap-2')}
           >
-            <CategoryMark category={named ?? pool} />
+            <CategoryMark category={chosen ?? pool} />
             <span className="flex-1 text-left">
               <ComboboxValue placeholder={t('transactions.pool')} />
             </span>
@@ -440,7 +497,7 @@ export function TransactionDialog({
         </Combobox>
       </div>
 
-      <div hidden={locked} className="flex flex-col gap-1.5">
+      <div hidden={locked || transferring} className="flex flex-col gap-1.5">
         <Label>{t(spending ? 'transactions.payeeExpense' : 'transactions.payeeIncome')}</Label>
         <PayeeField
           id={payeeField}
@@ -460,62 +517,44 @@ export function TransactionDialog({
       </div>
 
       <div hidden={locked} className="flex flex-col gap-1.5">
-        <Label>{t('transactions.accountLabel')}</Label>
-        <Select
+        <Label>
+          {t(transferring ? 'transactions.fromAccountLabel' : 'transactions.accountLabel')}
+        </Label>
+        <AccountField
+          label={t(transferring ? 'transactions.fromAccountLabel' : 'transactions.accountLabel')}
           value={accountId}
-          onValueChange={(next: string | null) => {
-            setAccountId(next ?? '');
+          accounts={accounts}
+          money={money}
+          onChange={(next) => {
+            setAccountId(next);
+            if (next === toAccountId) {
+              setToAccountId(otherThan(next));
+            }
             edited();
           }}
-        >
-          <SelectTrigger
-            aria-label={t('transactions.accountLabel')}
-            className={cn(FIELD_SHAPE, 'w-full border-transparent data-[size=default]:h-11')}
-          >
-            <SelectValue>
-              {(picked: string) => {
-                const account = accounts.find((candidate) => candidate.id === picked) ?? null;
-
-                return account === null ? (
-                  ''
-                ) : (
-                  <>
-                    <span className="flex-1 truncate text-left">{account.name}</span>
-                    <span className="flex items-baseline gap-1.5">
-                      <span className="text-muted-foreground text-xs">
-                        {t('transactions.availableNote')}
-                      </span>
-                      <span
-                        className={cn(
-                          'tabular-nums',
-                          parseMoney(account.balance) < 0n && 'text-destructive',
-                        )}
-                      >
-                        {money.format(parseMoney(account.balance))}
-                      </span>
-                    </span>
-                  </>
-                );
-              }}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className={POPUP_SHAPE}>
-            {accounts.map((account) => (
-              <SelectItem key={account.id} value={account.id} className={ITEM_SHAPE}>
-                <span className="flex-1">{account.name}</span>
-                <span
-                  className={cn(
-                    'tabular-nums',
-                    parseMoney(account.balance) < 0n && 'text-destructive',
-                  )}
-                >
-                  {money.format(parseMoney(account.balance))}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
+
+      {transferring ? (
+        <div className="flex flex-col gap-1.5">
+          <Label>{t('transactions.toAccountLabel')}</Label>
+          <AccountField
+            label={t('transactions.toAccountLabel')}
+            value={toAccountId}
+            accounts={accounts}
+            money={money}
+            onChange={(next) => {
+              setToAccountId(next);
+              edited();
+            }}
+          />
+          {oneAccountTwice ? (
+            <p role="alert" className="text-destructive text-xs">
+              {t('transactions.sameAccountHint')}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {flash === null ? null : (
         <p data-testid="entry-flash" className="text-muted-foreground text-xs">
@@ -527,7 +566,13 @@ export function TransactionDialog({
         <Alert variant="destructive">
           <IconAlertCircle />
           <AlertTitle>
-            {t(spending ? 'transactions.failTitleExpense' : 'transactions.failTitleIncome')}
+            {t(
+              transferring
+                ? 'transactions.failTitleTransfer'
+                : spending
+                  ? 'transactions.failTitleExpense'
+                  : 'transactions.failTitleIncome',
+            )}
           </AlertTitle>
           <AlertDescription>{t(worded(failed, spending))}</AlertDescription>
         </Alert>
@@ -535,7 +580,7 @@ export function TransactionDialog({
 
       <div className="border-border/60 flex flex-col gap-2 border-t pt-4">
         <div className="flex gap-2">
-          {record === null ? (
+          {record === null && !transferring ? (
             <Button
               type="button"
               variant="outline"

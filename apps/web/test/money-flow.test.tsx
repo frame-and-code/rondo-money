@@ -72,6 +72,12 @@ const written: unknown[] = [];
 
 let fetched = 0;
 
+let accountsFetched = 0;
+
+let viewFetched = 0;
+
+const transferred: unknown[] = [];
+
 const wholeFeed = {
   transactions: [
     {
@@ -105,7 +111,11 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
   accountsControllerListOptions: () => ({
     queryKey: [{ _id: 'accountsControllerList' }],
-    queryFn: () => Promise.resolve(accounts),
+    queryFn: () => {
+      accountsFetched += 1;
+
+      return Promise.resolve(accounts);
+    },
   }),
   accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList' }],
   accountsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
@@ -115,7 +125,11 @@ jest.mock('@rondo/api-client/react-query', () => ({
 
     return {
       queryKey: [{ _id: 'budgetViewControllerRead' }],
-      queryFn: () => Promise.resolve(view),
+      queryFn: () => {
+        viewFetched += 1;
+
+        return Promise.resolve(view);
+      },
     };
   },
   budgetViewControllerReadQueryKey: () => [{ _id: 'budgetViewControllerRead' }],
@@ -146,6 +160,27 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
   transactionsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   transactionsControllerRemoveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transfersControllerCreateMutation: () => ({
+    mutationFn: (options: unknown) => {
+      transferred.push(options);
+
+      return Promise.resolve({});
+    },
+  }),
+  transfersControllerUpdateMutation: () => ({
+    mutationFn: (options: unknown) => {
+      transferred.push(options);
+
+      return Promise.resolve({});
+    },
+  }),
+  transfersControllerRemoveMutation: () => ({
+    mutationFn: (options: unknown) => {
+      transferred.push(options);
+
+      return Promise.resolve({});
+    },
+  }),
 }));
 
 class Watcher {
@@ -197,6 +232,9 @@ afterEach(() => {
   written.length = 0;
   Watcher.live.length = 0;
   fetched = 0;
+  accountsFetched = 0;
+  viewFetched = 0;
+  transferred.length = 0;
 });
 
 const dayName = (date: string): RegExp => {
@@ -510,5 +548,39 @@ describe('what a reopened form remembers', () => {
     await userEvent.click(screen.getByRole('button', { name: en['transactions.add'] }));
 
     expect(await screen.findByLabelText(en['transactions.amountLabel'])).toHaveValue('');
+  });
+});
+
+describe('moving money between two accounts', () => {
+  it('sends the pair to its own operation and rereads the balances and the month', async () => {
+    draw();
+
+    await userEvent.click(await screen.findByRole('button', { name: en['transactions.add'] }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: en['transactions.kindTransfer'] }),
+    );
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '500');
+    await userEvent.click(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    );
+    await userEvent.click(await screen.findByRole('option', { name: /Card/ }));
+
+    const balances = accountsFetched;
+    const month = viewFetched;
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    await waitFor(() => expect(transferred).toHaveLength(1));
+    expect(transferred[0]).toMatchObject({
+      body: {
+        fromAccountId: 'a1',
+        toAccountId: 'a2',
+        amount: '50000',
+      },
+    });
+    expect(written).toHaveLength(0);
+
+    await waitFor(() => expect(accountsFetched).toBeGreaterThan(balances));
+    await waitFor(() => expect(viewFetched).toBeGreaterThan(month));
   });
 });

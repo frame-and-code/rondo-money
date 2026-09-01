@@ -113,6 +113,65 @@ describe('confirming that a record goes', () => {
     expect(screen.queryByTestId('delete-category-line')).not.toBeInTheDocument();
   });
 
+  it('names both accounts of a transfer and mentions no envelope at all', () => {
+    render(
+      <LocaleProvider initialLocale="en">
+        <DeleteTransactionDialog
+          record={record({
+            id: 'r7',
+            type: 'TRANSFER',
+            transferId: 't1',
+            counterAccountId: 'a2',
+            categoryId: null,
+            payee: null,
+            amount: '-50000',
+          })}
+          money={money}
+          accountName={(id) => (id === 'a1' ? 'Wallet' : 'Card')}
+          categoryName={() => 'Coffee'}
+          failed={null}
+          busy={false}
+          onDelete={jest.fn()}
+          onCancel={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByTestId('delete-account-line')).toHaveTextContent('Wallet');
+    expect(screen.getByTestId('delete-counter-line')).toHaveTextContent('Card');
+    expect(screen.queryByTestId('delete-category-line')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('delete-pool-line')).not.toBeInTheDocument();
+  });
+
+  it('reads the leg it was opened from, so the money never goes back to where it arrives', () => {
+    render(
+      <LocaleProvider initialLocale="en">
+        <DeleteTransactionDialog
+          record={record({
+            id: 'r8',
+            type: 'TRANSFER',
+            transferId: 't1',
+            counterAccountId: 'a2',
+            categoryId: null,
+            payee: null,
+            accountId: 'a1',
+            amount: '50000',
+          })}
+          money={money}
+          accountName={(id) => (id === 'a1' ? 'Wallet' : 'Card')}
+          categoryName={() => 'Coffee'}
+          failed={null}
+          busy={false}
+          onDelete={jest.fn()}
+          onCancel={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByTestId('delete-account-line')).toHaveTextContent('Card');
+    expect(screen.getByTestId('delete-counter-line')).toHaveTextContent('Wallet');
+  });
+
   it('asks once and freezes while the request is in flight', async () => {
     const onDelete = jest.fn();
     show({}, onDelete);

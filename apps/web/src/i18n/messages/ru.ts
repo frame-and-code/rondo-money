@@ -314,6 +314,7 @@ export const ru = {
   'transactions.availableNote': 'доступно',
   'transactions.failTitleExpense': 'Не удалось сохранить расход',
   'transactions.failTitleIncome': 'Не удалось сохранить доход',
+  'transactions.failTitleTransfer': 'Не удалось сохранить перевод',
   'transactions.failBeforeAccountExpense':
     'Дата расхода раньше даты открытия счёта. Выберите другую дату или счёт.',
   'transactions.failBeforeAccountIncome':
@@ -372,6 +373,21 @@ export const ru = {
   'transactions.deleteAccountLine': 'На счёт «{{name}}» вернётся {{amount}}',
   'transactions.deleteCategoryLine': 'В «{{name}}» вернётся {{amount}}',
   'transactions.deletePoolLine': 'В свободные деньги вернётся {{amount}}',
+  'transactions.kindTransfer': 'Перевод',
+  'transactions.createTransfer': 'Новый перевод',
+  'transactions.editTransfer': 'Перевод',
+  'transactions.fromAccountLabel': 'Со счёта',
+  'transactions.toAccountLabel': 'На счёт',
+  'transactions.sameAccountHint': 'Деньги не могут прийти туда, откуда ушли. Выберите другой счёт.',
+  'transactions.deleteTransferTitle': 'Удалить перевод на {{amount}}?',
+  'transactions.deleteTransferLine': 'На счёт «{{name}}» вернётся {{amount}}',
+  'transactions.deleteTransferCounterLine': 'Со счёта «{{name}}» уйдёт {{amount}}',
+  'transactions.failSameAccount':
+    'Переводу нужны два разных счёта, иначе деньги придут туда, откуда ушли.',
+  'transactions.failAccountGone': 'В бюджете больше нет такого счёта.',
+  'transactions.failTransferGone': 'Этого перевода уже нет. Обновите экран.',
+  'transactions.failBeforeAccountTransfer':
+    'Дата раньше дня, когда завели поздний из двух счетов. Выберите другую дату или счёт.',
   'transactions.delete': 'Удалить',
   'transactions.unavailable': 'Не удалось прочитать движения. Обновите страницу.',
   'transactions.failFuture':
@@ -381,6 +397,8 @@ export const ru = {
   'transactions.failCategoryRequired': 'У расхода нужна категория.',
   'transactions.failCategoryHidden': 'Эта категория скрыта, в неё нельзя записывать.',
   'transactions.failAccountArchived': 'Архивного счёта в списках нет вовсе.',
+  'transactions.failTransferArchived':
+    'Переводу нужны оба счёта открытыми, а один из этих двух в архиве.',
   'transactions.failNotEditable': 'Эту запись менять нельзя: её сделало приложение.',
   'transactions.failGone': 'Записи больше нет. Обновите страницу.',
   'transactions.failBudget': 'Не удалось прочитать бюджет. Обновите страницу.',

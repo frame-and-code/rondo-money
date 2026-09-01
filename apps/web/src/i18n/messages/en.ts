@@ -315,6 +315,7 @@ export const en: Record<MessageKey, string> = {
   'transactions.availableNote': 'available',
   'transactions.failTitleExpense': 'Could not save the expense',
   'transactions.failTitleIncome': 'Could not save the income',
+  'transactions.failTitleTransfer': 'Could not save the transfer',
   'transactions.failBeforeAccountExpense':
     'The expense date is earlier than the account opening date. Choose a different date or account.',
   'transactions.failBeforeAccountIncome':
@@ -373,6 +374,21 @@ export const en: Record<MessageKey, string> = {
   'transactions.deleteAccountLine': '{{amount}} goes back to {{name}}',
   'transactions.deleteCategoryLine': '{{amount}} goes back into {{name}}',
   'transactions.deletePoolLine': '{{amount}} goes back to ready to assign',
+  'transactions.kindTransfer': 'Transfer',
+  'transactions.createTransfer': 'New transfer',
+  'transactions.editTransfer': 'Transfer',
+  'transactions.fromAccountLabel': 'From account',
+  'transactions.toAccountLabel': 'To account',
+  'transactions.sameAccountHint': 'Money cannot arrive where it left from. Pick another account.',
+  'transactions.deleteTransferTitle': 'Delete the transfer of {{amount}}?',
+  'transactions.deleteTransferLine': '{{amount}} goes back to {{name}}',
+  'transactions.deleteTransferCounterLine': '{{amount}} leaves {{name}}',
+  'transactions.failSameAccount':
+    'A transfer needs two different accounts, or the money would arrive where it left from.',
+  'transactions.failAccountGone': 'This budget no longer holds that account.',
+  'transactions.failTransferGone': 'This transfer is already gone. Refresh the screen.',
+  'transactions.failBeforeAccountTransfer':
+    'The date is earlier than the day the later of the two accounts was opened. Choose a different date or account.',
   'transactions.delete': 'Delete',
   'transactions.unavailable': 'The records could not be read. Reload the page.',
   'transactions.failFuture':
@@ -383,6 +399,8 @@ export const en: Record<MessageKey, string> = {
   'transactions.failCategoryRequired': 'An expense needs a category.',
   'transactions.failCategoryHidden': 'This category is hidden and takes no new records.',
   'transactions.failAccountArchived': 'An archived account is not in these lists at all.',
+  'transactions.failTransferArchived':
+    'A transfer needs both of its accounts open, and one of these two is archived.',
   'transactions.failNotEditable': 'This movement cannot be changed: the app wrote it.',
   'transactions.failGone': 'The movement is gone. Reload the page.',
   'transactions.failBudget': 'The budget could not be read. Reload the page.',

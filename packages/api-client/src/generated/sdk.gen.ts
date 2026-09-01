@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, AccountsControllerRenameData, AccountsControllerRenameErrors, AccountsControllerRenameResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, TransactionsControllerCreateData, TransactionsControllerCreateErrors, TransactionsControllerCreateResponses, TransactionsControllerListData, TransactionsControllerListErrors, TransactionsControllerListResponses, TransactionsControllerPayeesData, TransactionsControllerPayeesErrors, TransactionsControllerPayeesResponses, TransactionsControllerRemoveData, TransactionsControllerRemoveErrors, TransactionsControllerRemoveResponses, TransactionsControllerUpdateData, TransactionsControllerUpdateErrors, TransactionsControllerUpdateResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, AccountsControllerRenameData, AccountsControllerRenameErrors, AccountsControllerRenameResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, TransactionsControllerCreateData, TransactionsControllerCreateErrors, TransactionsControllerCreateResponses, TransactionsControllerListData, TransactionsControllerListErrors, TransactionsControllerListResponses, TransactionsControllerPayeesData, TransactionsControllerPayeesErrors, TransactionsControllerPayeesResponses, TransactionsControllerRemoveData, TransactionsControllerRemoveErrors, TransactionsControllerRemoveResponses, TransactionsControllerUpdateData, TransactionsControllerUpdateErrors, TransactionsControllerUpdateResponses, TransfersControllerCreateData, TransfersControllerCreateErrors, TransfersControllerCreateResponses, TransfersControllerRemoveData, TransfersControllerRemoveErrors, TransfersControllerRemoveResponses, TransfersControllerUpdateData, TransfersControllerUpdateErrors, TransfersControllerUpdateResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -358,7 +358,7 @@ export const transactionsControllerPayees = <ThrowOnError extends boolean = fals
 /**
  * Change a record
  *
- * Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all.
+ * Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all: the pair it belongs to has its own operations under /transfers.
  */
 export const transactionsControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<TransactionsControllerUpdateData, ThrowOnError>): RequestResult<TransactionsControllerUpdateResponses, TransactionsControllerUpdateErrors, ThrowOnError> => (options.client ?? client).patch<TransactionsControllerUpdateResponses, TransactionsControllerUpdateErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -378,6 +378,51 @@ export const transactionsControllerUpdate = <ThrowOnError extends boolean = fals
 export const transactionsControllerRemove = <ThrowOnError extends boolean = false>(options: Options<TransactionsControllerRemoveData, ThrowOnError>): RequestResult<TransactionsControllerRemoveResponses, TransactionsControllerRemoveErrors, ThrowOnError> => (options.client ?? client).post<TransactionsControllerRemoveResponses, TransactionsControllerRemoveErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/transactions/{id}/delete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Move money between two accounts
+ *
+ * Writes both legs of one transfer in one database transaction: the amount leaves one account and arrives on the other, under a shared identifier. Neither envelope nor ready to assign is touched, because the money never leaves the budget.
+ */
+export const transfersControllerCreate = <ThrowOnError extends boolean = false>(options: Options<TransfersControllerCreateData, ThrowOnError>): RequestResult<TransfersControllerCreateResponses, TransfersControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<TransfersControllerCreateResponses, TransfersControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transfers',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change a transfer
+ *
+ * Rewrites both legs together, the two accounts included, so the pair can never disagree about the amount, the day or where the money went.
+ */
+export const transfersControllerUpdate = <ThrowOnError extends boolean = false>(options: Options<TransfersControllerUpdateData, ThrowOnError>): RequestResult<TransfersControllerUpdateResponses, TransfersControllerUpdateErrors, ThrowOnError> => (options.client ?? client).patch<TransfersControllerUpdateResponses, TransfersControllerUpdateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transfers/{transferId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove a transfer
+ *
+ * Deletes both legs together, and both balances follow at once. It is a POST because the idempotency key travels in the body.
+ */
+export const transfersControllerRemove = <ThrowOnError extends boolean = false>(options: Options<TransfersControllerRemoveData, ThrowOnError>): RequestResult<TransfersControllerRemoveResponses, TransfersControllerRemoveErrors, ThrowOnError> => (options.client ?? client).post<TransfersControllerRemoveResponses, TransfersControllerRemoveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/transfers/{transferId}/delete',
     ...options,
     headers: {
         'Content-Type': 'application/json',

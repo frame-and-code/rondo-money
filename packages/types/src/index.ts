@@ -54,6 +54,8 @@ export {
   isTransactionRefusal,
   isTransactionType,
 } from './transaction.js';
+export type { TransferDto, TransferRefusal } from './transfer.js';
+export { TRANSFER_REFUSALS, isTransferRefusal } from './transfer.js';
 export type { LanguageTag, UserSettingsDto } from './user-settings.js';
 export type { CalendarDate, CalendarMonth } from './calendar.js';
 export {

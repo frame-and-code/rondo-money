@@ -28,6 +28,10 @@ A move locks the same rows for the same reason, which is what stops the two cros
 live there too, and they take the same lock for a different reason: a category keeps a history
 of them, so a write reads that history and chooses between editing, replacing and closing, and
 two writers reading it at once would both insert.
+[`src/transfers`](src/transfers) is the fifth shape, one operation over a pair of rows of the
+same table: the two legs of a transfer are written, rewritten and deleted inside one mutation,
+and they are always touched in the order of their row ids, so two edits of one pair from
+opposite directions wait for each other instead of deadlocking.
 
 ## Endpoints
 
@@ -113,6 +117,17 @@ two writers reading it at once would both insert.
 - `GET /transactions/payees` answers with every name a person has typed in this budget, once
   each and in alphabetical order, so a field searches them in the browser rather than asking
   per keystroke. The names the app wrote itself are not among them.
+- `POST /transfers`, `PATCH /transfers/:transferId` and `POST /transfers/:transferId/delete`
+  move money between two accounts of one budget. A transfer is a pair of legs sharing a
+  `transferId`, mirrored, carrying no envelope and no payee, so ready to assign and every
+  category are untouched by it. All three operations are addressed by the pair rather than by a
+  leg, and each writes both legs in one transaction. Both accounts must be open, and that holds
+  for an edit and a removal as well as for the write: deleting a pair whose other end is
+  archived would move a closed account's balance with nobody able to correct it. The accounts
+  themselves can be changed, which is an ordinary edit. The date is not later than today and
+  not earlier than the day the later of the two accounts was opened. Refusals name a reason:
+  `SAME_ACCOUNT`, `ACCOUNT_ARCHIVED`, `DATE_IN_FUTURE`, `DATE_BEFORE_ACCOUNT`,
+  `UNKNOWN_ACCOUNT`, `UNKNOWN_TRANSFER`, `NO_ACTIVE_BUDGET`.
 - `POST /categories`, `PATCH /categories/:id`, `POST /categories/:id/hide`, `/unhide` and
   `POST /categories/reorder` are the category's own operations, and the five under
   `/category-groups` are the group's. There is no way to delete either: a category is hidden and
@@ -324,8 +339,9 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
      use another one.
    - Its boundary is in [security](../../.claude/rules/security.md) too: what the extension
      does and does not cover, and what a nested write has to do about it. The domain models
-     carry relations, so a nested write is reachable now. It keeps whatever owner the caller
-     put on the nested rows, and it is the shape a transfer's two legs take.
+     carry relations, so a nested write is reachable now, and it keeps whatever owner the
+     caller put on the nested rows. A transfer's two legs sidestep the question: they are two
+     top-level writes inside one mutation, which is the shape the extension does cover.
 3. **The registry.** [`scoped-models.ts`](src/prisma/scoped-models.ts) classifies every model
    in the schema: everything scoped to a user, the subset a budget owns, and the ones only a
    mutation may write. A new table joins each set it belongs to in the same change that creates

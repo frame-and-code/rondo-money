@@ -37,7 +37,8 @@ type Operation =
   | { kind: 'expense'; amount: bigint; date: string; category: number }
   | { kind: 'assign'; amount: bigint; month: string; category: number }
   | { kind: 'move'; amount: bigint; month: string; from: Side; to: Side }
-  | { kind: 'hide'; category: number };
+  | { kind: 'hide'; category: number }
+  | { kind: 'transfer'; amount: bigint; date: string; back: boolean };
 
 const CATEGORIES = 3;
 
@@ -49,6 +50,8 @@ let movesApplied = 0;
 let movesLanded = 0;
 let hidesApplied = 0;
 let hidesLanded = 0;
+let transfersApplied = 0;
+let transfersLanded = 0;
 
 const operation = (): fc.Arbitrary<Operation> =>
   fc.oneof(
@@ -80,6 +83,12 @@ const operation = (): fc.Arbitrary<Operation> =>
       kind: fc.constant<'hide'>('hide'),
       category: fc.integer({ min: 0, max: CATEGORIES - 1 }),
     }),
+    fc.record({
+      kind: fc.constant<'transfer'>('transfer'),
+      amount: fc.bigInt({ min: 1n, max: 200_000n }),
+      date: fc.constantFrom(...DATES),
+      back: fc.boolean(),
+    }),
   );
 
 interface View {
@@ -95,6 +104,7 @@ describe('invariant 5.5 (integration)', () => {
 
   let budgetId: string;
   let accountId: string;
+  let secondAccountId: string;
   let categoryIds: string[] = [];
 
   const originalJwtKey = process.env.CLERK_JWT_KEY;
@@ -132,7 +142,38 @@ describe('invariant 5.5 (integration)', () => {
       ? { kind: 'READY_TO_ASSIGN' }
       : { kind: 'CATEGORY', categoryId: categoryIds[side] ?? '' };
 
+  const assignmentCount = (): Promise<number> =>
+    prisma.assignment.count({ where: { userId: USER, budgetId } });
+
   const apply = async (step: Operation): Promise<void> => {
+    if (step.kind === 'transfer') {
+      transfersApplied += 1;
+      const heldAssignments = await assignmentCount();
+
+      const answer = await request(app.getHttpServer() as Server)
+        .post('/transfers')
+        .set('Authorization', `Bearer ${tokenFor()}`)
+        .send({
+          fromAccountId: step.back ? secondAccountId : accountId,
+          toAccountId: step.back ? accountId : secondAccountId,
+          amount: step.amount.toString(10),
+          date: step.date,
+          idempotencyKey: `invariant-transfer-${transfersApplied}`,
+        });
+
+      expect(answer.status).toBe(201);
+      transfersLanded += 1;
+
+      const legs = await prisma.transaction.findMany({
+        where: { userId: USER, budgetId, type: 'TRANSFER' },
+      });
+
+      expect(legs.every((leg) => leg.categoryId === null)).toBe(true);
+      await expect(assignmentCount()).resolves.toBe(heldAssignments);
+
+      return;
+    }
+
     if (step.kind === 'hide') {
       hidesApplied += 1;
       const hidden = await request(app.getHttpServer() as Server)
@@ -277,6 +318,17 @@ describe('invariant 5.5 (integration)', () => {
     });
     accountId = account.id;
 
+    const second = await prisma.account.create({
+      data: {
+        userId: USER,
+        budgetId,
+        name: 'Второй счёт',
+        type: 'DEBIT',
+        createdAt: new Date('2025-12-01T00:00:00Z'),
+      },
+    });
+    secondAccountId = second.id;
+
     const group = await prisma.categoryGroup.create({
       data: { userId: USER, budgetId, name: 'Группа', sortOrder: 0 },
     });
@@ -348,5 +400,7 @@ describe('invariant 5.5 (integration)', () => {
     expect(entriesLanded).toBe(entriesApplied);
     expect(movesLanded).toBeGreaterThan(0);
     expect(hidesLanded).toBeGreaterThan(0);
+    expect(transfersLanded).toBeGreaterThan(0);
+    expect(transfersLanded).toBe(transfersApplied);
   }, 180_000);
 });

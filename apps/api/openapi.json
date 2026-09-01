@@ -1578,7 +1578,7 @@
     },
     "/transactions/{id}": {
       "patch": {
-        "description": "Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all.",
+        "description": "Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all: the pair it belongs to has its own operations under /transfers.",
         "operationId": "TransactionsController_update",
         "parameters": [
           {
@@ -1717,6 +1717,213 @@
         "summary": "Remove a record",
         "tags": [
           "Transactions"
+        ]
+      }
+    },
+    "/transfers": {
+      "post": {
+        "description": "Writes both legs of one transfer in one database transaction: the amount leaves one account and arrives on the other, under a shared identifier. Neither envelope nor ready to assign is touched, because the money never leaves the budget.",
+        "operationId": "TransfersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The pair that now exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the pair cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Move money between two accounts",
+        "tags": [
+          "Transfers"
+        ]
+      }
+    },
+    "/transfers/{transferId}": {
+      "patch": {
+        "description": "Rewrites both legs together, the two accounts included, so the pair can never disagree about the amount, the day or where the money went.",
+        "operationId": "TransfersController_update",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTransferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The pair as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the pair cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change a transfer",
+        "tags": [
+          "Transfers"
+        ]
+      }
+    },
+    "/transfers/{transferId}/delete": {
+      "post": {
+        "description": "Deletes both legs together, and both balances follow at once. It is a POST because the idempotency key travels in the body.",
+        "operationId": "TransfersController_remove",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTransferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The pair that was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the pair cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove a transfer",
+        "tags": [
+          "Transfers"
         ]
       }
     }
@@ -3411,6 +3618,191 @@
           "idempotencyKey": {
             "type": "string",
             "description": "Minted once when the confirmation opens. A repeat under the same key is answered with the record that was removed rather than with a refusal.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "CreateTransferDto": {
+        "type": "object",
+        "properties": {
+          "fromAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money leaves."
+          },
+          "toAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money arrives on."
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What moves, in minor units and without a sign. The server writes one sign on each leg, so the pair always mirrors."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the later of the two accounts was opened."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two transfers again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "fromAccountId",
+          "toAccountId",
+          "amount",
+          "date",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "TransferResponse": {
+        "type": "object",
+        "properties": {
+          "transferId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Shared by the two legs of one transfer."
+          },
+          "from": {
+            "description": "The leg on the account the money left, whose amount is below zero.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionResponse"
+              }
+            ]
+          },
+          "to": {
+            "description": "The leg on the account the money arrived on, whose amount is above zero.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "transferId",
+          "from",
+          "to"
+        ]
+      },
+      "TransferRefusal": {
+        "type": "string",
+        "enum": [
+          "ACCOUNT_ARCHIVED",
+          "DATE_BEFORE_ACCOUNT",
+          "DATE_IN_FUTURE",
+          "NO_ACTIVE_BUDGET",
+          "SAME_ACCOUNT",
+          "UNKNOWN_ACCOUNT",
+          "UNKNOWN_TRANSFER"
+        ],
+        "description": "Why the transfer was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
+      },
+      "TransferRefusedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          },
+          "reason": {
+            "description": "Why the transfer was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransferRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "UpdateTransferDto": {
+        "type": "object",
+        "properties": {
+          "fromAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money leaves."
+          },
+          "toAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money arrives on."
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What moves, in minor units and without a sign. The server writes one sign on each leg, so the pair always mirrors."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the later of the two accounts was opened."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two transfers again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "fromAccountId",
+          "toAccountId",
+          "amount",
+          "date",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "DeleteTransferDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the confirmation opens. A repeat under the same key is answered with the pair that was removed rather than with a refusal.",
             "minLength": 1,
             "maxLength": 64
           }

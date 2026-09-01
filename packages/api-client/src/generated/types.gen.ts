@@ -735,6 +735,89 @@ export type DeleteTransactionDto = {
     idempotencyKey: string;
 };
 
+export type CreateTransferDto = {
+    /**
+     * The account the money leaves.
+     */
+    fromAccountId: string;
+    /**
+     * The account the money arrives on.
+     */
+    toAccountId: string;
+    /**
+     * What moves, in minor units and without a sign. The server writes one sign on each leg, so the pair always mirrors.
+     */
+    amount: string;
+    /**
+     * The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the later of the two accounts was opened.
+     */
+    date: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two transfers again.
+     */
+    idempotencyKey: string;
+};
+
+export type TransferResponse = {
+    /**
+     * Shared by the two legs of one transfer.
+     */
+    transferId: string;
+    /**
+     * The leg on the account the money left, whose amount is below zero.
+     */
+    from: TransactionResponse;
+    /**
+     * The leg on the account the money arrived on, whose amount is above zero.
+     */
+    to: TransactionResponse;
+};
+
+/**
+ * Why the transfer was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export type TransferRefusal = 'ACCOUNT_ARCHIVED' | 'DATE_BEFORE_ACCOUNT' | 'DATE_IN_FUTURE' | 'NO_ACTIVE_BUDGET' | 'SAME_ACCOUNT' | 'UNKNOWN_ACCOUNT' | 'UNKNOWN_TRANSFER';
+
+export type TransferRefusedResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+    /**
+     * Why the transfer was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+     */
+    reason?: TransferRefusal;
+};
+
+export type UpdateTransferDto = {
+    /**
+     * The account the money leaves.
+     */
+    fromAccountId: string;
+    /**
+     * The account the money arrives on.
+     */
+    toAccountId: string;
+    /**
+     * What moves, in minor units and without a sign. The server writes one sign on each leg, so the pair always mirrors.
+     */
+    amount: string;
+    /**
+     * The day the money moved, in the budget timezone. It is never later than today and never earlier than the day the later of the two accounts was opened.
+     */
+    date: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two transfers again.
+     */
+    idempotencyKey: string;
+};
+
+export type DeleteTransferDto = {
+    /**
+     * Minted once when the confirmation opens. A repeat under the same key is answered with the pair that was removed rather than with a refusal.
+     */
+    idempotencyKey: string;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -1647,3 +1730,106 @@ export type TransactionsControllerRemoveResponses = {
 };
 
 export type TransactionsControllerRemoveResponse = TransactionsControllerRemoveResponses[keyof TransactionsControllerRemoveResponses];
+
+export type TransfersControllerCreateData = {
+    body: CreateTransferDto;
+    path?: never;
+    query?: never;
+    url: '/transfers';
+};
+
+export type TransfersControllerCreateErrors = {
+    /**
+     * The body was refused, or the pair cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransferRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type TransfersControllerCreateError = TransfersControllerCreateErrors[keyof TransfersControllerCreateErrors];
+
+export type TransfersControllerCreateResponses = {
+    /**
+     * The pair that now exists.
+     */
+    201: TransferResponse;
+};
+
+export type TransfersControllerCreateResponse = TransfersControllerCreateResponses[keyof TransfersControllerCreateResponses];
+
+export type TransfersControllerUpdateData = {
+    body: UpdateTransferDto;
+    path: {
+        transferId: string;
+    };
+    query?: never;
+    url: '/transfers/{transferId}';
+};
+
+export type TransfersControllerUpdateErrors = {
+    /**
+     * The body was refused, or the pair cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransferRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type TransfersControllerUpdateError = TransfersControllerUpdateErrors[keyof TransfersControllerUpdateErrors];
+
+export type TransfersControllerUpdateResponses = {
+    /**
+     * The pair as it stands now.
+     */
+    200: TransferResponse;
+};
+
+export type TransfersControllerUpdateResponse = TransfersControllerUpdateResponses[keyof TransfersControllerUpdateResponses];
+
+export type TransfersControllerRemoveData = {
+    body: DeleteTransferDto;
+    path: {
+        transferId: string;
+    };
+    query?: never;
+    url: '/transfers/{transferId}/delete';
+};
+
+export type TransfersControllerRemoveErrors = {
+    /**
+     * The body was refused, or the pair cannot be written where it was aimed. A refusal from the domain carries the reason it was refused for.
+     */
+    400: TransferRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type TransfersControllerRemoveError = TransfersControllerRemoveErrors[keyof TransfersControllerRemoveErrors];
+
+export type TransfersControllerRemoveResponses = {
+    /**
+     * The pair that was removed.
+     */
+    200: TransferResponse;
+};
+
+export type TransfersControllerRemoveResponse = TransfersControllerRemoveResponses[keyof TransfersControllerRemoveResponses];

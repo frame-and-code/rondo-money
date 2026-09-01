@@ -10,7 +10,7 @@ it draws a month of the budget, moves money between its envelopes, assigning inc
 the user arrange the categories themselves, creating, renaming, repainting, reordering and
 hiding them. Money flow is a real screen too: the accounts sit on the left with what each of them
 holds and what they hold together, the records run beside them as a feed by days, and the
-screen takes an account, a rename and an income or an expense from its dialogs. Net worth and settings are
+screen takes an account, a rename and an income, an expense or a transfer from its dialogs. Net worth and settings are
 still slots.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
@@ -65,8 +65,11 @@ src/
                               # amount is typed into, which the onboarding form and the
                               # accounts dialog share, the money flow screen and everything on
                               # it (the accounts panel, the feed by days and its rows, the
-                              # record form, the payee field, the filters, the empty states and
-                              # the delete confirmation), the dialog an account is created and
+                              # record form, which writes a transfer as well and picks the
+                              # second account where the envelope would be, the account field
+                              # both of its sides are built from, the payee field, the filters,
+                              # the empty states and the delete confirmation), the dialog an
+                              # account is created and
                               # renamed from, and the categories screen: the month
                               # header, a group, a tile that opens the move dialog, its spend
                               # ring, the fields that move money between envelopes, the
@@ -97,8 +100,10 @@ src/
   lib/calendar-day.ts         # a calendar date to the Date a picker works in and back, built
                               # from local parts so a day never shifts across a timezone
   lib/last-entry.ts           # what the last record was written with, kept per budget in the
-                              # browser, so the next form opens on the same day, envelope and
-                              # counterparty
+                              # browser, so the next form opens on the same envelope and
+                              # counterparty. The day is remembered too, but only until the
+                              # next one starts: it carries the day it was stored, and a
+                              # memory from an earlier day opens on today instead
   lib/budget-month.ts         # which month the screen shows, its label, and the two arcs a
                               # tile's ring is drawn with, from the goal when there is one and
                               # from the envelope when there is not. Today comes from the
@@ -114,6 +119,7 @@ src/
                               # than from its message, and what the screen does about each
   lib/transaction-failure.ts  # the same for a refused record, one message per reason the API
                               # names, and one fallback for a reason it does not
+  lib/transfer-failure.ts     # the same for a refused transfer, which has refusals of its own
   lib/transaction-feed.ts     # the records of one page cut into days, each with the total the
                               # server counted for the whole day rather than for the page
   lib/sections.ts             # the sections in one place: route, message key, icon.

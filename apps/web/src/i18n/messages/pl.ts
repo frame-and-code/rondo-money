@@ -314,6 +314,7 @@ export const pl: Record<MessageKey, string> = {
   'transactions.availableNote': 'dostępne',
   'transactions.failTitleExpense': 'Nie udało się zapisać wydatku',
   'transactions.failTitleIncome': 'Nie udało się zapisać przychodu',
+  'transactions.failTitleTransfer': 'Nie udało się zapisać przelewu',
   'transactions.failBeforeAccountExpense':
     'Data wydatku jest wcześniejsza niż data otwarcia konta. Wybierz inną datę lub konto.',
   'transactions.failBeforeAccountIncome':
@@ -372,6 +373,21 @@ export const pl: Record<MessageKey, string> = {
   'transactions.deleteAccountLine': 'Na konto {{name}} wróci {{amount}}',
   'transactions.deleteCategoryLine': 'Do {{name}} wróci {{amount}}',
   'transactions.deletePoolLine': 'Do wolnych pieniędzy wróci {{amount}}',
+  'transactions.kindTransfer': 'Przelew',
+  'transactions.createTransfer': 'Nowy przelew',
+  'transactions.editTransfer': 'Przelew',
+  'transactions.fromAccountLabel': 'Z konta',
+  'transactions.toAccountLabel': 'Na konto',
+  'transactions.sameAccountHint': 'Pieniądze nie mogą wrócić tam, skąd wyszły. Wybierz inne konto.',
+  'transactions.deleteTransferTitle': 'Usunąć przelew na {{amount}}?',
+  'transactions.deleteTransferLine': 'Na konto {{name}} wróci {{amount}}',
+  'transactions.deleteTransferCounterLine': 'Z konta {{name}} ubędzie {{amount}}',
+  'transactions.failSameAccount':
+    'Przelew potrzebuje dwóch różnych kont, inaczej pieniądze wrócą tam, skąd wyszły.',
+  'transactions.failAccountGone': 'Budżet nie ma już takiego konta.',
+  'transactions.failTransferGone': 'Tego przelewu już nie ma. Odśwież ekran.',
+  'transactions.failBeforeAccountTransfer':
+    'Data jest wcześniejsza niż dzień założenia późniejszego z dwóch kont. Wybierz inną datę lub konto.',
   'transactions.delete': 'Usuń',
   'transactions.unavailable': 'Nie udało się odczytać wpisów. Odśwież stronę.',
   'transactions.failFuture': 'Data jest późniejsza niż dzisiaj. Wpis powstaje po ruchu pieniędzy.',
@@ -381,6 +397,8 @@ export const pl: Record<MessageKey, string> = {
   'transactions.failCategoryRequired': 'Wydatek potrzebuje kategorii.',
   'transactions.failCategoryHidden': 'Ta kategoria jest ukryta i nie przyjmuje wpisów.',
   'transactions.failAccountArchived': 'Konta w archiwum nie ma na tych listach.',
+  'transactions.failTransferArchived':
+    'Przelew potrzebuje obu kont otwartych, a jedno z tych dwóch jest w archiwum.',
   'transactions.failNotEditable': 'Tego ruchu nie da się zmienić: zapisała go aplikacja.',
   'transactions.failGone': 'Tego ruchu już nie ma. Odśwież stronę.',
   'transactions.failBudget': 'Nie udało się odczytać budżetu. Odśwież stronę.',
