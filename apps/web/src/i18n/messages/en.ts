@@ -285,8 +285,8 @@ export const en: Record<MessageKey, string> = {
   'newAccount.typeDebitHint': 'A bank account you spend from.',
   'newAccount.balanceLabel': 'Starting balance',
   'newAccount.balanceHint':
-    'Zero is fine. The amount is dated today and can be corrected until the account holds its ' +
-    'first record.',
+    'Zero is fine. The amount is dated today and can be corrected until the first movement ' +
+    'is recorded on the account.',
   'newAccount.balancePreview': '{{amount}} lands in Ready to Assign',
   'newAccount.balanceNegative': 'The starting balance cannot be negative.',
   'newAccount.balanceDigitsOnly': 'The amount is digits only.',

@@ -283,8 +283,8 @@ export const pl: Record<MessageKey, string> = {
   'newAccount.typeDebitHint': 'Rachunek bankowy, z którego wydajesz.',
   'newAccount.balanceLabel': 'Saldo początkowe',
   'newAccount.balanceHint':
-    'Zero jest w porządku. Kwota ma dzisiejszą datę i można ją poprawić, dopóki konto nie ma ' +
-    'żadnego zapisu.',
+    'Zero jest w porządku. Kwota ma dzisiejszą datę i można ją poprawić, dopóki na koncie nie ' +
+    'ma żadnego ruchu.',
   'newAccount.balancePreview': '{{amount}} trafi do „Do rozdania”',
   'newAccount.balanceNegative': 'Saldo początkowe nie może być ujemne.',
   'newAccount.balanceDigitsOnly': 'Kwotę zapisuje się cyframi.',
