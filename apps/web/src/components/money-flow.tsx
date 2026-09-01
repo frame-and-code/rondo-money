@@ -91,7 +91,7 @@ type Editing =
   | { kind: 'account' }
   | { kind: 'rename'; id: string; name: string; type: AccountType; balance: string }
   | { kind: 'archive'; id: string; name: string; key: string }
-  | { kind: 'reconcile'; id: string; name: string; balance: string };
+  | { kind: 'reconcile'; id: string; name: string };
 
 export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNode {
   const { t, locale } = useTranslations();
@@ -573,7 +573,9 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
       {editing?.kind === 'reconcile' ? (
         <ReconcileAccountDialog
           name={editing.name}
-          held={parseMoney(editing.balance)}
+          held={parseMoney(
+            accounts.data.accounts.find((one) => one.id === editing.id)?.balance ?? '0',
+          )}
           money={signedMoney}
           failed={failed}
           failure={accountFailure}
@@ -679,7 +681,6 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
                       kind: 'reconcile',
                       id: settling.id,
                       name: settling.name,
-                      balance: settling.balance,
                     })
                   }
                 >

@@ -16,7 +16,7 @@ let budget = {
   active: true,
 };
 
-const WALLET = {
+let WALLET = {
   id: 'a1',
   name: 'Wallet',
   type: 'CASH',
@@ -142,6 +142,7 @@ afterEach(() => {
   jest.clearAllMocks();
   reconcileRefuses = null;
   budget = { ...budget, currency: 'USD', minorDigits: 2 };
+  WALLET = { ...WALLET, balance: '125050' };
 });
 
 describe('reconciling an account with what it really holds', () => {
@@ -261,6 +262,28 @@ describe('reconciling an account with what it really holds', () => {
     expect(surface().getByText(said('accounts.reconcileWillWrite', '-55 $'))).not.toHaveClass(
       'text-destructive',
     );
+  });
+
+  it('follows the balance the server re-read while the surface was open', async () => {
+    const user = userEvent.setup();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <LocaleProvider>
+          <MoneyFlow accountId="a1" />
+        </LocaleProvider>
+      </QueryClientProvider>,
+    );
+
+    await openReconcile(user);
+    expect(surface().getByText('1,250.50 $')).toBeInTheDocument();
+
+    WALLET = { ...WALLET, balance: '90000' };
+    await client.invalidateQueries();
+
+    expect(await surface().findByText('900 $')).toBeInTheDocument();
+    expect(surface().queryByText('1,250.50 $')).not.toBeInTheDocument();
   });
 
   it('carries no field for the day, because a reconciliation happens today', async () => {
