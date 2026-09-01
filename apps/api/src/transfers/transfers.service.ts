@@ -11,12 +11,14 @@ import {
   type TransferRefusal,
 } from '@rondo/types';
 
+import { heldAccount, heldOpenAccounts, type OpenAccountRow } from '@/accounts/open-accounts';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 import { decodeTransaction, serializeTransaction } from '@/transactions/transaction-record';
 import { CreateTransferDto } from '@/transfers/create-transfer.dto';
 import { DeleteTransferDto } from '@/transfers/delete-transfer.dto';
-import { inLegWriteOrder, refuseTransfer, type TransferAccount } from '@/transfers/transfer-rules';
+import { inLegWriteOrder, refuseTransfer } from '@/transfers/transfer-rules';
 import { TransferResponse } from '@/transfers/transfer.response';
 import { UpdateTransferDto } from '@/transfers/update-transfer.dto';
 
@@ -93,6 +95,7 @@ export class TransfersService {
   constructor(
     @Inject(SCOPED_PRISMA) private readonly prisma: ScopedPrismaClient,
     private readonly mutations: MutationService,
+    private readonly raw: ScopedRawRepository,
   ) {}
 
   async create(userId: string, body: CreateTransferDto): Promise<TransferResponse> {
@@ -112,7 +115,8 @@ export class TransfersService {
       },
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
-        await this.refuseUnusable(tx, budget, body);
+        const held = await this.holdOpen(tx, budget.id, [body.fromAccountId, body.toAccountId]);
+        this.refuseUnusable(budget, body, held);
 
         const transferId = randomUUID();
         const amount = parseMoney(body.amount);
@@ -160,8 +164,14 @@ export class TransfersService {
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
         const held = await this.pairHeld(tx, transferId);
+        const accounts = await this.holdOpen(tx, budget.id, [
+          held.outgoing.accountId,
+          held.incoming.accountId,
+          body.fromAccountId,
+          body.toAccountId,
+        ]);
 
-        await this.refuseUnusable(tx, budget, body);
+        this.refuseUnusable(budget, body, accounts);
 
         const amount = parseMoney(body.amount);
         const date = toDbDate(parseCalendarDate(body.date));
@@ -200,8 +210,9 @@ export class TransfersService {
         decode: decodeTransfer,
       },
       async (tx) => {
-        await this.activeBudget(tx, intended.id);
+        const budget = await this.activeBudget(tx, intended.id);
         const held = await this.pairHeld(tx, transferId);
+        await this.holdOpen(tx, budget.id, [held.outgoing.accountId, held.incoming.accountId]);
 
         for (const leg of inLegWriteOrder([held.outgoing, held.incoming])) {
           await tx.transaction.delete({ where: { id: leg.id } });
@@ -218,44 +229,34 @@ export class TransfersService {
       throw refuse('UNKNOWN_TRANSFER');
     }
 
-    const held = pairOf(transferId, legs);
-    const accounts = await tx.account.findMany({
-      where: { id: { in: [held.outgoing.accountId, held.incoming.accountId] } },
-    });
-
-    if (accounts.some((account) => account.archivedAt !== null)) {
-      throw refuse('ACCOUNT_ARCHIVED');
-    }
-
-    return held;
+    return pairOf(transferId, legs);
   }
 
-  private async refuseUnusable(
+  private holdOpen(
     tx: MutationClient,
+    budgetId: string,
+    ids: readonly string[],
+  ): Promise<ReadonlyMap<string, OpenAccountRow>> {
+    return heldOpenAccounts(this.raw, tx, budgetId, ids, refuse);
+  }
+
+  private refuseUnusable(
     budget: { id: string; timezone: string },
     body: CreateTransferDto,
-  ): Promise<void> {
-    const from = await this.accountHeld(tx, body.fromAccountId);
-    const to =
-      body.toAccountId === body.fromAccountId ? from : await this.accountHeld(tx, body.toAccountId);
-
+    held: ReadonlyMap<string, OpenAccountRow>,
+  ): void {
     const blocked = refuseTransfer(
-      { from, to, date: parseCalendarDate(body.date) },
+      {
+        from: heldAccount(held, body.fromAccountId),
+        to: heldAccount(held, body.toAccountId),
+        date: parseCalendarDate(body.date),
+      },
       { timezone: budget.timezone, today: todayIn(budget.timezone) },
     );
 
     if (blocked !== null) {
       throw refuse(blocked);
     }
-  }
-
-  private async accountHeld(tx: MutationClient, id: string): Promise<TransferAccount> {
-    const account = await tx.account.findFirst({ where: { id } });
-    if (!account) {
-      throw refuse('UNKNOWN_ACCOUNT');
-    }
-
-    return account;
   }
 
   private async activeBudget(

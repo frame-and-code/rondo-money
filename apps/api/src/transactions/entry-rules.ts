@@ -8,7 +8,6 @@ import {
 
 export interface EntryAccount {
   createdAt: Date;
-  archivedAt: Date | null;
 }
 
 export interface EntryCategory {
@@ -38,10 +37,6 @@ export function signedAmount(type: TransactionEntryType, amount: Money): Money {
 }
 
 export function refuseDraft(draft: EntryDraft, clock: BudgetClock): TransactionRefusal | null {
-  if (draft.account.archivedAt !== null) {
-    return 'ACCOUNT_ARCHIVED';
-  }
-
   if (draft.date > clock.today) {
     return 'DATE_IN_FUTURE';
   }

@@ -137,11 +137,26 @@ describe('invariant 5.5 (integration)', () => {
 
   const owned = { userId: USER };
 
+  const publishedTotal = async (): Promise<bigint> => {
+    const response = await request(app.getHttpServer() as Server)
+      .get('/accounts')
+      .set('Authorization', `Bearer ${tokenFor()}`)
+      .expect(200);
+
+    const body = response.body as { total?: unknown };
+    if (typeof body.total !== 'string') {
+      throw new Error(`Not an accounts answer: ${JSON.stringify(response.body)}`);
+    }
+
+    return BigInt(body.total);
+  };
+
   const clearMoney = async (): Promise<void> => {
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
     await prisma.idempotencyKey.deleteMany({ where: owned });
     await prisma.category.updateMany({ where: owned, data: { hiddenAt: null } });
+    await prisma.account.updateMany({ where: owned, data: { archivedAt: null } });
   };
 
   const openAccounts = async (): Promise<void> => {
@@ -451,4 +466,96 @@ describe('invariant 5.5 (integration)', () => {
     expect(transfersLanded).toBe(transfersApplied);
     expect(openingEditsLanded).toBeGreaterThan(0);
   }, 180_000);
+  it('holds when an emptied account is archived, against the total the screen is given', async () => {
+    await startAgain();
+
+    const write = (body: Record<string, unknown>) =>
+      request(app.getHttpServer() as Server)
+        .post('/transactions')
+        .set('Authorization', `Bearer ${tokenFor()}`)
+        .send(body);
+
+    const equality = async (): Promise<[bigint, bigint]> => {
+      const view = await allTimeView();
+      const available = view.groups
+        .flatMap((group) => group.categories)
+        .reduce((total, category) => total + BigInt(category.available), 0n);
+
+      return [BigInt(view.readyToAssign) + available, await publishedTotal()];
+    };
+
+    await write({
+      accountId: accountId,
+      type: 'INCOME',
+      amount: '30000',
+      date: '2026-01-05',
+      idempotencyKey: 'closing-kept-income',
+    }).expect(201);
+
+    await write({
+      accountId: secondAccountId,
+      type: 'INCOME',
+      amount: '50000',
+      date: '2026-01-05',
+      idempotencyKey: 'closing-income',
+    }).expect(201);
+
+    await write({
+      accountId: secondAccountId,
+      categoryId: categoryIds[0],
+      type: 'EXPENSE',
+      amount: '50000',
+      date: '2026-01-06',
+      idempotencyKey: 'closing-spend',
+    }).expect(201);
+
+    const [pooledBefore, heldBefore] = await equality();
+    expect(pooledBefore).toBe(heldBefore);
+    expect(heldBefore).toBe(30_000n);
+
+    await request(app.getHttpServer() as Server)
+      .post(`/accounts/${secondAccountId}/archive`)
+      .set('Authorization', `Bearer ${tokenFor()}`)
+      .send({ idempotencyKey: 'closing-archive' })
+      .expect(200);
+
+    const [pooledAfter, heldAfter] = await equality();
+    expect(pooledAfter).toBe(heldAfter);
+    expect(heldAfter).toBe(30_000n);
+  }, 30_000);
+
+  it('is what the zero balance protects: an archived account holding money breaks it', async () => {
+    await startAgain();
+
+    await request(app.getHttpServer() as Server)
+      .post('/transactions')
+      .set('Authorization', `Bearer ${tokenFor()}`)
+      .send({
+        accountId: secondAccountId,
+        type: 'INCOME',
+        amount: '50000',
+        date: '2026-01-05',
+        idempotencyKey: 'stranded-income',
+      })
+      .expect(201);
+
+    await request(app.getHttpServer() as Server)
+      .post(`/accounts/${secondAccountId}/archive`)
+      .set('Authorization', `Bearer ${tokenFor()}`)
+      .send({ idempotencyKey: 'stranded-archive' })
+      .expect(400);
+
+    await prisma.account.update({
+      where: { id: secondAccountId },
+      data: { archivedAt: new Date('2026-02-01T00:00:00Z') },
+    });
+
+    const view = await allTimeView();
+    const available = view.groups
+      .flatMap((group) => group.categories)
+      .reduce((total, category) => total + BigInt(category.available), 0n);
+
+    expect(BigInt(view.readyToAssign) + available).toBe(50_000n);
+    expect(await publishedTotal()).toBe(0n);
+  }, 30_000);
 });

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -12,6 +12,7 @@ import { AccountRefusedResponse } from '@/accounts/account-refused.response';
 import { AccountResponse } from '@/accounts/account.response';
 import { AccountsResponse } from '@/accounts/accounts.response';
 import { AccountsService } from '@/accounts/accounts.service';
+import { ArchiveAccountDto } from '@/accounts/archive-account.dto';
 import { CorrectOpeningDto } from '@/accounts/correct-opening.dto';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
 import { RenameAccountDto } from '@/accounts/rename-account.dto';
@@ -101,6 +102,38 @@ export class AccountsController {
     @Body() body: RenameAccountDto,
   ): Promise<AccountResponse> {
     return this.accounts.rename(id, body);
+  }
+
+  @Post(':id/archive')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Archive an account',
+    description:
+      'Puts the account away for good, and only while it holds exactly nothing. The balance is ' +
+      'summed inside the same transaction that writes the archive, so a record arriving at the ' +
+      'same moment cannot slip past the check. From then on the account takes no write of any ' +
+      'kind and its history stays readable. There is no way back: an account is archived once.',
+  })
+  @ApiOkResponse({ description: 'The account that is now archived.', type: AccountResponse })
+  @ApiBadRequestResponse({
+    description:
+      'The account still holds money, or it is archived already, or this budget holds no such ' +
+      'account, or the caller has no active budget.',
+    type: AccountRefusedResponse,
+  })
+  @ApiConflictResponse({
+    description: 'The idempotency key was claimed by a different request.',
+    type: ConflictResponse,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The token was missing, malformed, expired or not minted for this app.',
+    type: UnauthorizedResponse,
+  })
+  archive(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ArchiveAccountDto,
+  ): Promise<AccountResponse> {
+    return this.accounts.archive(id, body.idempotencyKey);
   }
 
   @Patch(':id/opening-balance')

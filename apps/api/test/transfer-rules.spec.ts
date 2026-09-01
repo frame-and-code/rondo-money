@@ -14,9 +14,9 @@ const OPENED_EARLY = new Date('2026-06-01T09:00:00Z');
 
 const OPENED_LATE = new Date('2026-08-10T09:00:00Z');
 
-const wallet: TransferAccount = { id: 'a1', createdAt: OPENED_EARLY, archivedAt: null };
+const wallet: TransferAccount = { id: 'a1', createdAt: OPENED_EARLY };
 
-const card: TransferAccount = { id: 'a2', createdAt: OPENED_LATE, archivedAt: null };
+const card: TransferAccount = { id: 'a2', createdAt: OPENED_LATE };
 
 const draft = (over: Partial<TransferDraft> = {}): TransferDraft => ({
   from: wallet,
@@ -32,18 +32,6 @@ describe('the two sides a transfer names', () => {
 
   it('refuses one account named twice, because the money would arrive where it left from', () => {
     expect(refuseTransfer(draft({ to: { ...wallet } }), CLOCK)).toBe('SAME_ACCOUNT');
-  });
-
-  it('refuses an archived source, whichever side it is on', () => {
-    const closed = { ...wallet, archivedAt: new Date('2026-08-20T00:00:00Z') };
-
-    expect(refuseTransfer(draft({ from: closed }), CLOCK)).toBe('ACCOUNT_ARCHIVED');
-  });
-
-  it('refuses an archived target, because a closed account takes no money either', () => {
-    const closed = { ...card, archivedAt: new Date('2026-08-20T00:00:00Z') };
-
-    expect(refuseTransfer(draft({ to: closed }), CLOCK)).toBe('ACCOUNT_ARCHIVED');
   });
 });
 

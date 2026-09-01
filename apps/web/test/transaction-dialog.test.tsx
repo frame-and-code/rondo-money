@@ -900,4 +900,43 @@ describe('what the form offers when the budget holds one account', () => {
       screen.getByRole('button', { name: en['transactions.kindTransfer'] }),
     ).toBeInTheDocument();
   });
+  it('names an account the screen no longer carries rather than showing an empty picker', () => {
+    render(
+      <LocaleProvider initialLocale="en">
+        <TransactionDialog
+          record={{
+            id: 'r10',
+            accountId: 'a1',
+            categoryId: null,
+            date: '2026-08-20',
+            amount: '-50000',
+            type: 'TRANSFER',
+            payee: null,
+            isSystem: false,
+            transferId: 't3',
+            counterAccountId: 'a9',
+            createdAt: '2026-08-20T10:00:00.000Z',
+          }}
+          accounts={accounts}
+          groups={groups}
+          kept={null}
+          payees={[]}
+          money={money}
+          today={TODAY}
+          defaults={{ accountId: 'a1', date: TODAY, categoryId: null, payee: null }}
+          failed={null}
+          busy={false}
+          written={0}
+          onSave={jest.fn()}
+          onTransfer={jest.fn()}
+          onCorrectOpening={jest.fn()}
+          onDelete={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    ).toHaveTextContent(en['transactions.archivedAccount']);
+  });
 });

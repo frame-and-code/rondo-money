@@ -12,7 +12,11 @@ hiding them. Money flow is a real screen too: the accounts sit on the left with 
 holds and what they hold together, the records run beside them as a feed by days, and the
 screen takes an account, a rename and an income, an expense or a transfer from its dialogs. The
 opening balance of an account is corrected in that same form while the account is still empty,
-and the form says it is settled once the account has held money. Net worth and settings are
+and the form says it is settled once the account has held money. An account that holds nothing
+is archived from the rename dialog, behind a confirmation, and while it still holds money the
+action says so instead of offering itself. An archived account then leaves the screen for good, so the panel
+and the account picker's list carry only what is in use, and a record whose other side sits on
+one names it as an archived account rather than by a name nothing can resolve. Net worth and settings are
 still slots.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
@@ -73,7 +77,8 @@ src/
                               # both of its sides are built from, the payee field, the filters,
                               # the empty states and the delete confirmation), the dialog an
                               # account is created and
-                              # renamed from, and the categories screen: the month
+                              # renamed from, the confirmation an account is archived behind,
+                              # and the categories screen: the month
                               # header, a group, a tile that opens the move dialog, its spend
                               # ring, the fields that move money between envelopes, the
                               # actions folded under them, the dialog a category is set up in,
@@ -124,7 +129,8 @@ src/
                               # names, and one fallback for a reason it does not
   lib/transfer-failure.ts     # the same for a refused transfer, which has refusals of its own
   lib/category-failure.ts     # the same for a refused change to a category
-  lib/account-failure.ts      # the same for a refused correction of an opening balance
+  lib/account-failure.ts      # the same for a refused change to an account: a correction of an
+                              # opening balance, and an archive the balance still blocks
   lib/transaction-feed.ts     # the records of one page cut into days, each with the total the
                               # server counted for the whole day rather than for the page
   lib/sections.ts             # the sections in one place: route, message key, icon.

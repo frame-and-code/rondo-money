@@ -72,6 +72,10 @@ integration level because the arithmetic lives in SQL:
 It reads the all-time aggregate by asking for a month far beyond any date it generates, and it
 sums the balances in Prisma rather than through the API. The two are not the same number on
 purpose: the accounts screen leaves an archived account out of its total, and this invariant
-counts every account the budget holds. When
+counts every account the budget holds. The equality still has to hold against the published
+total, and what makes both readings true at once is that an account is archived only at a
+balance of exactly zero. The two tests beside the property assert exactly that, one over an
+account emptied through the API and one over an archived account carrying money, written
+straight into the database because no request produces it. When
 it goes red, [`invariant-debugger`](../../agents/invariant-debugger.md) reads the
 counterexample.

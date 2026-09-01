@@ -90,6 +90,8 @@ export const zAccountResponse = z.object({
  * Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
 export const zAccountRefusal = z.enum([
+    'ACCOUNT_ARCHIVED',
+    'BALANCE_NOT_ZERO',
     'NO_ACTIVE_BUDGET',
     'OPENING_FROZEN',
     'UNKNOWN_ACCOUNT'
@@ -102,7 +104,8 @@ export const zAccountRefusedResponse = z.object({
         z.string(),
         z.array(z.string())
     ]),
-    reason: zAccountRefusal.optional()
+    reason: zAccountRefusal.optional(),
+    balance: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/).optional()
 });
 
 export const zAccountBalanceResponse = z.object({
@@ -120,6 +123,10 @@ export const zAccountsResponse = z.object({
 
 export const zRenameAccountDto = z.object({
     name: z.string().min(1).max(60),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zArchiveAccountDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
 
@@ -604,6 +611,17 @@ export const zAccountsControllerRenamePath = z.object({
  * The account as it stands now.
  */
 export const zAccountsControllerRenameResponse = zAccountResponse;
+
+export const zAccountsControllerArchiveBody = zArchiveAccountDto;
+
+export const zAccountsControllerArchivePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The account that is now archived.
+ */
+export const zAccountsControllerArchiveResponse = zAccountResponse;
 
 export const zAccountsControllerCorrectOpeningBody = zCorrectOpeningDto;
 

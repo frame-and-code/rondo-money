@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  accountsControllerArchiveMutation,
   accountsControllerCreateMutation,
   accountsControllerListOptions,
   accountsControllerListQueryKey,
@@ -20,7 +21,14 @@ import {
   transfersControllerRemoveMutation,
   transfersControllerUpdateMutation,
 } from '@rondo/api-client/react-query';
-import { monthOf, todayIn, type AccountType, type TransactionDto } from '@rondo/types';
+import {
+  monthOf,
+  parseMoney,
+  todayIn,
+  type AccountBalanceDto,
+  type AccountType,
+  type TransactionDto,
+} from '@rondo/types';
 import { Button } from '@rondo/ui/components/ui/button';
 import {
   Dialog,
@@ -38,6 +46,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { AccountDialog, type AccountDraft } from '@/components/account-dialog';
 import { AccountPanel } from '@/components/account-panel';
+import { ArchiveAccountDialog } from '@/components/archive-account-dialog';
 import { DeleteTransactionDialog } from '@/components/delete-transaction-dialog';
 import { TransactionDay } from '@/components/transaction-day';
 import {
@@ -74,7 +83,8 @@ type Editing =
   | { kind: 'edit'; record: TransactionDto }
   | { kind: 'delete'; record: TransactionDto; key: string }
   | { kind: 'account' }
-  | { kind: 'rename'; id: string; name: string; type: AccountType };
+  | { kind: 'rename'; id: string; name: string; type: AccountType; balance: string }
+  | { kind: 'archive'; id: string; name: string; key: string };
 
 export function MoneyFlow(): ReactNode {
   const { t, locale } = useTranslations();
@@ -287,6 +297,18 @@ export function MoneyFlow(): ReactNode {
     onError: refusedAccount,
   });
 
+  const archiveAccount = useMutation({
+    ...accountsControllerArchiveMutation(),
+    onSuccess: async (_answer, sent) => {
+      if (sent.path.id === accountId) {
+        setAccountId(null);
+      }
+
+      await settled();
+    },
+    onError: refusedOpening,
+  });
+
   const unread =
     (accounts.isError && accounts.data === undefined) ||
     (budgets.isError && budgets.data === undefined) ||
@@ -417,12 +439,14 @@ export function MoneyFlow(): ReactNode {
     writeTransfer.isPending ||
     changeTransfer.isPending ||
     dropTransfer.isPending ||
-    correctOpening.isPending;
+    correctOpening.isPending ||
+    archiveAccount.isPending;
 
   const titleOf = (open: Editing | null): string => {
     if (open?.kind === 'edit') return t('transactions.editTitle');
     if (open?.kind === 'delete') return t('transactions.delete');
     if (open?.kind === 'rename') return t('accounts.renameTitle');
+    if (open?.kind === 'archive') return t('accounts.archiveTitle', { name: open.name });
     if (open?.kind === 'account') return t('accounts.createTitle');
 
     return t('transactions.createTitle');
@@ -498,16 +522,49 @@ export function MoneyFlow(): ReactNode {
           failure={accountFailure}
           busy={addAccount.isPending || renameAccount.isPending}
           frozen={accountFailure !== null && keepsTheKey(accountFailure)}
+          holds={editing.kind === 'rename' ? parseMoney(editing.balance) : 0n}
           onSave={saveAccount}
+          onArchive={() => {
+            if (editing.kind !== 'rename') return;
+
+            setFailed(null);
+            setEditing({
+              kind: 'archive',
+              id: editing.id,
+              name: editing.name,
+              key: crypto.randomUUID(),
+            });
+          }}
           onEdited={() => setAccountFailure(null)}
+          onCancel={close}
+        />
+      ) : null}
+
+      {editing?.kind === 'archive' ? (
+        <ArchiveAccountDialog
+          name={editing.name}
+          failed={failed}
+          busy={archiveAccount.isPending}
+          onArchive={() =>
+            archiveAccount.mutate({
+              path: { id: editing.id },
+              body: { idempotencyKey: editing.key },
+            })
+          }
           onCancel={close}
         />
       ) : null}
     </>
   );
 
-  const renameAccountOf = (account: { id: string; name: string; type: AccountType }): void => {
-    setEditing({ kind: 'rename', id: account.id, name: account.name, type: account.type });
+  const renameAccountOf = (account: AccountBalanceDto): void => {
+    setEditing({
+      kind: 'rename',
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      balance: account.balance,
+    });
   };
 
   return (

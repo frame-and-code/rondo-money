@@ -214,6 +214,16 @@ export const en: Record<MessageKey, string> = {
   'accounts.saveFailed': 'The account was not saved. Try again.',
   'accounts.saveLost':
     'The answer never arrived, so we cannot say whether it was written. Press Save again to send the same request, or cancel.',
+  'accounts.archive': 'Archive the account',
+  'accounts.archiveNeedsZero':
+    'An account is archived once it holds nothing. Move what is left to another account first.',
+  'accounts.archiveTitle': 'Archive {{name}}?',
+  'accounts.archiveBody':
+    'Its records stay where they are and keep counting. The account itself takes no change afterwards, and there is no way back.',
+  'accounts.archiveConfirm': 'Archive',
+  'accounts.failBalanceNotZero':
+    'This account still holds money. Move what is left to another account, then archive it.',
+  'accounts.failArchived': 'This account is archived, and an archived account takes no changes.',
   'netWorth.slotTitle': 'The "Net worth" slot',
   'netWorth.slotBody': 'The net worth chart lands here.',
   'settings.slotTitle': 'The "Settings" slot',
@@ -331,6 +341,7 @@ export const en: Record<MessageKey, string> = {
   'transactions.openingBalance': 'Opening balance',
   'transactions.systemBadge': 'system',
   'transactions.transferBadge': 'transfer',
+  'transactions.transferPlain': 'Transfer',
   'transactions.transferTo': 'Transfer to {{name}}',
   'transactions.transferFrom': 'Transfer from {{name}}',
   'transactions.pool': 'Ready to assign',
@@ -374,7 +385,10 @@ export const en: Record<MessageKey, string> = {
   'transactions.cancel': 'Cancel',
   'transactions.deleteOne': 'Delete {{payee}}',
   'transactions.deleteTitle': 'Delete {{payee}} for {{amount}}?',
+  'transactions.archivedAccount': 'Archived account',
   'transactions.deleteAccountLine': '{{amount}} goes back to {{name}}',
+  'transactions.deleteArchivedLine': '{{amount}} goes back to an archived account',
+  'transactions.deleteArchivedCounterLine': '{{amount}} leaves an archived account',
   'transactions.deleteCategoryLine': '{{amount}} goes back into {{name}}',
   'transactions.deletePoolLine': '{{amount}} goes back to ready to assign',
   'transactions.kindTransfer': 'Transfer',

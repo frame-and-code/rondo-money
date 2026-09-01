@@ -46,8 +46,12 @@ export function AccountField({
           {(picked: string) => {
             const account = accounts.find((candidate) => candidate.id === picked) ?? null;
 
+            if (picked === '') {
+              return '';
+            }
+
             return account === null ? (
-              ''
+              <span className="flex-1 truncate text-left">{t('transactions.archivedAccount')}</span>
             ) : (
               <>
                 <span className="flex-1 truncate text-left">{account.name}</span>

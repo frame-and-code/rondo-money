@@ -4,6 +4,8 @@ import type { MessageKey } from '@/i18n/messages';
 import { saveFailureKind, type SaveFailureKind } from '@/lib/save-failure';
 
 const BY_REASON: Record<AccountRefusal, MessageKey> = {
+  ACCOUNT_ARCHIVED: 'accounts.failArchived',
+  BALANCE_NOT_ZERO: 'accounts.failBalanceNotZero',
   NO_ACTIVE_BUDGET: 'transactions.failBudget',
   OPENING_FROZEN: 'transactions.failOpeningFrozen',
   UNKNOWN_ACCOUNT: 'transactions.failOther',

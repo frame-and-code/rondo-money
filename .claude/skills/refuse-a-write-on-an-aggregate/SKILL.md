@@ -29,13 +29,34 @@ it is racing has to take the same lock on the same rows, so `MovesService` locks
 move names before it touches an assignment. When adding a second writer of those rows, that lock
 is part of the change, not a follow-up.
 
-**One shape needs no second writer: when the rows being counted are children of the row you
-lock.** Correcting an account's opening balance is refused while the account holds records of
-its own, and it locks the account row alone. Inserting a transaction checks its foreign key
-against that same account row, and the check takes a lock of its own on it, so a concurrent
-insert waits on the row the correction is holding rather than slipping past the count. Reach for
-this only where a foreign key really points at the locked row; anywhere else the writers lock
-explicitly.
+**A foreign key covers inserts and nothing else.** Correcting an account's opening balance is
+refused while the account holds records of its own, and it locks the account row alone.
+Inserting a transaction checks its foreign key against that same account row, and the check
+takes a lock of its own on it, so a concurrent insert waits on the row the correction is holding
+rather than slipping past the count. **Deleting a child row checks no key and takes no such
+lock.** Archiving an account is the case that shows it: the archive is refused unless the
+balance is exactly zero, and a delete landing at that moment moves the balance after the sum has
+read it, leaving a closed account holding money nobody can reach. So the shortcut holds only
+where every writer of the counted rows is an insert. Where a delete or an update can move the
+bound, each of those paths takes the lock itself.
+
+**A shared lock is enough on the writers of the counted rows.** Recording a transaction takes
+`FOR SHARE` on the account it names, and the write refused by the sum takes `FOR UPDATE`. The
+two modes conflict, so neither slips past the other, while a shared lock does not conflict with
+itself and two ordinary writes on one account still run side by side. Giving every writer the
+exclusive lock would serialise them all and buy nothing.
+
+**A write that updates the locked row itself takes the exclusive lock up front.** Its own
+`UPDATE` asks for one anyway, so a shared lock taken first would have to be upgraded, which is
+the deadlock the next paragraph describes. Renaming an account therefore locks it exclusively
+while recording a transaction on it does not, and the difference is which row the write lands
+on rather than how important it is.
+
+**One mode per row per transaction.** A path that takes the shared lock and then asks for the
+exclusive one on the same row deadlocks against another path doing the same, and the caller is
+handed a 500 for an operation nothing was wrong with. So a path that already holds a row
+exclusively reads what it needs out of the row that lock returned, rather than asking for it a
+second time.
 
 **Lock the rows in a fixed order**, by id, the way `inLockOrder` and
 [`inWriteOrder`](../../../apps/api/src/categories/write-order.ts) do. Two requests taking the

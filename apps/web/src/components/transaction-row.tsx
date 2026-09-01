@@ -80,11 +80,13 @@ export function TransactionRow({
     if (record.isSystem) return t('transactions.openingBalance');
 
     if (record.transferId !== null) {
-      const name = counterpart ?? '';
+      if (counterpart === null) {
+        return t('transactions.transferPlain');
+      }
 
       return amount < 0n
-        ? t('transactions.transferTo', { name })
-        : t('transactions.transferFrom', { name });
+        ? t('transactions.transferTo', { name: counterpart })
+        : t('transactions.transferFrom', { name: counterpart });
     }
 
     return record.payee ?? t('transactions.noPayee');

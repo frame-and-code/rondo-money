@@ -144,6 +144,7 @@ describe('OpenAPI document', () => {
     expect(Object.keys(document.paths).sort()).toEqual([
       '/accounts',
       '/accounts/{id}',
+      '/accounts/{id}/archive',
       '/accounts/{id}/opening-balance',
       '/budget-view',
       '/budgets',
@@ -452,6 +453,25 @@ describe('OpenAPI document', () => {
     it('publishes every amount it answers with as a string of minor units', () => {
       expect(moneyFieldsOf(document, 'AccountsResponse')).toEqual(['total']);
       expect(moneyFieldsOf(document, 'AccountBalanceResponse')).toEqual(['balance']);
+    });
+
+    it('publishes the amount that blocked an archive as a string of minor units too', () => {
+      expect(moneyFieldsOf(document, 'AccountRefusedResponse')).toEqual(['balance']);
+    });
+
+    it('takes nothing but the key when an account is archived, because there is nothing to choose', () => {
+      const schema = requestSchemaOf(document, document.paths['/accounts/{id}/archive']?.post);
+      const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+      expect(Object.keys(properties).sort()).toEqual(['idempotencyKey']);
+    });
+
+    it('publishes no way back, because an account is archived once and for good', () => {
+      const reversing = Object.keys(document.paths).filter((path) =>
+        /unarchive|restore|reopen/i.test(path),
+      );
+
+      expect(reversing).toEqual([]);
     });
 
     it('takes nothing but an amount when an opening balance is corrected', () => {

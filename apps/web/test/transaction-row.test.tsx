@@ -185,4 +185,17 @@ describe('one row of the feed', () => {
 
     expect(screen.getByTestId('added-r1')).toHaveTextContent('11:20');
   });
+
+  it('names a transfer without its other side when that account is gone from the screen', () => {
+    show({
+      type: 'TRANSFER',
+      transferId: 't1',
+      counterAccountId: 'a9',
+      categoryId: null,
+      payee: null,
+    });
+
+    expect(screen.getByText(en['transactions.transferPlain'])).toBeInTheDocument();
+    expect(screen.queryByText(/Transfer to\s*$/)).not.toBeInTheDocument();
+  });
 });

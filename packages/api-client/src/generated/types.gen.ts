@@ -147,7 +147,7 @@ export type AccountResponse = {
 /**
  * Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
-export type AccountRefusal = 'NO_ACTIVE_BUDGET' | 'OPENING_FROZEN' | 'UNKNOWN_ACCOUNT';
+export type AccountRefusal = 'ACCOUNT_ARCHIVED' | 'BALANCE_NOT_ZERO' | 'NO_ACTIVE_BUDGET' | 'OPENING_FROZEN' | 'UNKNOWN_ACCOUNT';
 
 export type AccountRefusedResponse = {
     statusCode: number;
@@ -157,6 +157,10 @@ export type AccountRefusedResponse = {
      * Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
      */
     reason?: AccountRefusal;
+    /**
+     * What the account still holds, present only when that is what blocked the archive, so a client that does not already carry the balance learns it from the refusal.
+     */
+    balance?: string;
 };
 
 export type AccountBalanceResponse = {
@@ -194,6 +198,13 @@ export type RenameAccountDto = {
     name: string;
     /**
      * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+};
+
+export type ArchiveAccountDto = {
+    /**
+     * Minted once when the confirmation opens, never per request. A key per request makes a double click two writes again.
      */
     idempotencyKey: string;
 };
@@ -1083,6 +1094,41 @@ export type AccountsControllerRenameResponses = {
 };
 
 export type AccountsControllerRenameResponse = AccountsControllerRenameResponses[keyof AccountsControllerRenameResponses];
+
+export type AccountsControllerArchiveData = {
+    body: ArchiveAccountDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/archive';
+};
+
+export type AccountsControllerArchiveErrors = {
+    /**
+     * The account still holds money, or it is archived already, or this budget holds no such account, or the caller has no active budget.
+     */
+    400: AccountRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AccountsControllerArchiveError = AccountsControllerArchiveErrors[keyof AccountsControllerArchiveErrors];
+
+export type AccountsControllerArchiveResponses = {
+    /**
+     * The account that is now archived.
+     */
+    200: AccountResponse;
+};
+
+export type AccountsControllerArchiveResponse = AccountsControllerArchiveResponses[keyof AccountsControllerArchiveResponses];
 
 export type AccountsControllerCorrectOpeningData = {
     body: CorrectOpeningDto;
