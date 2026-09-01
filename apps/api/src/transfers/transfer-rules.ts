@@ -31,12 +31,11 @@ export function refuseTransfer(draft: TransferDraft, clock: BudgetClock): Transf
     return 'DATE_IN_FUTURE';
   }
 
-  const opened = [draft.from, draft.to]
-    .map((account) => calendarDateIn(account.createdAt, clock.timezone))
-    .sort()
-    .at(-1);
+  const from = calendarDateIn(draft.from.createdAt, clock.timezone);
+  const to = calendarDateIn(draft.to.createdAt, clock.timezone);
+  const opened = from > to ? from : to;
 
-  return opened !== undefined && draft.date < opened ? 'DATE_BEFORE_ACCOUNT' : null;
+  return draft.date < opened ? 'DATE_BEFORE_ACCOUNT' : null;
 }
 
 export function inLegWriteOrder<Leg extends TransferLeg>(legs: readonly Leg[]): Leg[] {

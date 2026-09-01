@@ -29,9 +29,10 @@ live there too, and they take the same lock for a different reason: a category k
 of them, so a write reads that history and chooses between editing, replacing and closing, and
 two writers reading it at once would both insert.
 [`src/transfers`](src/transfers) is the fifth shape, one operation over a pair of rows of the
-same table: the two legs of a transfer are written, rewritten and deleted inside one mutation,
-and they are always touched in the order of their row ids, so two edits of one pair from
-opposite directions wait for each other instead of deadlocking.
+same table: the two legs of a transfer are written, rewritten and deleted inside one mutation.
+A rewrite and a removal touch the two existing rows in the order of their row ids, so two edits
+of one pair from opposite directions wait for each other instead of deadlocking. The write needs
+no such order, because both rows are new and neither is a row anyone else can be holding.
 
 ## Endpoints
 

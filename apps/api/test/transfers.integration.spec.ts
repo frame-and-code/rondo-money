@@ -112,7 +112,8 @@ describe('/transfers (integration)', () => {
     return { budget, wallet, card, group, category };
   };
 
-  const rowsOf = (userId: string) => harness.prisma.transaction.findMany({ where: { userId } });
+  const rowsOf = (userId: string) =>
+    harness.prisma.transaction.findMany({ where: { userId }, orderBy: { id: 'asc' } });
 
   const reasonOf = (body: unknown): unknown => asRecord(body)['reason'];
 
