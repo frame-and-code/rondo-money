@@ -57,6 +57,12 @@ describe('accounts across tenants', () => {
       .set('Authorization', `Bearer ${tokenFor(userId)}`)
       .send(body);
 
+  const archive = (userId: string, id: string, body: Record<string, unknown>) =>
+    request(app.getHttpServer() as Server)
+      .post(`/accounts/${id}/archive`)
+      .set('Authorization', `Bearer ${tokenFor(userId)}`)
+      .send(body);
+
   const correct = (userId: string, id: string, body: Record<string, unknown>) =>
     request(app.getHttpServer() as Server)
       .patch(`/accounts/${id}/opening-balance`)
@@ -300,5 +306,46 @@ describe('accounts across tenants', () => {
 
     expect(seen.accounts).toHaveLength(1);
     expect(seen.accounts[0]).toMatchObject({ openingEditable: true });
+  });
+  it('refuses to archive an account belonging to another user, and leaves it open', async () => {
+    const budgetA = await seedBudget(USER_A, 'A');
+    await seedBudget(USER_B, 'B');
+
+    const walletA = await seedAccount(USER_A, budgetA.id, 'Кошелёк A');
+    await seedTransaction(USER_A, budgetA.id, walletA.id, 0n, { isSystem: true });
+
+    const response = await archive(USER_B, walletA.id, { idempotencyKey: 'b-closes-a-account' });
+
+    expect(response.status).toBe(400);
+    expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+
+    const stored = await prisma.account.findUniqueOrThrow({ where: { id: walletA.id } });
+    expect(stored.archivedAt).toBeNull();
+  });
+
+  it('refuses to archive an account of a second budget the caller is not working in', async () => {
+    const active = await seedBudget(USER_A, 'A');
+    const other = await prisma.budget.create({
+      data: {
+        userId: USER_A,
+        name: 'Второй',
+        currency: 'PLN',
+        minorDigits: 2,
+        timezone: 'Europe/Warsaw',
+        active: false,
+      },
+    });
+
+    await seedAccount(USER_A, active.id, 'Кошелёк');
+    const parked = await seedAccount(USER_A, other.id, 'Отложенный');
+    await seedTransaction(USER_A, other.id, parked.id, 0n, { isSystem: true });
+
+    const response = await archive(USER_A, parked.id, { idempotencyKey: 'a-closes-the-other' });
+
+    expect(response.status).toBe(400);
+    expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+
+    const stored = await prisma.account.findUniqueOrThrow({ where: { id: parked.id } });
+    expect(stored.archivedAt).toBeNull();
   });
 });

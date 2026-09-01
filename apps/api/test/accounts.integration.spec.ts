@@ -41,6 +41,11 @@ const USER_RACE = `${USER_PREFIX}Race`;
 const USER_OPENING = `${USER_PREFIX}Opening`;
 const USER_FROZEN = `${USER_PREFIX}Frozen`;
 const USER_NEIGHBOUR = `${USER_PREFIX}Neighbour`;
+const USER_CLOSING = `${USER_PREFIX}Closing`;
+const USER_HOLDS = `${USER_PREFIX}Holds`;
+const USER_OWES = `${USER_PREFIX}Owes`;
+const USER_EVENED = `${USER_PREFIX}Evened`;
+const USER_CLOSED = `${USER_PREFIX}Closed`;
 
 const ZONE = 'Europe/Warsaw';
 
@@ -91,6 +96,12 @@ describe('/accounts (integration)', () => {
   const rename = (userId: string, id: string, body: Record<string, unknown>) =>
     request(app.getHttpServer() as Server)
       .patch(`/accounts/${id}`)
+      .set('Authorization', `Bearer ${tokenFor(userId)}`)
+      .send(body);
+
+  const archive = (userId: string, id: string, body: Record<string, unknown>) =>
+    request(app.getHttpServer() as Server)
+      .post(`/accounts/${id}/archive`)
       .set('Authorization', `Bearer ${tokenFor(userId)}`)
       .send(body);
 
@@ -1009,6 +1020,161 @@ describe('/accounts (integration)', () => {
 
     it('refuses a caller with no active budget rather than failing on the way down', async () => {
       const response = await correct(USER_NOBUDGET, UNKNOWN_ACCOUNT_ID, correction());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('NO_ACTIVE_BUDGET');
+    });
+  });
+  describe('POST /accounts/:id/archive', () => {
+    const NO_SUCH_ACCOUNT = '0199c1a8-9ecf-71c7-a617-c575df073998';
+
+    const closing = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+      idempotencyKey: 'archive-asked-once',
+      ...over,
+    });
+
+    const accountWith = async (userId: string, opening: bigint) => {
+      const budget = await seedBudget(userId);
+      const wallet = await seedAccount(userId, budget.id, 'Кошелёк');
+      await seedTransaction(userId, budget.id, wallet.id, opening, { isSystem: true });
+
+      return { budget, wallet };
+    };
+
+    const storedAccount = (id: string) => prisma.account.findUniqueOrThrow({ where: { id } });
+
+    it('archives an account that holds nothing at all', async () => {
+      const { wallet } = await accountWith(USER_CLOSING, 0n);
+
+      const response = await archive(USER_CLOSING, wallet.id, closing());
+
+      expect(response.status).toBe(200);
+      expect(asRecord(response.body)).toMatchObject({ id: wallet.id, name: 'Кошелёк' });
+      expect((await storedAccount(wallet.id)).archivedAt).not.toBeNull();
+    });
+
+    it('refuses an account whose only record is the money it was opened with', async () => {
+      const { wallet } = await accountWith(USER_HOLDS, 5_000n);
+
+      const response = await archive(USER_HOLDS, wallet.id, closing());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)).toMatchObject({
+        reason: 'BALANCE_NOT_ZERO',
+        balance: '5000',
+      });
+      await expect(storedAccount(wallet.id)).resolves.toMatchObject({ archivedAt: null });
+    });
+
+    it('refuses an account holding a debt, because a hidden minus is the same lost money', async () => {
+      const { budget, wallet } = await accountWith(USER_OWES, 0n);
+      await seedTransaction(USER_OWES, budget.id, wallet.id, -3_000n, { type: 'EXPENSE' });
+
+      const response = await archive(USER_OWES, wallet.id, closing());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)).toMatchObject({
+        reason: 'BALANCE_NOT_ZERO',
+        balance: '-3000',
+      });
+      await expect(storedAccount(wallet.id)).resolves.toMatchObject({ archivedAt: null });
+    });
+
+    it('archives an account whose records add up to nothing, records or not', async () => {
+      const { budget, wallet } = await accountWith(USER_EVENED, 10_000n);
+      await seedTransaction(USER_EVENED, budget.id, wallet.id, -10_000n, { type: 'EXPENSE' });
+
+      const response = await archive(USER_EVENED, wallet.id, closing());
+
+      expect(response.status).toBe(200);
+      expect((await storedAccount(wallet.id)).archivedAt).not.toBeNull();
+      await expect(prisma.transaction.count({ where: { accountId: wallet.id } })).resolves.toBe(2);
+    });
+
+    it('refuses to archive the same account a second time', async () => {
+      const { wallet } = await accountWith(USER_CLOSED, 0n);
+
+      await archive(USER_CLOSED, wallet.id, closing()).expect(200);
+      const again = await archive(
+        USER_CLOSED,
+        wallet.id,
+        closing({ idempotencyKey: 'archive-asked-again' }),
+      );
+
+      expect(again.status).toBe(400);
+      expect(asRecord(again.body)['reason']).toBe('ACCOUNT_ARCHIVED');
+    });
+
+    it('refuses to rename an archived account, because it takes no write of any kind', async () => {
+      const { wallet } = await accountWith(USER_CLOSED, 0n);
+      await archive(USER_CLOSED, wallet.id, closing()).expect(200);
+
+      const response = await rename(USER_CLOSED, wallet.id, {
+        name: 'Старый',
+        idempotencyKey: 'rename-after-closing',
+      });
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('ACCOUNT_ARCHIVED');
+      await expect(storedAccount(wallet.id)).resolves.toMatchObject({ name: 'Кошелёк' });
+    });
+
+    it('refuses to correct the opening balance of an archived account, which would leave zero behind everything else', async () => {
+      const { wallet } = await accountWith(USER_CLOSED, 0n);
+      await archive(USER_CLOSED, wallet.id, closing()).expect(200);
+
+      const response = await correct(USER_CLOSED, wallet.id, {
+        amount: '40000',
+        idempotencyKey: 'opening-after-closing',
+      });
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('ACCOUNT_ARCHIVED');
+      await expect(
+        prisma.transaction.findFirstOrThrow({ where: { accountId: wallet.id } }),
+      ).resolves.toMatchObject({ amount: 0n });
+    });
+
+    it('answers a repeated key with what it already wrote, and archives nothing twice', async () => {
+      const { wallet } = await accountWith(USER_REPEAT, 0n);
+
+      const first = await archive(USER_REPEAT, wallet.id, closing());
+      const second = await archive(USER_REPEAT, wallet.id, closing());
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(second.body).toEqual(first.body);
+      await expect(rowsOf(USER_REPEAT)).resolves.toMatchObject({ keys: 1 });
+    });
+
+    it('leaves the list holding exactly the accounts that are left, and a total that is their sum', async () => {
+      const budget = await seedBudget(USER_GONE);
+      const kept = await seedAccount(USER_GONE, budget.id, 'Текущий');
+      const closed = await seedAccount(USER_GONE, budget.id, 'Закрываемый');
+      await seedTransaction(USER_GONE, budget.id, kept.id, 60_000n, { isSystem: true });
+      await seedTransaction(USER_GONE, budget.id, closed.id, 0n, { isSystem: true });
+
+      await archive(USER_GONE, closed.id, closing()).expect(200);
+
+      const { accounts, total } = await readAccounts(USER_GONE);
+
+      expect(accounts.map((account) => [account['id'], account['balance']])).toEqual([
+        [kept.id, '60000'],
+      ]);
+      expect(total).toBe('60000');
+    });
+
+    it('refuses an account this budget does not hold', async () => {
+      await accountWith(USER_CLOSING, 0n);
+
+      const response = await archive(USER_CLOSING, NO_SUCH_ACCOUNT, closing());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+    });
+
+    it('refuses a caller with no active budget rather than failing on the way down', async () => {
+      const response = await archive(USER_NOBUDGET, NO_SUCH_ACCOUNT, closing());
 
       expect(response.status).toBe(400);
       expect(asRecord(response.body)['reason']).toBe('NO_ACTIVE_BUDGET');

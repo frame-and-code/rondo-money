@@ -16,9 +16,13 @@ is also where a handler asks for the active budget itself rather than letting th
 extension refuse the read: without one the extension raises an internal error, and a user part
 way through onboarding would meet a 500 for an ordinary state. Its read is a hand-written
 aggregate as well, because a balance is summed from transactions rather than stored, and that
-same aggregate decides one of its writes: an opening balance takes a correction only while the
-account holds nothing else, so the mutation locks the account row and counts inside its own
-transaction.
+same aggregate decides two of its writes: an opening balance takes a correction only while the
+account holds nothing else, and an account is archived only while it holds nothing at all, so
+each mutation locks the account row and counts inside its own transaction. It also owns the one
+rule every write path that names an account has to pass, `refusalOfAccounts` in
+[`src/accounts/open-accounts.ts`](src/accounts/open-accounts.ts): an account that is gone or
+archived takes no write, and the rows it judges come back under the lock that makes the
+judgement hold.
 [`src/budget-view`](src/budget-view) is the third shape, a read the extension cannot express at
 all: the budget numbers are aggregates over many rows, so they are hand-written SQL through the
 raw-SQL repository, which supplies the caller and leaves the budget to the service.
@@ -103,6 +107,15 @@ no such order, because both rows are new and neither is a row anyone else can be
 - `PATCH /accounts/:id` renames an account and changes nothing else. The type is chosen when
   the account is created and never afterwards, so no operation in the contract accepts one
   again. An account the active budget does not hold is a 400 rather than a 500.
+- `POST /accounts/:id/archive` puts an account away, and only while its balance is exactly
+  zero. The sum runs inside the same transaction that writes `archivedAt`, under a lock on the
+  account row that every write naming that account has to pass, so a record landing or leaving
+  at that moment cannot slip past the check. Which mode each side takes is
+  [`refuse-a-write-on-an-aggregate`](../../.claude/skills/refuse-a-write-on-an-aggregate/SKILL.md).
+  It is a POST because the idempotency key travels in the body. There is no way back: the contract publishes nothing that clears the
+  archive, and from then on the account takes no write of any kind while its history stays
+  readable through `GET /transactions?accountId=`. A refusal carries `BALANCE_NOT_ZERO` with
+  the amount that blocked it, or `ACCOUNT_ARCHIVED` when it is archived already.
 - `PATCH /accounts/:id/opening-balance` corrects the amount the account was created with, and
   takes nothing else: the day it carries and the direction it points in belong to the account,
   so the contract has nowhere to name them. Zero is a valid amount, because an account can be
@@ -110,8 +123,8 @@ no such order, because both rows are new and neither is a row anyone else can be
   its own, a transfer leg included, and from then on a balance that drifted is corrected by
   recording the movements it is missing. The count runs under a lock on the account row inside the same
   transaction as the correction, so a record arriving at that moment is never missed. Refusals
-  name a reason: `OPENING_FROZEN`, `UNKNOWN_ACCOUNT`, `NO_ACTIVE_BUDGET`, which the other
-  account operations answer with too.
+  name a reason: `OPENING_FROZEN`, `BALANCE_NOT_ZERO`, `ACCOUNT_ARCHIVED`, `UNKNOWN_ACCOUNT`,
+  `NO_ACTIVE_BUDGET`, which the other account operations answer with too.
 - `POST /transactions`, `PATCH /transactions/:id` and `POST /transactions/:id/delete` are how
   an income or an expense is written, corrected and removed. The amount arrives without a sign
   and the server writes one from the type, so an expense always leaves the account. Deletion is

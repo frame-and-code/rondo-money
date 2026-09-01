@@ -10,8 +10,10 @@ import {
   type TransactionRefusal,
 } from '@rondo/types';
 
+import { heldAccount, heldOpenAccounts } from '@/accounts/open-accounts';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 import { CreateTransactionDto } from '@/transactions/create-transaction.dto';
 import { DeleteTransactionDto } from '@/transactions/delete-transaction.dto';
 import {
@@ -110,6 +112,7 @@ export class TransactionsService {
   constructor(
     @Inject(SCOPED_PRISMA) private readonly prisma: ScopedPrismaClient,
     private readonly mutations: MutationService,
+    private readonly raw: ScopedRawRepository,
   ) {}
 
   async create(userId: string, body: CreateTransactionDto): Promise<TransactionResponse> {
@@ -131,7 +134,7 @@ export class TransactionsService {
       },
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
-        await this.refuseUnusable(tx, budget, body, null);
+        await this.refuseUnusable(tx, budget, body, null, []);
 
         const written = await tx.transaction.create({
           data: {
@@ -181,7 +184,7 @@ export class TransactionsService {
           throw refuse(blocked);
         }
 
-        await this.refuseUnusable(tx, budget, body, current.categoryId);
+        await this.refuseUnusable(tx, budget, body, current.categoryId, [current.accountId]);
 
         const written = await tx.transaction.update({
           where: { id: current.id },
@@ -210,7 +213,7 @@ export class TransactionsService {
         decode: decodeTransaction,
       },
       async (tx) => {
-        await this.activeBudget(tx, intended.id);
+        const budget = await this.activeBudget(tx, intended.id);
 
         const current = await tx.transaction.findFirst({ where: { id } });
         if (!current) {
@@ -221,6 +224,8 @@ export class TransactionsService {
         if (blocked !== null) {
           throw refuse(blocked);
         }
+
+        await heldOpenAccounts(this.raw, tx, budget.id, [current.accountId], refuse);
 
         await tx.transaction.delete({ where: { id: current.id } });
 
@@ -339,11 +344,16 @@ export class TransactionsService {
     budget: { id: string; timezone: string },
     body: CreateTransactionDto,
     heldCategoryId: string | null,
+    alsoHeld: readonly string[],
   ): Promise<void> {
-    const account = await tx.account.findFirst({ where: { id: body.accountId } });
-    if (!account) {
-      throw refuse('UNKNOWN_ACCOUNT');
-    }
+    const held = await heldOpenAccounts(
+      this.raw,
+      tx,
+      budget.id,
+      [body.accountId, ...alsoHeld],
+      refuse,
+    );
+    const account = heldAccount(held, body.accountId);
 
     let category: EntryCategory | null = null;
     if (body.categoryId !== undefined) {

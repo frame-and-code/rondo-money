@@ -52,6 +52,9 @@ export function DeleteTransactionDialog({
     onDelete();
   };
 
+  const landed = accountName(transfer ? returnedTo : record.accountId);
+  const left = accountName(takenFrom);
+
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">
@@ -65,17 +68,23 @@ export function DeleteTransactionDialog({
 
       <ul className="text-muted-foreground flex flex-col gap-1 text-sm">
         <li data-testid="delete-account-line">
-          {t(transfer ? 'transactions.deleteTransferLine' : 'transactions.deleteAccountLine', {
-            name: accountName(transfer ? returnedTo : record.accountId) ?? '',
-            amount: money.format(transfer ? moved : back),
-          })}
+          {landed === null
+            ? t('transactions.deleteArchivedLine', {
+                amount: money.format(transfer ? moved : back),
+              })
+            : t(transfer ? 'transactions.deleteTransferLine' : 'transactions.deleteAccountLine', {
+                name: landed,
+                amount: money.format(transfer ? moved : back),
+              })}
         </li>
         {transfer ? (
           <li data-testid="delete-counter-line">
-            {t('transactions.deleteTransferCounterLine', {
-              name: accountName(takenFrom) ?? '',
-              amount: money.format(moved),
-            })}
+            {left === null
+              ? t('transactions.deleteArchivedCounterLine', { amount: money.format(moved) })
+              : t('transactions.deleteTransferCounterLine', {
+                  name: left,
+                  amount: money.format(moved),
+                })}
           </li>
         ) : record.categoryId === null ? (
           <li data-testid="delete-pool-line">

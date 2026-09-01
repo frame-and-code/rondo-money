@@ -213,6 +213,16 @@ export const pl: Record<MessageKey, string> = {
   'accounts.saveFailed': 'Konto nie zostało zapisane. Spróbuj ponownie.',
   'accounts.saveLost':
     'Odpowiedź nie dotarła, więc nie wiemy, czy zapis się udał. Naciśnij Zapisz jeszcze raz, aby wysłać to samo żądanie, albo anuluj.',
+  'accounts.archive': 'Zarchiwizuj konto',
+  'accounts.archiveNeedsZero':
+    'Do archiwum trafia konto, na którym nic nie zostało. Najpierw przenieś resztę na inne konto.',
+  'accounts.archiveTitle': 'Zarchiwizować „{{name}}”?',
+  'accounts.archiveBody':
+    'Zapisy zostaną na miejscu i nadal się liczą. Samo konto nie przyjmie już żadnych zmian i nie da się go przywrócić.',
+  'accounts.archiveConfirm': 'Do archiwum',
+  'accounts.failBalanceNotZero':
+    'Na koncie wciąż są pieniądze. Przenieś resztę na inne konto, a potem je zarchiwizuj.',
+  'accounts.failArchived': 'To konto jest w archiwum, a konto w archiwum nie przyjmuje zmian.',
   'netWorth.slotTitle': 'Slot sekcji „Kapitał”',
   'netWorth.slotBody': 'Tu pojawi się wykres kapitału.',
   'settings.slotTitle': 'Slot sekcji „Ustawienia”',
@@ -329,6 +339,7 @@ export const pl: Record<MessageKey, string> = {
   'transactions.openingBalance': 'Saldo początkowe',
   'transactions.systemBadge': 'systemowy',
   'transactions.transferBadge': 'przelew',
+  'transactions.transferPlain': 'Przelew',
   'transactions.transferTo': 'Przelew na {{name}}',
   'transactions.transferFrom': 'Przelew z {{name}}',
   'transactions.pool': 'Wolne pieniądze',
@@ -372,7 +383,10 @@ export const pl: Record<MessageKey, string> = {
   'transactions.cancel': 'Anuluj',
   'transactions.deleteOne': 'Usuń {{payee}}',
   'transactions.deleteTitle': 'Usunąć {{payee}} na {{amount}}?',
+  'transactions.archivedAccount': 'Zarchiwizowane konto',
   'transactions.deleteAccountLine': 'Na konto {{name}} wróci {{amount}}',
+  'transactions.deleteArchivedLine': 'Na zarchiwizowane konto wróci {{amount}}',
+  'transactions.deleteArchivedCounterLine': 'Z zarchiwizowanego konta ubędzie {{amount}}',
   'transactions.deleteCategoryLine': 'Do {{name}} wróci {{amount}}',
   'transactions.deletePoolLine': 'Do wolnych pieniędzy wróci {{amount}}',
   'transactions.kindTransfer': 'Przelew',

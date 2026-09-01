@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ACCOUNT_REFUSALS, type AccountRefusal } from '@rondo/types';
 
 import { BadRequestResponse } from '@/openapi/bad-request.response';
+import { ApiMoneyProperty } from '@/validation/money.decorator';
 
 export class AccountRefusedResponse extends BadRequestResponse {
   @ApiProperty({
@@ -14,4 +15,12 @@ export class AccountRefusedResponse extends BadRequestResponse {
     required: false,
   })
   reason?: AccountRefusal;
+
+  @ApiMoneyProperty({
+    required: false,
+    description:
+      'What the account still holds, present only when that is what blocked the archive, so a ' +
+      'client that does not already carry the balance learns it from the refusal.',
+  })
+  balance?: string;
 }

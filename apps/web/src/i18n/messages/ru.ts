@@ -212,6 +212,16 @@ export const ru = {
   'accounts.saveFailed': 'Счёт не сохранился. Попробуйте ещё раз.',
   'accounts.saveLost':
     'Ответ не дошёл, и мы не знаем, записалось ли. Нажмите «Сохранить» ещё раз тем же запросом или отмените.',
+  'accounts.archive': 'Убрать счёт в архив',
+  'accounts.archiveNeedsZero':
+    'В архив уходит счёт, на котором ничего не осталось. Сначала переведите остаток на другой счёт.',
+  'accounts.archiveTitle': 'Убрать «{{name}}» в архив?',
+  'accounts.archiveBody':
+    'Записи останутся на месте и продолжат считаться. Сам счёт больше не примет никаких изменений, и вернуть его нельзя.',
+  'accounts.archiveConfirm': 'В архив',
+  'accounts.failBalanceNotZero':
+    'На счёте ещё есть деньги. Переведите остаток на другой счёт и уберите его в архив после этого.',
+  'accounts.failArchived': 'Счёт в архиве, а архивный счёт изменений не принимает.',
   'netWorth.slotTitle': 'Слот раздела «Капитал»',
   'netWorth.slotBody': 'Сюда встанет график капитала.',
   'settings.slotTitle': 'Слот раздела «Настройки»',
@@ -329,6 +339,7 @@ export const ru = {
   'transactions.openingBalance': 'Начальный остаток',
   'transactions.systemBadge': 'системная',
   'transactions.transferBadge': 'перевод',
+  'transactions.transferPlain': 'Перевод',
   'transactions.transferTo': 'Перевод в «{{name}}»',
   'transactions.transferFrom': 'Перевод из «{{name}}»',
   'transactions.pool': 'Свободные деньги',
@@ -372,7 +383,10 @@ export const ru = {
   'transactions.cancel': 'Отмена',
   'transactions.deleteOne': 'Удалить «{{payee}}»',
   'transactions.deleteTitle': 'Удалить «{{payee}}» на {{amount}}?',
+  'transactions.archivedAccount': 'Архивный счёт',
   'transactions.deleteAccountLine': 'На счёт «{{name}}» вернётся {{amount}}',
+  'transactions.deleteArchivedLine': 'На архивный счёт вернётся {{amount}}',
+  'transactions.deleteArchivedCounterLine': 'С архивного счёта уйдёт {{amount}}',
   'transactions.deleteCategoryLine': 'В «{{name}}» вернётся {{amount}}',
   'transactions.deletePoolLine': 'В свободные деньги вернётся {{amount}}',
   'transactions.kindTransfer': 'Перевод',

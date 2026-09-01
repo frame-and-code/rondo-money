@@ -5,7 +5,6 @@ import { type BudgetClock } from '@/transactions/entry-rules';
 export interface TransferAccount {
   id: string;
   createdAt: Date;
-  archivedAt: Date | null;
 }
 
 export interface TransferDraft {
@@ -21,10 +20,6 @@ export interface TransferLeg {
 export function refuseTransfer(draft: TransferDraft, clock: BudgetClock): TransferRefusal | null {
   if (draft.from.id === draft.to.id) {
     return 'SAME_ACCOUNT';
-  }
-
-  if (draft.from.archivedAt !== null || draft.to.archivedAt !== null) {
-    return 'ACCOUNT_ARCHIVED';
   }
 
   if (draft.date > clock.today) {

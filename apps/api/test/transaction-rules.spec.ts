@@ -17,7 +17,7 @@ const OPENED_AT = new Date('2026-06-01T09:00:00Z');
 const draft = (over: Partial<EntryDraft> = {}): EntryDraft => ({
   type: 'EXPENSE',
   date: '2026-08-31',
-  account: { createdAt: OPENED_AT, archivedAt: null },
+  account: { createdAt: OPENED_AT },
   category: { hiddenAt: null },
   categoryChanged: true,
   ...over,
@@ -51,7 +51,7 @@ describe('the day a transaction may carry', () => {
   });
 
   it('reads the opening day in the budget timezone rather than from the stored instant', () => {
-    const account = { createdAt: new Date('2026-06-01T22:30:00Z'), archivedAt: null };
+    const account = { createdAt: new Date('2026-06-01T22:30:00Z') };
 
     expect(refuseDraft(draft({ account, date: '2026-06-02' }), CLOCK)).toBeNull();
     expect(refuseDraft(draft({ account, date: '2026-06-01' }), CLOCK)).toBe('DATE_BEFORE_ACCOUNT');
@@ -77,14 +77,6 @@ describe('the category a transaction needs', () => {
     const category = { hiddenAt: new Date('2026-07-01T00:00:00Z') };
 
     expect(refuseDraft(draft({ category, categoryChanged: false }), CLOCK)).toBeNull();
-  });
-});
-
-describe('the account a transaction lands on', () => {
-  it('refuses an archived one, which takes no new records', () => {
-    const account = { createdAt: OPENED_AT, archivedAt: new Date('2026-08-01T00:00:00Z') };
-
-    expect(refuseDraft(draft({ account }), CLOCK)).toBe('ACCOUNT_ARCHIVED');
   });
 });
 

@@ -122,6 +122,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
   accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList' }],
   accountsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerRenameMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  accountsControllerArchiveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerCorrectOpeningMutation: () => ({
     mutationFn: (options: unknown) => {
       corrected.push(options);

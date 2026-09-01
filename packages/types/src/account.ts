@@ -6,7 +6,13 @@ export function isAccountType(value: unknown): value is AccountType {
   return typeof value === 'string' && (ACCOUNT_TYPES as readonly string[]).includes(value);
 }
 
-export const ACCOUNT_REFUSALS = ['NO_ACTIVE_BUDGET', 'OPENING_FROZEN', 'UNKNOWN_ACCOUNT'] as const;
+export const ACCOUNT_REFUSALS = [
+  'ACCOUNT_ARCHIVED',
+  'BALANCE_NOT_ZERO',
+  'NO_ACTIVE_BUDGET',
+  'OPENING_FROZEN',
+  'UNKNOWN_ACCOUNT',
+] as const;
 
 export type AccountRefusal = (typeof ACCOUNT_REFUSALS)[number];
 

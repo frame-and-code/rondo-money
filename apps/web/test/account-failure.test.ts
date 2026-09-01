@@ -10,6 +10,15 @@ describe('what a refused correction of an opening balance tells the user', () =>
     );
   });
 
+  it('says what still holds the account open when the archive was refused', () => {
+    expect(accountFailure({ statusCode: 400, reason: 'BALANCE_NOT_ZERO' })).toBe(
+      'accounts.failBalanceNotZero',
+    );
+    expect(accountFailure({ statusCode: 400, reason: 'ACCOUNT_ARCHIVED' })).toBe(
+      'accounts.failArchived',
+    );
+  });
+
   it('says the budget changed under the screen when that is what was reported', () => {
     expect(accountFailure({ statusCode: 400, reason: 'NO_ACTIVE_BUDGET' })).toBe(
       'transactions.failBudget',

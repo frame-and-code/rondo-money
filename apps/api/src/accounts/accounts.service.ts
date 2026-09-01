@@ -3,15 +3,19 @@ import { TransactionType, type Account, type Prisma } from '@rondo/db';
 import { isAccountType, parseMoney, serializeMoney, toDbDate, todayIn } from '@rondo/types';
 
 import {
+  accountBalanceStatement,
+  type AccountBalanceOnlyRow,
+} from '@/accounts/account-balance.query';
+import {
   accountBalancesStatement,
   type AccountBalanceRow,
 } from '@/accounts/account-balances.query';
-import { accountLockStatement, type AccountLockRow } from '@/accounts/account-lock.query';
 import { refuseAccount } from '@/accounts/account-refusal';
 import { AccountResponse } from '@/accounts/account.response';
 import { AccountBalanceResponse, AccountsResponse } from '@/accounts/accounts.response';
 import { CorrectOpeningDto } from '@/accounts/correct-opening.dto';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
+import { heldOpenAccount } from '@/accounts/open-accounts';
 import { RenameAccountDto } from '@/accounts/rename-account.dto';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
@@ -131,15 +135,46 @@ export class AccountsService {
         decode: decodeAccount,
       },
       async (tx) => {
-        await this.activeBudget(tx, intended.id);
+        const budget = await this.activeBudget(tx, intended.id);
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
 
-        const current = await tx.account.findFirst({ where: { id } });
-        if (!current) {
-          throw refuseAccount('UNKNOWN_ACCOUNT');
+        return serialize(await tx.account.update({ where: { id }, data: { name: body.name } }));
+      },
+    );
+  }
+
+  async archive(id: string, key: string): Promise<AccountResponse> {
+    const intended = await this.activeBudget(this.prisma);
+
+    return this.mutations.run(
+      {
+        key,
+        request: { budgetId: intended.id, id, act: 'archive' },
+        decode: decodeAccount,
+      },
+      async (tx) => {
+        const budget = await this.activeBudget(tx, intended.id);
+
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
+
+        const [summed] = await this.raw.query<AccountBalanceOnlyRow>(
+          (scope) => accountBalanceStatement(scope, budget.id, id),
+          tx,
+        );
+        if (!summed) {
+          throw new Error(
+            `The balance statement answered with no row for account ${id}: it sums with no ` +
+              'grouping, so it always answers with one, and an empty answer means the statement ' +
+              'no longer does.',
+          );
+        }
+
+        if (summed.balance !== 0n) {
+          throw refuseAccount('BALANCE_NOT_ZERO', { balance: serializeMoney(summed.balance) });
         }
 
         return serialize(
-          await tx.account.update({ where: { id: current.id }, data: { name: body.name } }),
+          await tx.account.update({ where: { id }, data: { archivedAt: new Date() } }),
         );
       },
     );
@@ -157,13 +192,7 @@ export class AccountsService {
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
 
-        const held = await this.raw.query<AccountLockRow>(
-          (scope) => accountLockStatement(scope, budget.id, id),
-          tx,
-        );
-        if (held.length === 0) {
-          throw refuseAccount('UNKNOWN_ACCOUNT');
-        }
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
 
         const moved = await tx.transaction.count({ where: { accountId: id, isSystem: false } });
         if (moved > 0) {

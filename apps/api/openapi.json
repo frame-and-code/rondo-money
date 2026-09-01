@@ -385,6 +385,78 @@
         ]
       }
     },
+    "/accounts/{id}/archive": {
+      "post": {
+        "description": "Puts the account away for good, and only while it holds exactly nothing. The balance is summed inside the same transaction that writes the archive, so a record arriving at the same moment cannot slip past the check. From then on the account takes no write of any kind and its history stays readable. There is no way back: an account is archived once.",
+        "operationId": "AccountsController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account that is now archived.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The account still holds money, or it is archived already, or this budget holds no such account, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Archive an account",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
     "/accounts/{id}/opening-balance": {
       "patch": {
         "description": "Changes the amount of the opening balance the account was created with, and nothing else about it. The day it carries and the direction it points in belong to the account rather than to this correction, so neither is accepted here. It is refused the moment the account holds a record of its own: from then on a balance that drifted is corrected by recording the movements it is missing, not by rewriting the day it was opened.",
@@ -2348,6 +2420,8 @@
       "AccountRefusal": {
         "type": "string",
         "enum": [
+          "ACCOUNT_ARCHIVED",
+          "BALANCE_NOT_ZERO",
           "NO_ACTIVE_BUDGET",
           "OPENING_FROZEN",
           "UNKNOWN_ACCOUNT"
@@ -2388,6 +2462,13 @@
                 "$ref": "#/components/schemas/AccountRefusal"
               }
             ]
+          },
+          "balance": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the account still holds, present only when that is what blocked the archive, so a client that does not already carry the balance learns it from the refusal."
           }
         },
         "required": [
@@ -2477,6 +2558,21 @@
         },
         "required": [
           "name",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "ArchiveAccountDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the confirmation opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
           "idempotencyKey"
         ],
         "additionalProperties": false

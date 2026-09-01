@@ -339,6 +339,28 @@ describe('the feed of what a budget recorded (integration)', () => {
 
       expect(answer.transactions.map((row) => row.payee)).toEqual(['живой счёт']);
     });
+
+    it('brings back the history of an archived account when that account is named', async () => {
+      const { budget, category } = await budgetOf(USER_CLOSED);
+      const closed = await harness.seedAccount(USER_CLOSED, budget.id, {
+        name: 'Старый счёт',
+        createdAt: OPENED,
+      });
+
+      await seedRow(USER_CLOSED, budget.id, closed.id, {
+        categoryId: category.id,
+        payee: 'закрытый счёт',
+      });
+
+      await harness.prisma.account.update({
+        where: { id: closed.id },
+        data: { archivedAt: new Date('2026-08-01T00:00:00Z') },
+      });
+
+      const answer = await feed(USER_CLOSED, `?accountId=${closed.id}`);
+
+      expect(answer.transactions.map((row) => row.payee)).toEqual(['закрытый счёт']);
+    });
   });
 
   describe('a transfer in the feed', () => {

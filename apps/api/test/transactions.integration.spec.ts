@@ -12,6 +12,7 @@ const USER_EDITS = `${USER_PREFIX}Edits`;
 const USER_REMOVES = `${USER_PREFIX}Removes`;
 const USER_NAMES = `${USER_PREFIX}Names`;
 const USER_COUNTS = `${USER_PREFIX}Counts`;
+const USER_CLOSED = `${USER_PREFIX}Closed`;
 
 const ZONE = 'Europe/Warsaw';
 
@@ -559,6 +560,61 @@ describe('/transactions (integration)', () => {
         categoryId: null,
         isSystem: true,
       });
+    });
+  });
+  describe('a record that sits on an archived account', () => {
+    const ARCHIVED = new Date('2026-08-01T00:00:00Z');
+
+    const recordOnClosedAccount = async (userId: string) => {
+      const { budget, account, category } = await budgetOf(userId);
+      const closed = await harness.seedAccount(userId, budget.id, {
+        name: 'Старый счёт',
+        createdAt: OPENED,
+      });
+
+      const written = await post(
+        userId,
+        entry({ accountId: closed.id, categoryId: category.id }),
+      ).expect(201);
+
+      await harness.prisma.account.update({
+        where: { id: closed.id },
+        data: { archivedAt: ARCHIVED },
+      });
+
+      return {
+        budget,
+        active: account,
+        closed,
+        category,
+        id: String(asRecord(written.body)['id']),
+      };
+    };
+
+    it('refuses to move it off the archived account onto an open one', async () => {
+      const { active, closed, category, id } = await recordOnClosedAccount(USER_CLOSED);
+
+      const response = await patch(
+        USER_CLOSED,
+        id,
+        entry({ accountId: active.id, categoryId: category.id }),
+      );
+
+      expect(response.status).toBe(400);
+      expect(reasonOf(response.body)).toBe('ACCOUNT_ARCHIVED');
+      await expect(
+        harness.prisma.transaction.findUniqueOrThrow({ where: { id } }),
+      ).resolves.toMatchObject({ accountId: closed.id });
+    });
+
+    it('refuses to delete it, because the balance of a closed account cannot move', async () => {
+      const { id } = await recordOnClosedAccount(USER_CLOSED);
+
+      const response = await remove(USER_CLOSED, id, { idempotencyKey: 'delete-on-closed' });
+
+      expect(response.status).toBe(400);
+      expect(reasonOf(response.body)).toBe('ACCOUNT_ARCHIVED');
+      await expect(harness.prisma.transaction.count({ where: { id } })).resolves.toBe(1);
     });
   });
 });

@@ -182,4 +182,32 @@ describe('confirming that a record goes', () => {
 
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+  it('names an account the screen no longer carries rather than leaving the sentence open', () => {
+    render(
+      <LocaleProvider initialLocale="en">
+        <DeleteTransactionDialog
+          record={record({
+            id: 'r8',
+            type: 'TRANSFER',
+            transferId: 't2',
+            counterAccountId: 'a9',
+            categoryId: null,
+            payee: null,
+            amount: '-50000',
+          })}
+          money={money}
+          accountName={(id) => (id === 'a1' ? 'Wallet' : null)}
+          categoryName={() => 'Coffee'}
+          failed={null}
+          busy={false}
+          onDelete={jest.fn()}
+          onCancel={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByTestId('delete-counter-line')).toHaveTextContent(
+      en['transactions.deleteArchivedCounterLine'].replace('{{amount}}', '500 zł'),
+    );
+  });
 });

@@ -21,6 +21,8 @@ describe('account types', () => {
 describe('what an account operation can be refused for', () => {
   it('names every reason the accounts endpoints answer with', () => {
     expect([...ACCOUNT_REFUSALS]).toEqual([
+      'ACCOUNT_ARCHIVED',
+      'BALANCE_NOT_ZERO',
       'NO_ACTIVE_BUDGET',
       'OPENING_FROZEN',
       'UNKNOWN_ACCOUNT',
