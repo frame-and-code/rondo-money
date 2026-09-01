@@ -284,7 +284,9 @@ export const en: Record<MessageKey, string> = {
   'newAccount.typeDebit': 'Debit card',
   'newAccount.typeDebitHint': 'A bank account you spend from.',
   'newAccount.balanceLabel': 'Starting balance',
-  'newAccount.balanceHint': 'Zero is fine. The amount is dated today and can be corrected later.',
+  'newAccount.balanceHint':
+    'Zero is fine. The amount is dated today and can be corrected until the first movement ' +
+    'is recorded on the account.',
   'newAccount.balancePreview': '{{amount}} lands in Ready to Assign',
   'newAccount.balanceNegative': 'The starting balance cannot be negative.',
   'newAccount.balanceDigitsOnly': 'The amount is digits only.',
@@ -366,6 +368,7 @@ export const en: Record<MessageKey, string> = {
   'transactions.willArrive': '{{amount}} will be added to your account',
   'transactions.amountZero': 'An amount of nothing records no movement.',
   'transactions.save': 'Save',
+  'transactions.saving': 'Saving…',
   'transactions.saveAndMore': 'Save and add another',
   'transactions.saved': 'Recorded: {{payee}}, {{amount}}',
   'transactions.cancel': 'Cancel',
@@ -402,6 +405,13 @@ export const en: Record<MessageKey, string> = {
   'transactions.failTransferArchived':
     'A transfer needs both of its accounts open, and one of these two is archived.',
   'transactions.failNotEditable': 'This movement cannot be changed: the app wrote it.',
+  'transactions.failOpeningFrozen':
+    'This account already holds movements, so the balance it opened with is settled. Record ' +
+    'the movements it is missing to bring it back in line.',
+  'transactions.openingFrozenTitle': 'The opening balance is settled',
+  'transactions.openingFrozen':
+    'The account has held money since it was opened, so this number stays as it was recorded. ' +
+    'Record the movements it is missing to bring the balance back in line with the real one.',
   'transactions.failGone': 'The movement is gone. Reload the page.',
   'transactions.failBudget': 'The budget could not be read. Reload the page.',
   'transactions.failConflict': 'The record may already be saved. Reload the page.',

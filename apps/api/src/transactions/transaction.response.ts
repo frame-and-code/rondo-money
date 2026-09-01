@@ -54,7 +54,8 @@ export class TransactionResponse implements TransactionDto {
   @ApiProperty({
     description:
       'True for a record the app wrote itself, such as an opening balance. It counts like any ' +
-      'other, takes a correction of its amount and is never deleted.',
+      'other and is never deleted, and it is not changed here: an opening balance is corrected ' +
+      'through the account it belongs to.',
   })
   isSystem!: boolean;
 

@@ -16,12 +16,9 @@ import { CreateTransactionDto } from '@/transactions/create-transaction.dto';
 import { DeleteTransactionDto } from '@/transactions/delete-transaction.dto';
 import {
   refuseDraft,
-  refuseRemoval,
-  refuseSystemEdit,
   refuseTarget,
   signedAmount,
   type EntryCategory,
-  type SystemEntry,
 } from '@/transactions/entry-rules';
 import { ListTransactionsQueryDto, PAGE_SIZE } from '@/transactions/list-transactions.query.dto';
 import { decodeTransaction, serializeTransaction } from '@/transactions/transaction-record';
@@ -41,7 +38,7 @@ const MESSAGES: Record<TransactionRefusal, string> = {
   DATE_IN_FUTURE: 'A record is dated no later than today in the budget timezone.',
   NOT_EDITABLE:
     'This record belongs to the app rather than to a person: an opening balance and a transfer ' +
-    'leg are written and removed by their own operations.',
+    'leg are written, changed and removed by their own operations.',
   NO_ACTIVE_BUDGET,
   UNKNOWN_ACCOUNT: 'This budget holds no such account.',
   UNKNOWN_CATEGORY: 'This budget holds no such category.',
@@ -184,29 +181,7 @@ export class TransactionsService {
           throw refuse(blocked);
         }
 
-        if (current.isSystem) {
-          const held: SystemEntry = {
-            accountId: current.accountId,
-            categoryId: current.categoryId,
-            date: calendarDateOf(current.date),
-            payee: current.payee,
-            type: current.amount < 0n ? 'EXPENSE' : 'INCOME',
-          };
-          const wanted = {
-            accountId: body.accountId,
-            categoryId: body.categoryId ?? null,
-            date: parseCalendarDate(body.date),
-            payee: body.payee ?? null,
-            type: body.type,
-          };
-
-          const kept = refuseSystemEdit(held, wanted);
-          if (kept !== null) {
-            throw refuse(kept);
-          }
-        } else {
-          await this.refuseUnusable(tx, budget, body, current.categoryId);
-        }
+        await this.refuseUnusable(tx, budget, body, current.categoryId);
 
         const written = await tx.transaction.update({
           where: { id: current.id },
@@ -242,7 +217,7 @@ export class TransactionsService {
           throw refuse('UNKNOWN_TRANSACTION');
         }
 
-        const blocked = refuseRemoval(current);
+        const blocked = refuseTarget(current);
         if (blocked !== null) {
           throw refuse(blocked);
         }

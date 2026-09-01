@@ -86,11 +86,31 @@ export const zAccountResponse = z.object({
     type: zAccountType
 });
 
+/**
+ * Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export const zAccountRefusal = z.enum([
+    'NO_ACTIVE_BUDGET',
+    'OPENING_FROZEN',
+    'UNKNOWN_ACCOUNT'
+]);
+
+export const zAccountRefusedResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    reason: zAccountRefusal.optional()
+});
+
 export const zAccountBalanceResponse = z.object({
     id: z.uuid(),
     name: z.string().max(60),
     type: zAccountType,
-    balance: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
+    balance: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    openingEditable: z.boolean()
 });
 
 export const zAccountsResponse = z.object({
@@ -101,6 +121,35 @@ export const zAccountsResponse = z.object({
 export const zRenameAccountDto = z.object({
     name: z.string().min(1).max(60),
     idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zCorrectOpeningDto = z.object({
+    amount: z.string().max(20).regex(/^(0|[1-9]\d*)$/),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+/**
+ * What the record is.
+ */
+export const zTransactionType = z.enum([
+    'INCOME',
+    'EXPENSE',
+    'TRANSFER',
+    'ADJUSTMENT'
+]);
+
+export const zTransactionResponse = z.object({
+    id: z.uuid(),
+    accountId: z.uuid(),
+    categoryId: z.uuid().nullable(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    amount: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    type: zTransactionType,
+    payee: z.string().max(100).nullable(),
+    isSystem: z.boolean(),
+    transferId: z.uuid().nullable(),
+    counterAccountId: z.uuid().nullable(),
+    createdAt: z.iso.datetime()
 });
 
 /**
@@ -399,30 +448,6 @@ export const zCreateTransactionDto = z.object({
 });
 
 /**
- * What the record is.
- */
-export const zTransactionType = z.enum([
-    'INCOME',
-    'EXPENSE',
-    'TRANSFER',
-    'ADJUSTMENT'
-]);
-
-export const zTransactionResponse = z.object({
-    id: z.uuid(),
-    accountId: z.uuid(),
-    categoryId: z.uuid().nullable(),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    amount: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
-    type: zTransactionType,
-    payee: z.string().max(100).nullable(),
-    isSystem: z.boolean(),
-    transferId: z.uuid().nullable(),
-    counterAccountId: z.uuid().nullable(),
-    createdAt: z.iso.datetime()
-});
-
-/**
  * Why the record was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
 export const zTransactionRefusal = z.enum([
@@ -579,6 +604,17 @@ export const zAccountsControllerRenamePath = z.object({
  * The account as it stands now.
  */
 export const zAccountsControllerRenameResponse = zAccountResponse;
+
+export const zAccountsControllerCorrectOpeningBody = zCorrectOpeningDto;
+
+export const zAccountsControllerCorrectOpeningPath = z.object({
+    id: z.string()
+});
+
+/**
+ * The opening balance as it stands now.
+ */
+export const zAccountsControllerCorrectOpeningResponse = zTransactionResponse;
 
 export const zBudgetViewControllerReadQuery = z.object({
     month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),

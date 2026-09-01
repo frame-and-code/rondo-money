@@ -50,3 +50,12 @@ describe('the account balances statement', () => {
     expect(read.filter((entry) => !entry.scoped)).toEqual([]);
   });
 });
+
+describe('what the statement says about correcting an opening balance', () => {
+  it('counts what a person wrote, leaves out what the app wrote, and bounds no month', () => {
+    const text = accountBalancesStatement({ userId: USER }, BUDGET).text.toLowerCase();
+
+    expect(text).toMatch(/count\([^)]*\)\s*filter\s*\(\s*where\s+not\s+t\.is_system/);
+    expect(text).not.toMatch(/\bdate\b/);
+  });
+});

@@ -8,6 +8,7 @@ export interface AccountBalanceRow {
   name: string | null;
   type: string | null;
   balance: bigint;
+  entries: bigint;
 }
 
 export function accountBalancesStatement(scope: RawQueryScope, budgetId: string): Prisma.Sql {
@@ -15,7 +16,10 @@ export function accountBalancesStatement(scope: RawQueryScope, budgetId: string)
 
   return Prisma.sql`
     WITH balances AS (
-      SELECT t.account_id, SUM(t.amount) AS amount
+      SELECT
+        t.account_id,
+        SUM(t.amount) AS amount,
+        COUNT(*) FILTER (WHERE NOT t.is_system) AS entries
       FROM "transaction" t
       WHERE t.user_id = ${userId} AND t.budget_id = ${budgetId}::uuid
       GROUP BY t.account_id
@@ -26,7 +30,8 @@ export function accountBalancesStatement(scope: RawQueryScope, budgetId: string)
         a.name,
         a.type::text AS type,
         a.created_at,
-        COALESCE(balances.amount, 0) AS balance
+        COALESCE(balances.amount, 0) AS balance,
+        COALESCE(balances.entries, 0) AS entries
       FROM account a
       LEFT JOIN balances ON balances.account_id = a.id
       WHERE a.user_id = ${userId}
@@ -41,7 +46,8 @@ export function accountBalancesStatement(scope: RawQueryScope, budgetId: string)
       v.id AS "accountId",
       v.name AS "name",
       v.type AS "type",
-      COALESCE(v.balance, 0)::bigint AS "balance"
+      COALESCE(v.balance, 0)::bigint AS "balance",
+      COALESCE(v.entries, 0)::bigint AS "entries"
     FROM pool
     LEFT JOIN visible v ON true
     ORDER BY v.created_at, v.id

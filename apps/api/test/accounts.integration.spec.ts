@@ -38,6 +38,9 @@ const USER_COUNTED = `${USER_PREFIX}Counted`;
 const USER_WHOLE = `${USER_PREFIX}Whole`;
 const USER_NAMED = `${USER_PREFIX}Named`;
 const USER_RACE = `${USER_PREFIX}Race`;
+const USER_OPENING = `${USER_PREFIX}Opening`;
+const USER_FROZEN = `${USER_PREFIX}Frozen`;
+const USER_NEIGHBOUR = `${USER_PREFIX}Neighbour`;
 
 const ZONE = 'Europe/Warsaw';
 
@@ -88,6 +91,12 @@ describe('/accounts (integration)', () => {
   const rename = (userId: string, id: string, body: Record<string, unknown>) =>
     request(app.getHttpServer() as Server)
       .patch(`/accounts/${id}`)
+      .set('Authorization', `Bearer ${tokenFor(userId)}`)
+      .send(body);
+
+  const correct = (userId: string, id: string, body: Record<string, unknown>) =>
+    request(app.getHttpServer() as Server)
+      .patch(`/accounts/${id}/opening-balance`)
       .set('Authorization', `Bearer ${tokenFor(userId)}`)
       .send(body);
 
@@ -388,7 +397,13 @@ describe('/accounts (integration)', () => {
       const { accounts, total } = await readAccounts(USER_HOLDING);
 
       expect(accounts).toEqual([
-        { id: wallet.id, name: 'Кошелёк', type: 'CASH', balance: '100000' },
+        {
+          id: wallet.id,
+          name: 'Кошелёк',
+          type: 'CASH',
+          balance: '100000',
+          openingEditable: false,
+        },
       ]);
       expect(total).toBe('100000');
     });
@@ -531,6 +546,30 @@ describe('/accounts (integration)', () => {
       expect(total).toBe('20000');
     });
 
+    it('says an opening balance still takes a correction until the money moves', async () => {
+      const budget = await seedBudget(USER_COUNTED);
+      const wallet = await seedAccount(USER_COUNTED, budget.id, 'Кошелёк');
+      await seedTransaction(USER_COUNTED, budget.id, wallet.id, 125_050n, { isSystem: true });
+
+      const opened = await readAccounts(USER_COUNTED);
+      expect(opened.accounts[0]).toMatchObject({ openingEditable: true });
+
+      await seedTransaction(USER_COUNTED, budget.id, wallet.id, -3_000n, { type: 'EXPENSE' });
+
+      const moved = await readAccounts(USER_COUNTED);
+      expect(moved.accounts[0]).toMatchObject({ openingEditable: false });
+    });
+
+    it('says an account holding no record at all takes one, rather than reading as frozen', async () => {
+      const budget = await seedBudget(USER_QUIET);
+      await seedAccount(USER_QUIET, budget.id, 'Пустой');
+
+      const { accounts } = await readAccounts(USER_QUIET);
+
+      expect(accounts).toHaveLength(1);
+      expect(accounts[0]).toMatchObject({ balance: '0', openingEditable: true });
+    });
+
     it('refuses to list accounts when the caller has no active budget, rather than failing at 500', async () => {
       const response = await list(USER_NOBUDGET);
 
@@ -556,9 +595,16 @@ describe('/accounts (integration)', () => {
         'balance',
         'id',
         'name',
+        'openingEditable',
         'type',
       ]);
-      expect(Object.keys(accounts[0] ?? {}).sort()).toEqual(['balance', 'id', 'name', 'type']);
+      expect(Object.keys(accounts[0] ?? {}).sort()).toEqual([
+        'balance',
+        'id',
+        'name',
+        'openingEditable',
+        'type',
+      ]);
       expect(typeof total).toBe('string');
     });
 
@@ -643,7 +689,13 @@ describe('/accounts (integration)', () => {
 
       const { accounts, total } = await readAccounts(USER_NAMED);
       expect(accounts).toEqual([
-        { id: wallet.id, name: 'Карта', type: 'DEBIT', balance: '125050' },
+        {
+          id: wallet.id,
+          name: 'Карта',
+          type: 'DEBIT',
+          balance: '125050',
+          openingEditable: true,
+        },
       ]);
       expect(total).toBe('125050');
     });
@@ -749,6 +801,217 @@ describe('/accounts (integration)', () => {
 
       const stored = await prisma.account.findFirstOrThrow({ where: { id: wallet.id } });
       expect(stored.name).toBe('Кошелёк');
+    });
+  });
+
+  describe('PATCH /accounts/:id/opening-balance', () => {
+    const UNKNOWN_ACCOUNT_ID = '0199c1a8-9ecf-71c7-a617-c575df073999';
+    const TRANSFER_ID = '0199c1a8-9ecf-71c7-a617-c575df073998';
+
+    const correction = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+      amount: '40000',
+      idempotencyKey: 'opening-form-opened-once',
+      ...over,
+    });
+
+    const openedAccount = async (userId: string) => {
+      const budget = await seedBudget(userId);
+      const wallet = await seedAccount(userId, budget.id, 'Кошелёк');
+      const opening = await seedTransaction(userId, budget.id, wallet.id, 125_050n, {
+        isSystem: true,
+      });
+
+      return { budget, wallet, opening };
+    };
+
+    const openingOf = (userId: string) =>
+      prisma.transaction.findFirstOrThrow({ where: { userId, isSystem: true } });
+
+    const readyToAssign = async (userId: string): Promise<string> => {
+      const view = await request(app.getHttpServer() as Server)
+        .get('/budget-view')
+        .query({ month: monthOf(todayIn(ZONE)) })
+        .set('Authorization', `Bearer ${tokenFor(userId)}`);
+
+      expect(view.status).toBe(200);
+
+      return String(asRecord(view.body)['readyToAssign']);
+    };
+
+    it('corrects what the account opened with, and the balance and the pool follow it', async () => {
+      const { wallet } = await openedAccount(USER_OPENING);
+
+      const response = await correct(USER_OPENING, wallet.id, correction());
+
+      expect(response.status).toBe(200);
+      expect(asRecord(response.body)).toMatchObject({
+        accountId: wallet.id,
+        amount: '40000',
+        isSystem: true,
+      });
+
+      const { accounts, total } = await readAccounts(USER_OPENING);
+      expect(accounts[0]).toMatchObject({ balance: '40000' });
+      expect(total).toBe('40000');
+      await expect(readyToAssign(USER_OPENING)).resolves.toBe('40000');
+    });
+
+    it('takes zero, because an account can be opened with a number that was wrong twice', async () => {
+      const { wallet } = await openedAccount(USER_OPENING);
+
+      const response = await correct(USER_OPENING, wallet.id, correction({ amount: '0' }));
+
+      expect(response.status).toBe(200);
+      await expect(openingOf(USER_OPENING)).resolves.toMatchObject({ amount: 0n });
+
+      const { total } = await readAccounts(USER_OPENING);
+      expect(total).toBe('0');
+    });
+
+    it('refuses a negative amount and leaves the balance where it was', async () => {
+      const { wallet } = await openedAccount(USER_OPENING);
+
+      const response = await correct(USER_OPENING, wallet.id, correction({ amount: '-4000' }));
+
+      expect(response.status).toBe(400);
+      await expect(openingOf(USER_OPENING)).resolves.toMatchObject({ amount: 125_050n });
+    });
+
+    it.each([
+      ['a decimal amount', { amount: '400.50' }],
+      ['an amount sent as a JSON number', { amount: 40_000 }],
+      ['a missing amount', { amount: undefined }],
+      ['a missing idempotency key', { idempotencyKey: undefined }],
+      ['a day, which belongs to the account rather than to the correction', { date: '2026-01-01' }],
+      ['a kind, because an opening balance is never an expense', { type: 'EXPENSE' }],
+      [
+        'an envelope, because the money arrived ready to assign',
+        { categoryId: UNKNOWN_ACCOUNT_ID },
+      ],
+    ])('refuses %s', async (_case, over) => {
+      const { wallet } = await openedAccount(USER_OPENING);
+
+      const response = await correct(USER_OPENING, wallet.id, correction(over));
+
+      expect(response.status).toBe(400);
+      await expect(openingOf(USER_OPENING)).resolves.toMatchObject({ amount: 125_050n });
+    });
+
+    it('leaves the day and the kind of the record it corrects alone', async () => {
+      const { opening, wallet } = await openedAccount(USER_OPENING);
+
+      await correct(USER_OPENING, wallet.id, correction());
+
+      const stored = await openingOf(USER_OPENING);
+      expect(stored).toMatchObject({
+        id: opening.id,
+        date: opening.date,
+        type: opening.type,
+        categoryId: null,
+        isSystem: true,
+      });
+    });
+
+    it('refuses the correction once the account holds a record of its own', async () => {
+      const { budget, wallet } = await openedAccount(USER_FROZEN);
+      await seedTransaction(USER_FROZEN, budget.id, wallet.id, -3_000n, { type: 'EXPENSE' });
+
+      const response = await correct(USER_FROZEN, wallet.id, correction());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('OPENING_FROZEN');
+      await expect(openingOf(USER_FROZEN)).resolves.toMatchObject({ amount: 125_050n });
+    });
+
+    it('takes the correction again once that record is gone', async () => {
+      const { budget, wallet } = await openedAccount(USER_FROZEN);
+      const spent = await seedTransaction(USER_FROZEN, budget.id, wallet.id, -3_000n, {
+        type: 'EXPENSE',
+      });
+
+      await correct(USER_FROZEN, wallet.id, correction()).expect(400);
+      await prisma.transaction.delete({ where: { id: spent.id } });
+
+      const response = await correct(
+        USER_FROZEN,
+        wallet.id,
+        correction({ idempotencyKey: 'opening-form-opened-again' }),
+      );
+
+      expect(response.status).toBe(200);
+      await expect(openingOf(USER_FROZEN)).resolves.toMatchObject({ amount: 40_000n });
+    });
+
+    it('counts a transfer leg as a record of its own, because the money did move', async () => {
+      const { budget, wallet } = await openedAccount(USER_FROZEN);
+      await seedTransaction(USER_FROZEN, budget.id, wallet.id, -5_000n, {
+        type: 'TRANSFER',
+        transferId: TRANSFER_ID,
+      });
+
+      const response = await correct(USER_FROZEN, wallet.id, correction());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('OPENING_FROZEN');
+    });
+
+    it('leaves an account editable while the money moved on another one', async () => {
+      const { budget, wallet } = await openedAccount(USER_NEIGHBOUR);
+      const other = await seedAccount(USER_NEIGHBOUR, budget.id, 'Карта');
+      await seedTransaction(USER_NEIGHBOUR, budget.id, other.id, -3_000n, { type: 'EXPENSE' });
+
+      const response = await correct(USER_NEIGHBOUR, wallet.id, correction());
+
+      expect(response.status).toBe(200);
+      await expect(openingOf(USER_NEIGHBOUR)).resolves.toMatchObject({ amount: 40_000n });
+    });
+
+    it('answers a repeated key with what it already wrote, and writes nothing again', async () => {
+      const { wallet } = await openedAccount(USER_REPEAT);
+
+      const first = await correct(USER_REPEAT, wallet.id, correction());
+      const second = await correct(USER_REPEAT, wallet.id, correction());
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(second.body).toEqual(first.body);
+      await expect(rowsOf(USER_REPEAT)).resolves.toMatchObject({ transactions: 1, keys: 1 });
+    });
+
+    it('refuses a repeated key carrying a different amount', async () => {
+      const { wallet } = await openedAccount(USER_CHANGED);
+
+      await correct(USER_CHANGED, wallet.id, correction());
+      const second = await correct(USER_CHANGED, wallet.id, correction({ amount: '999' }));
+
+      expect(second.status).toBe(409);
+      await expect(openingOf(USER_CHANGED)).resolves.toMatchObject({ amount: 40_000n });
+    });
+
+    it('refuses an account this budget does not hold', async () => {
+      await openedAccount(USER_GONE);
+
+      const response = await correct(USER_GONE, UNKNOWN_ACCOUNT_ID, correction());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+    });
+
+    it('refuses to invent an opening balance for an account that lost the one it had', async () => {
+      const budget = await seedBudget(USER_QUIET);
+      const wallet = await seedAccount(USER_QUIET, budget.id, 'Кошелёк');
+
+      const response = await correct(USER_QUIET, wallet.id, correction());
+
+      expect(response.status).toBe(500);
+      await expect(prisma.transaction.count({ where: { userId: USER_QUIET } })).resolves.toBe(0);
+    });
+
+    it('refuses a caller with no active budget rather than failing on the way down', async () => {
+      const response = await correct(USER_NOBUDGET, UNKNOWN_ACCOUNT_ID, correction());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('NO_ACTIVE_BUDGET');
     });
   });
 });

@@ -282,7 +282,8 @@ export const ru = {
   'newAccount.typeDebitHint': 'Банковский счёт, с которого вы тратите.',
   'newAccount.balanceLabel': 'Начальный остаток',
   'newAccount.balanceHint':
-    'Ноль это нормально. Сумма датируется сегодняшним днём, её можно поправить позже.',
+    'Ноль это нормально. Сумма датируется сегодняшним днём, и её можно поправить, пока по ' +
+    'счёту не прошло ни одного движения.',
   'newAccount.balancePreview': '{{amount}} попадёт в «Свободные деньги»',
   'newAccount.balanceNegative': 'Начальный остаток не может быть отрицательным.',
   'newAccount.balanceDigitsOnly': 'Сумма записывается цифрами.',
@@ -365,6 +366,7 @@ export const ru = {
   'transactions.willArrive': 'На счёт поступит {{amount}}',
   'transactions.amountZero': 'Сумма не может быть нулевой.',
   'transactions.save': 'Сохранить',
+  'transactions.saving': 'Сохраняю…',
   'transactions.saveAndMore': 'Сохранить и добавить ещё',
   'transactions.saved': 'Записано: {{payee}}, {{amount}}',
   'transactions.cancel': 'Отмена',
@@ -400,6 +402,13 @@ export const ru = {
   'transactions.failTransferArchived':
     'Переводу нужны оба счёта открытыми, а один из этих двух в архиве.',
   'transactions.failNotEditable': 'Эту запись менять нельзя: её сделало приложение.',
+  'transactions.failOpeningFrozen':
+    'На счёте уже есть движения, поэтому начальный остаток больше не правится. Запишите ' +
+    'недостающие движения, и остаток сойдётся.',
+  'transactions.openingFrozenTitle': 'Начальный остаток закрыт',
+  'transactions.openingFrozen':
+    'С момента открытия по счёту прошли деньги, поэтому это число остаётся таким, каким было ' +
+    'записано. Чтобы остаток сошёлся с реальным, запишите недостающие движения.',
   'transactions.failGone': 'Записи больше нет. Обновите страницу.',
   'transactions.failBudget': 'Не удалось прочитать бюджет. Обновите страницу.',
   'transactions.failConflict': 'Запись, возможно, уже сохранена. Обновите страницу.',

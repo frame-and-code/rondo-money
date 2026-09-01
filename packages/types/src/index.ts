@@ -20,8 +20,14 @@ export {
   minorDigits,
   supportedCurrencyCodes,
 } from './currency.js';
-export type { AccountBalanceDto, AccountDto, AccountsDto, AccountType } from './account.js';
-export { ACCOUNT_TYPES, isAccountType } from './account.js';
+export type {
+  AccountBalanceDto,
+  AccountDto,
+  AccountRefusal,
+  AccountsDto,
+  AccountType,
+} from './account.js';
+export { ACCOUNT_REFUSALS, ACCOUNT_TYPES, isAccountRefusal, isAccountType } from './account.js';
 export type { BudgetDto } from './budget.js';
 export type { CategoryColor, CategoryIcon } from './category-look.js';
 export {

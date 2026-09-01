@@ -29,6 +29,15 @@ export class AccountBalanceResponse implements AccountBalanceDto {
       'zero, which is a signal rather than an error.',
   })
   balance!: string;
+
+  @ApiProperty({
+    description:
+      'Whether the opening balance of this account still takes a correction. It stops taking ' +
+      'one the moment the account holds a record of its own, and from then on a balance that ' +
+      'drifted is corrected by recording the movements it is missing. A screen reads this ' +
+      'rather than learning it from a refusal.',
+  })
+  openingEditable!: boolean;
 }
 
 export class AccountsResponse implements AccountsDto {

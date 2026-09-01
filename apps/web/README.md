@@ -10,7 +10,9 @@ it draws a month of the budget, moves money between its envelopes, assigning inc
 the user arrange the categories themselves, creating, renaming, repainting, reordering and
 hiding them. Money flow is a real screen too: the accounts sit on the left with what each of them
 holds and what they hold together, the records run beside them as a feed by days, and the
-screen takes an account, a rename and an income, an expense or a transfer from its dialogs. Net worth and settings are
+screen takes an account, a rename and an income, an expense or a transfer from its dialogs. The
+opening balance of an account is corrected in that same form while the account is still empty,
+and the form says it is settled once the account has held money. Net worth and settings are
 still slots.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
@@ -55,7 +57,8 @@ src/
       categories/             # the month of the budget: page.tsx renders BudgetMonth, and
                               # loading.tsx the same skeleton the screen shows while it reads
       accounts/               # money flow: page.tsx renders MoneyFlow, the accounts panel
-                              # beside the feed, and loading.tsx the skeleton it shows
+                              # beside the feed, and loading.tsx the skeleton it shows, the
+                              # same one the shell draws while the gate decides
       net-worth/              # the remaining sections are page.tsx (the slot) + loading.tsx
       settings/
   components/                 # app-level components: the shell and its navigation, the
@@ -120,6 +123,8 @@ src/
   lib/transaction-failure.ts  # the same for a refused record, one message per reason the API
                               # names, and one fallback for a reason it does not
   lib/transfer-failure.ts     # the same for a refused transfer, which has refusals of its own
+  lib/category-failure.ts     # the same for a refused change to a category
+  lib/account-failure.ts      # the same for a refused correction of an opening balance
   lib/transaction-feed.ts     # the records of one page cut into days, each with the total the
                               # server counted for the whole day rather than for the page
   lib/sections.ts             # the sections in one place: route, message key, icon.

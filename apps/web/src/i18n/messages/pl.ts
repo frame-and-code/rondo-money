@@ -283,7 +283,8 @@ export const pl: Record<MessageKey, string> = {
   'newAccount.typeDebitHint': 'Rachunek bankowy, z którego wydajesz.',
   'newAccount.balanceLabel': 'Saldo początkowe',
   'newAccount.balanceHint':
-    'Zero jest w porządku. Kwota ma dzisiejszą datę i można ją później poprawić.',
+    'Zero jest w porządku. Kwota ma dzisiejszą datę i można ją poprawić, dopóki na koncie nie ' +
+    'ma żadnego ruchu.',
   'newAccount.balancePreview': '{{amount}} trafi do „Do rozdania”',
   'newAccount.balanceNegative': 'Saldo początkowe nie może być ujemne.',
   'newAccount.balanceDigitsOnly': 'Kwotę zapisuje się cyframi.',
@@ -365,6 +366,7 @@ export const pl: Record<MessageKey, string> = {
   'transactions.willArrive': 'Na konto wpłynie {{amount}}',
   'transactions.amountZero': 'Kwota nie może być zerowa.',
   'transactions.save': 'Zapisz',
+  'transactions.saving': 'Zapisuję…',
   'transactions.saveAndMore': 'Zapisz i dodaj kolejny',
   'transactions.saved': 'Zapisano: {{payee}}, {{amount}}',
   'transactions.cancel': 'Anuluj',
@@ -400,6 +402,13 @@ export const pl: Record<MessageKey, string> = {
   'transactions.failTransferArchived':
     'Przelew potrzebuje obu kont otwartych, a jedno z tych dwóch jest w archiwum.',
   'transactions.failNotEditable': 'Tego ruchu nie da się zmienić: zapisała go aplikacja.',
+  'transactions.failOpeningFrozen':
+    'Na koncie są już ruchy, więc saldo początkowe nie podlega poprawce. Zapisz brakujące ' +
+    'ruchy, a saldo się zgodzi.',
+  'transactions.openingFrozenTitle': 'Saldo początkowe jest zamknięte',
+  'transactions.openingFrozen':
+    'Od otwarcia konta przeszły przez nie pieniądze, więc ta liczba zostaje taka, jaka została ' +
+    'zapisana. Zapisz brakujące ruchy, żeby saldo zgodziło się z rzeczywistym.',
   'transactions.failGone': 'Tego ruchu już nie ma. Odśwież stronę.',
   'transactions.failBudget': 'Nie udało się odczytać budżetu. Odśwież stronę.',
   'transactions.failConflict': 'Wpis mógł już zostać zapisany. Odśwież stronę.',

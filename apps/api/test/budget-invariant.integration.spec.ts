@@ -38,7 +38,8 @@ type Operation =
   | { kind: 'assign'; amount: bigint; month: string; category: number }
   | { kind: 'move'; amount: bigint; month: string; from: Side; to: Side }
   | { kind: 'hide'; category: number }
-  | { kind: 'transfer'; amount: bigint; date: string; back: boolean };
+  | { kind: 'transfer'; amount: bigint; date: string; back: boolean }
+  | { kind: 'openingEdit'; amount: bigint };
 
 const CATEGORIES = 3;
 
@@ -52,6 +53,8 @@ let hidesApplied = 0;
 let hidesLanded = 0;
 let transfersApplied = 0;
 let transfersLanded = 0;
+let openingEditsApplied = 0;
+let openingEditsLanded = 0;
 
 const operation = (): fc.Arbitrary<Operation> =>
   fc.oneof(
@@ -88,6 +91,10 @@ const operation = (): fc.Arbitrary<Operation> =>
       amount: fc.bigInt({ min: 1n, max: 200_000n }),
       date: fc.constantFrom(...DATES),
       back: fc.boolean(),
+    }),
+    fc.record({
+      kind: fc.constant<'openingEdit'>('openingEdit'),
+      amount: fc.bigInt({ min: 0n, max: 400_000n }),
     }),
   );
 
@@ -137,6 +144,27 @@ describe('invariant 5.5 (integration)', () => {
     await prisma.category.updateMany({ where: owned, data: { hiddenAt: null } });
   };
 
+  const openAccounts = async (): Promise<void> => {
+    for (const account of [accountId, secondAccountId]) {
+      await prisma.transaction.create({
+        data: {
+          userId: USER,
+          budgetId,
+          accountId: account,
+          date: new Date('2026-01-01T00:00:00Z'),
+          amount: 0n,
+          type: 'INCOME',
+          isSystem: true,
+        },
+      });
+    }
+  };
+
+  const startAgain = async (): Promise<void> => {
+    await clearMoney();
+    await openAccounts();
+  };
+
   const sideOf = (side: Side): Record<string, unknown> =>
     side === POOL
       ? { kind: 'READY_TO_ASSIGN' }
@@ -146,6 +174,25 @@ describe('invariant 5.5 (integration)', () => {
     prisma.assignment.count({ where: { userId: USER, budgetId } });
 
   const apply = async (step: Operation): Promise<void> => {
+    if (step.kind === 'openingEdit') {
+      openingEditsApplied += 1;
+
+      const answer = await request(app.getHttpServer() as Server)
+        .patch(`/accounts/${accountId}/opening-balance`)
+        .set('Authorization', `Bearer ${tokenFor()}`)
+        .send({
+          amount: step.amount.toString(10),
+          idempotencyKey: `invariant-opening-${openingEditsApplied}`,
+        });
+
+      expect([200, 400]).toContain(answer.status);
+      if (answer.status === 200) {
+        openingEditsLanded += 1;
+      }
+
+      return;
+    }
+
     if (step.kind === 'transfer') {
       transfersApplied += 1;
       const heldAssignments = await assignmentCount();
@@ -392,7 +439,7 @@ describe('invariant 5.5 (integration)', () => {
             expect(BigInt(shown.readyToAssign) + visible).toBe(held);
           }
         })
-        .beforeEach(clearMoney),
+        .beforeEach(startAgain),
       { numRuns: 50 },
     );
 
@@ -402,5 +449,6 @@ describe('invariant 5.5 (integration)', () => {
     expect(hidesLanded).toBeGreaterThan(0);
     expect(transfersLanded).toBeGreaterThan(0);
     expect(transfersLanded).toBe(transfersApplied);
+    expect(openingEditsLanded).toBeGreaterThan(0);
   }, 180_000);
 });
