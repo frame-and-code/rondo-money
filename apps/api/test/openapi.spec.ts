@@ -146,6 +146,7 @@ describe('OpenAPI document', () => {
       '/accounts/{id}',
       '/accounts/{id}/archive',
       '/accounts/{id}/opening-balance',
+      '/accounts/{id}/reconcile',
       '/budget-view',
       '/budgets',
       '/categories',
@@ -457,6 +458,15 @@ describe('OpenAPI document', () => {
 
     it('publishes the amount that blocked an archive as a string of minor units too', () => {
       expect(moneyFieldsOf(document, 'AccountRefusedResponse')).toEqual(['balance']);
+    });
+
+    it('publishes both sides of a reconciliation as strings of minor units', () => {
+      const schema = requestSchemaOf(document, document.paths['/accounts/{id}/reconcile']?.post);
+      const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+      expect(moneyFieldsOf(document, 'ReconciliationResponse')).toEqual(['difference']);
+      expect(Object.keys(properties).sort()).toEqual(['balance', 'idempotencyKey']);
+      expect(properties['balance']).toMatchObject({ pattern: MONEY_PATTERN.source });
     });
 
     it('takes nothing but the key when an account is archived, because there is nothing to choose', () => {

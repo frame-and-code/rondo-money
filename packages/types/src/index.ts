@@ -26,6 +26,7 @@ export type {
   AccountRefusal,
   AccountsDto,
   AccountType,
+  ReconciliationDto,
 } from './account.js';
 export { ACCOUNT_REFUSALS, ACCOUNT_TYPES, isAccountRefusal, isAccountType } from './account.js';
 export type { BudgetDto } from './budget.js';

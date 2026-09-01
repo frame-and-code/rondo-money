@@ -12,9 +12,14 @@ hiding them. Money flow is a real screen too: the accounts sit on the left with 
 holds and what they hold together, the records run beside them as a feed by days, and the
 screen takes an account, a rename and an income, an expense or a transfer from its dialogs. The
 opening balance of an account is corrected in that same form while the account is still empty,
-and the form says it is settled once the account has held money. An account that holds nothing
-is archived from the rename dialog, behind a confirmation, and while it still holds money the
-action says so instead of offering itself. An archived account then leaves the screen for good, so the panel
+and the form says it is settled once the account has held money. Which account the feed covers lives in the address rather than in the screen, so a link to one
+account works and so does the back button. An account is settled against the balance it really
+holds from the row beside the filters, which shows what the book makes it and what the
+correction would come to before anything is written, and balances that already agree write
+nothing. Renaming and archiving live in a menu on the account's own row, a drop-down on a wide
+screen and a sheet on a narrow one. An account that holds nothing is archived from
+that menu, behind a confirmation, and while it still holds money the entry says so instead of
+offering itself. An archived account then leaves the screen for good, so the panel
 and the account picker's list carry only what is in use, and a record whose other side sits on
 one names it as an archived account rather than by a name nothing can resolve. Net worth and settings are
 still slots.
@@ -60,9 +65,10 @@ src/
       layout.tsx              # the gate over the app, and AppShell around every section
       categories/             # the month of the budget: page.tsx renders BudgetMonth, and
                               # loading.tsx the same skeleton the screen shows while it reads
-      accounts/               # money flow: page.tsx renders MoneyFlow, the accounts panel
-                              # beside the feed, and loading.tsx the skeleton it shows, the
-                              # same one the shell draws while the gate decides
+      accounts/               # money flow: page.tsx renders MoneyFlow over every account,
+                              # [id]/page.tsx over the one the address names, and loading.tsx
+                              # the skeleton both show, the same one the shell draws while the
+                              # gate decides
       net-worth/              # the remaining sections are page.tsx (the slot) + loading.tsx
       settings/
   components/                 # app-level components: the shell and its navigation, the
@@ -78,6 +84,7 @@ src/
                               # the empty states and the delete confirmation), the dialog an
                               # account is created and
                               # renamed from, the confirmation an account is archived behind,
+                              # the surface an account is settled against its real balance in,
                               # and the categories screen: the month
                               # header, a group, a tile that opens the move dialog, its spend
                               # ring, the fields that move money between envelopes, the

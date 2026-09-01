@@ -76,6 +76,9 @@ counts every account the budget holds. The equality still has to hold against th
 total, and what makes both readings true at once is that an account is archived only at a
 balance of exactly zero. The two tests beside the property assert exactly that, one over an
 account emptied through the API and one over an archived account carrying money, written
-straight into the database because no request produces it. When
+straight into the database because no request produces it. An operation whose success sometimes
+writes nothing counts what it wrote rather than what it answered: reconciling to a balance the
+book already agreed with is a 200 that moved no money, so a counter keyed on the status would
+claim coverage the run never had. When
 it goes red, [`invariant-debugger`](../../agents/invariant-debugger.md) reads the
 counterexample.

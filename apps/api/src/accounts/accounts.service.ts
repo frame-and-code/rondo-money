@@ -16,6 +16,8 @@ import { AccountBalanceResponse, AccountsResponse } from '@/accounts/accounts.re
 import { CorrectOpeningDto } from '@/accounts/correct-opening.dto';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
 import { heldOpenAccount } from '@/accounts/open-accounts';
+import { ReconcileAccountDto } from '@/accounts/reconcile-account.dto';
+import { decodeReconciliation, ReconciliationResponse } from '@/accounts/reconciliation.response';
 import { RenameAccountDto } from '@/accounts/rename-account.dto';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
@@ -215,6 +217,57 @@ export class AccountsService {
         });
 
         return serializeTransaction(written, null);
+      },
+    );
+  }
+
+  async reconcile(
+    userId: string,
+    id: string,
+    body: ReconcileAccountDto,
+  ): Promise<ReconciliationResponse> {
+    const intended = await this.activeBudget(this.prisma);
+
+    return this.mutations.run(
+      {
+        key: body.idempotencyKey,
+        request: { budgetId: intended.id, accountId: id, balance: body.balance },
+        decode: decodeReconciliation,
+      },
+      async (tx) => {
+        const budget = await this.activeBudget(tx, intended.id);
+
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
+
+        const [summed] = await this.raw.query<AccountBalanceOnlyRow>(
+          (scope) => accountBalanceStatement(scope, budget.id, id),
+          tx,
+        );
+        if (!summed) {
+          throw new Error(
+            `The balance statement answered with no row for account ${id}: it sums with no ` +
+              'grouping, so it always answers with one, and an empty answer means the statement ' +
+              'no longer does.',
+          );
+        }
+
+        const difference = parseMoney(body.balance) - summed.balance;
+        if (difference === 0n) {
+          return { difference: serializeMoney(difference), adjustmentId: null };
+        }
+
+        const written = await tx.transaction.create({
+          data: {
+            userId,
+            budgetId: budget.id,
+            accountId: id,
+            date: toDbDate(todayIn(budget.timezone)),
+            amount: difference,
+            type: TransactionType.ADJUSTMENT,
+          },
+        });
+
+        return { difference: serializeMoney(difference), adjustmentId: written.id };
       },
     );
   }

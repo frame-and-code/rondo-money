@@ -43,7 +43,6 @@ describe('the heading over one day of the feed', () => {
           categoryOf={() => ({ name: 'Coffee', icon: null, color: null })}
           showAccount={false}
           onOpen={jest.fn()}
-          onDelete={jest.fn()}
         />
       </LocaleProvider>,
     );
@@ -63,7 +62,6 @@ describe('the heading over one day of the feed', () => {
           categoryOf={() => ({ name: 'Coffee', icon: null, color: null })}
           showAccount={false}
           onOpen={jest.fn()}
-          onDelete={jest.fn()}
         />
       </LocaleProvider>,
     );
@@ -71,7 +69,9 @@ describe('the heading over one day of the feed', () => {
     const heading = screen.getByTestId('day-total-2026-08-31').parentElement;
     const row = screen.getByTestId('amount-r1').parentElement;
 
-    expect(heading?.lastElementChild?.className).toContain('size-8');
-    expect(row?.lastElementChild?.className).toContain('size-8');
+    expect(heading?.lastElementChild).toBe(screen.getByTestId('day-total-2026-08-31'));
+    expect(row?.lastElementChild).toBe(screen.getByTestId('amount-r1'));
+    expect(heading?.className).toContain('px-4');
+    expect(row?.className).toContain('px-4');
   });
 });

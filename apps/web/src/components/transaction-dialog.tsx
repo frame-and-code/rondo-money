@@ -380,11 +380,10 @@ export function TransactionDialog({
               key={one}
               type="button"
               variant="outline"
+              size="xl"
+              shape="pill"
               aria-pressed={chosenKind}
-              className={cn(
-                'h-11 flex-1 justify-start gap-2 rounded-full px-3',
-                chosenKind && KIND_TONES[one].chip,
-              )}
+              className={cn('flex-1 justify-start px-3', chosenKind && KIND_TONES[one].chip)}
               onClick={() => {
                 setKind(one);
                 edited();
@@ -625,7 +624,9 @@ export function TransactionDialog({
             <Button
               type="button"
               variant="outline"
-              className="h-11 flex-1 rounded-full"
+              size="xl"
+              shape="pill"
+              className="flex-1"
               disabled={busy || !ready}
               onClick={again}
             >
@@ -635,7 +636,13 @@ export function TransactionDialog({
           ) : null}
 
           {frozen ? null : (
-            <Button type="submit" className="h-11 flex-1 rounded-full" disabled={busy || !ready}>
+            <Button
+              type="submit"
+              size="xl"
+              shape="pill"
+              className="flex-1"
+              disabled={busy || !ready}
+            >
               {savingOne ? <IconLoader className="size-4 animate-spin" /> : null}
               {t(savingOne ? 'transactions.saving' : 'transactions.save')}
             </Button>
@@ -646,7 +653,9 @@ export function TransactionDialog({
           <Button
             type="button"
             variant="ghost"
-            className="text-destructive h-11 rounded-full"
+            size="xl"
+            shape="pill"
+            className="text-destructive"
             onClick={onDelete}
           >
             <IconTrash className="size-4" />

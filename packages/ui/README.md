@@ -17,7 +17,7 @@ src/
   components/
     ui/                 # shadcn/ui primitives, generated: alert, button, card, checkbox,
                         # combobox, calendar, command, dialog, drawer, dropdown-menu, input,
-                        # input-group, label, popover, radio-group, select, separator,
+                        # input-group, item, label, popover, radio-group, select, separator,
                         # skeleton, textarea, tooltip
     theme-provider.tsx  # next-themes provider (light/dark)
     theme-toggle.tsx    # theme switch used in the app header
@@ -79,6 +79,17 @@ came from. And `select.tsx`, `dropdown-menu.tsx` and `combobox.tsx` keep their o
 animations, which the generator suppresses outright; here they are suppressed only for a reader
 who asked for reduced motion. So after regenerating any of these, put them back and look at both
 the onboarding currency sheet and the move dialog, which is where the difference shows.
+
+`button.tsx` carries the shape a control takes rather than leaving it to the call site.
+The radius is a variant of its own, `shape`, because radius and height do not travel together
+here: a pill-shaped control exists at more than one height, and a square-cornered one does too.
+`size="xl"` is the height a surface asks for when its controls are meant to be hit with a
+thumb, and `icon-xl` is the same height square: the record form and the account panel's narrow
+half use it, while most dialogs here keep the default height. It is what a surface chooses, not
+what a dialog gets. Before this they were a class string copied into every screen that opened a
+dialog, which is how two of them end up a pixel apart. A call site that writes a height or a
+radius by hand is either reaching for a size that does not exist yet, which belongs here, or
+drifting from the rest.
 
 The one thing a new file gets afterwards is `eslint --fix` and Prettier. The generator writes
 double quotes, no semicolons and its own import order, all of which the gate refuses. That

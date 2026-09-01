@@ -3,5 +3,5 @@
 import { MoneyFlow } from '@/components/money-flow';
 
 export default function MoneyFlowPage() {
-  return <MoneyFlow />;
+  return <MoneyFlow accountId={null} />;
 }

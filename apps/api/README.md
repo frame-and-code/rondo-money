@@ -16,9 +16,10 @@ is also where a handler asks for the active budget itself rather than letting th
 extension refuse the read: without one the extension raises an internal error, and a user part
 way through onboarding would meet a 500 for an ordinary state. Its read is a hand-written
 aggregate as well, because a balance is summed from transactions rather than stored, and that
-same aggregate decides two of its writes: an opening balance takes a correction only while the
-account holds nothing else, and an account is archived only while it holds nothing at all, so
-each mutation locks the account row and counts inside its own transaction. It also owns the one
+same aggregate decides three of its writes: an opening balance takes a correction only while
+the account holds nothing else, an account is archived only while it holds nothing at all, and
+a reconciliation takes the amount it writes from the balance it just summed, so each mutation
+locks the account row and counts inside its own transaction. It also owns the one
 rule every write path that names an account has to pass, `refusalOfAccounts` in
 [`src/accounts/open-accounts.ts`](src/accounts/open-accounts.ts): an account that is gone or
 archived takes no write, and the rows it judges come back under the lock that makes the
@@ -125,6 +126,17 @@ no such order, because both rows are new and neither is a row anyone else can be
   transaction as the correction, so a record arriving at that moment is never missed. Refusals
   name a reason: `OPENING_FROZEN`, `BALANCE_NOT_ZERO`, `ACCOUNT_ARCHIVED`, `UNKNOWN_ACCOUNT`,
   `NO_ACTIVE_BUDGET`, which the other account operations answer with too.
+- `POST /accounts/:id/reconcile` takes the balance the account really holds and writes the one
+  record that makes the book agree with it: a correction for the difference, carrying no
+  category, so the money joins or leaves ready to assign the way an income with no envelope
+  does. The balance is summed under the same lock and inside the same transaction as the write,
+  so a record landing at that moment is counted once rather than twice. Balances that already
+  agree are a success that writes nothing, answered with a difference of zero and no
+  correction. The declared balance takes any sign, because an account spent past its own money
+  holds less than nothing, and the day is not part of the request: a reconciliation is dated
+  today in the budget timezone by definition. What it writes is an ordinary record from then
+  on, edited and removed through the transaction operations. Refusals name `ACCOUNT_ARCHIVED`,
+  `UNKNOWN_ACCOUNT` or `NO_ACTIVE_BUDGET`.
 - `POST /transactions`, `PATCH /transactions/:id` and `POST /transactions/:id/delete` are how
   an income or an expense is written, corrected and removed. The amount arrives without a sign
   and the server writes one from the type, so an expense always leaves the account. Deletion is

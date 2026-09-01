@@ -42,7 +42,10 @@ amount, set one aside every month, reach one by a chosen month, or save towards 
 deadline. The card then says how much of what the goal asks for this month is already inside,
 and clicking it opens the move form with the rest of it filled in. Money flow is a screen of its own: the accounts sit beside a feed of
 what was recorded, day by day, and income, expenses and transfers between two accounts are
-written, corrected and taken back there.
+written, corrected and taken back there. Which account the feed covers lives in the address, so
+a link to one of them works and so does the back button. An account is also settled against what it really
+holds: the screen says what the book makes it and what the correction would come to, and one
+record dated that day closes the gap, which lands in the money that has no job yet.
 
 ## What it is
 

@@ -106,6 +106,15 @@ let page: {
   nextCursor: string | null;
 } = wholeFeed;
 
+const routed: string[] = [];
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: (href: string) => routed.push(href),
+    replace: (href: string) => routed.push(href),
+  }),
+}));
+
 jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerListOptions: () => ({
     queryKey: [{ _id: 'budgetsControllerList' }],
@@ -122,6 +131,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
   accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList' }],
   accountsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerRenameMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  accountsControllerReconcileMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerArchiveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerCorrectOpeningMutation: () => ({
     mutationFn: (options: unknown) => {
@@ -221,13 +231,15 @@ class Watcher {
 
 globalThis.IntersectionObserver = Watcher as unknown as typeof IntersectionObserver;
 
+let showing: string | null = null;
+
 const draw = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   return render(
     <QueryClientProvider client={client}>
       <LocaleProvider initialLocale="en">
-        <MoneyFlow />
+        <MoneyFlow accountId={showing} />
       </LocaleProvider>
     </QueryClientProvider>,
   );
@@ -236,6 +248,8 @@ const draw = () => {
 const lastAsked = (): Record<string, unknown> => asked[asked.length - 1] ?? {};
 
 afterEach(() => {
+  showing = null;
+  routed.length = 0;
   page = wholeFeed;
   asked.length = 0;
   viewed.length = 0;
@@ -275,13 +289,21 @@ describe('the money flow screen', () => {
     expect(lastAsked()).toEqual({});
   });
 
-  it('asks the server again when an account is picked, rather than narrowing what is loaded', async () => {
+  it('asks the server for one account when the address names it, rather than narrowing what is loaded', async () => {
+    showing = 'a1';
+    draw();
+    await screen.findByTestId('account-panel');
+
+    await waitFor(() => expect(lastAsked()).toMatchObject({ accountId: 'a1' }));
+  });
+
+  it('puts the account a reader picks into the address rather than into a hidden state', async () => {
     draw();
     await screen.findByText('Wallet');
 
     await userEvent.click(screen.getByRole('button', { name: 'Wallet' }));
 
-    await waitFor(() => expect(lastAsked()).toMatchObject({ accountId: 'a1' }));
+    expect(routed).toContain('/accounts/a1');
   });
 
   it('sends two filters as one narrower question', async () => {
@@ -295,6 +317,18 @@ describe('the money flow screen', () => {
     await pickType(en['transactions.typeIncome']);
 
     await waitFor(() => expect(lastAsked()).toMatchObject({ categoryId: 'c1', type: 'INCOME' }));
+  });
+
+  it('offers corrections as a kind of record, because the feed now holds them', async () => {
+    draw();
+    await screen.findByText('Corner cafe');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: new RegExp(en['transactions.filter']) }),
+    );
+    await pickType(en['transactions.typeAdjustment']);
+
+    await waitFor(() => expect(lastAsked()).toMatchObject({ type: 'ADJUSTMENT' }));
   });
 
   it('counts the filters that are on and clears them all at once', async () => {
@@ -353,12 +387,8 @@ describe('the money flow screen', () => {
     draw();
     await screen.findByText('Corner cafe');
 
-    await userEvent.click(
-      screen.getByRole('button', {
-        name: en['transactions.deleteOne'].replace('{{payee}}', 'Corner cafe'),
-      }),
-    );
-    await userEvent.click(await screen.findByRole('menuitem', { name: en['transactions.delete'] }));
+    await userEvent.click(screen.getByRole('button', { name: 'Corner cafe' }));
+    await userEvent.click(await screen.findByRole('button', { name: en['transactions.delete'] }));
 
     expect(await screen.findByTestId('delete-category-line')).toHaveTextContent('Coffee');
   });

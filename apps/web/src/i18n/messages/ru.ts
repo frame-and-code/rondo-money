@@ -201,7 +201,8 @@ export const ru = {
   'categoryColor.gray': 'серый',
   'accounts.total': 'Всего',
   'accounts.add': 'Добавить счёт',
-  'accounts.renameOne': 'Переименовать счёт «{{name}}»',
+  'accounts.actionsFor': 'Что можно сделать со счётом «{{name}}»',
+  'accounts.rename': 'Переименовать',
   'accounts.empty': 'Счетов пока нет. Заведите первый, и здесь появится его остаток.',
   'accounts.unavailable':
     'Не получилось прочитать ваши счета. Обновите страницу, чтобы попробовать снова.',
@@ -212,9 +213,8 @@ export const ru = {
   'accounts.saveFailed': 'Счёт не сохранился. Попробуйте ещё раз.',
   'accounts.saveLost':
     'Ответ не дошёл, и мы не знаем, записалось ли. Нажмите «Сохранить» ещё раз тем же запросом или отмените.',
-  'accounts.archive': 'Убрать счёт в архив',
-  'accounts.archiveNeedsZero':
-    'В архив уходит счёт, на котором ничего не осталось. Сначала переведите остаток на другой счёт.',
+  'accounts.archive': 'Убрать в архив',
+  'accounts.archiveNeedsZero': 'Заблокировано, пока лежат деньги',
   'accounts.archiveTitle': 'Убрать «{{name}}» в архив?',
   'accounts.archiveBody':
     'Записи останутся на месте и продолжат считаться. Сам счёт больше не примет никаких изменений, и вернуть его нельзя.',
@@ -222,6 +222,15 @@ export const ru = {
   'accounts.failBalanceNotZero':
     'На счёте ещё есть деньги. Переведите остаток на другой счёт и уберите его в архив после этого.',
   'accounts.failArchived': 'Счёт в архиве, а архивный счёт изменений не принимает.',
+  'accounts.reconcile': 'Сверить остаток',
+  'accounts.reconcileTitle': 'Сверить «{{name}}»',
+  'accounts.reconcileBody':
+    'Скажите, сколько на счёте на самом деле. Мы запишем одну строку, которая сведёт книгу с этим остатком, и эти деньги придут в свободные или уйдут из них.',
+  'accounts.reconcileLabel': 'Сколько на счёте на самом деле',
+  'accounts.reconcileComputed': 'По книге',
+  'accounts.reconcileWillWrite': 'Запишем корректировку на {{amount}} сегодняшним днём.',
+  'accounts.reconcileNoDifference': 'Остатки уже сходятся, записывать нечего.',
+  'accounts.reconcileConfirm': 'Сверить',
   'netWorth.slotTitle': 'Слот раздела «Капитал»',
   'netWorth.slotBody': 'Сюда встанет график капитала.',
   'settings.slotTitle': 'Слот раздела «Настройки»',
@@ -339,6 +348,8 @@ export const ru = {
   'transactions.openingBalance': 'Начальный остаток',
   'transactions.systemBadge': 'системная',
   'transactions.transferBadge': 'перевод',
+  'transactions.adjustment': 'Сверка',
+  'transactions.adjustmentBadge': 'корректировка',
   'transactions.transferPlain': 'Перевод',
   'transactions.transferTo': 'Перевод в «{{name}}»',
   'transactions.transferFrom': 'Перевод из «{{name}}»',
@@ -358,6 +369,7 @@ export const ru = {
   'transactions.typeExpense': 'Расходы',
   'transactions.typeIncome': 'Доходы',
   'transactions.typeTransfer': 'Переводы',
+  'transactions.typeAdjustment': 'Корректировки',
   'transactions.findCategory': 'Найти категорию',
   'transactions.findPayee': 'Найти',
   'transactions.nothingFound': 'Ничего не нашлось',
@@ -381,7 +393,6 @@ export const ru = {
   'transactions.saveAndMore': 'Сохранить и добавить ещё',
   'transactions.saved': 'Записано: {{payee}}, {{amount}}',
   'transactions.cancel': 'Отмена',
-  'transactions.deleteOne': 'Удалить «{{payee}}»',
   'transactions.deleteTitle': 'Удалить «{{payee}}» на {{amount}}?',
   'transactions.archivedAccount': 'Архивный счёт',
   'transactions.deleteAccountLine': 'На счёт «{{name}}» вернётся {{amount}}',

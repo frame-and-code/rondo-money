@@ -244,4 +244,76 @@ describe('archiving an account while its money is moving (integration)', () => {
       expect(['Копилка', 'Карта']).toContain(stored.name);
     }
   });
+  it('never lets two reconciliations of one account both settle the same difference', async () => {
+    for (let round = 0; round < ROUNDS; round += 1) {
+      const userId = `${PREFIX}Settles${round}`;
+      const { budget, account } = await emptyAccount(userId);
+
+      await harness.prisma.transaction.create({
+        data: {
+          userId,
+          budgetId: budget.id,
+          accountId: account.id,
+          date: toDbDate(parseCalendarDate(TODAY)),
+          amount: 40_000n,
+          type: 'INCOME',
+        },
+      });
+
+      const reconcile = (key: string) =>
+        post(userId, `/accounts/${account.id}/reconcile`, {
+          balance: '100000',
+          idempotencyKey: key,
+        });
+
+      const [first, second] = await Promise.all([
+        reconcile(`settle-first-${round}`),
+        reconcile(`settle-second-${round}`),
+      ]);
+
+      expect([first.status, second.status]).toEqual([200, 200]);
+
+      const written = await harness.prisma.transaction.count({
+        where: { accountId: account.id, type: 'ADJUSTMENT' },
+      });
+
+      expect(written).toBe(1);
+      await expect(balanceOf(account.id)).resolves.toBe(100_000n);
+    }
+  });
+
+  it('reconciles an account while a record is leaving it, without deadlocking or failing', async () => {
+    for (let round = 0; round < ROUNDS; round += 1) {
+      const userId = `${PREFIX}Drains${round}`;
+      const { budget, account } = await emptyAccount(userId);
+      const group = await harness.seedGroup(userId, budget.id, 'Дом');
+      const category = await harness.seedCategory(userId, budget.id, group.id, 'Кафе');
+
+      const spent = await harness.prisma.transaction.create({
+        data: {
+          userId,
+          budgetId: budget.id,
+          accountId: account.id,
+          categoryId: category.id,
+          date: toDbDate(parseCalendarDate(TODAY)),
+          amount: -12_000n,
+          type: 'EXPENSE',
+        },
+      });
+
+      const [settling, removing] = await Promise.all([
+        post(userId, `/accounts/${account.id}/reconcile`, {
+          balance: '50000',
+          idempotencyKey: `settle-while-draining-${round}`,
+        }),
+        post(userId, `/transactions/${spent.id}/delete`, {
+          idempotencyKey: `drain-${round}`,
+        }),
+      ]);
+
+      expect(settling.status).not.toBe(500);
+      expect(removing.status).not.toBe(500);
+      expect([settling.status, removing.status]).toEqual([200, 200]);
+    }
+  });
 });

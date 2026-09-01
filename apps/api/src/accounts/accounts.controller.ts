@@ -15,6 +15,8 @@ import { AccountsService } from '@/accounts/accounts.service';
 import { ArchiveAccountDto } from '@/accounts/archive-account.dto';
 import { CorrectOpeningDto } from '@/accounts/correct-opening.dto';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
+import { ReconcileAccountDto } from '@/accounts/reconcile-account.dto';
+import { ReconciliationResponse } from '@/accounts/reconciliation.response';
 import { RenameAccountDto } from '@/accounts/rename-account.dto';
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { UnauthorizedResponse } from '@/auth/unauthorized.response';
@@ -169,5 +171,44 @@ export class AccountsController {
     @Body() body: CorrectOpeningDto,
   ): Promise<TransactionResponse> {
     return this.accounts.correctOpening(id, body);
+  }
+
+  @Post(':id/reconcile')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Settle an account against what it really holds',
+    description:
+      'Takes the balance the account really carries and writes the one record that makes the ' +
+      'book agree with it: a correction for the difference, carrying no category, so the money ' +
+      'lands in or leaves Ready to Assign the way an income with no envelope does. The balance ' +
+      'is summed inside the same transaction that writes the correction, so a record arriving ' +
+      'at the same moment cannot be counted twice. Balances that already agree are a success ' +
+      'that writes nothing. The correction is dated today in the budget timezone, which is what ' +
+      'a reconciliation means, and it is an ordinary record from then on.',
+  })
+  @ApiOkResponse({
+    description: 'What the reconciliation came to.',
+    type: ReconciliationResponse,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'The body was refused, or the account is archived, or this budget holds no such account, ' +
+      'or the caller has no active budget.',
+    type: AccountRefusedResponse,
+  })
+  @ApiConflictResponse({
+    description: 'The idempotency key was claimed by a different request.',
+    type: ConflictResponse,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The token was missing, malformed, expired or not minted for this app.',
+    type: UnauthorizedResponse,
+  })
+  reconcile(
+    @CurrentUserId() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ReconcileAccountDto,
+  ): Promise<ReconciliationResponse> {
+    return this.accounts.reconcile(userId, id, body);
   }
 }

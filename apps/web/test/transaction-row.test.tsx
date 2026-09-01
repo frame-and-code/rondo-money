@@ -42,7 +42,6 @@ const show = (over: Partial<TransactionDto> = {}, showAccount = false) =>
         showAccount={showAccount}
         showAdded
         onOpen={jest.fn()}
-        onDelete={jest.fn()}
       />
     </LocaleProvider>,
   );
@@ -96,10 +95,18 @@ describe('one row of the feed', () => {
     expect(screen.getByText(en['transactions.systemBadge'])).toBeInTheDocument();
   });
 
-  it('offers no menu on a record a person may not change', async () => {
-    show({ id: 'r5', isSystem: true, payee: null });
+  it('names a correction as the reconciliation it came from and marks it as one', () => {
+    show({
+      id: 'r9',
+      type: 'ADJUSTMENT',
+      amount: '-24950',
+      categoryId: null,
+      payee: null,
+    });
 
-    expect(screen.queryByRole('button', { name: /Delete/ })).not.toBeInTheDocument();
+    expect(screen.getByText(en['transactions.adjustment'])).toBeInTheDocument();
+    expect(screen.getByText(en['transactions.adjustmentBadge'])).toBeInTheDocument();
+    expect(screen.queryByText(en['transactions.noPayee'])).not.toBeInTheDocument();
   });
 
   it('opens the record wherever the row is pressed, not only on its name', async () => {
@@ -118,7 +125,6 @@ describe('one row of the feed', () => {
           showAccount={false}
           showAdded
           onOpen={onOpen}
-          onDelete={jest.fn()}
         />
       </LocaleProvider>,
     );
@@ -136,9 +142,8 @@ describe('one row of the feed', () => {
     expect(screen.getByText(/Wallet/)).toBeInTheDocument();
   });
 
-  it('opens a transfer leg and offers to remove it, because a pair has its own operation now', async () => {
+  it('opens a transfer leg, because removing a pair belongs to the form it opens', async () => {
     const onOpen = jest.fn();
-    const onDelete = jest.fn();
     const written = record({
       id: 'r7',
       type: 'TRANSFER',
@@ -162,22 +167,14 @@ describe('one row of the feed', () => {
           showAccount={false}
           showAdded
           onOpen={onOpen}
-          onDelete={onDelete}
         />
       </LocaleProvider>,
     );
 
     await userEvent.click(screen.getByRole('button', { name: 'Transfer to Card' }));
+
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'r7' }));
-
-    await userEvent.click(
-      screen.getByRole('button', {
-        name: en['transactions.deleteOne'].replace('{{payee}}', 'Transfer to Card'),
-      }),
-    );
-    await userEvent.click(await screen.findByRole('menuitem', { name: en['transactions.delete'] }));
-
-    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'r7' }));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   it('shows the time a record was entered in the budget timezone', () => {

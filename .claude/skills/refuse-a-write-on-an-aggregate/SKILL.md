@@ -1,6 +1,6 @@
 ---
 name: refuse-a-write-on-an-aggregate
-description: Write a mutation whose refusal depends on a sum over many rows, without leaving a window where a concurrent write slips past the check. Use when hiding a category, archiving an account, closing anything that must be empty first.
+description: Write a mutation whose refusal depends on a sum over many rows, without leaving a window where a concurrent write slips past the check. Use when hiding a category, archiving an account, closing anything that must be empty first, or when a write takes its amount from a sum.
 ---
 
 # A write the numbers have to allow
@@ -57,6 +57,17 @@ exclusive one on the same row deadlocks against another path doing the same, and
 handed a 500 for an operation nothing was wrong with. So a path that already holds a row
 exclusively reads what it needs out of the row that lock returned, rather than asking for it a
 second time.
+
+**Some writes take their amount from the aggregate rather than their refusal.** Reconciling an
+account is the case: what it writes is the declared balance minus the summed one, so the sum is
+not a check it passes but the number it is made of. It still takes the row exclusively even
+though all it does is insert, which is the one place the mode rule above reads the wrong way:
+two of these side by side would both sum the same balance and both write the difference, and
+the account would end up holding twice it. A sum read outside the lock would be stale by the
+time the row lands, and the correction would be wrong by whatever moved in between, which is
+worse than a refusal that fired late. A difference of zero
+writes nothing and is still a success, so the caller learns what happened from the answer rather
+than from a status code.
 
 **Lock the rows in a fixed order**, by id, the way `inLockOrder` and
 [`inWriteOrder`](../../../apps/api/src/categories/write-order.ts) do. Two requests taking the

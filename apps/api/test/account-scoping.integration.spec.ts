@@ -63,6 +63,12 @@ describe('accounts across tenants', () => {
       .set('Authorization', `Bearer ${tokenFor(userId)}`)
       .send(body);
 
+  const reconcile = (userId: string, id: string, body: Record<string, unknown>) =>
+    request(app.getHttpServer() as Server)
+      .post(`/accounts/${id}/reconcile`)
+      .set('Authorization', `Bearer ${tokenFor(userId)}`)
+      .send(body);
+
   const correct = (userId: string, id: string, body: Record<string, unknown>) =>
     request(app.getHttpServer() as Server)
       .patch(`/accounts/${id}/opening-balance`)
@@ -347,5 +353,53 @@ describe('accounts across tenants', () => {
 
     const stored = await prisma.account.findUniqueOrThrow({ where: { id: parked.id } });
     expect(stored.archivedAt).toBeNull();
+  });
+  it('refuses to reconcile an account belonging to another user, and moves none of its money', async () => {
+    const budgetA = await seedBudget(USER_A, 'A');
+    await seedBudget(USER_B, 'B');
+
+    const walletA = await seedAccount(USER_A, budgetA.id, 'Кошелёк A');
+    await seedTransaction(USER_A, budgetA.id, walletA.id, 125_050n, { isSystem: true });
+
+    const response = await reconcile(USER_B, walletA.id, {
+      balance: '1',
+      idempotencyKey: 'b-opened-the-reconcile-form',
+    });
+
+    expect(response.status).toBe(400);
+    expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+
+    const held = await prisma.transaction.findMany({ where: { userId: USER_A } });
+    expect(held).toHaveLength(1);
+    expect(held[0]?.amount).toBe(125_050n);
+  });
+
+  it('refuses to reconcile an account of a second budget the caller is not working in', async () => {
+    const active = await seedBudget(USER_A, 'A');
+    const other = await prisma.budget.create({
+      data: {
+        userId: USER_A,
+        name: 'Второй',
+        currency: 'PLN',
+        minorDigits: 2,
+        timezone: 'Europe/Warsaw',
+        active: false,
+      },
+    });
+
+    await seedAccount(USER_A, active.id, 'Кошелёк');
+    const parked = await seedAccount(USER_A, other.id, 'Отложенный');
+    await seedTransaction(USER_A, other.id, parked.id, 7_000n, { isSystem: true });
+
+    const response = await reconcile(USER_A, parked.id, {
+      balance: '1',
+      idempotencyKey: 'a-reconciles-the-other',
+    });
+
+    expect(response.status).toBe(400);
+    expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+
+    const held = await prisma.transaction.findMany({ where: { accountId: parked.id } });
+    expect(held).toHaveLength(1);
   });
 });

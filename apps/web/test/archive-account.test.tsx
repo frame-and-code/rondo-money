@@ -31,6 +31,9 @@ let listed = [HOLDING, EMPTIED];
 const archive = jest.fn();
 const invalidate = jest.fn();
 
+const pushed = jest.fn();
+const replaced = jest.fn();
+
 let archiveRefuses: unknown = null;
 
 const asked: Record<string, unknown>[] = [];
@@ -83,6 +86,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
   accountsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerCorrectOpeningMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerRenameMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  accountsControllerReconcileMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerArchiveMutation: () => ({
     mutationFn: (options: unknown) => {
       archive(options);
@@ -98,10 +102,16 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
 }));
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: pushed, replace: replaced }),
+}));
+
 jest.mock('@tanstack/react-query', () => ({
   ...jest.requireActual('@tanstack/react-query'),
   useQueryClient: () => ({ invalidateQueries: invalidate }),
 }));
+
+let showing: string | null = null;
 
 const draw = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -109,7 +119,7 @@ const draw = () => {
   return render(
     <QueryClientProvider client={client}>
       <LocaleProvider>
-        <MoneyFlow />
+        <MoneyFlow accountId={showing} />
       </LocaleProvider>
     </QueryClientProvider>,
   );
@@ -117,18 +127,24 @@ const draw = () => {
 
 const panel = () => within(screen.getByTestId('account-panel'));
 
-const openRename = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+const openMenu = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
   await screen.findByTestId('account-panel');
 
   await user.click(
     await panel().findByRole('button', {
-      name: en['accounts.renameOne'].replace('{{name}}', name),
+      name: en['accounts.actionsFor'].replace('{{name}}', name),
     }),
   );
 };
 
+const openArchive = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+  await openMenu(user, name);
+  await user.click(await screen.findByRole('menuitem', { name: en['accounts.archive'] }));
+};
+
 afterEach(() => {
   jest.clearAllMocks();
+  showing = null;
   listed = [HOLDING, EMPTIED];
   archiveRefuses = null;
   asked.length = 0;
@@ -139,9 +155,11 @@ describe('archiving an account from the screen', () => {
     const user = userEvent.setup();
     draw();
 
-    await openRename(user, 'Wallet');
+    await openMenu(user, 'Wallet');
 
-    expect(await screen.findByRole('button', { name: en['accounts.archive'] })).toBeDisabled();
+    expect(
+      await screen.findByRole('menuitem', { name: new RegExp(en['accounts.archive']) }),
+    ).toHaveAttribute('data-disabled');
     expect(screen.getByText(en['accounts.archiveNeedsZero'])).toBeInTheDocument();
   });
 
@@ -149,8 +167,7 @@ describe('archiving an account from the screen', () => {
     const user = userEvent.setup();
     draw();
 
-    await openRename(user, 'Old card');
-    await user.click(await screen.findByRole('button', { name: en['accounts.archive'] }));
+    await openArchive(user, 'Old card');
 
     expect(screen.getByRole('button', { name: en['accounts.archiveConfirm'] })).toBeInTheDocument();
     expect(screen.getByText(en['accounts.archiveBody'])).toBeInTheDocument();
@@ -161,8 +178,7 @@ describe('archiving an account from the screen', () => {
     const user = userEvent.setup();
     draw();
 
-    await openRename(user, 'Old card');
-    await user.click(await screen.findByRole('button', { name: en['accounts.archive'] }));
+    await openArchive(user, 'Old card');
     await user.click(screen.getByRole('button', { name: en['accounts.archiveConfirm'] }));
 
     await waitFor(() => expect(archive).toHaveBeenCalledTimes(1));
@@ -179,36 +195,33 @@ describe('archiving an account from the screen', () => {
     const user = userEvent.setup();
     draw();
 
-    await openRename(user, 'Old card');
-    await user.click(await screen.findByRole('button', { name: en['accounts.archive'] }));
+    await openArchive(user, 'Old card');
     await user.click(screen.getByRole('button', { name: en['accounts.cancel'] }));
 
     expect(archive).not.toHaveBeenCalled();
   });
 
-  it('takes the feed back to every account when the one it was showing is archived', async () => {
+  it('takes the reader back to every account when the one they were on is archived', async () => {
     const user = userEvent.setup();
+    showing = 'a2';
     draw();
 
     await screen.findByTestId('account-panel');
-    await user.click(await panel().findByRole('button', { name: 'Old card' }));
-
     await waitFor(() => expect(asked.at(-1)).toMatchObject({ accountId: 'a2' }));
 
-    await openRename(user, 'Old card');
-    await user.click(await screen.findByRole('button', { name: en['accounts.archive'] }));
+    await openArchive(user, 'Old card');
     await user.click(screen.getByRole('button', { name: en['accounts.archiveConfirm'] }));
 
     await waitFor(() => expect(archive).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(asked.at(-1)).not.toHaveProperty('accountId'));
+    await waitFor(() => expect(replaced).toHaveBeenCalledWith('/accounts'));
+    expect(pushed).not.toHaveBeenCalled();
   });
 
   it('re-reads the accounts and the month, because a closed account leaves both', async () => {
     const user = userEvent.setup();
     draw();
 
-    await openRename(user, 'Old card');
-    await user.click(await screen.findByRole('button', { name: en['accounts.archive'] }));
+    await openArchive(user, 'Old card');
     await user.click(screen.getByRole('button', { name: en['accounts.archiveConfirm'] }));
 
     await waitFor(() => expect(invalidate).toHaveBeenCalled());
@@ -225,8 +238,7 @@ describe('archiving an account from the screen', () => {
     archiveRefuses = { statusCode: 400, reason: 'BALANCE_NOT_ZERO', balance: '4000' };
     draw();
 
-    await openRename(user, 'Old card');
-    await user.click(await screen.findByRole('button', { name: en['accounts.archive'] }));
+    await openArchive(user, 'Old card');
     await user.click(screen.getByRole('button', { name: en['accounts.archiveConfirm'] }));
 
     expect(await screen.findByText(en['accounts.failBalanceNotZero'])).toBeInTheDocument();

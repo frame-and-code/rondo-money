@@ -45,3 +45,9 @@ export interface AccountsDto {
 
   total: string;
 }
+
+export interface ReconciliationDto {
+  difference: string;
+
+  adjustmentId: string | null;
+}
