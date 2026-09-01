@@ -464,6 +464,10 @@ describe('OpenAPI document', () => {
       const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
 
       expect(Object.keys(properties).sort()).toEqual(['idempotencyKey']);
+      expect(schema).toMatchObject({
+        required: ['idempotencyKey'],
+        additionalProperties: false,
+      });
     });
 
     it('publishes no way back, because an account is archived once and for good', () => {
