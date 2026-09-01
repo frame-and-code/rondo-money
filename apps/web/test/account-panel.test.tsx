@@ -21,6 +21,7 @@ const show = (
     selected?: string | null;
     onSelect?: (id: string | null) => void;
     onRename?: (account: AccountBalanceDto) => void;
+    onArchive?: (account: AccountBalanceDto) => void;
     onAdd?: () => void;
   } = {},
 ) => {
@@ -34,6 +35,7 @@ const show = (
         onSelect={over.onSelect ?? jest.fn()}
         onAdd={over.onAdd ?? jest.fn()}
         onRename={over.onRename ?? jest.fn()}
+        onArchive={over.onArchive ?? jest.fn()}
       />
     </LocaleProvider>,
   );
@@ -71,15 +73,56 @@ describe('the panel of accounts beside the feed', () => {
     expect(onSelect).toHaveBeenCalledWith(null);
   });
 
-  it('keeps the pencil that renames an account', async () => {
+  it('renames an account from the menu its row carries', async () => {
     const onRename = jest.fn();
     show({ onRename });
 
     await userEvent.click(
-      screen.getByRole('button', { name: en['accounts.renameOne'].replace('{{name}}', 'Wallet') }),
+      screen.getByRole('button', {
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet'),
+      }),
     );
+    await userEvent.click(await screen.findByRole('menuitem', { name: en['accounts.rename'] }));
 
     expect(onRename).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
+  });
+
+  it('archives an emptied account from that same menu', async () => {
+    const onArchive = jest.fn();
+    const emptied: AccountBalanceDto = {
+      id: 'a3',
+      name: 'Old card',
+      type: 'DEBIT',
+      openingEditable: true,
+      balance: '0',
+    };
+    show({ onArchive, accounts: [emptied] });
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Old card'),
+      }),
+    );
+    await userEvent.click(await screen.findByRole('menuitem', { name: en['accounts.archive'] }));
+
+    expect(onArchive).toHaveBeenCalledWith(expect.objectContaining({ id: 'a3' }));
+  });
+
+  it('says why the archive is unavailable while the account still holds money', async () => {
+    const onArchive = jest.fn();
+    show({ onArchive });
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet'),
+      }),
+    );
+
+    expect(await screen.findByText(en['accounts.archiveNeedsZero'])).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('menuitem', { name: new RegExp(en['accounts.archive']) }),
+    );
+    expect(onArchive).not.toHaveBeenCalled();
   });
 
   it('opens the account form from the screen the money is on', async () => {
@@ -105,6 +148,7 @@ describe('the panel of accounts beside the feed', () => {
           onSelect={jest.fn()}
           onAdd={onAdd}
           onRename={jest.fn()}
+          onArchive={jest.fn()}
         />
       </LocaleProvider>,
     );
@@ -124,6 +168,7 @@ describe('the panel of accounts beside the feed', () => {
           onSelect={jest.fn()}
           onAdd={jest.fn()}
           onRename={jest.fn()}
+          onArchive={jest.fn()}
         />
       </LocaleProvider>,
     );
@@ -147,6 +192,7 @@ describe('the panel of accounts beside the feed', () => {
           onSelect={onSelect}
           onAdd={jest.fn()}
           onRename={jest.fn()}
+          onArchive={jest.fn()}
         />
       </LocaleProvider>,
     );
@@ -174,13 +220,17 @@ describe('the panel of accounts beside the feed', () => {
           onSelect={jest.fn()}
           onAdd={jest.fn()}
           onRename={onRename}
+          onArchive={jest.fn()}
         />
       </LocaleProvider>,
     );
 
     await userEvent.click(
-      screen.getByRole('button', { name: en['accounts.renameOne'].replace('{{name}}', 'Wallet') }),
+      screen.getByRole('button', {
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet'),
+      }),
     );
+    await userEvent.click(await screen.findByRole('menuitem', { name: en['accounts.rename'] }));
 
     expect(onRename).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
   });
@@ -197,13 +247,14 @@ describe('the panel of accounts beside the feed', () => {
           onSelect={jest.fn()}
           onAdd={jest.fn()}
           onRename={jest.fn()}
+          onArchive={jest.fn()}
         />
       </LocaleProvider>,
     );
 
     expect(
       screen.queryByRole('button', {
-        name: en['accounts.renameOne'].replace('{{name}}', 'Wallet'),
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet'),
       }),
     ).toBeNull();
   });
@@ -212,5 +263,71 @@ describe('the panel of accounts beside the feed', () => {
     show();
 
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('(2)');
+  });
+});
+
+describe('the account actions on a narrow screen', () => {
+  const narrow = () => {
+    Object.defineProperty(window, 'innerWidth', { writable: true, value: 375 });
+  };
+
+  const wide = () => {
+    Object.defineProperty(window, 'innerWidth', { writable: true, value: 1280 });
+  };
+
+  afterEach(wide);
+
+  it('opens the actions in a sheet rather than a dropdown, where the width is there', async () => {
+    narrow();
+    const onRename = jest.fn();
+    show({ onRename });
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet'),
+      }),
+    );
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    await userEvent.click(await screen.findByRole('button', { name: en['accounts.rename'] }));
+
+    expect(onRename).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
+  });
+
+  it('walks away from the sheet without doing anything', async () => {
+    narrow();
+    const onRename = jest.fn();
+    const onArchive = jest.fn();
+    show({ onRename, onArchive });
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet'),
+      }),
+    );
+    await userEvent.click(await screen.findByRole('button', { name: en['accounts.cancel'] }));
+
+    expect(onRename).not.toHaveBeenCalled();
+    expect(onArchive).not.toHaveBeenCalled();
+  });
+
+  it('refuses the archive in the sheet while the account still holds money, and says why', async () => {
+    narrow();
+    const onArchive = jest.fn();
+    show({ onArchive });
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet'),
+      }),
+    );
+
+    const item = await screen.findByRole('button', {
+      name: new RegExp(en['accounts.archive']),
+    });
+
+    expect(item).toBeDisabled();
+    expect(screen.getByText(en['accounts.archiveNeedsZero'])).toBeInTheDocument();
   });
 });

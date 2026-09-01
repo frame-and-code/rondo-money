@@ -6,6 +6,7 @@ import {
   accountsControllerListOptions,
   accountsControllerListQueryKey,
   accountsControllerCorrectOpeningMutation,
+  accountsControllerReconcileMutation,
   accountsControllerRenameMutation,
   budgetViewControllerReadOptions,
   budgetViewControllerReadQueryKey,
@@ -39,15 +40,20 @@ import {
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@rondo/ui/components/ui/drawer';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconPlus } from '@tabler/icons-react';
+import { IconPlus, IconScale } from '@tabler/icons-react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { AccountDialog, type AccountDraft } from '@/components/account-dialog';
 import { AccountPanel } from '@/components/account-panel';
 import { ArchiveAccountDialog } from '@/components/archive-account-dialog';
 import { DeleteTransactionDialog } from '@/components/delete-transaction-dialog';
+import {
+  ReconcileAccountDialog,
+  type ReconciliationDraft,
+} from '@/components/reconcile-account-dialog';
 import { TransactionDay } from '@/components/transaction-day';
 import {
   TransactionDialog,
@@ -84,14 +90,18 @@ type Editing =
   | { kind: 'delete'; record: TransactionDto; key: string }
   | { kind: 'account' }
   | { kind: 'rename'; id: string; name: string; type: AccountType; balance: string }
-  | { kind: 'archive'; id: string; name: string; key: string };
+  | { kind: 'archive'; id: string; name: string; key: string }
+  | { kind: 'reconcile'; id: string; name: string };
 
-export function MoneyFlow(): ReactNode {
+export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNode {
   const { t, locale } = useTranslations();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const router = useRouter();
 
-  const [accountId, setAccountId] = useState<string | null>(null);
+  const openAccount = (id: string | null): void => {
+    router.push(id === null ? '/accounts' : `/accounts/${id}`);
+  };
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -164,6 +174,14 @@ export function MoneyFlow(): ReactNode {
 
   const money = useMemo(
     () => (budget === null ? null : moneyOf(locale, budget.currency, budget.minorDigits)),
+    [budget, locale],
+  );
+
+  const signedMoney = useMemo(
+    () =>
+      budget === null
+        ? null
+        : moneyOf(locale, budget.currency, budget.minorDigits, { signed: true }),
     [budget, locale],
   );
 
@@ -285,6 +303,17 @@ export function MoneyFlow(): ReactNode {
     setAccountFailure(saveFailureKind(error));
   };
 
+  const refusedReconcile = (error: unknown): void => {
+    setFailed(openingFailure(error));
+    setAccountFailure(saveFailureKind(error));
+  };
+
+  const reconcileAccount = useMutation({
+    ...accountsControllerReconcileMutation(),
+    onSuccess: settled,
+    onError: refusedReconcile,
+  });
+
   const addAccount = useMutation({
     ...accountsControllerCreateMutation(),
     onSuccess: settled,
@@ -301,7 +330,7 @@ export function MoneyFlow(): ReactNode {
     ...accountsControllerArchiveMutation(),
     onSuccess: async (_answer, sent) => {
       if (sent.path.id === accountId) {
-        setAccountId(null);
+        router.replace('/accounts');
       }
 
       await settled();
@@ -322,7 +351,7 @@ export function MoneyFlow(): ReactNode {
     );
   }
 
-  if (money === null || today === null || accounts.data === undefined) {
+  if (money === null || signedMoney === null || today === null || accounts.data === undefined) {
     return null;
   }
 
@@ -399,6 +428,17 @@ export function MoneyFlow(): ReactNode {
     });
   };
 
+  const saveReconciliation = (draft: ReconciliationDraft): void => {
+    setSent(true);
+
+    if (editing?.kind !== 'reconcile') return;
+
+    reconcileAccount.mutate({
+      path: { id: editing.id },
+      body: { balance: draft.balance, idempotencyKey: draft.idempotencyKey },
+    });
+  };
+
   const saveAccount = (draft: AccountDraft): void => {
     setSent(true);
 
@@ -440,6 +480,7 @@ export function MoneyFlow(): ReactNode {
     changeTransfer.isPending ||
     dropTransfer.isPending ||
     correctOpening.isPending ||
+    reconcileAccount.isPending ||
     archiveAccount.isPending;
 
   const titleOf = (open: Editing | null): string => {
@@ -447,6 +488,7 @@ export function MoneyFlow(): ReactNode {
     if (open?.kind === 'delete') return t('transactions.delete');
     if (open?.kind === 'rename') return t('accounts.renameTitle');
     if (open?.kind === 'archive') return t('accounts.archiveTitle', { name: open.name });
+    if (open?.kind === 'reconcile') return t('accounts.reconcileTitle', { name: open.name });
     if (open?.kind === 'account') return t('accounts.createTitle');
 
     return t('transactions.createTitle');
@@ -522,20 +564,27 @@ export function MoneyFlow(): ReactNode {
           failure={accountFailure}
           busy={addAccount.isPending || renameAccount.isPending}
           frozen={accountFailure !== null && keepsTheKey(accountFailure)}
-          holds={editing.kind === 'rename' ? parseMoney(editing.balance) : 0n}
           onSave={saveAccount}
-          onArchive={() => {
-            if (editing.kind !== 'rename') return;
-
-            setFailed(null);
-            setEditing({
-              kind: 'archive',
-              id: editing.id,
-              name: editing.name,
-              key: crypto.randomUUID(),
-            });
-          }}
           onEdited={() => setAccountFailure(null)}
+          onCancel={close}
+        />
+      ) : null}
+
+      {editing?.kind === 'reconcile' ? (
+        <ReconcileAccountDialog
+          name={editing.name}
+          held={parseMoney(
+            accounts.data.accounts.find((one) => one.id === editing.id)?.balance ?? '0',
+          )}
+          money={signedMoney}
+          failed={failed}
+          failure={accountFailure}
+          busy={reconcileAccount.isPending}
+          onReconcile={saveReconciliation}
+          onEdited={() => {
+            setFailed(null);
+            setAccountFailure(null);
+          }}
           onCancel={close}
         />
       ) : null}
@@ -557,6 +606,21 @@ export function MoneyFlow(): ReactNode {
     </>
   );
 
+  const settling =
+    accountId === null
+      ? null
+      : (accounts.data.accounts.find((one) => one.id === accountId) ?? null);
+
+  const archiveAccountOf = (account: AccountBalanceDto): void => {
+    setFailed(null);
+    setEditing({
+      kind: 'archive',
+      id: account.id,
+      name: account.name,
+      key: crypto.randomUUID(),
+    });
+  };
+
   const renameAccountOf = (account: AccountBalanceDto): void => {
     setEditing({
       kind: 'rename',
@@ -576,9 +640,10 @@ export function MoneyFlow(): ReactNode {
           money={money}
           selected={accountId}
           variant="switcher"
-          onSelect={setAccountId}
+          onSelect={openAccount}
           onAdd={() => setEditing({ kind: 'account' })}
           onRename={renameAccountOf}
+          onArchive={archiveAccountOf}
         />
       </div>
 
@@ -588,28 +653,45 @@ export function MoneyFlow(): ReactNode {
           total={accounts.data.total}
           money={money}
           selected={accountId}
-          onSelect={setAccountId}
+          onSelect={openAccount}
           onAdd={() => setEditing({ kind: 'account' })}
           onRename={renameAccountOf}
+          onArchive={archiveAccountOf}
         />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <FilterToggle
-              count={activeFilters(filters)}
-              open={filtersOpen}
-              onToggle={() => setFiltersOpen(!filtersOpen)}
-              onReset={() => setFilters(NO_FILTERS)}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterToggle
+                count={activeFilters(filters)}
+                open={filtersOpen}
+                onToggle={() => setFiltersOpen(!filtersOpen)}
+                onReset={() => setFilters(NO_FILTERS)}
+              />
+
+              {settling === null ? null : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() =>
+                    setEditing({
+                      kind: 'reconcile',
+                      id: settling.id,
+                      name: settling.name,
+                    })
+                  }
+                >
+                  <IconScale className="size-4" />
+                  {t('accounts.reconcile')}
+                </Button>
+              )}
+            </div>
 
             {isMobile ? null : (
-              <Button
-                type="button"
-                className="h-9 rounded-2xl px-4"
-                onClick={() => setEditing({ kind: 'create' })}
-              >
+              <Button type="button" size="lg" onClick={() => setEditing({ kind: 'create' })}>
                 <IconPlus className="size-4" />
                 {t('transactions.add')}
               </Button>
@@ -658,9 +740,6 @@ export function MoneyFlow(): ReactNode {
                 categoryOf={(id) => looks.get(id) ?? null}
                 showAccount={accountId === null}
                 onOpen={(record) => setEditing({ kind: 'edit', record })}
-                onDelete={(record) =>
-                  setEditing({ kind: 'delete', record, key: crypto.randomUUID() })
-                }
               />
             ))}
 

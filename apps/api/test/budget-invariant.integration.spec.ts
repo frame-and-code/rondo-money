@@ -39,7 +39,8 @@ type Operation =
   | { kind: 'move'; amount: bigint; month: string; from: Side; to: Side }
   | { kind: 'hide'; category: number }
   | { kind: 'transfer'; amount: bigint; date: string; back: boolean }
-  | { kind: 'openingEdit'; amount: bigint };
+  | { kind: 'openingEdit'; amount: bigint }
+  | { kind: 'reconcile'; balance: bigint };
 
 const CATEGORIES = 3;
 
@@ -55,6 +56,8 @@ let transfersApplied = 0;
 let transfersLanded = 0;
 let openingEditsApplied = 0;
 let openingEditsLanded = 0;
+let reconcilesApplied = 0;
+let reconcilesLanded = 0;
 
 const operation = (): fc.Arbitrary<Operation> =>
   fc.oneof(
@@ -95,6 +98,10 @@ const operation = (): fc.Arbitrary<Operation> =>
     fc.record({
       kind: fc.constant<'openingEdit'>('openingEdit'),
       amount: fc.bigInt({ min: 0n, max: 400_000n }),
+    }),
+    fc.record({
+      kind: fc.constant<'reconcile'>('reconcile'),
+      balance: fc.bigInt({ min: -200_000n, max: 600_000n }),
     }),
   );
 
@@ -189,6 +196,27 @@ describe('invariant 5.5 (integration)', () => {
     prisma.assignment.count({ where: { userId: USER, budgetId } });
 
   const apply = async (step: Operation): Promise<void> => {
+    if (step.kind === 'reconcile') {
+      reconcilesApplied += 1;
+
+      const answer = await request(app.getHttpServer() as Server)
+        .post(`/accounts/${accountId}/reconcile`)
+        .set('Authorization', `Bearer ${tokenFor()}`)
+        .send({
+          balance: step.balance.toString(10),
+          idempotencyKey: `invariant-reconcile-${reconcilesApplied}`,
+        });
+
+      expect(answer.status).toBe(200);
+
+      const body = answer.body as { adjustmentId?: unknown };
+      if (typeof body.adjustmentId === 'string') {
+        reconcilesLanded += 1;
+      }
+
+      return;
+    }
+
     if (step.kind === 'openingEdit') {
       openingEditsApplied += 1;
 
@@ -465,6 +493,7 @@ describe('invariant 5.5 (integration)', () => {
     expect(transfersLanded).toBeGreaterThan(0);
     expect(transfersLanded).toBe(transfersApplied);
     expect(openingEditsLanded).toBeGreaterThan(0);
+    expect(reconcilesLanded).toBeGreaterThan(0);
   }, 180_000);
   it('holds when an emptied account is archived, against the total the screen is given', async () => {
     await startAgain();

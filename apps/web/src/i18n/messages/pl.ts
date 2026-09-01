@@ -202,7 +202,8 @@ export const pl: Record<MessageKey, string> = {
   'categoryColor.gray': 'Szary',
   'accounts.total': 'Razem',
   'accounts.add': 'Dodaj konto',
-  'accounts.renameOne': 'Zmień nazwę konta {{name}}',
+  'accounts.actionsFor': 'Co można zrobić z kontem {{name}}',
+  'accounts.rename': 'Zmień nazwę',
   'accounts.empty': 'Nie ma jeszcze kont. Dodaj pierwsze, a jego saldo pojawi się tutaj.',
   'accounts.unavailable':
     'Nie udało się odczytać Twoich kont. Odśwież stronę, aby spróbować ponownie.',
@@ -213,9 +214,8 @@ export const pl: Record<MessageKey, string> = {
   'accounts.saveFailed': 'Konto nie zostało zapisane. Spróbuj ponownie.',
   'accounts.saveLost':
     'Odpowiedź nie dotarła, więc nie wiemy, czy zapis się udał. Naciśnij Zapisz jeszcze raz, aby wysłać to samo żądanie, albo anuluj.',
-  'accounts.archive': 'Zarchiwizuj konto',
-  'accounts.archiveNeedsZero':
-    'Do archiwum trafia konto, na którym nic nie zostało. Najpierw przenieś resztę na inne konto.',
+  'accounts.archive': 'Zarchiwizuj',
+  'accounts.archiveNeedsZero': 'Zablokowane, dopóki są pieniądze',
   'accounts.archiveTitle': 'Zarchiwizować „{{name}}”?',
   'accounts.archiveBody':
     'Zapisy zostaną na miejscu i nadal się liczą. Samo konto nie przyjmie już żadnych zmian i nie da się go przywrócić.',
@@ -223,6 +223,15 @@ export const pl: Record<MessageKey, string> = {
   'accounts.failBalanceNotZero':
     'Na koncie wciąż są pieniądze. Przenieś resztę na inne konto, a potem je zarchiwizuj.',
   'accounts.failArchived': 'To konto jest w archiwum, a konto w archiwum nie przyjmuje zmian.',
+  'accounts.reconcile': 'Uzgodnij saldo',
+  'accounts.reconcileTitle': 'Uzgodnij „{{name}}”',
+  'accounts.reconcileBody':
+    'Podaj, ile naprawdę jest na koncie. Zapiszemy jeden wpis, który uzgodni księgę z tym saldem, a te pieniądze trafią do wolnych albo z nich znikną.',
+  'accounts.reconcileLabel': 'Ile naprawdę jest na koncie',
+  'accounts.reconcileComputed': 'Według księgi',
+  'accounts.reconcileWillWrite': 'Zapiszemy korektę na {{amount}} z dzisiejszą datą.',
+  'accounts.reconcileNoDifference': 'Salda już się zgadzają, nie ma czego zapisywać.',
+  'accounts.reconcileConfirm': 'Uzgodnij',
   'netWorth.slotTitle': 'Slot sekcji „Kapitał”',
   'netWorth.slotBody': 'Tu pojawi się wykres kapitału.',
   'settings.slotTitle': 'Slot sekcji „Ustawienia”',
@@ -339,6 +348,8 @@ export const pl: Record<MessageKey, string> = {
   'transactions.openingBalance': 'Saldo początkowe',
   'transactions.systemBadge': 'systemowy',
   'transactions.transferBadge': 'przelew',
+  'transactions.adjustment': 'Uzgodnienie',
+  'transactions.adjustmentBadge': 'korekta',
   'transactions.transferPlain': 'Przelew',
   'transactions.transferTo': 'Przelew na {{name}}',
   'transactions.transferFrom': 'Przelew z {{name}}',
@@ -358,6 +369,7 @@ export const pl: Record<MessageKey, string> = {
   'transactions.typeExpense': 'Wydatki',
   'transactions.typeIncome': 'Wpływy',
   'transactions.typeTransfer': 'Przelewy',
+  'transactions.typeAdjustment': 'Korekty',
   'transactions.findCategory': 'Znajdź kategorię',
   'transactions.findPayee': 'Szukaj',
   'transactions.nothingFound': 'Nic nie znaleziono',
@@ -381,7 +393,6 @@ export const pl: Record<MessageKey, string> = {
   'transactions.saveAndMore': 'Zapisz i dodaj kolejny',
   'transactions.saved': 'Zapisano: {{payee}}, {{amount}}',
   'transactions.cancel': 'Anuluj',
-  'transactions.deleteOne': 'Usuń {{payee}}',
   'transactions.deleteTitle': 'Usunąć {{payee}} na {{amount}}?',
   'transactions.archivedAccount': 'Zarchiwizowane konto',
   'transactions.deleteAccountLine': 'Na konto {{name}} wróci {{amount}}',

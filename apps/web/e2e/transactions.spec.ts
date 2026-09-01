@@ -55,10 +55,8 @@ test('an expense is recorded on the screen, lands in its envelope, and can be ta
   await expect(availableOf(page, CATEGORY)).toContainText('-25');
 
   await page.goto('/accounts');
-  await page
-    .getByRole('button', { name: en['transactions.deleteOne'].replace('{{payee}}', PAYEE) })
-    .click();
-  await page.getByRole('menuitem', { name: en['transactions.delete'] }).click();
+  await page.getByRole('button', { name: PAYEE, exact: true }).click();
+  await page.getByRole('button', { name: en['transactions.delete'], exact: true }).click();
   await page.getByRole('button', { name: en['transactions.delete'], exact: true }).click();
 
   await expect(page.getByRole('listitem').filter({ hasText: PAYEE })).toHaveCount(0);

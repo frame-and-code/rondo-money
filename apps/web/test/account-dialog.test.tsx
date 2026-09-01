@@ -79,6 +79,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
   accountsControllerArchiveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerCorrectOpeningMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  accountsControllerReconcileMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerRenameMutation: () => ({
     mutationFn: (options: unknown) => {
       rename(options);
@@ -88,6 +89,10 @@ jest.mock('@rondo/api-client/react-query', () => ({
         : Promise.reject(renameRefuses);
     },
   }),
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
 
 jest.mock('@tanstack/react-query', () => ({
@@ -101,7 +106,7 @@ const draw = () => {
   return render(
     <QueryClientProvider client={client}>
       <LocaleProvider>
-        <MoneyFlow />
+        <MoneyFlow accountId={null} />
       </LocaleProvider>
     </QueryClientProvider>,
   );
@@ -123,8 +128,9 @@ const openCreate = async (user: ReturnType<typeof userEvent.setup>) => {
 const openRename = async (user: ReturnType<typeof userEvent.setup>) => {
   await screen.findByText('Wallet');
   await user.click(
-    screen.getByRole('button', { name: en['accounts.renameOne'].replace('{{name}}', 'Wallet') }),
+    screen.getByRole('button', { name: en['accounts.actionsFor'].replace('{{name}}', 'Wallet') }),
   );
+  await user.click(await screen.findByRole('menuitem', { name: en['accounts.rename'] }));
 };
 
 afterEach(() => {

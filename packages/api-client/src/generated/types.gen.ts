@@ -269,6 +269,28 @@ export type TransactionResponse = {
     createdAt: string;
 };
 
+export type ReconcileAccountDto = {
+    /**
+     * What the account really holds right now, in minor units of the budget currency. Any sign: an account that has been spent past its own money holds less than nothing, and saying so is the point of the reconciliation. The day is not here, because a reconciliation happens today by definition.
+     */
+    balance: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two corrections again.
+     */
+    idempotencyKey: string;
+};
+
+export type ReconciliationResponse = {
+    /**
+     * What the correction came to, in minor units and signed: below zero when the account held less than the book said. Zero when the two already agreed, and then nothing was written at all.
+     */
+    difference: string;
+    /**
+     * The correction that was written, and null when the difference was zero. It is an ordinary record: it is edited and removed through the transaction operations.
+     */
+    adjustmentId: string | null;
+};
+
 /**
  * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
  */
@@ -1164,6 +1186,41 @@ export type AccountsControllerCorrectOpeningResponses = {
 };
 
 export type AccountsControllerCorrectOpeningResponse = AccountsControllerCorrectOpeningResponses[keyof AccountsControllerCorrectOpeningResponses];
+
+export type AccountsControllerReconcileData = {
+    body: ReconcileAccountDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/reconcile';
+};
+
+export type AccountsControllerReconcileErrors = {
+    /**
+     * The body was refused, or the account is archived, or this budget holds no such account, or the caller has no active budget.
+     */
+    400: AccountRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AccountsControllerReconcileError = AccountsControllerReconcileErrors[keyof AccountsControllerReconcileErrors];
+
+export type AccountsControllerReconcileResponses = {
+    /**
+     * What the reconciliation came to.
+     */
+    200: ReconciliationResponse;
+};
+
+export type AccountsControllerReconcileResponse = AccountsControllerReconcileResponses[keyof AccountsControllerReconcileResponses];
 
 export type BudgetViewControllerReadData = {
     body?: never;

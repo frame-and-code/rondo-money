@@ -19,7 +19,6 @@ export function TransactionDay({
   categoryOf,
   showAccount,
   onOpen,
-  onDelete,
 }: {
   day: FeedDay;
   money: MoneyReader;
@@ -28,7 +27,6 @@ export function TransactionDay({
   categoryOf: (id: string) => CategoryLookOf | null;
   showAccount: boolean;
   onOpen: (record: TransactionDto) => void;
-  onDelete: (record: TransactionDto) => void;
 }): ReactNode {
   const { t, locale } = useTranslations();
 
@@ -53,7 +51,6 @@ export function TransactionDay({
         >
           {money.format(total)}
         </span>
-        <span aria-hidden className="hidden size-8 shrink-0 sm:block" />
       </header>
 
       <ul className="bg-card border-border/60 flex flex-col overflow-hidden rounded-[24px] border">
@@ -68,7 +65,6 @@ export function TransactionDay({
             showAccount={showAccount}
             showAdded
             onOpen={onOpen}
-            onDelete={onDelete}
           />
         ))}
       </ul>

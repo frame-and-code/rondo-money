@@ -57,6 +57,7 @@ const KINDS: { value: TransactionType; label: MessageKey }[] = [
   { value: 'EXPENSE', label: 'transactions.typeExpense' },
   { value: 'INCOME', label: 'transactions.typeIncome' },
   { value: 'TRANSFER', label: 'transactions.typeTransfer' },
+  { value: 'ADJUSTMENT', label: 'transactions.typeAdjustment' },
 ];
 
 const ALL = 'all';

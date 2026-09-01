@@ -3,7 +3,14 @@ import { expect, test } from '@playwright/test';
 
 import { en } from '../src/i18n/messages/en';
 
-import { ACCOUNTS_TEST_EMAIL, ARCHIVE_TEST_EMAIL, hasClerkKeys, recreateTestUser } from './clerk';
+import { readyToAssign } from './budget';
+import {
+  ACCOUNTS_TEST_EMAIL,
+  ARCHIVE_TEST_EMAIL,
+  hasClerkKeys,
+  RECONCILE_TEST_EMAIL,
+  recreateTestUser,
+} from './clerk';
 import { onboard } from './onboarding';
 
 test.skip(!process.env.CI && !hasClerkKeys(), 'Clerk keys are not configured');
@@ -40,9 +47,10 @@ test('the accounts screen carries the balances, takes another account and rename
   await expect(panel.getByText(ADDED)).toBeVisible();
   await expect(page.getByTestId('accounts-total')).toContainText('1,250');
 
-  await page
-    .getByRole('button', { name: en['accounts.renameOne'].replace('{{name}}', OPENED) })
+  await panel
+    .getByRole('button', { name: en['accounts.actionsFor'].replace('{{name}}', OPENED) })
     .click();
+  await page.getByRole('menuitem', { name: en['accounts.rename'] }).click();
 
   const field = page.getByLabel(en['newAccount.nameLabel'], { exact: true });
   await field.fill(RENAMED);
@@ -78,13 +86,17 @@ test('an account is archived once it holds nothing, and leaves the screen for go
   await expect(panel.getByText(ADDED)).toBeVisible();
   await expect(page.getByTestId('accounts-total')).toContainText('1,250');
 
-  const openRename = async (name: string) =>
-    panel.getByRole('button', { name: en['accounts.renameOne'].replace('{{name}}', name) }).click();
+  const openMenu = async (name: string) =>
+    panel
+      .getByRole('button', { name: en['accounts.actionsFor'].replace('{{name}}', name) })
+      .click();
 
-  await openRename(ADDED);
-  await expect(page.getByRole('button', { name: en['accounts.archive'] })).toBeDisabled();
+  await openMenu(ADDED);
+  await expect(
+    page.getByRole('menuitem', { name: new RegExp(en['accounts.archive']) }),
+  ).toBeDisabled();
   await expect(page.getByText(en['accounts.archiveNeedsZero'])).toBeVisible();
-  await page.getByRole('button', { name: en['accounts.cancel'] }).click();
+  await page.keyboard.press('Escape');
 
   await panel.getByRole('button', { name: ADDED, exact: true }).click();
   await page.getByRole('button', { name: en['transactions.add'] }).click();
@@ -100,11 +112,49 @@ test('an account is archived once it holds nothing, and leaves the screen for go
   await expect(form).toBeHidden();
   await expect(panel.locator('li').filter({ hasText: ADDED })).not.toContainText('250');
 
-  await openRename(ADDED);
-  await expect(page.getByRole('button', { name: en['accounts.archive'] })).toBeEnabled();
-  await page.getByRole('button', { name: en['accounts.archive'] }).click();
+  await openMenu(ADDED);
+  await page.getByRole('menuitem', { name: en['accounts.archive'], exact: true }).click();
   await page.getByRole('button', { name: en['accounts.archiveConfirm'] }).click();
 
   await expect(panel.getByText(ADDED)).toHaveCount(0);
   await expect(page.getByTestId('accounts-total')).toContainText('1,250');
+});
+
+test('a declared balance settles the difference, and the pool follows it', async ({ page }) => {
+  await recreateTestUser(RECONCILE_TEST_EMAIL);
+  await setupClerkTestingToken({ page });
+
+  await page.goto('/sign-in');
+  await clerk.signIn({
+    page,
+    signInParams: { strategy: 'email_code', identifier: RECONCILE_TEST_EMAIL },
+  });
+
+  await onboard(page);
+  await expect(readyToAssign(page)).toHaveText('1,000 $');
+
+  await page.goto('/accounts');
+
+  const panel = page.getByTestId('account-panel');
+  await expect(panel.getByText(OPENED)).toBeVisible();
+
+  await panel.getByRole('button', { name: OPENED, exact: true }).click();
+  await page.getByRole('button', { name: en['accounts.reconcile'] }).click();
+
+  const form = page.getByRole('dialog');
+  await expect(form.getByText(en['accounts.reconcileComputed'])).toBeVisible();
+
+  await form.getByLabel(en['accounts.reconcileLabel'], { exact: true }).fill('880');
+  await expect(
+    form.getByText(en['accounts.reconcileWillWrite'].replace('{{amount}}', '-120 $')),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: en['accounts.reconcileConfirm'] }).click();
+
+  await expect(form).toBeHidden();
+  await expect(page.getByTestId('accounts-total')).toContainText('880');
+  await expect(page.getByText(en['transactions.adjustment'])).toBeVisible();
+
+  await page.getByRole('link', { name: en['nav.categories'] }).click();
+  await expect(readyToAssign(page)).toHaveText('880 $');
 });

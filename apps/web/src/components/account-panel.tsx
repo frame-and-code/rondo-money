@@ -3,6 +3,20 @@
 import { parseMoney, type AccountBalanceDto, type AccountType } from '@rondo/types';
 import { Button } from '@rondo/ui/components/ui/button';
 import { Card } from '@rondo/ui/components/ui/card';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@rondo/ui/components/ui/drawer';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@rondo/ui/components/ui/dropdown-menu';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from '@rondo/ui/components/ui/item';
 import {
   Select,
   SelectContent,
@@ -10,9 +24,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@rondo/ui/components/ui/select';
+import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconCash, IconCreditCard, IconPencil, IconPlus, IconWallet } from '@tabler/icons-react';
-import { type ReactNode } from 'react';
+import {
+  IconArchive,
+  IconCash,
+  IconCreditCard,
+  IconDots,
+  IconPencil,
+  IconPlus,
+  IconWallet,
+} from '@tabler/icons-react';
+import { useRef, useState, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
@@ -38,6 +61,7 @@ export function AccountPanel({
   onSelect,
   onAdd,
   onRename,
+  onArchive,
 }: {
   accounts: AccountBalanceDto[];
   total: string;
@@ -47,8 +71,154 @@ export function AccountPanel({
   onSelect: (id: string | null) => void;
   onAdd: () => void;
   onRename: (account: AccountBalanceDto) => void;
+  onArchive: (account: AccountBalanceDto) => void;
 }): ReactNode {
   const { t } = useTranslations();
+
+  const isMobile = useIsMobile();
+  const [opened, setOpened] = useState<string | null>(null);
+
+  const emptied = (account: AccountBalanceDto): boolean => parseMoney(account.balance) === 0n;
+
+  const trigger = (
+    account: AccountBalanceDto,
+    size: 'icon' | 'icon-xl',
+    className: string,
+    onClick?: () => void,
+  ) => (
+    <Button
+      type="button"
+      variant={size === 'icon-xl' ? 'outline' : 'ghost'}
+      size={size}
+      shape={size === 'icon-xl' ? 'pill' : 'default'}
+      className={className}
+      aria-label={t('accounts.actionsFor', { name: account.name })}
+      onClick={onClick}
+    >
+      <IconDots className="size-4" />
+    </Button>
+  );
+
+  const actions = (
+    account: AccountBalanceDto,
+    size: 'icon' | 'icon-xl',
+    className: string,
+  ): ReactNode => {
+    if (isMobile) {
+      return trigger(account, size, className, () => setOpened(account.id));
+    }
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger render={trigger(account, size, className)} />
+        <DropdownMenuContent align="end" className="min-w-52">
+          <DropdownMenuItem onClick={() => onRename(account)}>
+            <IconPencil className="size-4 shrink-0" />
+            <span className="whitespace-nowrap">{t('accounts.rename')}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={!emptied(account)} onClick={() => onArchive(account)}>
+            <IconArchive className="size-4 shrink-0" />
+            <span className="flex min-w-0 flex-col items-start">
+              <span className="whitespace-nowrap">{t('accounts.archive')}</span>
+              {emptied(account) ? null : (
+                <span className="text-muted-foreground text-xs whitespace-nowrap">
+                  {t('accounts.archiveNeedsZero')}
+                </span>
+              )}
+            </span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
+  const picked = accounts.find((account) => account.id === opened) ?? null;
+  const lastPicked = useRef<AccountBalanceDto | null>(null);
+  if (picked !== null) {
+    lastPicked.current = picked;
+  }
+  const chosenForActions = picked ?? lastPicked.current;
+
+  const sheet = (
+    <Drawer
+      showSwipeHandle
+      open={opened !== null}
+      onOpenChange={(next: boolean) => (next ? null : setOpened(null))}
+    >
+      <DrawerContent>
+        {chosenForActions === null ? null : (
+          <>
+            <DrawerHeader className="pb-0">
+              <DrawerTitle className="sr-only">
+                {t('accounts.actionsFor', { name: chosenForActions.name })}
+              </DrawerTitle>
+            </DrawerHeader>
+
+            <div className="px-4 pt-2 pb-6">
+              <div className="flex flex-col">
+                <Item
+                  size="sm"
+                  className="hover:bg-muted"
+                  render={
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpened(null);
+                        onRename(chosenForActions);
+                      }}
+                    />
+                  }
+                >
+                  <ItemMedia variant="icon">
+                    <IconPencil />
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle>{t('accounts.rename')}</ItemTitle>
+                  </ItemContent>
+                </Item>
+
+                <Item
+                  size="sm"
+                  className="hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                  render={
+                    <button
+                      type="button"
+                      disabled={!emptied(chosenForActions)}
+                      onClick={() => {
+                        setOpened(null);
+                        onArchive(chosenForActions);
+                      }}
+                    />
+                  }
+                >
+                  <ItemMedia variant="icon">
+                    <IconArchive />
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle>{t('accounts.archive')}</ItemTitle>
+                    {emptied(chosenForActions) ? null : (
+                      <ItemDescription>{t('accounts.archiveNeedsZero')}</ItemDescription>
+                    )}
+                  </ItemContent>
+                </Item>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="xl"
+                shape="pill"
+                className="mt-3 w-full"
+                onClick={() => setOpened(null)}
+              >
+                {t('accounts.cancel')}
+              </Button>
+            </div>
+          </>
+        )}
+      </DrawerContent>
+    </Drawer>
+  );
 
   const held = parseMoney(total);
   const chosen = accounts.find((account) => account.id === selected) ?? null;
@@ -56,6 +226,7 @@ export function AccountPanel({
   if (variant === 'switcher') {
     return (
       <div className="flex items-center gap-2">
+        {sheet}
         <Select
           value={selected ?? ALL}
           onValueChange={(next: string | null) =>
@@ -110,24 +281,14 @@ export function AccountPanel({
           </SelectContent>
         </Select>
 
-        {chosen === null ? null : (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-11 shrink-0 rounded-full"
-            aria-label={t('accounts.renameOne', { name: chosen.name })}
-            onClick={() => onRename(chosen)}
-          >
-            <IconPencil className="size-4" />
-          </Button>
-        )}
+        {chosen === null ? null : actions(chosen, 'icon-xl', 'shrink-0')}
 
         <Button
           type="button"
           variant="outline"
-          size="icon"
-          className="size-11 shrink-0 rounded-full"
+          size="icon-xl"
+          shape="pill"
+          className="shrink-0"
           aria-label={t('transactions.addAccount')}
           onClick={onAdd}
         >
@@ -139,6 +300,7 @@ export function AccountPanel({
 
   return (
     <aside data-testid="account-panel" className="flex w-full flex-col gap-3 lg:max-w-xs">
+      {sheet}
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">
           {t('transactions.panelTitle')}
@@ -238,16 +400,7 @@ export function AccountPanel({
                     {money.format(balance)}
                   </span>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="relative z-10 size-8 shrink-0"
-                    aria-label={t('accounts.renameOne', { name: account.name })}
-                    onClick={() => onRename(account)}
-                  >
-                    <IconPencil className="size-4" />
-                  </Button>
+                  {actions(account, 'icon', 'relative z-10 shrink-0')}
                 </li>
               );
             })}

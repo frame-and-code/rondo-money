@@ -529,6 +529,78 @@
         ]
       }
     },
+    "/accounts/{id}/reconcile": {
+      "post": {
+        "description": "Takes the balance the account really carries and writes the one record that makes the book agree with it: a correction for the difference, carrying no category, so the money lands in or leaves Ready to Assign the way an income with no envelope does. The balance is summed inside the same transaction that writes the correction, so a record arriving at the same moment cannot be counted twice. Balances that already agree are a success that writes nothing. The correction is dated today in the budget timezone, which is what a reconciliation means, and it is an ordinary record from then on.",
+        "operationId": "AccountsController_reconcile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcileAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the reconciliation came to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the account is archived, or this budget holds no such account, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Settle an account against what it really holds",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
     "/budget-view": {
       "get": {
         "description": "The groups and categories of the active budget with what each holds this month, plus the money that has no job yet. Nothing here is stored: every number is computed from transactions and assignments when it is asked for.",
@@ -2690,6 +2762,51 @@
           "transferId",
           "counterAccountId",
           "createdAt"
+        ]
+      },
+      "ReconcileAccountDto": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the account really holds right now, in minor units of the budget currency. Any sign: an account that has been spent past its own money holds less than nothing, and saying so is the point of the reconciliation. The day is not here, because a reconciliation happens today by definition."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two corrections again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "balance",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "ReconciliationResponse": {
+        "type": "object",
+        "properties": {
+          "difference": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the correction came to, in minor units and signed: below zero when the account held less than the book said. Zero when the two already agreed, and then nothing was written at all."
+          },
+          "adjustmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The correction that was written, and null when the difference was zero. It is an ordinary record: it is edited and removed through the transaction operations."
+          }
+        },
+        "required": [
+          "difference",
+          "adjustmentId"
         ]
       },
       "CategoryIcon": {

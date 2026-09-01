@@ -46,6 +46,23 @@ const USER_HOLDS = `${USER_PREFIX}Holds`;
 const USER_OWES = `${USER_PREFIX}Owes`;
 const USER_EVENED = `${USER_PREFIX}Evened`;
 const USER_CLOSED = `${USER_PREFIX}Closed`;
+const USER_SHORT = `${USER_PREFIX}Short`;
+const USER_OVER = `${USER_PREFIX}Over`;
+const USER_AGREED = `${USER_PREFIX}Agreed`;
+const USER_POOL = `${USER_PREFIX}Pool`;
+const USER_SUNK = `${USER_PREFIX}Sunk`;
+const USER_STAMP = `${USER_PREFIX}Stamp`;
+const USER_DATED = `${USER_PREFIX}Dated`;
+const USER_OWING = `${USER_PREFIX}Owing`;
+const USER_SETTLED = `${USER_PREFIX}Settled`;
+const USER_AGAIN = `${USER_PREFIX}Again`;
+const USER_SAME = `${USER_PREFIX}Same`;
+const USER_OTHERWISE = `${USER_PREFIX}Otherwise`;
+const USER_PUBLISHED = `${USER_PREFIX}Published`;
+const USER_FROZE = `${USER_PREFIX}Froze`;
+const USER_UNDONE = `${USER_PREFIX}Undone`;
+const USER_EAST_ZONE = `${USER_PREFIX}EastZone`;
+const USER_WEST_ZONE = `${USER_PREFIX}WestZone`;
 
 const ZONE = 'Europe/Warsaw';
 
@@ -1178,6 +1195,306 @@ describe('/accounts (integration)', () => {
 
       expect(response.status).toBe(400);
       expect(asRecord(response.body)['reason']).toBe('NO_ACTIVE_BUDGET');
+    });
+  });
+  describe('POST /accounts/:id/reconcile', () => {
+    const NO_SUCH_ONE = '0199c1a8-9ecf-71c7-a617-c575df073997';
+
+    const settlement = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+      balance: '150000',
+      idempotencyKey: 'reconcile-form-opened-once',
+      ...over,
+    });
+
+    const reconcile = (userId: string, id: string, body: Record<string, unknown>) =>
+      request(app.getHttpServer() as Server)
+        .post(`/accounts/${id}/reconcile`)
+        .set('Authorization', `Bearer ${tokenFor(userId)}`)
+        .send(body);
+
+    const heldAccount = async (userId: string, holding = 125_050n) => {
+      const budget = await seedBudget(userId);
+      const wallet = await seedAccount(userId, budget.id, 'Кошелёк');
+      await seedTransaction(userId, budget.id, wallet.id, holding, { isSystem: true });
+
+      return { budget, wallet };
+    };
+
+    const balanceOf = async (userId: string, accountId: string): Promise<bigint> => {
+      const rows = await prisma.transaction.findMany({ where: { userId, accountId } });
+
+      return rows.reduce((sum, row) => sum + row.amount, 0n);
+    };
+
+    const poolOf = async (userId: string): Promise<bigint> => {
+      const view = await request(app.getHttpServer() as Server)
+        .get('/budget-view')
+        .query({ month: monthOf(todayIn(ZONE)) })
+        .set('Authorization', `Bearer ${tokenFor(userId)}`);
+
+      expect(view.status).toBe(200);
+
+      return BigInt(String(asRecord(view.body)['readyToAssign']));
+    };
+
+    it('settles a balance the book fell short of with one correction for the difference', async () => {
+      const { wallet } = await heldAccount(USER_SHORT);
+
+      const response = await reconcile(USER_SHORT, wallet.id, settlement());
+
+      expect(response.status).toBe(200);
+      expect(asRecord(response.body)['difference']).toBe('24950');
+
+      const written = await prisma.transaction.findMany({
+        where: { userId: USER_SHORT, isSystem: false },
+      });
+
+      expect(written).toHaveLength(1);
+      expect(written[0]?.amount).toBe(24_950n);
+      expect(asRecord(response.body)['adjustmentId']).toBe(written[0]?.id);
+      await expect(balanceOf(USER_SHORT, wallet.id)).resolves.toBe(150_000n);
+    });
+
+    it('settles a balance the book overstated with one correction below zero', async () => {
+      const { wallet } = await heldAccount(USER_OVER);
+
+      const response = await reconcile(USER_OVER, wallet.id, settlement({ balance: '100000' }));
+
+      expect(response.status).toBe(200);
+      expect(asRecord(response.body)['difference']).toBe('-25050');
+
+      const written = await prisma.transaction.findMany({
+        where: { userId: USER_OVER, isSystem: false },
+      });
+
+      expect(written).toHaveLength(1);
+      expect(written[0]?.amount).toBe(-25_050n);
+      await expect(balanceOf(USER_OVER, wallet.id)).resolves.toBe(100_000n);
+    });
+
+    it('writes nothing at all when the book already agreed with the account', async () => {
+      const { wallet } = await heldAccount(USER_AGREED);
+
+      const response = await reconcile(USER_AGREED, wallet.id, settlement({ balance: '125050' }));
+
+      expect(response.status).toBe(200);
+      expect(asRecord(response.body)).toMatchObject({ difference: '0', adjustmentId: null });
+      await expect(rowsOf(USER_AGREED)).resolves.toMatchObject({ transactions: 1 });
+    });
+
+    it('moves the pool by the difference and leaves every envelope where it was', async () => {
+      const { budget, wallet } = await heldAccount(USER_POOL);
+      const group = await prisma.categoryGroup.create({
+        data: { userId: USER_POOL, budgetId: budget.id, name: 'Дом', sortOrder: 0 },
+      });
+      const category = await prisma.category.create({
+        data: {
+          userId: USER_POOL,
+          budgetId: budget.id,
+          groupId: group.id,
+          name: 'Еда',
+          sortOrder: 0,
+        },
+      });
+      await prisma.assignment.create({
+        data: {
+          userId: USER_POOL,
+          budgetId: budget.id,
+          categoryId: category.id,
+          month: toDbMonth(monthOf(todayIn(ZONE))),
+          amount: 30_000n,
+        },
+      });
+
+      const before = await poolOf(USER_POOL);
+
+      const response = await reconcile(USER_POOL, wallet.id, settlement());
+      expect(response.status).toBe(200);
+
+      const assignments = await prisma.assignment.findMany({ where: { userId: USER_POOL } });
+
+      await expect(poolOf(USER_POOL)).resolves.toBe(before + 24_950n);
+      expect(assignments.map((row) => row.amount)).toEqual([30_000n]);
+    });
+
+    it('lets a correction sink the pool below zero, which is a signal rather than a refusal', async () => {
+      const { wallet } = await heldAccount(USER_SUNK, 1_000n);
+
+      const response = await reconcile(USER_SUNK, wallet.id, settlement({ balance: '0' }));
+
+      expect(response.status).toBe(200);
+      await expect(poolOf(USER_SUNK)).resolves.toBe(0n);
+
+      const deeper = await reconcile(
+        USER_SUNK,
+        wallet.id,
+        settlement({ balance: '-5000', idempotencyKey: 'reconcile-again' }),
+      );
+
+      expect(deeper.status).toBe(200);
+      await expect(poolOf(USER_SUNK)).resolves.toBe(-5_000n);
+    });
+
+    it('writes the correction as an ordinary record carrying no envelope', async () => {
+      const { budget, wallet } = await heldAccount(USER_STAMP);
+
+      await reconcile(USER_STAMP, wallet.id, settlement());
+
+      const written = await prisma.transaction.findFirstOrThrow({
+        where: { userId: USER_STAMP, isSystem: false },
+      });
+
+      expect(written).toMatchObject({
+        accountId: wallet.id,
+        budgetId: budget.id,
+        categoryId: null,
+        transferId: null,
+        payee: null,
+        type: 'ADJUSTMENT',
+        isSystem: false,
+      });
+    });
+
+    it('dates the correction by the budget zone, not by the server clock', async () => {
+      const east = await seedBudget(USER_EAST_ZONE, { timezone: 'Pacific/Kiritimati' });
+      const west = await seedBudget(USER_WEST_ZONE, { timezone: 'Pacific/Niue' });
+      const there = await seedAccount(USER_EAST_ZONE, east.id, 'Кошелёк');
+      const here = await seedAccount(USER_WEST_ZONE, west.id, 'Кошелёк');
+
+      await reconcile(USER_EAST_ZONE, there.id, settlement());
+      await reconcile(USER_WEST_ZONE, here.id, settlement());
+
+      const first = await prisma.transaction.findFirstOrThrow({
+        where: { userId: USER_EAST_ZONE },
+      });
+      const second = await prisma.transaction.findFirstOrThrow({
+        where: { userId: USER_WEST_ZONE },
+      });
+
+      expect(first.date.getTime() - second.date.getTime()).toBeGreaterThanOrEqual(DAY_MS);
+      expect(calendarDateOf(first.date)).toBe(todayIn('Pacific/Kiritimati'));
+      expect(calendarDateOf(second.date)).toBe(todayIn('Pacific/Niue'));
+    });
+
+    it('refuses a body naming a day, because a reconciliation happens today by definition', async () => {
+      const { wallet } = await heldAccount(USER_DATED);
+
+      const response = await reconcile(USER_DATED, wallet.id, settlement({ date: todayIn(ZONE) }));
+
+      expect(response.status).toBe(400);
+      await expect(rowsOf(USER_DATED)).resolves.toMatchObject({ transactions: 1 });
+    });
+
+    it('takes a declared balance below zero, because an account can be spent past its own money', async () => {
+      const { wallet } = await heldAccount(USER_OWING, 0n);
+
+      const response = await reconcile(USER_OWING, wallet.id, settlement({ balance: '-4500' }));
+
+      expect(response.status).toBe(200);
+      expect(asRecord(response.body)['difference']).toBe('-4500');
+      await expect(balanceOf(USER_OWING, wallet.id)).resolves.toBe(-4_500n);
+    });
+
+    it('refuses to reconcile an archived account, which takes no write of any kind', async () => {
+      const { wallet } = await heldAccount(USER_SETTLED);
+      await prisma.account.update({ where: { id: wallet.id }, data: { archivedAt: new Date() } });
+
+      const response = await reconcile(USER_SETTLED, wallet.id, settlement());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('ACCOUNT_ARCHIVED');
+      await expect(rowsOf(USER_SETTLED)).resolves.toMatchObject({ transactions: 1 });
+    });
+
+    it('refuses an account this budget does not hold, rather than failing at 500', async () => {
+      await heldAccount(USER_OTHERWISE);
+
+      const response = await reconcile(USER_OTHERWISE, NO_SUCH_ONE, settlement());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+    });
+
+    it('refuses a caller with no active budget rather than failing on the way down', async () => {
+      const response = await reconcile(USER_NOBUDGET, NO_SUCH_ONE, settlement());
+
+      expect(response.status).toBe(400);
+      expect(asRecord(response.body)['reason']).toBe('NO_ACTIVE_BUDGET');
+    });
+
+    it('answers a repeated key with what it already wrote, and corrects nothing twice', async () => {
+      const { wallet } = await heldAccount(USER_AGAIN);
+
+      const first = await reconcile(USER_AGAIN, wallet.id, settlement());
+      const second = await reconcile(USER_AGAIN, wallet.id, settlement());
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(second.body).toEqual(first.body);
+      await expect(rowsOf(USER_AGAIN)).resolves.toMatchObject({ transactions: 2 });
+    });
+
+    it('answers a repeated key over an agreement with the same empty result', async () => {
+      const { wallet } = await heldAccount(USER_SAME);
+
+      const first = await reconcile(USER_SAME, wallet.id, settlement({ balance: '125050' }));
+      const second = await reconcile(USER_SAME, wallet.id, settlement({ balance: '125050' }));
+
+      expect(first.body).toMatchObject({ difference: '0', adjustmentId: null });
+      expect(second.body).toEqual(first.body);
+      await expect(rowsOf(USER_SAME)).resolves.toMatchObject({ transactions: 1 });
+    });
+
+    it('refuses a repeated key carrying a different balance', async () => {
+      const { wallet } = await heldAccount(USER_REPEAT);
+
+      const first = await reconcile(USER_REPEAT, wallet.id, settlement());
+      const second = await reconcile(USER_REPEAT, wallet.id, settlement({ balance: '900' }));
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(409);
+      await expect(rowsOf(USER_REPEAT)).resolves.toMatchObject({ transactions: 2 });
+    });
+
+    it('answers with the shape the contract publishes', async () => {
+      const { wallet } = await heldAccount(USER_PUBLISHED);
+
+      const document = await generateOpenApiDocument();
+      const schema = document.components?.schemas?.['ReconciliationResponse'];
+      const published =
+        schema && 'properties' in schema ? Object.keys(schema.properties ?? {}) : [];
+
+      const response = await reconcile(USER_PUBLISHED, wallet.id, settlement());
+
+      expect(published.sort()).toEqual(['adjustmentId', 'difference']);
+      expect(Object.keys(asRecord(response.body)).sort()).toEqual(['adjustmentId', 'difference']);
+    });
+
+    it('freezes what the account opened with, because the correction is a record of its own', async () => {
+      const { wallet } = await heldAccount(USER_FROZE);
+
+      const before = await readAccounts(USER_FROZE);
+      expect(before.accounts[0]?.['openingEditable']).toBe(true);
+
+      await reconcile(USER_FROZE, wallet.id, settlement());
+
+      const after = await readAccounts(USER_FROZE);
+      expect(after.accounts[0]?.['openingEditable']).toBe(false);
+    });
+
+    it('lets the correction be removed like any other record, and the balance follows it back', async () => {
+      const { wallet } = await heldAccount(USER_UNDONE);
+
+      const written = await reconcile(USER_UNDONE, wallet.id, settlement());
+      const adjustmentId = String(asRecord(written.body)['adjustmentId']);
+
+      const removed = await request(app.getHttpServer() as Server)
+        .post(`/transactions/${adjustmentId}/delete`)
+        .set('Authorization', `Bearer ${tokenFor(USER_UNDONE)}`)
+        .send({ idempotencyKey: 'undo-the-reconciliation' });
+
+      expect(removed.status).toBe(200);
+      await expect(balanceOf(USER_UNDONE, wallet.id)).resolves.toBe(125_050n);
     });
   });
 });

@@ -5,7 +5,7 @@ import { Button } from '@rondo/ui/components/ui/button';
 import { Input } from '@rondo/ui/components/ui/input';
 import { Label } from '@rondo/ui/components/ui/label';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconArchive, IconCash, IconCreditCard, IconLoader } from '@tabler/icons-react';
+import { IconCash, IconCreditCard, IconLoader } from '@tabler/icons-react';
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { MoneyField } from '@/components/money-field';
@@ -49,9 +49,7 @@ export function AccountDialog({
   failure,
   busy,
   frozen,
-  holds,
   onSave,
-  onArchive,
   onEdited,
   onCancel,
 }: {
@@ -60,9 +58,7 @@ export function AccountDialog({
   failure: SaveFailureKind | null;
   busy: boolean;
   frozen: boolean;
-  holds: bigint;
   onSave: (draft: AccountDraft) => void;
-  onArchive: () => void;
   onEdited: () => void;
   onCancel: () => void;
 }) {
@@ -184,25 +180,6 @@ export function AccountDialog({
             />
           </div>
         </>
-      )}
-
-      {!renaming ? null : (
-        <div className="flex flex-col gap-1.5">
-          <Button
-            type="button"
-            variant="ghost"
-            className="text-destructive hover:text-destructive w-fit px-2"
-            disabled={busy || frozen || holds !== 0n}
-            onClick={onArchive}
-          >
-            <IconArchive className="size-4" />
-            {t('accounts.archive')}
-          </Button>
-
-          {holds === 0n ? null : (
-            <p className="text-muted-foreground text-xs">{t('accounts.archiveNeedsZero')}</p>
-          )}
-        </div>
       )}
 
       {failure === null ? null : (

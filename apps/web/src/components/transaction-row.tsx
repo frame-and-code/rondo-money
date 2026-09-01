@@ -8,19 +8,11 @@ import {
   type Money,
   type TransactionDto,
 } from '@rondo/types';
-import { Button } from '@rondo/ui/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@rondo/ui/components/ui/dropdown-menu';
 import { cn } from '@rondo/ui/lib/utils';
 import {
   IconArrowsExchange,
   IconBuildingBank,
-  IconDots,
-  IconTrash,
+  IconScale,
   IconTrendingDown,
   IconTrendingUp,
 } from '@tabler/icons-react';
@@ -33,6 +25,7 @@ import { type MoneyReader } from '@/lib/money';
 function iconOf(record: TransactionDto, amount: Money): typeof IconTrendingUp {
   if (record.transferId !== null) return IconArrowsExchange;
   if (record.isSystem) return IconBuildingBank;
+  if (record.type === 'ADJUSTMENT') return IconScale;
 
   return amount < 0n ? IconTrendingDown : IconTrendingUp;
 }
@@ -52,7 +45,6 @@ export function TransactionRow({
   showAccount,
   showAdded,
   onOpen,
-  onDelete,
 }: {
   record: TransactionDto;
   money: MoneyReader;
@@ -62,12 +54,10 @@ export function TransactionRow({
   showAccount: boolean;
   showAdded: boolean;
   onOpen: (record: TransactionDto) => void;
-  onDelete: (record: TransactionDto) => void;
 }): ReactNode {
   const { t, locale } = useTranslations();
 
   const amount = parseMoney(record.amount);
-  const removable = !record.isSystem;
 
   const category = record.categoryId === null ? null : categoryOf(record.categoryId);
   const look = category === null ? null : categoryLook(category.icon, category.color);
@@ -78,6 +68,8 @@ export function TransactionRow({
 
   const title = (): string => {
     if (record.isSystem) return t('transactions.openingBalance');
+
+    if (record.type === 'ADJUSTMENT') return t('transactions.adjustment');
 
     if (record.transferId !== null) {
       if (counterpart === null) {
@@ -96,7 +88,9 @@ export function TransactionRow({
     ? t('transactions.systemBadge')
     : record.transferId !== null
       ? t('transactions.transferBadge')
-      : null;
+      : record.type === 'ADJUSTMENT'
+        ? t('transactions.adjustmentBadge')
+        : null;
 
   const parts = [category?.name ?? null, showAccount ? accountName(record.accountId) : null].filter(
     (part): part is string => part !== null && part !== '',
@@ -175,32 +169,6 @@ export function TransactionRow({
       >
         {money.format(amount)}
       </span>
-
-      {removable ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="relative z-10 hidden size-8 shrink-0 sm:flex"
-                aria-label={t('transactions.deleteOne', { payee: title() })}
-              >
-                <IconDots className="size-4" />
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onDelete(record)}>
-              <IconTrash className="size-4" />
-              {t('transactions.delete')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <span aria-hidden className="hidden size-8 shrink-0 sm:block" />
-      )}
     </li>
   );
 }

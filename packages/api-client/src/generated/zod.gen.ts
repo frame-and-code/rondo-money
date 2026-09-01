@@ -159,6 +159,16 @@ export const zTransactionResponse = z.object({
     createdAt: z.iso.datetime()
 });
 
+export const zReconcileAccountDto = z.object({
+    balance: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zReconciliationResponse = z.object({
+    difference: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    adjustmentId: z.uuid().nullable()
+});
+
 /**
  * Which icon this category is drawn with, as a domain name rather than the name of a component. A category nobody has given one carries null, and so does a stored name this app no longer draws.
  */
@@ -633,6 +643,17 @@ export const zAccountsControllerCorrectOpeningPath = z.object({
  * The opening balance as it stands now.
  */
 export const zAccountsControllerCorrectOpeningResponse = zTransactionResponse;
+
+export const zAccountsControllerReconcileBody = zReconcileAccountDto;
+
+export const zAccountsControllerReconcilePath = z.object({
+    id: z.string()
+});
+
+/**
+ * What the reconciliation came to.
+ */
+export const zAccountsControllerReconcileResponse = zReconciliationResponse;
 
 export const zBudgetViewControllerReadQuery = z.object({
     month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
