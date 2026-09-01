@@ -520,47 +520,7 @@ describe('/transactions (integration)', () => {
         },
       });
 
-    it('takes a correction of its amount, because an account is opened with a guess', async () => {
-      const { budget, account } = await budgetOf(USER_EDITS);
-      const opening = await openingOf(USER_EDITS, budget.id, account.id);
-
-      await patch(USER_EDITS, opening.id, {
-        accountId: account.id,
-        type: 'INCOME',
-        amount: '133700',
-        date: TODAY,
-        idempotencyKey: 'correct-the-opening-balance',
-      }).expect(200);
-
-      const stored = await harness.prisma.transaction.findUniqueOrThrow({
-        where: { id: opening.id },
-      });
-
-      expect(stored).toMatchObject({ amount: 133700n, isSystem: true, categoryId: null });
-    });
-
-    it('refuses to turn the opening balance into an expense, which would negate it', async () => {
-      const { budget, account } = await budgetOf(USER_EDITS);
-      const opening = await openingOf(USER_EDITS, budget.id, account.id);
-
-      const answer = await patch(USER_EDITS, opening.id, {
-        accountId: account.id,
-        type: 'EXPENSE',
-        amount: '133700',
-        date: TODAY,
-        idempotencyKey: 'negate-the-opening-balance',
-      }).expect(400);
-
-      expect(answer.body).toMatchObject({ reason: 'NOT_EDITABLE' });
-
-      const stored = await harness.prisma.transaction.findUniqueOrThrow({
-        where: { id: opening.id },
-      });
-
-      expect(stored.amount > 0n).toBe(true);
-    });
-
-    it('refuses every other field, or the account is left without an opening balance', async () => {
+    it('refuses every change here, amount included, because it belongs to its account', async () => {
       const { budget, account, category } = await budgetOf(USER_EDITS);
       const other = await harness.seedAccount(USER_EDITS, budget.id, {
         name: 'Карта',
@@ -568,28 +528,37 @@ describe('/transactions (integration)', () => {
       });
       const opening = await openingOf(USER_EDITS, budget.id, account.id);
 
-      const moved = await patch(USER_EDITS, opening.id, {
-        accountId: other.id,
-        type: 'INCOME',
-        amount: '100000',
-        date: TODAY,
-        idempotencyKey: 'move-the-opening-balance',
+      const aimed = [
+        ['the amount alone', { amount: '133700' }],
+        ['another account', { accountId: other.id }],
+        ['an envelope', { categoryId: category.id }],
+        ['the other direction', { type: 'EXPENSE' }],
+      ] as const;
+
+      for (const [what, over] of aimed) {
+        const answer = await patch(USER_EDITS, opening.id, {
+          accountId: account.id,
+          type: 'INCOME',
+          amount: '100000',
+          date: TODAY,
+          idempotencyKey: `opening-${what.replace(/\s/g, '-')}`,
+          ...over,
+        });
+
+        expect(answer.status).toBe(400);
+        expect(reasonOf(answer.body)).toBe('NOT_EDITABLE');
+      }
+
+      const stored = await harness.prisma.transaction.findUniqueOrThrow({
+        where: { id: opening.id },
       });
 
-      expect(moved.status).toBe(400);
-      expect(reasonOf(moved.body)).toBe('NOT_EDITABLE');
-
-      const filed = await patch(USER_EDITS, opening.id, {
+      expect(stored).toMatchObject({
         accountId: account.id,
-        categoryId: category.id,
-        type: 'INCOME',
-        amount: '100000',
-        date: TODAY,
-        idempotencyKey: 'file-the-opening-balance',
+        amount: 100000n,
+        categoryId: null,
+        isSystem: true,
       });
-
-      expect(filed.status).toBe(400);
-      expect(reasonOf(filed.body)).toBe('NOT_EDITABLE');
     });
   });
 });

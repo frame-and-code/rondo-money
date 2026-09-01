@@ -35,8 +35,13 @@ Three things the amount still has to get right:
 - **an expression nobody finished typing is a third answer**, neither an amount nor a fault.
   `434+` reads as 434, and writing that is a number nobody asked for, while refusing it outright
   paints the field red on the keystroke after every `+`. So the reader reports the amount **and**
-  that it is unfinished, and the write is what refuses it. Zero and a typed minus are refused
-  the same way: the endpoint takes neither.
+  that it is unfinished, and the write is what refuses it. A typed minus is refused the same
+  way, and so is zero wherever the endpoint takes neither.
+- **where zero is a real amount, an empty field is still not one.** Correcting an opening
+  balance takes zero, because a number can be wrong twice. The reader answers an empty field
+  with zero as well, so a form that only asks whether the amount parsed writes that zero over
+  someone's money the moment they clear the field to retype it. The field also reports whether
+  anything was typed at all, and the write asks for that too.
 
 **The screen it was opened from is a side of the move, and it must be the right screen.** The
 month comes from what the reader is looking at rather than from a clock, and the write is
@@ -206,6 +211,7 @@ Cover, at least:
 - throwing an unretried request away re-reads, nothing can be written until that re-read
   lands, and a re-read that fails leaves the month up;
 - an unfinished expression is refused by the write and shown as an amount by the field;
+- a field the reader emptied writes nothing, on a form whose endpoint takes zero;
 - every amount rendered under a currency whose minor digit count is not two.
 
 One e2e journey proves the screens are wired together. It is the wrong level for the branches

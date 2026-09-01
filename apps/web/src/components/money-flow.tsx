@@ -4,6 +4,7 @@ import {
   accountsControllerCreateMutation,
   accountsControllerListOptions,
   accountsControllerListQueryKey,
+  accountsControllerCorrectOpeningMutation,
   accountsControllerRenameMutation,
   budgetViewControllerReadOptions,
   budgetViewControllerReadQueryKey,
@@ -41,6 +42,7 @@ import { DeleteTransactionDialog } from '@/components/delete-transaction-dialog'
 import { TransactionDay } from '@/components/transaction-day';
 import {
   TransactionDialog,
+  type OpeningDraft,
   type PickableCategory,
   type PickableGroup,
   type TransactionDraft,
@@ -57,6 +59,7 @@ import {
 import { type CategoryLookOf } from '@/components/transaction-row';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
+import { accountFailure as openingFailure } from '@/lib/account-failure';
 import { dayOf } from '@/lib/calendar-day';
 import { calendarLocale } from '@/lib/calendar-locale';
 import { NO_LAST_ENTRY, readLastEntry, storeLastEntry, type LastEntry } from '@/lib/last-entry';
@@ -258,6 +261,16 @@ export function MoneyFlow(): ReactNode {
     onError: refusedTransfer,
   });
 
+  const refusedOpening = (error: unknown): void => {
+    setFailed(openingFailure(error));
+  };
+
+  const correctOpening = useMutation({
+    ...accountsControllerCorrectOpeningMutation(),
+    onSuccess: settled,
+    onError: refusedOpening,
+  });
+
   const refusedAccount = (error: unknown): void => {
     setAccountFailure(saveFailureKind(error));
   };
@@ -357,6 +370,13 @@ export function MoneyFlow(): ReactNode {
     writeTransfer.mutate({ body });
   };
 
+  const saveOpening = (draft: OpeningDraft): void => {
+    correctOpening.mutate({
+      path: { id: draft.accountId },
+      body: { amount: draft.amount, idempotencyKey: draft.idempotencyKey },
+    });
+  };
+
   const saveAccount = (draft: AccountDraft): void => {
     setSent(true);
 
@@ -396,7 +416,8 @@ export function MoneyFlow(): ReactNode {
     drop.isPending ||
     writeTransfer.isPending ||
     changeTransfer.isPending ||
-    dropTransfer.isPending;
+    dropTransfer.isPending ||
+    correctOpening.isPending;
 
   const titleOf = (open: Editing | null): string => {
     if (open?.kind === 'edit') return t('transactions.editTitle');
@@ -429,6 +450,7 @@ export function MoneyFlow(): ReactNode {
           written={written}
           onSave={save}
           onTransfer={saveTransfer}
+          onCorrectOpening={saveOpening}
           onDelete={() => {
             setFailed(null);
             setEditing(

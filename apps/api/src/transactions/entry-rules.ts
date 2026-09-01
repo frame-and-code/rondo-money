@@ -58,28 +58,5 @@ export function refuseDraft(draft: EntryDraft, clock: BudgetClock): TransactionR
 }
 
 export function refuseTarget(entry: StoredEntry): TransactionRefusal | null {
-  return entry.transferId !== null ? 'NOT_EDITABLE' : null;
-}
-
-export interface SystemEntry {
-  accountId: string;
-  categoryId: string | null;
-  date: CalendarDate;
-  payee: string | null;
-  type: TransactionEntryType;
-}
-
-export function refuseSystemEdit(held: SystemEntry, next: SystemEntry): TransactionRefusal | null {
-  const same =
-    held.accountId === next.accountId &&
-    held.categoryId === next.categoryId &&
-    held.date === next.date &&
-    held.payee === next.payee &&
-    held.type === next.type;
-
-  return same ? null : 'NOT_EDITABLE';
-}
-
-export function refuseRemoval(entry: StoredEntry): TransactionRefusal | null {
   return entry.isSystem || entry.transferId !== null ? 'NOT_EDITABLE' : null;
 }

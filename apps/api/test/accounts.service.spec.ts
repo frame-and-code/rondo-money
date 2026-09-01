@@ -16,6 +16,7 @@ const row = (over: Partial<AccountBalanceRow> = {}): AccountBalanceRow => ({
   name: null,
   type: null,
   balance: 0n,
+  entries: 0n,
   ...over,
 });
 
@@ -45,13 +46,26 @@ describe('AccountsService reading the accounts', () => {
   it('answers with minor units as strings, in the order the statement returned them', async () => {
     const { service } = serviceReading([
       row({ total: 125_050n, accountId: 'a1', name: 'Кошелёк', type: 'CASH', balance: 25_050n }),
-      row({ total: 125_050n, accountId: 'a2', name: 'Карта', type: 'DEBIT', balance: 100_000n }),
+      row({
+        total: 125_050n,
+        accountId: 'a2',
+        name: 'Карта',
+        type: 'DEBIT',
+        balance: 100_000n,
+        entries: 2n,
+      }),
     ]);
 
     await expect(service.list(USER)).resolves.toEqual({
       accounts: [
-        { id: 'a1', name: 'Кошелёк', type: 'CASH', balance: '25050' },
-        { id: 'a2', name: 'Карта', type: 'DEBIT', balance: '100000' },
+        { id: 'a1', name: 'Кошелёк', type: 'CASH', balance: '25050', openingEditable: true },
+        {
+          id: 'a2',
+          name: 'Карта',
+          type: 'DEBIT',
+          balance: '100000',
+          openingEditable: false,
+        },
       ],
       total: '125050',
     });

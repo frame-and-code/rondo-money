@@ -45,6 +45,20 @@ describe.each(screens)('the loading screen of %s', (_section, Loading) => {
   });
 });
 
+describe('the loading screen of money flow', () => {
+  it('draws the feed it is about to show: days, their rows and the accounts beside them', () => {
+    render(
+      <LocaleProvider>
+        <AccountsLoading />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getAllByTestId('loading-day').length).toBeGreaterThan(1);
+    expect(screen.getAllByTestId('loading-record').length).toBeGreaterThan(2);
+    expect(screen.getByTestId('loading-accounts')).toBeInTheDocument();
+  });
+});
+
 describe('the shell the gate shows before it knows where the user belongs', () => {
   const draw = () =>
     render(
@@ -61,6 +75,14 @@ describe('the shell the gate shows before it knows where the user belongs', () =
     draw();
 
     expect(screen.getAllByTestId('loading-tile').length).toBeGreaterThan(1);
+  });
+
+  it('draws the feed on money flow, so the screen does not change shape twice either', () => {
+    route = '/accounts';
+    draw();
+
+    expect(screen.getAllByTestId('loading-record').length).toBeGreaterThan(2);
+    expect(screen.queryByTestId('loading-tile')).not.toBeInTheDocument();
   });
 
   it('draws no month on a section that has none', () => {

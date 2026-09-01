@@ -17,7 +17,7 @@ const budget = {
 };
 
 const answer = {
-  accounts: [{ id: 'a1', name: 'Wallet', type: 'CASH', balance: '125050' }],
+  accounts: [{ id: 'a1', name: 'Wallet', type: 'CASH', balance: '125050', openingEditable: true }],
   total: '125050',
 };
 
@@ -77,6 +77,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
         : Promise.resolve({ id: 'a2', name: 'Savings', type: 'CASH' });
     },
   }),
+  accountsControllerCorrectOpeningMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerRenameMutation: () => ({
     mutationFn: (options: unknown) => {
       rename(options);

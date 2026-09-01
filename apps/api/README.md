@@ -15,7 +15,10 @@ transaction. [`src/accounts`](src/accounts) is the same pair over a model a budg
 is also where a handler asks for the active budget itself rather than letting the scoping
 extension refuse the read: without one the extension raises an internal error, and a user part
 way through onboarding would meet a 500 for an ordinary state. Its read is a hand-written
-aggregate as well, because a balance is summed from transactions rather than stored.
+aggregate as well, because a balance is summed from transactions rather than stored, and that
+same aggregate decides one of its writes: an opening balance takes a correction only while the
+account holds nothing else, so the mutation locks the account row and counts inside its own
+transaction.
 [`src/budget-view`](src/budget-view) is the third shape, a read the extension cannot express at
 all: the budget numbers are aggregates over many rows, so they are hand-written SQL through the
 raw-SQL repository, which supplies the caller and leaves the budget to the service.
@@ -88,6 +91,8 @@ no such order, because both rows are new and neither is a row anyone else can be
   and what they hold together. Nothing here is stored: a balance is the sum of the account's
   transactions, over every date rather than up to today, and the total covers exactly the
   accounts listed. An archived account is in neither, so the rows always add up to the total.
+  Each row also says whether its opening balance still takes a correction, counted over every
+  date by the same statement, so a screen knows before it asks rather than by being refused.
 - `POST /accounts` creates an account and its opening balance in one transaction. The balance
   is an income transaction dated today in the budget's timezone and carrying no category, so
   the money lands in Ready to Assign. It is written even when the amount is zero, because
@@ -98,16 +103,25 @@ no such order, because both rows are new and neither is a row anyone else can be
 - `PATCH /accounts/:id` renames an account and changes nothing else. The type is chosen when
   the account is created and never afterwards, so no operation in the contract accepts one
   again. An account the active budget does not hold is a 400 rather than a 500.
+- `PATCH /accounts/:id/opening-balance` corrects the amount the account was created with, and
+  takes nothing else: the day it carries and the direction it points in belong to the account,
+  so the contract has nowhere to name them. Zero is a valid amount, because an account can be
+  opened with a number that was wrong twice. It is refused once the account holds a record of
+  its own, a transfer leg included, and from then on a balance that drifted is corrected by
+  recording the movements it is missing. The count runs under a lock on the account row inside the same
+  transaction as the correction, so a record arriving at that moment is never missed. Refusals
+  name a reason: `OPENING_FROZEN`, `UNKNOWN_ACCOUNT`, `NO_ACTIVE_BUDGET`, which the other
+  account operations answer with too.
 - `POST /transactions`, `PATCH /transactions/:id` and `POST /transactions/:id/delete` are how
   an income or an expense is written, corrected and removed. The amount arrives without a sign
   and the server writes one from the type, so an expense always leaves the account. Deletion is
   physical, and it is addressed with POST because the idempotency key travels in the body.
   Refusals name a reason: `DATE_IN_FUTURE`, `DATE_BEFORE_ACCOUNT`, `CATEGORY_REQUIRED`,
   `CATEGORY_HIDDEN`, `ACCOUNT_ARCHIVED`, `NOT_EDITABLE`, `UNKNOWN_TRANSACTION`,
-  `UNKNOWN_ACCOUNT`, `UNKNOWN_CATEGORY`, `NO_ACTIVE_BUDGET`. An opening balance takes a
-  correction of its amount and carries `NOT_EDITABLE` for every other field, since the rest of
-  it belongs to the account. A transfer leg carries it whatever the change: it belongs to an
-  operation of its own.
+  `UNKNOWN_ACCOUNT`, `UNKNOWN_CATEGORY`, `NO_ACTIVE_BUDGET`. An opening balance carries
+  `NOT_EDITABLE` whatever the change, its amount included, because it is corrected through the
+  account it belongs to. A transfer leg carries it for the same reason: both belong to an
+  operation of their own.
 - `GET /transactions` is the feed, newest day first and, inside a day, the last record entered
   first. It pages by an opaque `cursor` naming the day, the moment and the record, and it
   carries the total of every day it touches. Each total covers the whole day under the same

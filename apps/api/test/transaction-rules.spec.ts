@@ -1,14 +1,11 @@
-import { parseCalendarDate, parseMoney } from '@rondo/types';
+import { parseMoney } from '@rondo/types';
 
 import {
   refuseDraft,
-  refuseRemoval,
-  refuseSystemEdit,
   refuseTarget,
   signedAmount,
   type BudgetClock,
   type EntryDraft,
-  type SystemEntry,
 } from '@/transactions/entry-rules';
 
 const ZONE = 'Europe/Warsaw';
@@ -96,52 +93,18 @@ describe('the records a person may change', () => {
     expect(refuseTarget({ isSystem: false, transferId: null })).toBeNull();
   });
 
-  it('lets the opening balance be changed, because an account is opened with a guess', () => {
-    expect(refuseTarget({ isSystem: true, transferId: null })).toBeNull();
+  it('refuses the opening balance, which is corrected through the account it belongs to', () => {
+    expect(refuseTarget({ isSystem: true, transferId: null })).toBe('NOT_EDITABLE');
   });
 
-  it('refuses to remove the opening balance, which belongs to the account', () => {
-    expect(refuseRemoval({ isSystem: true, transferId: null })).toBe('NOT_EDITABLE');
-    expect(refuseRemoval({ isSystem: false, transferId: null })).toBeNull();
+  it('refuses the opening balance on the way out too, because it belongs to the account', () => {
+    expect(refuseTarget({ isSystem: true, transferId: null })).toBe('NOT_EDITABLE');
+    expect(refuseTarget({ isSystem: false, transferId: null })).toBeNull();
   });
 
   it('refuses one leg of a transfer, which is edited as a pair or not at all', () => {
     expect(
       refuseTarget({ isSystem: false, transferId: 'b7f0c0de-0000-7000-8000-000000000000' }),
     ).toBe('NOT_EDITABLE');
-  });
-});
-
-describe('what may change on an opening balance', () => {
-  const held: SystemEntry = {
-    accountId: 'a1',
-    categoryId: null,
-    date: parseCalendarDate('2026-06-01'),
-    payee: null,
-    type: 'INCOME',
-  };
-
-  it('takes a correction of the amount, which is the number a person guessed', () => {
-    expect(refuseSystemEdit(held, { ...held })).toBeNull();
-  });
-
-  it('refuses to move it to another account, which would leave the first one without one', () => {
-    expect(refuseSystemEdit(held, { ...held, accountId: 'a2' })).toBe('NOT_EDITABLE');
-  });
-
-  it('refuses to date it elsewhere, because it is the day the account was opened', () => {
-    expect(refuseSystemEdit(held, { ...held, date: '2026-06-02' })).toBe('NOT_EDITABLE');
-  });
-
-  it('refuses to put it in an envelope, because the money arrived ready to assign', () => {
-    expect(refuseSystemEdit(held, { ...held, categoryId: 'c1' })).toBe('NOT_EDITABLE');
-  });
-
-  it('refuses to name a payee on it, because the app wrote it rather than a shop', () => {
-    expect(refuseSystemEdit(held, { ...held, payee: 'Corner cafe' })).toBe('NOT_EDITABLE');
-  });
-
-  it('refuses to turn it into an expense, which would negate the money the account opened with', () => {
-    expect(refuseSystemEdit(held, { ...held, type: 'EXPENSE' })).toBe('NOT_EDITABLE');
   });
 });

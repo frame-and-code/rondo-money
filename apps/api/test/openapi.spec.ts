@@ -1,5 +1,6 @@
 import { type OpenAPIObject, type PathItemObject } from '@nestjs/swagger';
 import {
+  ACCOUNT_REFUSALS,
   CATEGORY_COLORS,
   CATEGORY_ICONS,
   MONEY_PATTERN,
@@ -143,6 +144,7 @@ describe('OpenAPI document', () => {
     expect(Object.keys(document.paths).sort()).toEqual([
       '/accounts',
       '/accounts/{id}',
+      '/accounts/{id}/opening-balance',
       '/budget-view',
       '/budgets',
       '/categories',
@@ -225,6 +227,9 @@ describe('OpenAPI document', () => {
     });
     expect(document.components?.schemas?.['TransferRefusal']).toMatchObject({
       enum: [...TRANSFER_REFUSALS],
+    });
+    expect(document.components?.schemas?.['AccountRefusal']).toMatchObject({
+      enum: [...ACCOUNT_REFUSALS],
     });
   });
 
@@ -447,6 +452,16 @@ describe('OpenAPI document', () => {
     it('publishes every amount it answers with as a string of minor units', () => {
       expect(moneyFieldsOf(document, 'AccountsResponse')).toEqual(['total']);
       expect(moneyFieldsOf(document, 'AccountBalanceResponse')).toEqual(['balance']);
+    });
+
+    it('takes nothing but an amount when an opening balance is corrected', () => {
+      const schema = requestSchemaOf(
+        document,
+        document.paths['/accounts/{id}/opening-balance']?.patch,
+      );
+      const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+      expect(Object.keys(properties).sort()).toEqual(['amount', 'idempotencyKey']);
     });
 
     it('takes nothing but a name when an account is renamed, because the type never changes', () => {

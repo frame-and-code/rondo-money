@@ -240,7 +240,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BadRequestResponse"
+                  "$ref": "#/components/schemas/AccountRefusedResponse"
                 }
               }
             }
@@ -291,7 +291,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BadRequestResponse"
+                  "$ref": "#/components/schemas/AccountRefusedResponse"
                 }
               }
             }
@@ -353,7 +353,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BadRequestResponse"
+                  "$ref": "#/components/schemas/AccountRefusedResponse"
                 }
               }
             }
@@ -380,6 +380,78 @@
           }
         },
         "summary": "Rename an account",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/accounts/{id}/opening-balance": {
+      "patch": {
+        "description": "Changes the amount of the opening balance the account was created with, and nothing else about it. The day it carries and the direction it points in belong to the account rather than to this correction, so neither is accepted here. It is refused the moment the account holds a record of its own: from then on a balance that drifted is corrected by recording the movements it is missing, not by rewriting the day it was opened.",
+        "operationId": "AccountsController_correctOpening",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectOpeningDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The opening balance as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the account already holds records of its own, or this budget holds no such account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Correct what an account opened with",
         "tags": [
           "Accounts"
         ]
@@ -1578,7 +1650,7 @@
     },
     "/transactions/{id}": {
       "patch": {
-        "description": "Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all: the pair it belongs to has its own operations under /transfers.",
+        "description": "Rewrites every field, the account and the type included, and runs the rules of the type it becomes. Two records are not changed here at all, whatever the body carries: an opening balance, which is corrected under the account it belongs to, and a transfer leg, whose pair has its own operations under /transfers.",
         "operationId": "TransactionsController_update",
         "parameters": [
           {
@@ -2273,6 +2345,57 @@
           "type"
         ]
       },
+      "AccountRefusal": {
+        "type": "string",
+        "enum": [
+          "NO_ACTIVE_BUDGET",
+          "OPENING_FROZEN",
+          "UNKNOWN_ACCOUNT"
+        ],
+        "description": "Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
+      },
+      "AccountRefusedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          },
+          "reason": {
+            "description": "Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "AccountBalanceResponse": {
         "type": "object",
         "properties": {
@@ -2300,13 +2423,18 @@
             "maxLength": 20,
             "example": "-4500",
             "description": "What the account holds, summed from its transactions rather than stored. It goes below zero, which is a signal rather than an error."
+          },
+          "openingEditable": {
+            "type": "boolean",
+            "description": "Whether the opening balance of this account still takes a correction. It stops taking one the moment the account holds a record of its own, and from then on a balance that drifted is corrected by recording the movements it is missing. A screen reads this rather than learning it from a refusal."
           }
         },
         "required": [
           "id",
           "name",
           "type",
-          "balance"
+          "balance",
+          "openingEditable"
         ]
       },
       "AccountsResponse": {
@@ -2352,6 +2480,121 @@
           "idempotencyKey"
         ],
         "additionalProperties": false
+      },
+      "CorrectOpeningDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the account actually held the day it was opened, in minor units of the budget currency. Zero is a valid amount: an account can be opened with a number that was wrong twice. The day and the direction are not here, because neither of them is correctable."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two corrections again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "amount",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "TransactionType": {
+        "type": "string",
+        "enum": [
+          "INCOME",
+          "EXPENSE",
+          "TRANSFER",
+          "ADJUSTMENT"
+        ],
+        "description": "What the record is."
+      },
+      "TransactionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account the money moved on."
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The envelope the money left, absent on income that stays ready to assign."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day the money moved, in the budget timezone."
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What moved, in minor units and signed: money that left the account is below zero. The server writes the sign from the type."
+          },
+          "type": {
+            "description": "What the record is.",
+            "example": "EXPENSE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionType"
+              }
+            ]
+          },
+          "payee": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "description": "Who was paid or who paid."
+          },
+          "isSystem": {
+            "type": "boolean",
+            "description": "True for a record the app wrote itself, such as an opening balance. It counts like any other and is never deleted, and it is not changed here: an opening balance is corrected through the account it belongs to."
+          },
+          "transferId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Shared by the two legs of one transfer."
+          },
+          "counterAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The account at the other end of a transfer, so a leg reads as a sentence."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the record was entered, which is not the day the money moved. It orders the records of one day."
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "categoryId",
+          "date",
+          "amount",
+          "type",
+          "payee",
+          "isSystem",
+          "transferId",
+          "counterAccountId",
+          "createdAt"
+        ]
       },
       "CategoryIcon": {
         "type": "string",
@@ -3341,98 +3584,6 @@
           "idempotencyKey"
         ],
         "additionalProperties": false
-      },
-      "TransactionType": {
-        "type": "string",
-        "enum": [
-          "INCOME",
-          "EXPENSE",
-          "TRANSFER",
-          "ADJUSTMENT"
-        ],
-        "description": "What the record is."
-      },
-      "TransactionResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "accountId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The account the money moved on."
-          },
-          "categoryId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true,
-            "description": "The envelope the money left, absent on income that stays ready to assign."
-          },
-          "date": {
-            "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-            "example": "2026-08-31",
-            "description": "The day the money moved, in the budget timezone."
-          },
-          "amount": {
-            "type": "string",
-            "pattern": "^(0|-?[1-9]\\d*)$",
-            "maxLength": 20,
-            "example": "-4500",
-            "description": "What moved, in minor units and signed: money that left the account is below zero. The server writes the sign from the type."
-          },
-          "type": {
-            "description": "What the record is.",
-            "example": "EXPENSE",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TransactionType"
-              }
-            ]
-          },
-          "payee": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 100,
-            "description": "Who was paid or who paid."
-          },
-          "isSystem": {
-            "type": "boolean",
-            "description": "True for a record the app wrote itself, such as an opening balance. It counts like any other, takes a correction of its amount and is never deleted."
-          },
-          "transferId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true,
-            "description": "Shared by the two legs of one transfer."
-          },
-          "counterAccountId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true,
-            "description": "The account at the other end of a transfer, so a leg reads as a sentence."
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When the record was entered, which is not the day the money moved. It orders the records of one day."
-          }
-        },
-        "required": [
-          "id",
-          "accountId",
-          "categoryId",
-          "date",
-          "amount",
-          "type",
-          "payee",
-          "isSystem",
-          "transferId",
-          "counterAccountId",
-          "createdAt"
-        ]
       },
       "TransactionRefusal": {
         "type": "string",

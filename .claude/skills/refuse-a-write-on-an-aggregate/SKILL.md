@@ -29,6 +29,14 @@ it is racing has to take the same lock on the same rows, so `MovesService` locks
 move names before it touches an assignment. When adding a second writer of those rows, that lock
 is part of the change, not a follow-up.
 
+**One shape needs no second writer: when the rows being counted are children of the row you
+lock.** Correcting an account's opening balance is refused while the account holds records of
+its own, and it locks the account row alone. Inserting a transaction checks its foreign key
+against that same account row, and the check takes a lock of its own on it, so a concurrent
+insert waits on the row the correction is holding rather than slipping past the count. Reach for
+this only where a foreign key really points at the locked row; anywhere else the writers lock
+explicitly.
+
 **Lock the rows in a fixed order**, by id, the way `inLockOrder` and
 [`inWriteOrder`](../../../apps/api/src/categories/write-order.ts) do. Two requests taking the
 same rows in opposite orders deadlock, and the caller is handed a 500 for an operation nothing
@@ -43,13 +51,16 @@ all, and a unit test asserts that.
 
 ## What the refusal has to carry
 
-The screen has to name the amount that blocked the write, so the refusal carries it as a string
-of minor units beside its reason. Do not send a formatted amount: the digit count belongs to the
-budget's currency and the screen already knows it.
+The refusal carries whatever the screen has to name. Where the bound is a sum the reader can
+act on, that is the amount that blocked the write, as a string of minor units beside the reason.
+Do not send a formatted amount: the digit count belongs to the budget's currency and the screen
+already knows it. Where the bound is a yes or a no, the reason is the whole answer: nothing
+about an account's records helps a reader whose opening balance is settled.
 
-The screen also needs that number **before** it asks, or the only way to learn a write will be
+The screen also needs the answer **before** it asks, or the only way to learn a write will be
 refused is to try it. That is why the month endpoint publishes the all-month sum next to the
-month's own.
+month's own, and why the accounts list says per account whether its opening balance still takes
+a correction.
 
 ## Tests that are not optional
 

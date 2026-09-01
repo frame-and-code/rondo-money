@@ -4,21 +4,37 @@ import userEvent from '@testing-library/user-event';
 
 import {
   TransactionDialog,
+  type OpeningDraft,
   type TransactionDraft,
   type TransferDraft,
 } from '@/components/transaction-dialog';
 import { LocaleProvider } from '@/i18n/locale-context';
+import type { MessageKey } from '@/i18n/messages';
 import { en } from '@/i18n/messages/en';
-import { moneyOf } from '@/lib/money';
+import { moneyOf, type MoneyReader } from '@/lib/money';
 
 const money = moneyOf('en-US', 'PLN', 2);
 
 const TODAY = '2026-08-31';
 
 const accounts = [
-  { id: 'a1', name: 'Wallet', balance: '125050' },
-  { id: 'a2', name: 'Card', balance: '-4000' },
+  { id: 'a1', name: 'Wallet', balance: '125050', openingEditable: true },
+  { id: 'a2', name: 'Card', balance: '-4000', openingEditable: false },
 ];
+
+const opening = {
+  id: 'r9',
+  accountId: 'a1',
+  categoryId: null,
+  date: '2026-06-01',
+  amount: '100000',
+  type: 'INCOME' as const,
+  payee: null,
+  isSystem: true,
+  transferId: null,
+  counterAccountId: null,
+  createdAt: '2026-06-01T10:00:00.000Z',
+};
 
 const groups = [
   {
@@ -35,13 +51,19 @@ const show = (
     defaults?: { accountId: string; date: string; categoryId: string | null; payee: string | null };
     onSave?: (draft: TransactionDraft, andMore: boolean) => void;
     onTransfer?: (draft: TransferDraft, andMore: boolean) => void;
+    onCorrectOpening?: (draft: OpeningDraft) => void;
     onDelete?: () => void;
     written?: number;
+    money?: MoneyReader;
+    busy?: boolean;
+    failed?: MessageKey;
   } = {},
 ) => {
   const onSave = over.onSave ?? jest.fn();
   const onTransfer = over.onTransfer ?? jest.fn();
+  const onCorrectOpening = over.onCorrectOpening ?? jest.fn();
   let written = over.written ?? 0;
+  let busy = over.busy ?? false;
 
   const view = (round: number) => (
     <LocaleProvider initialLocale="en">
@@ -51,14 +73,15 @@ const show = (
         groups={groups}
         kept={null}
         payees={['Corner cafe', 'Pharmacy']}
-        money={money}
+        money={over.money ?? money}
         today={TODAY}
         defaults={over.defaults ?? { accountId: 'a1', date: TODAY, categoryId: null, payee: null }}
-        failed={null}
-        busy={false}
+        failed={over.failed ?? null}
+        busy={busy}
         written={round}
         onSave={onSave}
         onTransfer={onTransfer}
+        onCorrectOpening={onCorrectOpening}
         onDelete={over.onDelete ?? jest.fn()}
       />
     </LocaleProvider>
@@ -71,7 +94,12 @@ const show = (
     rerender(view(written));
   };
 
-  return { onSave, onTransfer, land };
+  const working = (): void => {
+    busy = true;
+    rerender(view(written));
+  };
+
+  return { onSave, onTransfer, onCorrectOpening, land, working };
 };
 
 const typeAmount = async (value: string): Promise<void> => {
@@ -227,7 +255,7 @@ describe('the form a record is written in', () => {
             amount: '100000',
             type: 'INCOME',
             payee: null,
-            isSystem: true,
+            isSystem: false,
             transferId: null,
             counterAccountId: null,
             createdAt: '2026-08-20T10:00:00.000Z',
@@ -244,6 +272,7 @@ describe('the form a record is written in', () => {
           written={0}
           onSave={saved}
           onTransfer={jest.fn()}
+          onCorrectOpening={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -343,26 +372,135 @@ describe('the form a record is written in', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('offers only the amount on an opening balance, and no way to remove it', () => {
-    show({
-      record: {
-        id: 'r9',
-        accountId: 'a1',
-        categoryId: null,
-        date: '2026-06-01',
-        amount: '100000',
-        type: 'INCOME',
-        payee: null,
-        isSystem: true,
-        transferId: null,
-        counterAccountId: null,
-        createdAt: '2026-06-01T10:00:00.000Z',
-      },
-    });
+  it('says it is saving while the write is in flight, and takes no second press', async () => {
+    const { working } = show();
+    await typeAmount('120.50');
+    await pickCategory('Coffee');
+
+    expect(screen.getByRole('button', { name: en['transactions.save'] })).toBeEnabled();
+
+    working();
+
+    const saving = screen.getByRole('button', { name: en['transactions.saving'] });
+
+    expect(saving).toBeDisabled();
+    expect(screen.queryByRole('button', { name: en['transactions.save'] })).toBeNull();
+  });
+
+  it('moves the spinner to the plain save when that is the button pressed next', async () => {
+    const { working } = show({ failed: 'transactions.failFuture' });
+    await typeAmount('120.50');
+    await pickCategory('Coffee');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+    await userEvent.clear(screen.getByLabelText(en['transactions.amountLabel']));
+    await typeAmount('90');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    working();
+
+    expect(screen.getByRole('button', { name: en['transactions.saving'] })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: en['transactions.saveAndMore'] }),
+    ).toBeInTheDocument();
+  });
+
+  it('moves the spinner to the plain save after one record landed under the other button', async () => {
+    const { land, working } = show();
+    await typeAmount('120.50');
+    await pickCategory('Coffee');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    land();
+
+    await typeAmount('90');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    working();
+
+    expect(screen.getByRole('button', { name: en['transactions.saving'] })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: en['transactions.saveAndMore'] }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the confirmation of a record that landed while another field was touched', async () => {
+    const { land } = show({ failed: 'transactions.failFuture' });
+    await typeAmount('120.50');
+    await pickCategory('Coffee');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+    await pickCategory('Cinema');
+
+    land();
+
+    expect(await screen.findByTestId('entry-flash')).toBeInTheDocument();
+    expect(screen.getByLabelText(en['transactions.amountLabel'])).toHaveValue('');
+  });
+
+  it('says it is saving on the button that was pressed, not on the other one', async () => {
+    const { working } = show({ record: null });
+    await typeAmount('120.50');
+    await pickCategory('Coffee');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    working();
+
+    expect(screen.getByRole('button', { name: en['transactions.saving'] })).toBeDisabled();
+    expect(screen.getByRole('button', { name: en['transactions.save'] })).toBeDisabled();
+  });
+
+  it('offers only the amount on an opening balance, with no day and no way to remove it', () => {
+    show({ record: opening });
 
     expect(screen.getByLabelText(en['transactions.amountLabel'])).toHaveValue('1000.00');
     expect(screen.queryByLabelText(en['transactions.payeeIncome'])).not.toBeVisible();
+    expect(screen.getByText('1 June 2026')).not.toBeVisible();
     expect(screen.queryByRole('button', { name: en['transactions.delete'] })).toBeNull();
+  });
+
+  it('corrects an opening balance to nothing, because a guess can be wrong twice', async () => {
+    const { onCorrectOpening } = show({ record: opening });
+
+    await userEvent.clear(screen.getByLabelText(en['transactions.amountLabel']));
+    await typeAmount('0');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    expect(onCorrectOpening).toHaveBeenCalledWith({
+      accountId: 'a1',
+      amount: '0',
+      idempotencyKey: expect.any(String),
+    });
+  });
+
+  it('writes no correction from a field that was only emptied, because nobody typed a zero', async () => {
+    const { onCorrectOpening } = show({ record: opening });
+
+    await userEvent.clear(screen.getByLabelText(en['transactions.amountLabel']));
+
+    expect(screen.getByRole('button', { name: en['transactions.save'] })).toBeDisabled();
+    expect(onCorrectOpening).not.toHaveBeenCalled();
+  });
+
+  it('reads the amount in the digits the currency has, not in the two it usually has', async () => {
+    const { onCorrectOpening } = show({
+      record: { ...opening, amount: '1000' },
+      money: moneyOf('en-US', 'JPY', 0),
+    });
+
+    expect(screen.getByLabelText(en['transactions.amountLabel'])).toHaveValue('1000');
+
+    await userEvent.clear(screen.getByLabelText(en['transactions.amountLabel']));
+    await typeAmount('500');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    expect(onCorrectOpening).toHaveBeenCalledWith(expect.objectContaining({ amount: '500' }));
+  });
+
+  it('says an opening balance is settled once the account holds a record of its own', () => {
+    show({ record: { ...opening, accountId: 'a2' } });
+
+    expect(screen.getByText(en['transactions.openingFrozen'])).toBeInTheDocument();
+    expect(screen.getByLabelText(en['transactions.amountLabel'])).toBeDisabled();
+    expect(screen.queryByRole('button', { name: en['transactions.save'] })).toBeNull();
   });
 
   it('paints the income choice with the token income already carries in the feed', async () => {
@@ -435,6 +573,7 @@ describe('the form a record is written in', () => {
           written={0}
           onSave={jest.fn()}
           onTransfer={jest.fn()}
+          onCorrectOpening={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -463,6 +602,7 @@ describe('the form a record is written in', () => {
           written={0}
           onSave={jest.fn()}
           onTransfer={jest.fn()}
+          onCorrectOpening={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -651,6 +791,7 @@ describe('the form a transfer is written in', () => {
           written={0}
           onSave={jest.fn()}
           onTransfer={onTransfer}
+          onCorrectOpening={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -701,6 +842,7 @@ describe('what a record already written may become', () => {
           written={0}
           onSave={jest.fn()}
           onTransfer={jest.fn()}
+          onCorrectOpening={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -715,7 +857,9 @@ describe('what a record already written may become', () => {
 });
 
 describe('what the form offers when the budget holds one account', () => {
-  const withAccounts = (held: { id: string; name: string; balance: string }[]) =>
+  const withAccounts = (
+    held: { id: string; name: string; balance: string; openingEditable: boolean }[],
+  ) =>
     render(
       <LocaleProvider initialLocale="en">
         <TransactionDialog
@@ -732,13 +876,14 @@ describe('what the form offers when the budget holds one account', () => {
           written={0}
           onSave={jest.fn()}
           onTransfer={jest.fn()}
+          onCorrectOpening={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
     );
 
   it('leaves the transfer out, because there is no second account to send money to', () => {
-    withAccounts([{ id: 'a1', name: 'Wallet', balance: '125050' }]);
+    withAccounts([{ id: 'a1', name: 'Wallet', balance: '125050', openingEditable: true }]);
 
     expect(
       screen.queryByRole('button', { name: en['transactions.kindTransfer'] }),

@@ -8,15 +8,17 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
+import { AccountRefusedResponse } from '@/accounts/account-refused.response';
 import { AccountResponse } from '@/accounts/account.response';
 import { AccountsResponse } from '@/accounts/accounts.response';
 import { AccountsService } from '@/accounts/accounts.service';
+import { CorrectOpeningDto } from '@/accounts/correct-opening.dto';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
 import { RenameAccountDto } from '@/accounts/rename-account.dto';
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { UnauthorizedResponse } from '@/auth/unauthorized.response';
 import { ConflictResponse } from '@/mutations/conflict.response';
-import { BadRequestResponse } from '@/openapi/bad-request.response';
+import { TransactionResponse } from '@/transactions/transaction.response';
 
 @Controller('accounts')
 export class AccountsController {
@@ -33,7 +35,7 @@ export class AccountsController {
   @ApiCreatedResponse({ description: 'The account that now exists.', type: AccountResponse })
   @ApiBadRequestResponse({
     description: 'The body was refused, or the caller has no active budget to add it to.',
-    type: BadRequestResponse,
+    type: AccountRefusedResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
@@ -62,7 +64,7 @@ export class AccountsController {
   @ApiOkResponse({ description: 'The accounts as they stand now.', type: AccountsResponse })
   @ApiBadRequestResponse({
     description: 'The caller has no active budget, so there are no accounts to scope to.',
-    type: BadRequestResponse,
+    type: AccountRefusedResponse,
   })
   @ApiUnauthorizedResponse({
     description: 'The token was missing, malformed, expired or not minted for this app.',
@@ -84,7 +86,7 @@ export class AccountsController {
     description:
       'The body was refused, or this budget holds no such account, or the caller has no ' +
       'active budget.',
-    type: BadRequestResponse,
+    type: AccountRefusedResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
@@ -99,5 +101,40 @@ export class AccountsController {
     @Body() body: RenameAccountDto,
   ): Promise<AccountResponse> {
     return this.accounts.rename(id, body);
+  }
+
+  @Patch(':id/opening-balance')
+  @ApiOperation({
+    summary: 'Correct what an account opened with',
+    description:
+      'Changes the amount of the opening balance the account was created with, and nothing ' +
+      'else about it. The day it carries and the direction it points in belong to the account ' +
+      'rather than to this correction, so neither is accepted here. It is refused the moment ' +
+      'the account holds a record of its own: from then on a balance that drifted is corrected ' +
+      'by recording the movements it is missing, not by rewriting the day it was opened.',
+  })
+  @ApiOkResponse({
+    description: 'The opening balance as it stands now.',
+    type: TransactionResponse,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'The body was refused, or the account already holds records of its own, or this budget ' +
+      'holds no such account.',
+    type: AccountRefusedResponse,
+  })
+  @ApiConflictResponse({
+    description: 'The idempotency key was claimed by a different request.',
+    type: ConflictResponse,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The token was missing, malformed, expired or not minted for this app.',
+    type: UnauthorizedResponse,
+  })
+  correctOpening(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: CorrectOpeningDto,
+  ): Promise<TransactionResponse> {
+    return this.accounts.correctOpening(id, body);
   }
 }

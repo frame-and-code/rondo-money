@@ -144,6 +144,21 @@ export type AccountResponse = {
     type: AccountType;
 };
 
+/**
+ * Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export type AccountRefusal = 'NO_ACTIVE_BUDGET' | 'OPENING_FROZEN' | 'UNKNOWN_ACCOUNT';
+
+export type AccountRefusedResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+    /**
+     * Why the account operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+     */
+    reason?: AccountRefusal;
+};
+
 export type AccountBalanceResponse = {
     id: string;
     /**
@@ -158,6 +173,10 @@ export type AccountBalanceResponse = {
      * What the account holds, summed from its transactions rather than stored. It goes below zero, which is a signal rather than an error.
      */
     balance: string;
+    /**
+     * Whether the opening balance of this account still takes a correction. It stops taking one the moment the account holds a record of its own, and from then on a balance that drifted is corrected by recording the movements it is missing. A screen reads this rather than learning it from a refusal.
+     */
+    openingEditable: boolean;
 };
 
 export type AccountsResponse = {
@@ -177,6 +196,66 @@ export type RenameAccountDto = {
      * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
      */
     idempotencyKey: string;
+};
+
+export type CorrectOpeningDto = {
+    /**
+     * What the account actually held the day it was opened, in minor units of the budget currency. Zero is a valid amount: an account can be opened with a number that was wrong twice. The day and the direction are not here, because neither of them is correctable.
+     */
+    amount: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two corrections again.
+     */
+    idempotencyKey: string;
+};
+
+/**
+ * What the record is.
+ */
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER' | 'ADJUSTMENT';
+
+export type TransactionResponse = {
+    id: string;
+    /**
+     * The account the money moved on.
+     */
+    accountId: string;
+    /**
+     * The envelope the money left, absent on income that stays ready to assign.
+     */
+    categoryId: string | null;
+    /**
+     * The day the money moved, in the budget timezone.
+     */
+    date: string;
+    /**
+     * What moved, in minor units and signed: money that left the account is below zero. The server writes the sign from the type.
+     */
+    amount: string;
+    /**
+     * What the record is.
+     */
+    type: TransactionType;
+    /**
+     * Who was paid or who paid.
+     */
+    payee: string | null;
+    /**
+     * True for a record the app wrote itself, such as an opening balance. It counts like any other and is never deleted, and it is not changed here: an opening balance is corrected through the account it belongs to.
+     */
+    isSystem: boolean;
+    /**
+     * Shared by the two legs of one transfer.
+     */
+    transferId: string | null;
+    /**
+     * The account at the other end of a transfer, so a leg reads as a sentence.
+     */
+    counterAccountId: string | null;
+    /**
+     * When the record was entered, which is not the day the money moved. It orders the records of one day.
+     */
+    createdAt: string;
 };
 
 /**
@@ -607,55 +686,6 @@ export type CreateTransactionDto = {
 };
 
 /**
- * What the record is.
- */
-export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER' | 'ADJUSTMENT';
-
-export type TransactionResponse = {
-    id: string;
-    /**
-     * The account the money moved on.
-     */
-    accountId: string;
-    /**
-     * The envelope the money left, absent on income that stays ready to assign.
-     */
-    categoryId: string | null;
-    /**
-     * The day the money moved, in the budget timezone.
-     */
-    date: string;
-    /**
-     * What moved, in minor units and signed: money that left the account is below zero. The server writes the sign from the type.
-     */
-    amount: string;
-    /**
-     * What the record is.
-     */
-    type: TransactionType;
-    /**
-     * Who was paid or who paid.
-     */
-    payee: string | null;
-    /**
-     * True for a record the app wrote itself, such as an opening balance. It counts like any other, takes a correction of its amount and is never deleted.
-     */
-    isSystem: boolean;
-    /**
-     * Shared by the two legs of one transfer.
-     */
-    transferId: string | null;
-    /**
-     * The account at the other end of a transfer, so a leg reads as a sentence.
-     */
-    counterAccountId: string | null;
-    /**
-     * When the record was entered, which is not the day the money moved. It orders the records of one day.
-     */
-    createdAt: string;
-};
-
-/**
  * Why the record was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
 export type TransactionRefusal = 'ACCOUNT_ARCHIVED' | 'CATEGORY_HIDDEN' | 'CATEGORY_REQUIRED' | 'DATE_BEFORE_ACCOUNT' | 'DATE_IN_FUTURE' | 'NOT_EDITABLE' | 'NO_ACTIVE_BUDGET' | 'UNKNOWN_ACCOUNT' | 'UNKNOWN_CATEGORY' | 'UNKNOWN_TRANSACTION';
@@ -968,7 +998,7 @@ export type AccountsControllerListErrors = {
     /**
      * The caller has no active budget, so there are no accounts to scope to.
      */
-    400: BadRequestResponse;
+    400: AccountRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
@@ -997,7 +1027,7 @@ export type AccountsControllerCreateErrors = {
     /**
      * The body was refused, or the caller has no active budget to add it to.
      */
-    400: BadRequestResponse;
+    400: AccountRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
@@ -1032,7 +1062,7 @@ export type AccountsControllerRenameErrors = {
     /**
      * The body was refused, or this budget holds no such account, or the caller has no active budget.
      */
-    400: BadRequestResponse;
+    400: AccountRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
@@ -1053,6 +1083,41 @@ export type AccountsControllerRenameResponses = {
 };
 
 export type AccountsControllerRenameResponse = AccountsControllerRenameResponses[keyof AccountsControllerRenameResponses];
+
+export type AccountsControllerCorrectOpeningData = {
+    body: CorrectOpeningDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/accounts/{id}/opening-balance';
+};
+
+export type AccountsControllerCorrectOpeningErrors = {
+    /**
+     * The body was refused, or the account already holds records of its own, or this budget holds no such account.
+     */
+    400: AccountRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AccountsControllerCorrectOpeningError = AccountsControllerCorrectOpeningErrors[keyof AccountsControllerCorrectOpeningErrors];
+
+export type AccountsControllerCorrectOpeningResponses = {
+    /**
+     * The opening balance as it stands now.
+     */
+    200: TransactionResponse;
+};
+
+export type AccountsControllerCorrectOpeningResponse = AccountsControllerCorrectOpeningResponses[keyof AccountsControllerCorrectOpeningResponses];
 
 export type BudgetViewControllerReadData = {
     body?: never;

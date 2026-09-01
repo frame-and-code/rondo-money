@@ -20,8 +20,8 @@ const budget = {
 
 const accounts = {
   accounts: [
-    { id: 'a1', name: 'Wallet', type: 'CASH', balance: '125050' },
-    { id: 'a2', name: 'Card', type: 'DEBIT', balance: '-4000' },
+    { id: 'a1', name: 'Wallet', type: 'CASH', balance: '125050', openingEditable: true },
+    { id: 'a2', name: 'Card', type: 'DEBIT', balance: '-4000', openingEditable: false },
   ],
   total: '121050',
 };
@@ -78,6 +78,8 @@ let viewFetched = 0;
 
 const transferred: unknown[] = [];
 
+const corrected: unknown[] = [];
+
 const wholeFeed = {
   transactions: [
     {
@@ -120,6 +122,13 @@ jest.mock('@rondo/api-client/react-query', () => ({
   accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList' }],
   accountsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   accountsControllerRenameMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  accountsControllerCorrectOpeningMutation: () => ({
+    mutationFn: (options: unknown) => {
+      corrected.push(options);
+
+      return Promise.resolve({});
+    },
+  }),
   budgetViewControllerReadOptions: (options: { query: Record<string, unknown> }) => {
     viewed.push(options.query);
 
@@ -235,6 +244,7 @@ afterEach(() => {
   accountsFetched = 0;
   viewFetched = 0;
   transferred.length = 0;
+  corrected.length = 0;
 });
 
 const dayName = (date: string): RegExp => {
@@ -582,5 +592,55 @@ describe('moving money between two accounts', () => {
 
     await waitFor(() => expect(accountsFetched).toBeGreaterThan(balances));
     await waitFor(() => expect(viewFetched).toBeGreaterThan(month));
+  });
+});
+
+describe('correcting what an account opened with', () => {
+  it('sends the amount to the account own operation and rereads the balances and the month', async () => {
+    page = {
+      transactions: [
+        {
+          id: 'r9',
+          accountId: 'a1',
+          categoryId: null,
+          date: '2020-01-01',
+          amount: '125050',
+          type: 'INCOME',
+          payee: null,
+          isSystem: true,
+          transferId: null,
+          counterAccountId: null,
+          createdAt: '2020-01-01T09:00:00.000Z',
+        },
+      ],
+      days: [{ date: '2020-01-01', total: '125050' }],
+      nextCursor: null,
+    };
+
+    draw();
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: en['transactions.openingBalance'] }),
+    );
+    await userEvent.clear(await screen.findByLabelText(en['transactions.amountLabel']));
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '400');
+
+    const balances = accountsFetched;
+    const month = viewFetched;
+    const feed = fetched;
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    await waitFor(() => expect(corrected).toHaveLength(1));
+    expect(corrected[0]).toMatchObject({
+      path: { id: 'a1' },
+      body: { amount: '40000', idempotencyKey: expect.any(String) },
+    });
+
+    expect(written).toHaveLength(0);
+
+    await waitFor(() => expect(accountsFetched).toBeGreaterThan(balances));
+    await waitFor(() => expect(viewFetched).toBeGreaterThan(month));
+    await waitFor(() => expect(fetched).toBeGreaterThan(feed));
   });
 });

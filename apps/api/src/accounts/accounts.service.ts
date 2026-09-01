@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { TransactionType, type Account, type Prisma } from '@rondo/db';
 import { isAccountType, parseMoney, serializeMoney, toDbDate, todayIn } from '@rondo/types';
 
@@ -6,17 +6,18 @@ import {
   accountBalancesStatement,
   type AccountBalanceRow,
 } from '@/accounts/account-balances.query';
+import { accountLockStatement, type AccountLockRow } from '@/accounts/account-lock.query';
+import { refuseAccount } from '@/accounts/account-refusal';
 import { AccountResponse } from '@/accounts/account.response';
 import { AccountBalanceResponse, AccountsResponse } from '@/accounts/accounts.response';
+import { CorrectOpeningDto } from '@/accounts/correct-opening.dto';
 import { CreateAccountDto } from '@/accounts/create-account.dto';
 import { RenameAccountDto } from '@/accounts/rename-account.dto';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
 import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
-
-const NO_ACTIVE_BUDGET =
-  'The caller has no active budget, so there is nothing for an account to belong to. Create ' +
-  'a budget first.';
+import { decodeTransaction, serializeTransaction } from '@/transactions/transaction-record';
+import { TransactionResponse } from '@/transactions/transaction.response';
 
 function serialize(account: Account): Prisma.JsonObject {
   return { id: account.id, name: account.name, type: account.type };
@@ -44,7 +45,13 @@ function listed(row: AccountBalanceRow, userId: string): AccountBalanceResponse 
     );
   }
 
-  return { id: accountId, name, type, balance: serializeMoney(row.balance) };
+  return {
+    id: accountId,
+    name,
+    type,
+    balance: serializeMoney(row.balance),
+    openingEditable: row.entries === 0n,
+  };
 }
 
 @Injectable()
@@ -128,12 +135,57 @@ export class AccountsService {
 
         const current = await tx.account.findFirst({ where: { id } });
         if (!current) {
-          throw new BadRequestException(`This budget holds no account ${id}.`);
+          throw refuseAccount('UNKNOWN_ACCOUNT');
         }
 
         return serialize(
           await tx.account.update({ where: { id: current.id }, data: { name: body.name } }),
         );
+      },
+    );
+  }
+
+  async correctOpening(id: string, body: CorrectOpeningDto): Promise<TransactionResponse> {
+    const intended = await this.activeBudget(this.prisma);
+
+    return this.mutations.run(
+      {
+        key: body.idempotencyKey,
+        request: { budgetId: intended.id, accountId: id, amount: body.amount },
+        decode: decodeTransaction,
+      },
+      async (tx) => {
+        const budget = await this.activeBudget(tx, intended.id);
+
+        const held = await this.raw.query<AccountLockRow>(
+          (scope) => accountLockStatement(scope, budget.id, id),
+          tx,
+        );
+        if (held.length === 0) {
+          throw refuseAccount('UNKNOWN_ACCOUNT');
+        }
+
+        const moved = await tx.transaction.count({ where: { accountId: id, isSystem: false } });
+        if (moved > 0) {
+          throw refuseAccount('OPENING_FROZEN');
+        }
+
+        const opening = await tx.transaction.findFirst({
+          where: { accountId: id, isSystem: true },
+        });
+        if (!opening) {
+          throw new Error(
+            `Account ${id} carries no opening balance, and every account is created with one, ` +
+              'so this row was removed by something that had no business removing it.',
+          );
+        }
+
+        const written = await tx.transaction.update({
+          where: { id: opening.id },
+          data: { amount: parseMoney(body.amount) },
+        });
+
+        return serializeTransaction(written, null);
       },
     );
   }
@@ -146,7 +198,7 @@ export class AccountsService {
       where: { active: true, ...(id ? { id } : {}) },
     });
     if (!budget) {
-      throw new BadRequestException(NO_ACTIVE_BUDGET);
+      throw refuseAccount('NO_ACTIVE_BUDGET');
     }
 
     return budget;

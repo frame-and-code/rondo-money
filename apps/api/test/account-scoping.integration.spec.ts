@@ -57,6 +57,12 @@ describe('accounts across tenants', () => {
       .set('Authorization', `Bearer ${tokenFor(userId)}`)
       .send(body);
 
+  const correct = (userId: string, id: string, body: Record<string, unknown>) =>
+    request(app.getHttpServer() as Server)
+      .patch(`/accounts/${id}/opening-balance`)
+      .set('Authorization', `Bearer ${tokenFor(userId)}`)
+      .send(body);
+
   const readAccounts = async (userId: string) => {
     const response = await list(userId);
     expect(response.status).toBe(200);
@@ -82,7 +88,13 @@ describe('accounts across tenants', () => {
   const seedAccount = (userId: string, budgetId: string, name: string) =>
     prisma.account.create({ data: { userId, budgetId, name, type: 'CASH' } });
 
-  const seedTransaction = (userId: string, budgetId: string, accountId: string, amount: bigint) =>
+  const seedTransaction = (
+    userId: string,
+    budgetId: string,
+    accountId: string,
+    amount: bigint,
+    over: Record<string, unknown> = {},
+  ) =>
     prisma.transaction.create({
       data: {
         userId,
@@ -91,6 +103,7 @@ describe('accounts across tenants', () => {
         date: toDbDate(todayIn(ZONE)),
         amount,
         type: 'INCOME',
+        ...over,
       },
     });
 
@@ -252,5 +265,40 @@ describe('accounts across tenants', () => {
     const transaction = await prisma.transaction.findFirstOrThrow({ where: { userId: USER_B } });
     expect(transaction.budgetId).toBe(budgetB.id);
     expect(transaction.userId).toBe(USER_B);
+  });
+
+  it('refuses to correct the opening balance of another user, and leaves it untouched', async () => {
+    const budgetA = await seedBudget(USER_A, 'A');
+    await seedBudget(USER_B, 'B');
+
+    const walletA = await seedAccount(USER_A, budgetA.id, 'Кошелёк A');
+    await seedTransaction(USER_A, budgetA.id, walletA.id, 125_050n, { isSystem: true });
+
+    const response = await correct(USER_B, walletA.id, {
+      amount: '1',
+      idempotencyKey: 'b-opened-the-opening-form',
+    });
+
+    expect(response.status).toBe(400);
+    expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
+
+    const stored = await prisma.transaction.findFirstOrThrow({ where: { userId: USER_A } });
+    expect(stored.amount).toBe(125_050n);
+  });
+
+  it('reads how editable an opening balance is from the caller own records only', async () => {
+    const budgetA = await seedBudget(USER_A, 'A');
+    const budgetB = await seedBudget(USER_B, 'B');
+
+    const walletA = await seedAccount(USER_A, budgetA.id, 'Кошелёк A');
+    const walletB = await seedAccount(USER_B, budgetB.id, 'Кошелёк B');
+
+    await seedTransaction(USER_A, budgetA.id, walletA.id, 125_050n, { isSystem: true });
+    await seedTransaction(USER_B, budgetB.id, walletB.id, -3_000n, { type: 'EXPENSE' });
+
+    const seen = await readAccounts(USER_A);
+
+    expect(seen.accounts).toHaveLength(1);
+    expect(seen.accounts[0]).toMatchObject({ openingEditable: true });
   });
 });

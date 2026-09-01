@@ -10,8 +10,8 @@ import { moneyOf } from '@/lib/money';
 const money = moneyOf('en-US', 'PLN', 2);
 
 const held: AccountBalanceDto[] = [
-  { id: 'a1', name: 'Wallet', type: 'CASH', balance: '125050' },
-  { id: 'a2', name: 'Card', type: 'DEBIT', balance: '-4000' },
+  { id: 'a1', name: 'Wallet', type: 'CASH', openingEditable: true, balance: '125050' },
+  { id: 'a2', name: 'Card', type: 'DEBIT', openingEditable: true, balance: '-4000' },
 ];
 
 const show = (

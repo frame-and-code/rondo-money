@@ -31,6 +31,8 @@ import {
   IconArrowsExchange,
   IconArrowUpRight,
   IconCalendar,
+  IconLoader,
+  IconLock,
   IconSelector,
   IconTrash,
 } from '@tabler/icons-react';
@@ -81,6 +83,12 @@ export interface TransactionDraft {
   date: string;
   categoryId: string | null;
   payee: string | null;
+  idempotencyKey: string;
+}
+
+export interface OpeningDraft {
+  accountId: string;
+  amount: string;
   idempotencyKey: string;
 }
 
@@ -150,10 +158,11 @@ export function TransactionDialog({
   written,
   onSave,
   onTransfer,
+  onCorrectOpening,
   onDelete,
 }: {
   record: TransactionDto | null;
-  accounts: { id: string; name: string; balance: string }[];
+  accounts: { id: string; name: string; balance: string; openingEditable: boolean }[];
   groups: PickableGroup[];
   kept: PickableCategory | null;
   payees: string[];
@@ -165,6 +174,7 @@ export function TransactionDialog({
   written: number;
   onSave: (draft: TransactionDraft, andMore: boolean) => void;
   onTransfer: (draft: TransferDraft, andMore: boolean) => void;
+  onCorrectOpening: (draft: OpeningDraft) => void;
   onDelete: () => void;
 }): ReactNode {
   const { t, locale } = useTranslations();
@@ -210,9 +220,13 @@ export function TransactionDialog({
   const [query, setQuery] = useState('');
   const [flash, setFlash] = useState<string | null>(null);
   const [sent, setSent] = useState<{ payee: string; amount: string } | null>(null);
+  const [pressed, setPressed] = useState<'one' | 'more' | null>(null);
   const landed = useRef(written);
 
   const locked = record?.isSystem ?? false;
+  const frozen =
+    locked &&
+    !(accounts.find((account) => account.id === record?.accountId)?.openingEditable ?? false);
   const transferring = kind === 'TRANSFER';
   const type: EntryType = kind === 'TRANSFER' ? 'EXPENSE' : kind;
   const spending = kind === 'EXPENSE';
@@ -229,7 +243,11 @@ export function TransactionDialog({
   const named = transferring
     ? toAccountId !== '' && !oneAccountTwice
     : kind === 'INCOME' || categoryId !== null;
-  const ready = minor !== null && minor > 0n && named;
+  const ready =
+    minor !== null && (locked ? minor >= 0n && typed.typed && !frozen : minor > 0n && named);
+
+  const savingMore = busy && pressed === 'more';
+  const savingOne = busy && pressed !== 'more';
 
   const pool: PickableCategory = { id: '', name: t('transactions.pool'), icon: null, color: null };
 
@@ -267,6 +285,12 @@ export function TransactionDialog({
     idempotencyKey: key,
   });
 
+  const openingOf = (): OpeningDraft => ({
+    accountId,
+    amount: (minor ?? 0n).toString(10),
+    idempotencyKey: key,
+  });
+
   const transferOf = (): TransferDraft => ({
     fromAccountId: accountId,
     toAccountId,
@@ -278,6 +302,14 @@ export function TransactionDialog({
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     if (busy || !ready) return;
+
+    setPressed('one');
+
+    if (locked) {
+      onCorrectOpening(openingOf());
+
+      return;
+    }
 
     if (transferring) {
       onTransfer(transferOf(), false);
@@ -293,6 +325,7 @@ export function TransactionDialog({
 
     const draft = draftOf();
 
+    setPressed('more');
     setSent({
       payee: draft.payee ?? t('transactions.noPayee'),
       amount: money.format(minor ?? 0n),
@@ -382,7 +415,7 @@ export function TransactionDialog({
             setAmount(next);
             edited();
           }}
-          disabled={busy}
+          disabled={busy || frozen}
           className={cn(MONEY_FIELD, FIELD_SHAPE)}
         />
         {!locked && !transferring && minor !== null && minor > 0n ? (
@@ -392,7 +425,7 @@ export function TransactionDialog({
             })}
           </p>
         ) : null}
-        {minor === 0n && typed.typed ? (
+        {!locked && minor === 0n && typed.typed ? (
           <p role="alert" className="text-destructive text-xs">
             {t('transactions.amountZero')}
           </p>
@@ -562,6 +595,14 @@ export function TransactionDialog({
         </p>
       )}
 
+      {frozen ? (
+        <Alert>
+          <IconLock />
+          <AlertTitle>{t('transactions.openingFrozenTitle')}</AlertTitle>
+          <AlertDescription>{t('transactions.openingFrozen')}</AlertDescription>
+        </Alert>
+      ) : null}
+
       {failed === null ? null : (
         <Alert variant="destructive">
           <IconAlertCircle />
@@ -588,13 +629,17 @@ export function TransactionDialog({
               disabled={busy || !ready}
               onClick={again}
             >
-              {t('transactions.saveAndMore')}
+              {savingMore ? <IconLoader className="size-4 animate-spin" /> : null}
+              {t(savingMore ? 'transactions.saving' : 'transactions.saveAndMore')}
             </Button>
           ) : null}
 
-          <Button type="submit" className="h-11 flex-1 rounded-full" disabled={busy || !ready}>
-            {t('transactions.save')}
-          </Button>
+          {frozen ? null : (
+            <Button type="submit" className="h-11 flex-1 rounded-full" disabled={busy || !ready}>
+              {savingOne ? <IconLoader className="size-4 animate-spin" /> : null}
+              {t(savingOne ? 'transactions.saving' : 'transactions.save')}
+            </Button>
+          )}
         </div>
 
         {record === null || locked ? null : (
