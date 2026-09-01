@@ -39,6 +39,11 @@ export function DeleteTransactionDialog({
   const amount = parseMoney(record.amount);
   const spending = amount < 0n;
   const back = -amount;
+  const moved = amount < 0n ? -amount : amount;
+  const transfer = record.transferId !== null;
+  const counter = record.counterAccountId ?? '';
+  const returnedTo = spending ? record.accountId : counter;
+  const takenFrom = spending ? counter : record.accountId;
 
   const press = (): void => {
     if (busy || asked) return;
@@ -50,20 +55,29 @@ export function DeleteTransactionDialog({
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">
-        {t('transactions.deleteTitle', {
-          payee: record.payee ?? t('transactions.noPayee'),
-          amount: money.format(amount),
-        })}
+        {transfer
+          ? t('transactions.deleteTransferTitle', { amount: money.format(moved) })
+          : t('transactions.deleteTitle', {
+              payee: record.payee ?? t('transactions.noPayee'),
+              amount: money.format(amount),
+            })}
       </h2>
 
       <ul className="text-muted-foreground flex flex-col gap-1 text-sm">
         <li data-testid="delete-account-line">
-          {t('transactions.deleteAccountLine', {
-            name: accountName(record.accountId) ?? '',
-            amount: money.format(back),
+          {t(transfer ? 'transactions.deleteTransferLine' : 'transactions.deleteAccountLine', {
+            name: accountName(transfer ? returnedTo : record.accountId) ?? '',
+            amount: money.format(transfer ? moved : back),
           })}
         </li>
-        {record.categoryId === null ? (
+        {transfer ? (
+          <li data-testid="delete-counter-line">
+            {t('transactions.deleteTransferCounterLine', {
+              name: accountName(takenFrom) ?? '',
+              amount: money.format(moved),
+            })}
+          </li>
+        ) : record.categoryId === null ? (
           <li data-testid="delete-pool-line">
             {t('transactions.deletePoolLine', { amount: money.format(back) })}
           </li>
@@ -81,7 +95,13 @@ export function DeleteTransactionDialog({
         <Alert variant="destructive">
           <IconAlertCircle />
           <AlertTitle>
-            {t(spending ? 'transactions.failTitleExpense' : 'transactions.failTitleIncome')}
+            {t(
+              transfer
+                ? 'transactions.failTitleTransfer'
+                : spending
+                  ? 'transactions.failTitleExpense'
+                  : 'transactions.failTitleIncome',
+            )}
           </AlertTitle>
           <AlertDescription>{t(failed)}</AlertDescription>
         </Alert>

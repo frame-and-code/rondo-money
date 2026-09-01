@@ -84,7 +84,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
   budgetViewControllerReadOptions: ({ query }: { query: { month: string } }) => ({
     queryKey: [{ _id: 'budgetViewControllerRead', baseUrl: 'http://api', query }],
-    queryFn: () => Promise.resolve(view),
+    queryFn: () => Promise.resolve({ ...view, month: query.month }),
   }),
   budgetViewControllerReadQueryKey: ({ query }: { query: { month: string } }) => [
     { _id: 'budgetViewControllerRead', baseUrl: 'http://api', query },

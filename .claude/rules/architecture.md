@@ -281,11 +281,16 @@ specification, and prose describing it is a summary rather than a replacement.
    alone, and it never spreads to a number. Every colour here is a theme token, because a literal
    is right in one theme and wrong in the other.
    **Money flow is the screen where both halves of that rule stop.** An expense there is the ordinary
-   case rather than a warning, so an amount below zero keeps the plain colour there, and income
-   takes `text-success`, the token the goal badge already carries. Red stays with an account
+   case rather than a warning, so an amount below zero keeps the plain colour there, and money
+   arriving on an account takes `text-success`, the token the goal badge already carries, income
+   and the receiving leg of a transfer alike. Red stays with an account
    balance below zero wherever that screen shows one, the panel, its narrow switcher and the
    picker in the form, and nowhere else on that screen. Painting every expense red would turn the one screen that is nothing
-   but expenses into a sheet of warnings, and the colour would stop naming anything.
+   but expenses into a sheet of warnings, and the colour would stop naming anything. What the
+   record form's kind buttons carry is not an amount but a control, and each of the three takes a
+   tone of its own so the chosen one is read without its label: the primary for an expense,
+   `success` for income and `warning` for a transfer. Two of them sharing a tone would leave the
+   pressed state saying nothing.
 
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in

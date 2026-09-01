@@ -15,6 +15,9 @@ import {
   transactionsControllerPayeesQueryKey,
   transactionsControllerRemoveMutation,
   transactionsControllerUpdateMutation,
+  transfersControllerCreateMutation,
+  transfersControllerRemoveMutation,
+  transfersControllerUpdateMutation,
 } from '@rondo/api-client/react-query';
 import { monthOf, todayIn, type AccountType, type TransactionDto } from '@rondo/types';
 import { Button } from '@rondo/ui/components/ui/button';
@@ -41,6 +44,7 @@ import {
   type PickableCategory,
   type PickableGroup,
   type TransactionDraft,
+  type TransferDraft,
 } from '@/components/transaction-dialog';
 import { AddTodayRow, TransactionEmpty } from '@/components/transaction-empty';
 import {
@@ -60,6 +64,7 @@ import { moneyOf } from '@/lib/money';
 import { keepsTheKey, saveFailureKind, type SaveFailureKind } from '@/lib/save-failure';
 import { transactionFailure } from '@/lib/transaction-failure';
 import { feedDays } from '@/lib/transaction-feed';
+import { transferFailure } from '@/lib/transfer-failure';
 
 type Editing =
   | { kind: 'create'; on?: string }
@@ -88,14 +93,14 @@ export function MoneyFlow(): ReactNode {
 
   const budgetId = budget?.id ?? null;
 
+  const today = budget === null ? null : todayIn(budget.timezone);
+
   useEffect(() => {
-    setLast(budgetId === null ? NO_LAST_ENTRY : readLastEntry(budgetId));
-  }, [budgetId]);
+    setLast(budgetId === null || today === null ? NO_LAST_ENTRY : readLastEntry(budgetId, today));
+  }, [budgetId, today]);
 
   const accounts = useQuery(accountsControllerListOptions());
   const payees = useQuery(transactionsControllerPayeesOptions());
-
-  const today = budget === null ? null : todayIn(budget.timezone);
 
   const view = useQuery({
     ...budgetViewControllerReadOptions({
@@ -217,6 +222,10 @@ export function MoneyFlow(): ReactNode {
     setFailed(transactionFailure(error));
   };
 
+  const refusedTransfer = (error: unknown): void => {
+    setFailed(transferFailure(error));
+  };
+
   const write = useMutation({ ...transactionsControllerCreateMutation(), onError: refused });
 
   const change = useMutation({
@@ -229,6 +238,24 @@ export function MoneyFlow(): ReactNode {
     ...transactionsControllerRemoveMutation(),
     onSuccess: settled,
     onError: refused,
+  });
+
+  const writeTransfer = useMutation({
+    ...transfersControllerCreateMutation(),
+    onSuccess: settled,
+    onError: refusedTransfer,
+  });
+
+  const changeTransfer = useMutation({
+    ...transfersControllerUpdateMutation(),
+    onSuccess: settled,
+    onError: refusedTransfer,
+  });
+
+  const dropTransfer = useMutation({
+    ...transfersControllerRemoveMutation(),
+    onSuccess: settled,
+    onError: refusedTransfer,
   });
 
   const refusedAccount = (error: unknown): void => {
@@ -294,7 +321,7 @@ export function MoneyFlow(): ReactNode {
 
     setLast(entry);
     if (budgetId !== null) {
-      storeLastEntry(budgetId, entry);
+      storeLastEntry(budgetId, entry, today);
     }
 
     write.mutate(
@@ -308,6 +335,26 @@ export function MoneyFlow(): ReactNode {
           : settled,
       },
     );
+  };
+
+  const saveTransfer = (draft: TransferDraft): void => {
+    const body = {
+      fromAccountId: draft.fromAccountId,
+      toAccountId: draft.toAccountId,
+      amount: draft.amount,
+      date: draft.date,
+      idempotencyKey: draft.idempotencyKey,
+    };
+
+    const held = editing?.kind === 'edit' ? editing.record.transferId : null;
+
+    if (held !== null) {
+      changeTransfer.mutate({ path: { transferId: held }, body });
+
+      return;
+    }
+
+    writeTransfer.mutate({ body });
   };
 
   const saveAccount = (draft: AccountDraft): void => {
@@ -343,7 +390,13 @@ export function MoneyFlow(): ReactNode {
     }
   };
 
-  const busy = write.isPending || change.isPending || drop.isPending;
+  const busy =
+    write.isPending ||
+    change.isPending ||
+    drop.isPending ||
+    writeTransfer.isPending ||
+    changeTransfer.isPending ||
+    dropTransfer.isPending;
 
   const titleOf = (open: Editing | null): string => {
     if (open?.kind === 'edit') return t('transactions.editTitle');
@@ -375,6 +428,7 @@ export function MoneyFlow(): ReactNode {
           busy={busy}
           written={written}
           onSave={save}
+          onTransfer={saveTransfer}
           onDelete={() => {
             setFailed(null);
             setEditing(
@@ -394,12 +448,23 @@ export function MoneyFlow(): ReactNode {
           categoryName={(id) => looks.get(id)?.name ?? null}
           failed={failed}
           busy={busy}
-          onDelete={() =>
+          onDelete={() => {
+            const held = editing.record.transferId;
+
+            if (held !== null) {
+              dropTransfer.mutate({
+                path: { transferId: held },
+                body: { idempotencyKey: editing.key },
+              });
+
+              return;
+            }
+
             drop.mutate({
               path: { id: editing.record.id },
               body: { idempotencyKey: editing.key },
-            })
-          }
+            });
+          }}
           onCancel={close}
         />
       ) : null}

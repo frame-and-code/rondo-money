@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accountsControllerCreate, accountsControllerList, accountsControllerRename, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, categoryTargetsControllerClose, categoryTargetsControllerSet, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, transactionsControllerCreate, transactionsControllerList, transactionsControllerPayees, transactionsControllerRemove, transactionsControllerUpdate, userSettingsControllerRead } from '../sdk.gen';
-import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, AccountsControllerRenameData, AccountsControllerRenameError, AccountsControllerRenameResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseError, CategoryTargetsControllerCloseResponse, CategoryTargetsControllerSetData, CategoryTargetsControllerSetError, CategoryTargetsControllerSetResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, TransactionsControllerCreateData, TransactionsControllerCreateError, TransactionsControllerCreateResponse, TransactionsControllerListData, TransactionsControllerListError, TransactionsControllerListResponse, TransactionsControllerPayeesData, TransactionsControllerPayeesError, TransactionsControllerPayeesResponse, TransactionsControllerRemoveData, TransactionsControllerRemoveError, TransactionsControllerRemoveResponse, TransactionsControllerUpdateData, TransactionsControllerUpdateError, TransactionsControllerUpdateResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
+import { accountsControllerCreate, accountsControllerList, accountsControllerRename, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, categoryTargetsControllerClose, categoryTargetsControllerSet, healthControllerCheck, meControllerIdentify, movesControllerMove, type Options, transactionsControllerCreate, transactionsControllerList, transactionsControllerPayees, transactionsControllerRemove, transactionsControllerUpdate, transfersControllerCreate, transfersControllerRemove, transfersControllerUpdate, userSettingsControllerRead } from '../sdk.gen';
+import type { AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, AccountsControllerRenameData, AccountsControllerRenameError, AccountsControllerRenameResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseError, CategoryTargetsControllerCloseResponse, CategoryTargetsControllerSetData, CategoryTargetsControllerSetError, CategoryTargetsControllerSetResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, TransactionsControllerCreateData, TransactionsControllerCreateError, TransactionsControllerCreateResponse, TransactionsControllerListData, TransactionsControllerListError, TransactionsControllerListResponse, TransactionsControllerPayeesData, TransactionsControllerPayeesError, TransactionsControllerPayeesResponse, TransactionsControllerRemoveData, TransactionsControllerRemoveError, TransactionsControllerRemoveResponse, TransactionsControllerUpdateData, TransactionsControllerUpdateError, TransactionsControllerUpdateResponse, TransfersControllerCreateData, TransfersControllerCreateError, TransfersControllerCreateResponse, TransfersControllerRemoveData, TransfersControllerRemoveError, TransfersControllerRemoveResponse, TransfersControllerUpdateData, TransfersControllerUpdateError, TransfersControllerUpdateResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -584,7 +584,7 @@ export const transactionsControllerPayeesOptions = (options?: Options<Transactio
 /**
  * Change a record
  *
- * Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all.
+ * Rewrites every field, the account and the type included, and runs the rules of the type it becomes. An opening balance takes a correction of its amount and refuses every other change. A transfer leg is not changed here at all: the pair it belongs to has its own operations under /transfers.
  */
 export const transactionsControllerUpdateMutation = (options?: Partial<Options<TransactionsControllerUpdateData>>): UseMutationOptions<TransactionsControllerUpdateResponse, TransactionsControllerUpdateError, Options<TransactionsControllerUpdateData>> => {
     const mutationOptions: UseMutationOptions<TransactionsControllerUpdateResponse, TransactionsControllerUpdateError, Options<TransactionsControllerUpdateData>> = {
@@ -609,6 +609,63 @@ export const transactionsControllerRemoveMutation = (options?: Partial<Options<T
     const mutationOptions: UseMutationOptions<TransactionsControllerRemoveResponse, TransactionsControllerRemoveError, Options<TransactionsControllerRemoveData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await transactionsControllerRemove({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Move money between two accounts
+ *
+ * Writes both legs of one transfer in one database transaction: the amount leaves one account and arrives on the other, under a shared identifier. Neither envelope nor ready to assign is touched, because the money never leaves the budget.
+ */
+export const transfersControllerCreateMutation = (options?: Partial<Options<TransfersControllerCreateData>>): UseMutationOptions<TransfersControllerCreateResponse, TransfersControllerCreateError, Options<TransfersControllerCreateData>> => {
+    const mutationOptions: UseMutationOptions<TransfersControllerCreateResponse, TransfersControllerCreateError, Options<TransfersControllerCreateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await transfersControllerCreate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Change a transfer
+ *
+ * Rewrites both legs together, the two accounts included, so the pair can never disagree about the amount, the day or where the money went.
+ */
+export const transfersControllerUpdateMutation = (options?: Partial<Options<TransfersControllerUpdateData>>): UseMutationOptions<TransfersControllerUpdateResponse, TransfersControllerUpdateError, Options<TransfersControllerUpdateData>> => {
+    const mutationOptions: UseMutationOptions<TransfersControllerUpdateResponse, TransfersControllerUpdateError, Options<TransfersControllerUpdateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await transfersControllerUpdate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Remove a transfer
+ *
+ * Deletes both legs together, and both balances follow at once. It is a POST because the idempotency key travels in the body.
+ */
+export const transfersControllerRemoveMutation = (options?: Partial<Options<TransfersControllerRemoveData>>): UseMutationOptions<TransfersControllerRemoveResponse, TransfersControllerRemoveError, Options<TransfersControllerRemoveData>> => {
+    const mutationOptions: UseMutationOptions<TransfersControllerRemoveResponse, TransfersControllerRemoveError, Options<TransfersControllerRemoveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await transfersControllerRemove({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

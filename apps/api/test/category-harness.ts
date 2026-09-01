@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { type Server } from 'node:http';
 
 import { type INestApplication } from '@nestjs/common';
@@ -103,6 +104,14 @@ export interface CategoryHarness {
       endMonth?: string | null;
     },
   ) => Promise<{ id: string }>;
+  seedTransfer: (
+    userId: string,
+    budgetId: string,
+    legs: { fromAccountId: string; toAccountId: string },
+    date: string,
+    amount: bigint,
+    transferId?: string,
+  ) => Promise<{ transferId: string; fromId: string; toId: string }>;
   seedAssignment: (
     userId: string,
     budgetId: string,
@@ -199,6 +208,26 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
           type: TransactionType.EXPENSE,
         },
       }),
+    seedTransfer: async (userId, budgetId, legs, date, amount, transferId) => {
+      const shared = transferId ?? randomUUID();
+      const leg = (accountId: string, signed: bigint) =>
+        prisma.transaction.create({
+          data: {
+            userId,
+            budgetId,
+            accountId,
+            date: toDbDate(parseCalendarDate(date)),
+            amount: signed,
+            type: TransactionType.TRANSFER,
+            transferId: shared,
+          },
+        });
+
+      const from = await leg(legs.fromAccountId, -amount);
+      const to = await leg(legs.toAccountId, amount);
+
+      return { transferId: shared, fromId: from.id, toId: to.id };
+    },
     seedTarget: (userId, budgetId, categoryId, target) =>
       prisma.categoryTarget.create({
         data: {

@@ -2,7 +2,6 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Prisma, type Transaction } from '@rondo/db';
 import {
   calendarDateOf,
-  isTransactionType,
   parseCalendarDate,
   parseMoney,
   serializeMoney,
@@ -25,6 +24,7 @@ import {
   type SystemEntry,
 } from '@/transactions/entry-rules';
 import { ListTransactionsQueryDto, PAGE_SIZE } from '@/transactions/list-transactions.query.dto';
+import { decodeTransaction, serializeTransaction } from '@/transactions/transaction-record';
 import { TransactionResponse } from '@/transactions/transaction.response';
 import { PayeesResponse, TransactionPageResponse } from '@/transactions/transactions.response';
 import { UpdateTransactionDto } from '@/transactions/update-transaction.dto';
@@ -73,57 +73,6 @@ function counterpartOf(row: Transaction, held: Counterpart[]): string | null {
   );
 
   return pair?.accountId ?? null;
-}
-
-function serialize(row: Transaction, counterAccountId: string | null): Prisma.JsonObject {
-  return {
-    id: row.id,
-    accountId: row.accountId,
-    categoryId: row.categoryId,
-    date: calendarDateOf(row.date),
-    amount: serializeMoney(row.amount),
-    type: row.type,
-    payee: row.payee,
-    isSystem: row.isSystem,
-    transferId: row.transferId,
-    counterAccountId,
-    createdAt: row.createdAt.toISOString(),
-  };
-}
-
-function decodeTransaction(stored: Prisma.JsonValue): TransactionResponse {
-  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
-    throw new Error(`A stored record is not an object: ${JSON.stringify(stored)}`);
-  }
-
-  const { id, accountId, categoryId, date, amount, type, payee, isSystem } = stored;
-  const { transferId, counterAccountId, createdAt } = stored;
-
-  if (
-    typeof id !== 'string' ||
-    typeof accountId !== 'string' ||
-    typeof date !== 'string' ||
-    typeof amount !== 'string' ||
-    typeof isSystem !== 'boolean' ||
-    typeof createdAt !== 'string' ||
-    !isTransactionType(type)
-  ) {
-    throw new Error(`A stored record is missing fields: ${JSON.stringify(stored)}`);
-  }
-
-  return {
-    id,
-    accountId,
-    categoryId: typeof categoryId === 'string' ? categoryId : null,
-    date: parseCalendarDate(date),
-    amount,
-    type,
-    payee: typeof payee === 'string' ? payee : null,
-    isSystem,
-    transferId: typeof transferId === 'string' ? transferId : null,
-    counterAccountId: typeof counterAccountId === 'string' ? counterAccountId : null,
-    createdAt,
-  };
 }
 
 interface Cursor {
@@ -200,7 +149,7 @@ export class TransactionsService {
           },
         });
 
-        return serialize(written, null);
+        return serializeTransaction(written, null);
       },
     );
   }
@@ -271,7 +220,7 @@ export class TransactionsService {
           },
         });
 
-        return serialize(written, null);
+        return serializeTransaction(written, null);
       },
     );
   }
@@ -300,7 +249,7 @@ export class TransactionsService {
 
         await tx.transaction.delete({ where: { id: current.id } });
 
-        return serialize(current, null);
+        return serializeTransaction(current, null);
       },
     );
   }
@@ -325,7 +274,7 @@ export class TransactionsService {
 
     return {
       transactions: page.map((row) =>
-        decodeTransaction(serialize(row, counterpartOf(row, counterparts))),
+        decodeTransaction(serializeTransaction(row, counterpartOf(row, counterparts))),
       ),
       days: await this.totalsOf(page, filter),
       nextCursor: found.length > limit && last ? encodeCursor(last) : null,

@@ -2,7 +2,11 @@ import type { TransactionDto } from '@rondo/types';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { TransactionDialog, type TransactionDraft } from '@/components/transaction-dialog';
+import {
+  TransactionDialog,
+  type TransactionDraft,
+  type TransferDraft,
+} from '@/components/transaction-dialog';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { en } from '@/i18n/messages/en';
 import { moneyOf } from '@/lib/money';
@@ -30,11 +34,13 @@ const show = (
     record?: TransactionDto | null;
     defaults?: { accountId: string; date: string; categoryId: string | null; payee: string | null };
     onSave?: (draft: TransactionDraft, andMore: boolean) => void;
+    onTransfer?: (draft: TransferDraft, andMore: boolean) => void;
     onDelete?: () => void;
     written?: number;
   } = {},
 ) => {
   const onSave = over.onSave ?? jest.fn();
+  const onTransfer = over.onTransfer ?? jest.fn();
   let written = over.written ?? 0;
 
   const view = (round: number) => (
@@ -52,6 +58,7 @@ const show = (
         busy={false}
         written={round}
         onSave={onSave}
+        onTransfer={onTransfer}
         onDelete={over.onDelete ?? jest.fn()}
       />
     </LocaleProvider>
@@ -64,7 +71,7 @@ const show = (
     rerender(view(written));
   };
 
-  return { onSave, land };
+  return { onSave, onTransfer, land };
 };
 
 const typeAmount = async (value: string): Promise<void> => {
@@ -236,6 +243,7 @@ describe('the form a record is written in', () => {
           busy={false}
           written={0}
           onSave={saved}
+          onTransfer={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -426,6 +434,7 @@ describe('the form a record is written in', () => {
           busy={false}
           written={0}
           onSave={jest.fn()}
+          onTransfer={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -453,6 +462,7 @@ describe('the form a record is written in', () => {
           busy={false}
           written={0}
           onSave={jest.fn()}
+          onTransfer={jest.fn()}
           onDelete={jest.fn()}
         />
       </LocaleProvider>,
@@ -473,5 +483,276 @@ describe('the form a record is written in', () => {
 
     expect(screen.queryByTestId('entry-flash')).toBeNull();
     expect(screen.getByLabelText(en['transactions.amountLabel'])).toHaveValue('100');
+  });
+});
+
+const pickAccount = async (label: string, name: string): Promise<void> => {
+  await userEvent.click(screen.getByRole('combobox', { name: label }));
+  await userEvent.click(await screen.findByRole('option', { name: new RegExp(name) }));
+};
+
+const leg: TransactionDto = {
+  id: 'r7',
+  accountId: 'a1',
+  categoryId: null,
+  date: '2026-08-20',
+  amount: '-50000',
+  type: 'TRANSFER',
+  payee: null,
+  isSystem: false,
+  transferId: 't1',
+  counterAccountId: 'a2',
+  createdAt: '2026-08-20T10:00:00.000Z',
+};
+
+const expense: TransactionDto = {
+  id: 'r8',
+  accountId: 'a1',
+  categoryId: 'c1',
+  date: '2026-08-20',
+  amount: '-12050',
+  type: 'EXPENSE',
+  payee: 'Corner cafe',
+  isSystem: false,
+  transferId: null,
+  counterAccountId: null,
+  createdAt: '2026-08-20T10:00:00.000Z',
+};
+
+describe('the form a transfer is written in', () => {
+  const chooseTransfer = async (): Promise<void> => {
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.kindTransfer'] }));
+  };
+
+  it('puts the second account where the envelope and the payee were', async () => {
+    show();
+    await chooseTransfer();
+
+    expect(
+      screen.queryByRole('combobox', { name: en['transactions.categoryLabel'] }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: en['transactions.payeeExpense'] }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.fromAccountLabel'] }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    ).toBeInTheDocument();
+  });
+
+  it('saves the two accounts, the amount and the day, and nothing else', async () => {
+    const { onTransfer, onSave } = show();
+
+    await chooseTransfer();
+    await typeAmount('500');
+    await pickAccount(en['transactions.toAccountLabel'], 'Card');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onTransfer).toHaveBeenCalledWith(
+      {
+        fromAccountId: 'a1',
+        toAccountId: 'a2',
+        amount: '50000',
+        date: TODAY,
+        idempotencyKey: expect.any(String),
+      },
+      false,
+    );
+  });
+
+  it('takes a tone of its own, so it is not read as another expense', async () => {
+    show();
+
+    const transfer = screen.getByRole('button', { name: en['transactions.kindTransfer'] });
+    const expense = screen.getByRole('button', { name: en['transactions.kindExpense'] });
+
+    expect(expense).toHaveClass('text-primary');
+    expect(transfer).not.toHaveClass('text-warning');
+
+    await chooseTransfer();
+
+    expect(transfer).toHaveClass('text-warning');
+    expect(expense).not.toHaveClass('text-primary');
+  });
+
+  it('fills the second account with the first one that is not the first side', async () => {
+    const { onTransfer } = show();
+
+    await chooseTransfer();
+
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    ).toHaveTextContent('Card');
+
+    await typeAmount('500');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    expect(onTransfer).toHaveBeenCalledWith(
+      expect.objectContaining({ fromAccountId: 'a1', toAccountId: 'a2' }),
+      false,
+    );
+  });
+
+  it('moves the second account away when the first side takes it over', async () => {
+    show();
+
+    await chooseTransfer();
+    await pickAccount(en['transactions.fromAccountLabel'], 'Card');
+
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    ).toHaveTextContent('Wallet');
+    expect(screen.queryByText(en['transactions.sameAccountHint'])).not.toBeInTheDocument();
+  });
+
+  it('will not send one account named twice, and says why', async () => {
+    show();
+
+    await chooseTransfer();
+    await typeAmount('500');
+    await pickAccount(en['transactions.toAccountLabel'], 'Wallet');
+
+    expect(screen.getByText(en['transactions.sameAccountHint'])).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en['transactions.save'] })).toBeDisabled();
+  });
+
+  it('opens a leg with both sides filled from the leg and the account at its other end', () => {
+    show({ record: leg });
+
+    expect(
+      screen.getByRole('heading', { name: en['transactions.editTransfer'] }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.fromAccountLabel'] }),
+    ).toHaveTextContent('Wallet');
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    ).toHaveTextContent('Card');
+  });
+
+  it('mints a new key when an account is picked after a refusal, since that is a new intent', async () => {
+    const onTransfer = jest.fn();
+    render(
+      <LocaleProvider initialLocale="en">
+        <TransactionDialog
+          record={null}
+          accounts={accounts}
+          groups={groups}
+          kept={null}
+          payees={[]}
+          money={money}
+          today={TODAY}
+          defaults={{ accountId: 'a1', date: TODAY, categoryId: null, payee: null }}
+          failed="transactions.failSameAccount"
+          busy={false}
+          written={0}
+          onSave={jest.fn()}
+          onTransfer={onTransfer}
+          onDelete={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.kindTransfer'] }));
+    await typeAmount('500');
+    await pickAccount(en['transactions.toAccountLabel'], 'Card');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    await pickAccount(en['transactions.fromAccountLabel'], 'Card');
+    await pickAccount(en['transactions.toAccountLabel'], 'Wallet');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    const [first, second] = onTransfer.mock.calls;
+
+    expect(second?.[0].idempotencyKey).not.toBe(first?.[0].idempotencyKey);
+  });
+});
+
+describe('what a record already written may become', () => {
+  it('does not offer to turn it into a transfer, which would write a second record beside it', () => {
+    show({ record: expense });
+
+    expect(
+      screen.queryByRole('button', { name: en['transactions.kindTransfer'] }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: en['transactions.kindExpense'] }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en['transactions.kindIncome'] })).toBeInTheDocument();
+  });
+
+  it('names the transfer in the refusal, rather than the income it is not', async () => {
+    render(
+      <LocaleProvider initialLocale="en">
+        <TransactionDialog
+          record={null}
+          accounts={accounts}
+          groups={groups}
+          kept={null}
+          payees={[]}
+          money={money}
+          today={TODAY}
+          defaults={{ accountId: 'a1', date: TODAY, categoryId: null, payee: null }}
+          failed="transactions.failSameAccount"
+          busy={false}
+          written={0}
+          onSave={jest.fn()}
+          onTransfer={jest.fn()}
+          onDelete={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByText(en['transactions.failTitleExpense'])).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.kindTransfer'] }));
+
+    expect(screen.getByText(en['transactions.failTitleTransfer'])).toBeInTheDocument();
+  });
+});
+
+describe('what the form offers when the budget holds one account', () => {
+  const withAccounts = (held: { id: string; name: string; balance: string }[]) =>
+    render(
+      <LocaleProvider initialLocale="en">
+        <TransactionDialog
+          record={null}
+          accounts={held}
+          groups={groups}
+          kept={null}
+          payees={[]}
+          money={money}
+          today={TODAY}
+          defaults={{ accountId: 'a1', date: TODAY, categoryId: null, payee: null }}
+          failed={null}
+          busy={false}
+          written={0}
+          onSave={jest.fn()}
+          onTransfer={jest.fn()}
+          onDelete={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+  it('leaves the transfer out, because there is no second account to send money to', () => {
+    withAccounts([{ id: 'a1', name: 'Wallet', balance: '125050' }]);
+
+    expect(
+      screen.queryByRole('button', { name: en['transactions.kindTransfer'] }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: en['transactions.kindExpense'] }),
+    ).toBeInTheDocument();
+  });
+
+  it('offers it as soon as a second account exists', () => {
+    withAccounts(accounts);
+
+    expect(
+      screen.getByRole('button', { name: en['transactions.kindTransfer'] }),
+    ).toBeInTheDocument();
   });
 });

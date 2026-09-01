@@ -6,6 +6,7 @@ import {
   MONEY_POSITIVE_PATTERN,
   MOVE_REFUSALS,
   TRANSACTION_REFUSALS,
+  TRANSFER_REFUSALS,
 } from '@rondo/types';
 
 import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
@@ -163,6 +164,9 @@ describe('OpenAPI document', () => {
       '/transactions/payees',
       '/transactions/{id}',
       '/transactions/{id}/delete',
+      '/transfers',
+      '/transfers/{transferId}',
+      '/transfers/{transferId}/delete',
       '/user-settings',
     ]);
   });
@@ -218,6 +222,9 @@ describe('OpenAPI document', () => {
   it('names the refusal enum, so a screen answers each refusal without reading the message', () => {
     expect(document.components?.schemas?.['MoveRefusal']).toMatchObject({
       enum: [...MOVE_REFUSALS],
+    });
+    expect(document.components?.schemas?.['TransferRefusal']).toMatchObject({
+      enum: [...TRANSFER_REFUSALS],
     });
   });
 
@@ -447,6 +454,39 @@ describe('OpenAPI document', () => {
       const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
 
       expect(Object.keys(properties).sort()).toEqual(['idempotencyKey', 'name']);
+    });
+  });
+
+  describe('a transfer', () => {
+    it('takes the two accounts, the amount, the day and the key, and nothing else', () => {
+      const schema = requestSchemaOf(document, document.paths['/transfers']?.post);
+      const properties = schema && 'properties' in schema ? (schema.properties ?? {}) : {};
+
+      expect(Object.keys(properties).sort()).toEqual([
+        'amount',
+        'date',
+        'fromAccountId',
+        'idempotencyKey',
+        'toAccountId',
+      ]);
+    });
+
+    it('answers the reason beside the message, and never as the message', () => {
+      const refused = document.paths['/transfers']?.post?.responses['400'];
+      const schema =
+        refused && 'content' in refused ? refused.content?.['application/json']?.schema : undefined;
+
+      expect(JSON.stringify(schema)).toContain('TransferRefusedResponse');
+
+      const shape = document.components?.schemas?.['TransferRefusedResponse'];
+      const properties = shape && 'properties' in shape ? (shape.properties ?? {}) : {};
+      const required = shape && 'required' in shape ? (shape.required ?? []) : [];
+
+      expect(JSON.stringify(properties['reason'])).toContain(
+        '#/components/schemas/TransferRefusal',
+      );
+      expect(required).not.toContain('reason');
+      expect(required).toContain('message');
     });
   });
 

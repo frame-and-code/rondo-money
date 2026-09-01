@@ -26,6 +26,8 @@ export const ACCOUNTS_TEST_EMAIL = 'e2e-accounts+clerk_test@example.com';
 
 export const ENTRIES_TEST_EMAIL = 'e2e-entries+clerk_test@example.com';
 
+export const TRANSFER_TEST_EMAIL = 'e2e-transfer+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }

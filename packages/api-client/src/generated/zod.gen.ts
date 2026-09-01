@@ -477,6 +477,55 @@ export const zDeleteTransactionDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
 
+export const zCreateTransferDto = z.object({
+    fromAccountId: z.uuid(),
+    toAccountId: z.uuid(),
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zTransferResponse = z.object({
+    transferId: z.uuid(),
+    from: zTransactionResponse,
+    to: zTransactionResponse
+});
+
+/**
+ * Why the transfer was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export const zTransferRefusal = z.enum([
+    'ACCOUNT_ARCHIVED',
+    'DATE_BEFORE_ACCOUNT',
+    'DATE_IN_FUTURE',
+    'NO_ACTIVE_BUDGET',
+    'SAME_ACCOUNT',
+    'UNKNOWN_ACCOUNT',
+    'UNKNOWN_TRANSFER'
+]);
+
+export const zTransferRefusedResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    reason: zTransferRefusal.optional()
+});
+
+export const zUpdateTransferDto = z.object({
+    fromAccountId: z.uuid(),
+    toAccountId: z.uuid(),
+    amount: z.string().max(20).regex(/^[1-9]\d*$/),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zDeleteTransferDto = z.object({
+    idempotencyKey: z.string().min(1).max(64)
+});
+
 /**
  * The database answered.
  */
@@ -713,3 +762,32 @@ export const zTransactionsControllerRemovePath = z.object({
  * The record that was removed.
  */
 export const zTransactionsControllerRemoveResponse = zTransactionResponse;
+
+export const zTransfersControllerCreateBody = zCreateTransferDto;
+
+/**
+ * The pair that now exists.
+ */
+export const zTransfersControllerCreateResponse = zTransferResponse;
+
+export const zTransfersControllerUpdateBody = zUpdateTransferDto;
+
+export const zTransfersControllerUpdatePath = z.object({
+    transferId: z.string()
+});
+
+/**
+ * The pair as it stands now.
+ */
+export const zTransfersControllerUpdateResponse = zTransferResponse;
+
+export const zTransfersControllerRemoveBody = zDeleteTransferDto;
+
+export const zTransfersControllerRemovePath = z.object({
+    transferId: z.string()
+});
+
+/**
+ * The pair that was removed.
+ */
+export const zTransfersControllerRemoveResponse = zTransferResponse;

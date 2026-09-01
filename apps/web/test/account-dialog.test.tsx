@@ -60,6 +60,9 @@ jest.mock('@rondo/api-client/react-query', () => ({
   transactionsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   transactionsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   transactionsControllerRemoveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transfersControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transfersControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transfersControllerRemoveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   budgetViewControllerReadQueryKey: () => [
     { _id: 'budgetViewControllerRead', baseUrl: 'http://api' },
   ],

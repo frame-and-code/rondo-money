@@ -67,8 +67,7 @@ export function TransactionRow({
   const { t, locale } = useTranslations();
 
   const amount = parseMoney(record.amount);
-  const editable = record.transferId === null;
-  const removable = !record.isSystem && record.transferId === null;
+  const removable = !record.isSystem;
 
   const category = record.categoryId === null ? null : categoryOf(record.categoryId);
   const look = category === null ? null : categoryLook(category.icon, category.color);
@@ -115,18 +114,16 @@ export function TransactionRow({
       data-testid={`transaction-${record.id}`}
       className={cn(
         'border-border/60 relative flex items-center gap-3 border-b px-4 py-3 transition-colors last:border-b-0',
-        editable && 'has-[[data-slot=row-open]:active]:bg-muted',
+        'has-[[data-slot=row-open]:active]:bg-muted',
       )}
     >
-      {editable ? (
-        <button
-          type="button"
-          data-slot="row-open"
-          aria-label={title()}
-          onClick={() => onOpen(record)}
-          className="absolute inset-0 z-0"
-        />
-      ) : null}
+      <button
+        type="button"
+        data-slot="row-open"
+        aria-label={title()}
+        onClick={() => onOpen(record)}
+        className="absolute inset-0 z-0"
+      />
 
       <span
         className="pointer-events-none relative z-10 grid size-9 shrink-0 place-items-center rounded-full bg-secondary text-muted-foreground"
