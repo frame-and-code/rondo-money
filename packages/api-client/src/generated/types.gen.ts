@@ -30,20 +30,43 @@ export type UnauthorizedResponse = {
 };
 
 /**
- * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
+ * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.
  */
 export type LanguageTag = 'ru' | 'en' | 'pl';
 
 export type UserSettingsResponse = {
     /**
-     * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
+     * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.
      */
     language: LanguageTag;
 };
 
+export type UpdateUserSettingsDto = {
+    /**
+     * The language to speak to this user in, as a BCP 47 primary subtag.
+     */
+    language: LanguageTag;
+    /**
+     * Minted once when the choice is made, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+};
+
+export type BadRequestResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+};
+
+export type ConflictResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+};
+
 export type CreateBudgetDto = {
     /**
-     * The interface language the user picked on this screen. It is a property of the user rather than of the budget, and it is stored in their settings. It travels with the budget because the default categories are written in it, and because there is no endpoint to change a language on its own yet.
+     * The interface language the user picked on this screen. It is a property of the user rather than of the budget, and it is stored in their settings. It travels with the budget because the default categories are written in it.
      */
     language: LanguageTag;
     /**
@@ -94,18 +117,6 @@ export type BudgetResponse = {
      * A user holds at most one active budget, and the screens follow that one.
      */
     active: boolean;
-};
-
-export type BadRequestResponse = {
-    statusCode: number;
-    error: string;
-    message: string | Array<string>;
-};
-
-export type ConflictResponse = {
-    statusCode: number;
-    error: string;
-    message: string;
 };
 
 /**
@@ -961,6 +972,39 @@ export type UserSettingsControllerReadResponses = {
 };
 
 export type UserSettingsControllerReadResponse = UserSettingsControllerReadResponses[keyof UserSettingsControllerReadResponses];
+
+export type UserSettingsControllerUpdateData = {
+    body: UpdateUserSettingsDto;
+    path?: never;
+    query?: never;
+    url: '/user-settings';
+};
+
+export type UserSettingsControllerUpdateErrors = {
+    /**
+     * The body was refused.
+     */
+    400: BadRequestResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type UserSettingsControllerUpdateError = UserSettingsControllerUpdateErrors[keyof UserSettingsControllerUpdateErrors];
+
+export type UserSettingsControllerUpdateResponses = {
+    /**
+     * The settings as they stand now.
+     */
+    200: UserSettingsResponse;
+};
+
+export type UserSettingsControllerUpdateResponse = UserSettingsControllerUpdateResponses[keyof UserSettingsControllerUpdateResponses];
 
 export type BudgetsControllerListData = {
     body?: never;

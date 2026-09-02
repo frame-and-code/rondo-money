@@ -2,12 +2,12 @@ import { type LanguageTag } from '@rondo/types';
 
 import { DEFAULT_LANGUAGE_TAG, isLanguageTag } from '@/user-settings/language';
 
-interface LanguagePreference {
+interface WeightedTag {
   tag: string;
   quality: number;
 }
 
-function parsePreference(entry: string): LanguagePreference | null {
+function parsePreference(entry: string): WeightedTag | null {
   const [tag, ...parameters] = entry.split(';').map((part) => part.trim().toLowerCase());
   if (!tag) return null;
 
@@ -28,7 +28,7 @@ export function detectLanguageTag(header: string | undefined): LanguageTag {
   const preferences = (header ?? '')
     .split(',')
     .map(parsePreference)
-    .filter((preference): preference is LanguagePreference => preference !== null)
+    .filter((preference): preference is WeightedTag => preference !== null)
     .sort((first, second) => second.quality - first.quality);
 
   for (const { tag } of preferences) {

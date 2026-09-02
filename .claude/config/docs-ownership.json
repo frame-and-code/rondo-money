@@ -63,6 +63,11 @@
       "phrase": "a result that describes a write it never made",
       "owner": ".claude/rules/architecture.md",
       "note": "why a repeat carrying a different request is refused rather than replayed"
+    },
+    {
+      "phrase": "changed inside a mutation like anything else",
+      "owner": ".claude/rules/architecture.md",
+      "note": "what an exempt model may still do; it moved once already"
     }
   ],
   "banned": [

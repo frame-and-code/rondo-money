@@ -26,10 +26,10 @@ up.
 
 ## How a module reaches the database
 
-[`apps/api/src/user-settings`](../../apps/api/src/user-settings) is the read path in full,
-controller → service → `SCOPED_PRISMA`, and
-[`add-a-domain-module`](../skills/add-a-domain-module/SKILL.md) walks a new module through it
-file by file. The write path is [`apps/api/src/mutations`](../../apps/api/src/mutations), and
+[`apps/api/src/user-settings`](../../apps/api/src/user-settings) holds the read path whole,
+controller → service → `SCOPED_PRISMA`, beside the smallest write there is, and
+[`add-a-domain-module`](../skills/add-a-domain-module/SKILL.md) walks a new module through the
+read part file by file. The write path is [`apps/api/src/mutations`](../../apps/api/src/mutations), and
 [`add-a-mutation`](../skills/add-a-mutation/SKILL.md) walks that one. What follows holds for
 both, and is not optional:
 
@@ -43,8 +43,10 @@ both, and is not optional:
   extension **throws** on one that is not, so the single write point is a mechanism rather than
   a convention. Which models are guarded is `MUTATION_GUARDED_MODELS` in
   [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), and the exemption list
-  beside it holds the two that are not: a user's settings, which their own first read creates,
-  and the idempotency key, which the mutation service writes on its own transaction;
+  beside it holds the two that are not: a user's settings, whose row their own first read
+  creates, and the idempotency key, which the mutation service writes on its own transaction.
+  Exempt means the mutator does not force itself on the model, not that it is barred from one:
+  the settings row is created by a read and changed inside a mutation like anything else;
 - raw SQL only through `ScopedRawRepository`, which supplies `userId` itself; a lint rule
   fails the gate anywhere else;
 - a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), both

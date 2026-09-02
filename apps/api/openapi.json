@@ -110,6 +110,67 @@
         "tags": [
           "UserSettings"
         ]
+      },
+      "patch": {
+        "description": "Writes the language onto the settings of the caller, creating the row when they have never read it. The theme is not here on purpose: it belongs to the device rather than to the account, so it never reaches the server.",
+        "operationId": "UserSettingsController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The settings as they stand now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change the language the interface speaks",
+        "tags": [
+          "UserSettings"
+        ]
       }
     },
     "/budgets": {
@@ -2239,13 +2300,13 @@
           "en",
           "pl"
         ],
-        "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7."
+        "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards."
       },
       "UserSettingsResponse": {
         "type": "object",
         "properties": {
           "language": {
-            "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.",
+            "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.",
             "example": "en",
             "allOf": [
               {
@@ -2258,11 +2319,92 @@
           "language"
         ]
       },
+      "UpdateUserSettingsDto": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "description": "The language to speak to this user in, as a BCP 47 primary subtag.",
+            "example": "ru",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LanguageTag"
+              }
+            ]
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the choice is made, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "language",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "BadRequestResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ConflictResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 409
+          },
+          "error": {
+            "type": "string",
+            "example": "Conflict"
+          },
+          "message": {
+            "type": "string",
+            "example": "Refusing the mutation carrying key \"form-opened-once\": the idempotency key was claimed by a different request, and answering with the first one's result would report a write it never made"
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
       "CreateBudgetDto": {
         "type": "object",
         "properties": {
           "language": {
-            "description": "The interface language the user picked on this screen. It is a property of the user rather than of the budget, and it is stored in their settings. It travels with the budget because the default categories are written in it, and because there is no endpoint to change a language on its own yet.",
+            "description": "The interface language the user picked on this screen. It is a property of the user rather than of the budget, and it is stored in their settings. It travels with the budget because the default categories are written in it.",
             "example": "en",
             "allOf": [
               {
@@ -2355,62 +2497,6 @@
           "timezone",
           "firstMonth",
           "active"
-        ]
-      },
-      "BadRequestResponse": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "example": 400
-          },
-          "error": {
-            "type": "string",
-            "example": "Bad Request"
-          },
-          "message": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            ],
-            "example": [
-              "name must be longer than or equal to 1 characters"
-            ]
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
-        ]
-      },
-      "ConflictResponse": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number",
-            "example": 409
-          },
-          "error": {
-            "type": "string",
-            "example": "Conflict"
-          },
-          "message": {
-            "type": "string",
-            "example": "Refusing the mutation carrying key \"form-opened-once\": the idempotency key was claimed by a different request, and answering with the first one's result would report a write it never made"
-          }
-        },
-        "required": [
-          "statusCode",
-          "error",
-          "message"
         ]
       },
       "AccountType": {

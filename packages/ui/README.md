@@ -20,7 +20,13 @@ src/
                         # input-group, item, label, popover, radio-group, select, separator,
                         # skeleton, textarea, tooltip
     theme-provider.tsx  # next-themes provider (light/dark)
-    theme-toggle.tsx    # theme switch used in the app header
+    theme-toggle.tsx    # the one-press light/dark switch in the app header
+    theme-select.tsx    # the three-way choice on the settings screen, one icon per theme,
+                        # labels passed in, so next-themes stays in this package and the
+                        # strings stay in apps/web
+  lib/theme-switch.ts   # `switchTheme`: marks <html> for the length of a theme change, which
+                        # is what the colour transition in the app's globals.css keys on. Both
+                        # theme controls go through it, so neither switch snaps
   hooks/use-mobile.ts   # `useIsMobile`: the breakpoint a component branches on when the
                         # phone needs a different container, not just different classes
   lib/utils.ts          # `cn` — the clsx + tailwind-merge helper every primitive uses

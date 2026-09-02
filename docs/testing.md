@@ -107,8 +107,11 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
 - **Each scenario owns its account, and that is not redundancy.** The first authenticated
   request a user makes creates their settings row and fixes their interface language from
   `Accept-Language`, so whichever scenario signs in first decides it for every later one.
-  `locale.spec.ts` therefore owns `LOCALE_TEST_EMAIL` and no other spec touches it; a scenario
-  that needs a language of its own adds an account rather than sharing one.
+  A spec about the language therefore owns its own address and no other spec touches it:
+  `locale.spec.ts` owns `LOCALE_TEST_EMAIL`, `settings.spec.ts` owns `SETTINGS_TEST_EMAIL`, and
+  a scenario that needs a language of its own adds an account rather than sharing one. The
+  settings screen writes the language to the account, so that spec recreates its user at the
+  start of each test rather than keeping one.
 - **What a scenario writes decides how its account is made.** An account is created once and
   kept when the scenario only reads with it, and also when the scenario needs a finished setup,
   because the helper that walks one through setup checks where it stands first and is safe to
@@ -276,3 +279,9 @@ That failure means a missing test, never a lowered threshold.
   [ci.md](ci.md). Since the quality gate landed, this is not only a report. The Sonar quality gate
   blocks a pull request whose **new** code
   is under-covered, so a red `sonar` is answered with a test, not with a threshold.
+  **A file is only measured where a jest run collects it.** `@rondo/ui` ships no tests of its
+  own and is exercised through `apps/web`, so that config roots itself at the repository and
+  collects from `packages/ui/src` as well as its own `src`. Jest does not instrument files
+  outside `rootDir`, which is why the root sits above both rather than in `apps/web`. Without
+  it a component the web suite exercises reads as nought covered, and a new one there fails the
+  gate for a test that already exists.

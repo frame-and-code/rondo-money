@@ -1,10 +1,16 @@
 /** @type {import('jest').Config} */
 export default {
   testEnvironment: 'jsdom',
-  rootDir: '.',
-  roots: ['<rootDir>/src', '<rootDir>/test'],
+  rootDir: '../..',
+  roots: ['<rootDir>/apps/web/src', '<rootDir>/apps/web/test'],
   collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.{ts,tsx}'],
+  collectCoverageFrom: [
+    'apps/web/src/**/*.{ts,tsx}',
+    'packages/ui/src/**/*.{ts,tsx}',
+    '!packages/ui/src/components/ui/**',
+    '!packages/ui/src/hooks/**',
+  ],
+  coverageDirectory: '<rootDir>/apps/web/coverage',
   coverageReporters: [['lcov', { projectRoot: '../..' }], 'text-summary'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testRegex: '\\.(spec|test)\\.tsx?$',
@@ -20,10 +26,10 @@ export default {
     ],
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@rondo/ui/(.*)$': '<rootDir>/../../packages/ui/src/$1',
-    '^@rondo/api-client$': '<rootDir>/../../packages/api-client/src/index.ts',
-    '^@rondo/api-client/react-query$': '<rootDir>/../../packages/api-client/src/react-query.ts',
+    '^@/(.*)$': '<rootDir>/apps/web/src/$1',
+    '^@rondo/ui/(.*)$': '<rootDir>/packages/ui/src/$1',
+    '^@rondo/api-client$': '<rootDir>/packages/api-client/src/index.ts',
+    '^@rondo/api-client/react-query$': '<rootDir>/packages/api-client/src/react-query.ts',
   },
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/apps/web/test/setup.ts'],
 };

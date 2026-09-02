@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ClerkProviderLocalized>
             <ApiProvider>
               <SettingsLocaleSync />
-              <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                 {children}
               </ThemeProvider>
             </ApiProvider>

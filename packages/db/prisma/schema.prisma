@@ -43,8 +43,8 @@ model UserSettings {
   userId String @unique @map("user_id")
 
   /// The interface language, detected from the caller's `Accept-Language` when the row is
-  /// first created (F1.6) and editable by the user in Phase 7. The default is not cosmetic:
-  /// a NOT NULL column cannot be added to a non-empty table without one.
+  /// first created and changed by the user on the settings screen. The default is not
+  /// cosmetic: a NOT NULL column cannot be added to a non-empty table without one.
   language Language @default(EN)
 
   createdAt DateTime @default(now()) @map("created_at")

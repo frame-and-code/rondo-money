@@ -233,8 +233,19 @@ export const ru = {
   'accounts.reconcileConfirm': 'Сверить',
   'netWorth.slotTitle': 'Слот раздела «Капитал»',
   'netWorth.slotBody': 'Сюда встанет график капитала.',
-  'settings.slotTitle': 'Слот раздела «Настройки»',
-  'settings.slotBody': 'Сюда встанут валюта, таймзона и язык бюджета.',
+  'settings.language': 'Язык интерфейса',
+  'settings.theme': 'Тема',
+  'settings.themeSystem': 'Системная',
+  'settings.themeLight': 'Светлая',
+  'settings.themeDark': 'Тёмная',
+  'settings.languageNote':
+    'Сохраняется в аккаунте. На других устройствах приложение тоже будет открываться на этом языке.',
+  'settings.themeNote':
+    'Сохраняется только на этом устройстве. На каждом устройстве можно выбрать свою тему.',
+  'settings.saveFailedTitle': 'Язык не сохранился',
+  'settings.saveFailed':
+    'Сервер не принял выбор, интерфейс остался на прежнем языке. Попробуйте ещё раз.',
+  'settings.saveFailedDismiss': 'Понятно',
 
   'onboarding.progress': 'Настройка, шаг {{step}} из 3',
   'onboarding.step1Title': 'Бюджет',

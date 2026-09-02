@@ -22,7 +22,7 @@ export const zUnauthorizedResponse = z.object({
 });
 
 /**
- * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changeable by the user from Phase 7.
+ * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.
  */
 export const zLanguageTag = z.enum([
     'ru',
@@ -32,6 +32,26 @@ export const zLanguageTag = z.enum([
 
 export const zUserSettingsResponse = z.object({
     language: zLanguageTag
+});
+
+export const zUpdateUserSettingsDto = z.object({
+    language: zLanguageTag,
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zBadRequestResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ])
+});
+
+export const zConflictResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string()
 });
 
 export const zCreateBudgetDto = z.object({
@@ -51,21 +71,6 @@ export const zBudgetResponse = z.object({
     timezone: z.string(),
     firstMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
     active: z.boolean()
-});
-
-export const zBadRequestResponse = z.object({
-    statusCode: z.number(),
-    error: z.string(),
-    message: z.union([
-        z.string(),
-        z.array(z.string())
-    ])
-});
-
-export const zConflictResponse = z.object({
-    statusCode: z.number(),
-    error: z.string(),
-    message: z.string()
 });
 
 /**
@@ -586,6 +591,13 @@ export const zUserSettingsControllerReadHeaders = z.object({
  * The settings that exist now.
  */
 export const zUserSettingsControllerReadResponse = zUserSettingsResponse;
+
+export const zUserSettingsControllerUpdateBody = zUpdateUserSettingsDto;
+
+/**
+ * The settings as they stand now.
+ */
+export const zUserSettingsControllerUpdateResponse = zUserSettingsResponse;
 
 /**
  * The budgets that exist now.

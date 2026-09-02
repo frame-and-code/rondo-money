@@ -9,7 +9,6 @@ import { IconLayoutSidebar } from '@tabler/icons-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { SectionNav } from '@/components/section-nav';
 import { useTranslations } from '@/i18n/locale-context';
 import { activeSection, APP_NAME, documentTitle } from '@/lib/sections';
@@ -89,7 +88,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             {current === undefined ? null : t(current.labelKey)}
           </h1>
           <div className="flex-1" />
-          <LocaleSwitcher />
           <ThemeToggle label={t('common.themeToggle.trigger')} />
           <UserButton />
         </header>

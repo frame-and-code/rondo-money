@@ -21,6 +21,14 @@ const USER_GERMAN = `${USER_PREFIX}German`;
 const USER_SILENT = `${USER_PREFIX}Silent`;
 const USER_A = `${USER_PREFIX}OwnerA`;
 const USER_B = `${USER_PREFIX}OwnerB`;
+const USER_PICKS = `${USER_PREFIX}Picks`;
+const USER_STORED = `${USER_PREFIX}Stored`;
+const USER_UNSEEN = `${USER_PREFIX}Unseen`;
+const USER_REFUSED = `${USER_PREFIX}Refused`;
+const USER_TWICE = `${USER_PREFIX}Twice`;
+const USER_REUSED = `${USER_PREFIX}Reused`;
+const USER_KEEPS = `${USER_PREFIX}Keeps`;
+const USER_TAKES = `${USER_PREFIX}Takes`;
 
 describe('GET /user-settings (integration)', () => {
   let app: INestApplication;
@@ -43,8 +51,18 @@ describe('GET /user-settings (integration)', () => {
     return acceptLanguage === undefined ? call : call.set('Accept-Language', acceptLanguage);
   };
 
-  const removeFixtures = (): Promise<unknown> =>
-    prisma.userSettings.deleteMany({ where: { userId: { startsWith: USER_PREFIX } } });
+  const patch = (userId: string, body: Record<string, unknown>) =>
+    request(app.getHttpServer() as Server)
+      .patch('/user-settings')
+      .set('Authorization', `Bearer ${tokenFor(userId)}`)
+      .send(body);
+
+  const owned = { userId: { startsWith: USER_PREFIX } };
+
+  const removeFixtures = async (): Promise<void> => {
+    await prisma.idempotencyKey.deleteMany({ where: owned });
+    await prisma.userSettings.deleteMany({ where: owned });
+  };
 
   beforeAll(async () => {
     key = createTestSigningKey();
@@ -160,5 +178,126 @@ describe('GET /user-settings (integration)', () => {
     await expect(
       prisma.userSettings.count({ where: { userId: { startsWith: USER_PREFIX } } }),
     ).resolves.toBe(2);
+  });
+
+  it('stores the language it answered with, in the shape the column holds', async () => {
+    await get(USER_GERMAN, 'de-DE,de;q=0.9');
+    await get(USER_STORED, 'pl-PL');
+
+    const german = await prisma.userSettings.findUniqueOrThrow({ where: { userId: USER_GERMAN } });
+    const polish = await prisma.userSettings.findUniqueOrThrow({ where: { userId: USER_STORED } });
+
+    expect(german.language).toBe('EN');
+    expect(polish.language).toBe('PL');
+  });
+
+  describe('PATCH /user-settings', () => {
+    it('changes the language, and the next read answers with it', async () => {
+      await get(USER_PICKS, 'en');
+
+      const response = await patch(USER_PICKS, {
+        language: 'ru',
+        idempotencyKey: 'the-screen-opened-once',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ language: 'ru' });
+      await expect(get(USER_PICKS)).resolves.toMatchObject({ body: { language: 'ru' } });
+    });
+
+    it('writes the settings of a caller who has never read them', async () => {
+      const response = await patch(USER_UNSEEN, {
+        language: 'pl',
+        idempotencyKey: 'never-read-first',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ language: 'pl' });
+      await expect(prisma.userSettings.count({ where: { userId: USER_UNSEEN } })).resolves.toBe(1);
+    });
+
+    it.each([
+      ['a language the app cannot render', { language: 'de', idempotencyKey: 'refused' }],
+      ['a language that is not one', { language: 'system', idempotencyKey: 'refused' }],
+      ['a language spelled as the column spells it', { language: 'RU', idempotencyKey: 'refused' }],
+      ['no language at all', { idempotencyKey: 'refused' }],
+      ['no idempotency key', { language: 'ru' }],
+      ['a key of nothing but spaces', { language: 'ru', idempotencyKey: '   ' }],
+      [
+        'a field the endpoint never declared',
+        { language: 'ru', idempotencyKey: 'refused', theme: 'dark' },
+      ],
+    ])('refuses %s, and writes nothing', async (_case, body) => {
+      const response = await patch(USER_REFUSED, body);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({ statusCode: 400, error: 'Bad Request' });
+      await expect(prisma.userSettings.count({ where: { userId: USER_REFUSED } })).resolves.toBe(0);
+    });
+
+    it('answers a repeat with the first result, and writes nothing a second time', async () => {
+      await get(USER_TWICE, 'en');
+      const first = await patch(USER_TWICE, {
+        language: 'pl',
+        idempotencyKey: 'the-screen-opened-once',
+      });
+      const written = await prisma.userSettings.findUniqueOrThrow({
+        where: { userId: USER_TWICE },
+      });
+
+      const repeat = await patch(USER_TWICE, {
+        language: 'pl',
+        idempotencyKey: 'the-screen-opened-once',
+      });
+
+      expect(repeat.status).toBe(200);
+      expect(repeat.body).toEqual(first.body);
+
+      const stored = await prisma.userSettings.findUniqueOrThrow({
+        where: { userId: USER_TWICE },
+      });
+      expect(stored.updatedAt).toEqual(written.updatedAt);
+      await expect(prisma.idempotencyKey.count({ where: { userId: USER_TWICE } })).resolves.toBe(1);
+    });
+
+    it('refuses a key claimed by a different language rather than replaying the first', async () => {
+      await get(USER_REUSED, 'en');
+      await patch(USER_REUSED, { language: 'pl', idempotencyKey: 'claimed-once' });
+
+      const response = await patch(USER_REUSED, { language: 'ru', idempotencyKey: 'claimed-once' });
+
+      expect(response.status).toBe(409);
+      await expect(get(USER_REUSED)).resolves.toMatchObject({ body: { language: 'pl' } });
+    });
+
+    it("never changes another user's language", async () => {
+      await get(USER_KEEPS, 'ru');
+      const rowOfKeeps = await prisma.userSettings.findUniqueOrThrow({
+        where: { userId: USER_KEEPS },
+      });
+      await get(USER_TAKES, 'en');
+
+      const response = await patch(USER_TAKES, {
+        language: 'pl',
+        idempotencyKey: 'the-screen-opened-once',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ language: 'pl' });
+
+      const stored = await prisma.userSettings.findUniqueOrThrow({
+        where: { userId: USER_KEEPS },
+      });
+      expect(stored).toEqual(rowOfKeeps);
+    });
+
+    it('answers 401 to an anonymous caller, and writes nothing', async () => {
+      const response = await request(app.getHttpServer() as Server)
+        .patch('/user-settings')
+        .send({ language: 'ru', idempotencyKey: 'anonymous' });
+
+      expect(response.status).toBe(401);
+      await expect(prisma.userSettings.count({ where: owned })).resolves.toBe(0);
+    });
   });
 });

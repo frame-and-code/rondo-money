@@ -1,11 +1,7 @@
 'use client';
 
-import { IconSettings } from '@tabler/icons-react';
-
-import { SectionSlot } from '@/components/section-slot';
+import { SettingsPanel } from '@/components/settings-panel';
 
 export default function SettingsPage() {
-  return (
-    <SectionSlot Icon={IconSettings} titleKey="settings.slotTitle" bodyKey="settings.slotBody" />
-  );
+  return <SettingsPanel />;
 }

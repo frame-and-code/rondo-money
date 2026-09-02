@@ -48,11 +48,18 @@ describe('application shell', () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId('user-button')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: ru['common.localeSwitcher.ariaLabel'] }),
-    ).toBeInTheDocument();
-    expect(
       screen.getByRole('button', { name: ru['common.themeToggle.trigger'] }),
     ).toBeInTheDocument();
+  });
+
+  it('carries no language control, because a language is changed where it is stored', async () => {
+    renderShell();
+
+    await screen.findByRole('heading', { level: 1, name: ru['nav.categories'] });
+
+    expect(
+      screen.queryByRole('button', { name: ru['common.localeSwitcher.ariaLabel'] }),
+    ).not.toBeInTheDocument();
   });
 
   it('renames the collapse control and drops the wordmark once the sidebar is collapsed', async () => {

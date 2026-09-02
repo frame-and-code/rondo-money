@@ -9,8 +9,10 @@ Every write to a model in `MUTATION_GUARDED_MODELS`
 ([`scoped-models.ts`](../../../apps/api/src/prisma/scoped-models.ts)) goes through
 [`MutationService`](../../../apps/api/src/mutations/mutation.service.ts). This is not advice. The scoping extension throws on a write that is not inside
 one, so a service that reaches for `SCOPED_PRISMA` directly fails its first test rather than
-shipping. Two models sit beside that list on purpose: a user's settings, which their own first
-read creates, and the idempotency key, which this service writes on its own transaction.
+shipping. Two models sit beside that list on purpose: a user's settings, whose row their own
+first read creates, and the idempotency key, which this service writes on its own transaction.
+Being exempt does not bar them from one, which
+[architecture](../../rules/architecture.md) states.
 
 Read [`mutation.service.ts`](../../../apps/api/src/mutations/mutation.service.ts) alongside
 this file. It is one method, and every rule below is visible in it.
