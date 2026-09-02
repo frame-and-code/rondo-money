@@ -279,3 +279,9 @@ That failure means a missing test, never a lowered threshold.
   [ci.md](ci.md). Since the quality gate landed, this is not only a report. The Sonar quality gate
   blocks a pull request whose **new** code
   is under-covered, so a red `sonar` is answered with a test, not with a threshold.
+  **A file is only measured where a jest run collects it.** `@rondo/ui` ships no tests of its
+  own and is exercised through `apps/web`, so that config roots itself at the repository and
+  collects from `packages/ui/src` as well as its own `src`. Jest does not instrument files
+  outside `rootDir`, which is why the root sits above both rather than in `apps/web`. Without
+  it a component the web suite exercises reads as nought covered, and a new one there fails the
+  gate for a test that already exists.
