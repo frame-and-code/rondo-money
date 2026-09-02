@@ -1,6 +1,7 @@
 import { clerk, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
+import { localeLabels } from '../src/i18n/locales';
 import { en } from '../src/i18n/messages/en';
 import { pl } from '../src/i18n/messages/pl';
 
@@ -30,7 +31,7 @@ test('the language chosen in settings follows the account to another browser', a
 
   await page.goto('/settings');
   await page.getByRole('combobox', { name: en['settings.language'] }).click();
-  await page.getByRole('option', { name: 'Polski' }).click();
+  await page.getByRole('option', { name: localeLabels.pl }).click();
 
   await expect(page.getByText(pl['settings.theme'], { exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'pl');

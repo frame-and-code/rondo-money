@@ -40,6 +40,7 @@ export function SettingsLocaleSync() {
 export interface LanguageChoice {
   language: Locale;
   choose: (next: Locale) => void;
+  saving: boolean;
   failed: boolean;
   dismiss: () => void;
 }
@@ -73,5 +74,11 @@ export function useLanguageChoice(): LanguageChoice {
     [locale, setLocale, update, queryClient],
   );
 
-  return { language: locale, choose, failed, dismiss: () => setFailed(false) };
+  return {
+    language: locale,
+    choose,
+    saving: update.isPending,
+    failed,
+    dismiss: () => setFailed(false),
+  };
 }

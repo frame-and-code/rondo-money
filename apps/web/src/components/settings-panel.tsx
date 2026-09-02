@@ -34,7 +34,7 @@ function Section({ title, note, children }: { title: string; note: string; child
 
 export function SettingsPanel() {
   const { t } = useTranslations();
-  const { language, choose, failed, dismiss } = useLanguageChoice();
+  const { language, choose, saving, failed, dismiss } = useLanguageChoice();
 
   const [fading, setFading] = useState(false);
   const [picked, setPicked] = useState<Locale | null>(null);
@@ -80,6 +80,7 @@ export function SettingsPanel() {
       <Section title={t('settings.language')} note={t('settings.languageNote')}>
         <Select
           value={language}
+          disabled={saving}
           onValueChange={(next: string | null) => {
             if (next !== null && isLocale(next) && next !== language) {
               setPicked(next);

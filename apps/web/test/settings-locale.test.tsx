@@ -216,6 +216,30 @@ describe('SettingsLocaleSync', () => {
     await waitFor(() => expect(window.localStorage.getItem('rondo.locale:user_b')).toBe('pl'));
   });
 
+  it('leaves a choice made inside an account behind when the user signs out', async () => {
+    const user = userEvent.setup();
+    readSettings.mockResolvedValue({ language: 'en' });
+
+    const { rerender } = render(
+      <App>
+        <Chooser to="ru" />
+      </App>,
+    );
+    await screen.findByText(en['nav.categories']);
+    await user.click(screen.getByRole('button', { name: 'chooser:en' }));
+    await screen.findByText(ru['nav.categories']);
+
+    mockUserId = null;
+    mockIsSignedIn = false;
+    rerender(
+      <App>
+        <Chooser to="ru" />
+      </App>,
+    );
+
+    expect(await screen.findByText(en['nav.categories'])).toBeInTheDocument();
+  });
+
   it('forgets the settings language when the user signs out', async () => {
     readSettings.mockResolvedValue({ language: 'pl' });
 

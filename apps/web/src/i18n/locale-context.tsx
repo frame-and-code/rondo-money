@@ -116,6 +116,7 @@ export function LocaleProvider({
     }
 
     if (identity === null) {
+      setPicked(null);
       setRemembered(readStoredLocale(null));
       return;
     }

@@ -133,6 +133,21 @@ describe('the settings screen', () => {
     expect(within(trigger).getByText(localeLabels.pl)).toBeInTheDocument();
   });
 
+  it('takes no second language while the first one is still on its way', async () => {
+    const user = userEvent.setup();
+    writeSettings.mockReturnValue(new Promise(() => {}));
+    renderPanel();
+    await screen.findByText(localeLabels.en);
+
+    await user.click(languageTrigger());
+    await user.click(await screen.findByRole('option', { name: localeLabels.pl }));
+
+    await waitFor(() => expect(writeSettings).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: pl['settings.language'] })).toBeDisabled(),
+    );
+  });
+
   it('puts the language back when the account refuses to take it', async () => {
     const user = userEvent.setup();
     writeSettings.mockRejectedValue(new Error('network'));
