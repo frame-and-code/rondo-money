@@ -4,7 +4,7 @@ import { Skeleton } from '@rondo/ui/components/ui/skeleton';
 
 import { LoadingRegion } from '@/components/loading-region';
 
-const LABEL_WIDTHS = ['w-24', 'w-18', 'w-28'];
+const LABEL_WIDTHS = ['w-24', 'w-18'];
 
 export default function SettingsLoading() {
   return (
@@ -15,7 +15,7 @@ export default function SettingsLoading() {
           <Skeleton className="h-8 w-full rounded-lg" />
         </div>
       ))}
-      <Skeleton className="h-8 w-33 rounded-lg" />
+      <Skeleton className="h-3 w-64" />
     </LoadingRegion>
   );
 }

@@ -15,8 +15,7 @@ export class CreateBudgetDto {
     description:
       'The interface language the user picked on this screen. It is a property of the user ' +
       'rather than of the budget, and it is stored in their settings. It travels with the ' +
-      'budget because the default categories are written in it, and because there is no ' +
-      'endpoint to change a language on its own yet.',
+      'budget because the default categories are written in it.',
     enum: LANGUAGE_TAGS,
     enumName: 'LanguageTag',
     example: 'en',

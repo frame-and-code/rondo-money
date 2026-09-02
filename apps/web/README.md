@@ -3,7 +3,7 @@
 Rondo Money frontend on **Next.js (App Router)**.
 
 The app shell is in place: a persistent navigation over its sections, sign-in and route
-protection, the shadcn/ui base from `@rondo/ui`, the locale switcher and the typed API client
+protection, the shadcn/ui base from `@rondo/ui`, the settings screen and the typed API client
 `@rondo/api-client` (ADR-002), which `src/lib/api` wires to the Clerk session and to TanStack
 Query. Server state lives in that cache, not in component state. Categories is a real screen:
 it draws a month of the budget, moves money between its envelopes, assigning included, and lets
@@ -21,8 +21,9 @@ screen and a sheet on a narrow one. An account that holds nothing is archived fr
 that menu, behind a confirmation, and while it still holds money the entry says so instead of
 offering itself. An archived account then leaves the screen for good, so the panel
 and the account picker's list carry only what is in use, and a record whose other side sits on
-one names it as an archived account rather than by a name nothing can resolve. Net worth and settings are
-still slots.
+one names it as an archived account rather than by a name nothing can resolve. Settings is a
+screen too: the interface language, which follows the account rather than the device, and the
+theme, which does not. Net worth is still a slot.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
 account, is on a step of it, and every address behind the sign-in leads to that step until
@@ -69,12 +70,14 @@ src/
                               # [id]/page.tsx over the one the address names, and loading.tsx
                               # the skeleton both show, the same one the shell draws while the
                               # gate decides
-      net-worth/              # the remaining sections are page.tsx (the slot) + loading.tsx
-      settings/
+      net-worth/              # the last slot: page.tsx + loading.tsx
+      settings/               # the language and theme screen, and the skeleton it opens with
   components/                 # app-level components: the shell and its navigation, the
                               # onboarding gate and what it shows while it decides, the
                               # section slot, the loading region, the Clerk provider wrapper,
-                              # the locale switcher, the two onboarding forms, the field an
+                              # the locale switcher the sign-in screen carries, the settings
+                              # screen with its language and theme, the two onboarding forms,
+                              # the field an
                               # amount is typed into, which the onboarding form and the
                               # accounts dialog share, the money flow screen and everything on
                               # it (the accounts panel, the feed by days and its rows, the
@@ -94,8 +97,9 @@ src/
                               # the form it is set in, the amount whose digits roll when it
                               # changes, and the banner that says a save did not go through
   i18n/                       # ru / en / pl — dictionaries, detection, context. English is
-                              # the fallback (F1.6); settings-locale.tsx feeds the language
-                              # from GET /user-settings back into the locale context
+                              # the fallback; settings-locale.tsx feeds the language from
+                              # GET /user-settings into the locale context and owns the write
+                              # back through PATCH
   lib/api/                    # the only way to reach @rondo/api: ApiProvider wires the
                               # generated client (@rondo/api-client) to the address, the
                               # Clerk token and the TanStack Query cache
@@ -218,20 +222,35 @@ per load rather than once per user.
 The first thing the app asks for is the user's own settings.
 [`SettingsLocaleSync`](src/i18n/settings-locale.tsx) sits in the root layout, renders nothing,
 and calls `GET /user-settings` as soon as there is a session. That call is also what creates
-the row, since the endpoint is get-or-create (F1.6). Three sources can decide the interface
-language, and [`locale-context.tsx`](src/i18n/locale-context.tsx) holds the order in one
-expression: **the user's own pick** (kept in `localStorage`, because `PATCH /user-settings` is
-Phase 7 and the sign-in screen has no session to read settings with) beats **the account's
-settings**, which beat **the browser**. Reversing the last two would hand the choice back to
-the server on every reload, which is the defect the storage exists to remove.
+the row, since the endpoint is get-or-create.
+[`locale-context.tsx`](src/i18n/locale-context.tsx) holds the order in one expression: **a pick
+made in this session** beats **the account**, which beats **what was stored last time**, which
+beats **the browser**. The account is the source of truth, so a language chosen on one device
+is the language on the next one, and the browser decides only until the account has answered.
 
-Both of the first two are scoped to the signed-in account, because browsers get shared. The
-stored pick lives under `rondo.locale:<userId>`, and a signed-out visitor gets the bare
-`rondo.locale`, which is the sign-in screen, belonging to no account. The settings
-language is reported together with the user it belongs to, so a language arriving for the
-previous account cannot be applied to the next one. Storage access is wrapped as well. Safari
-with "Block All Cookies" and a sandboxed iframe throw on reading `window.localStorage` at all,
-and this provider sits above every screen with no error boundary under it.
+The session pick sits on top for one reason: the onboarding form picks a language and sends it
+with the budget, so an account answering a moment later must not overwrite what the person is
+looking at. The stored value is no longer a choice. It is what the first frame is drawn with
+before the account answers, and it can only be applied in a layout effect: reading storage
+while React initialises its state makes the first client render disagree with the server markup
+(ADR-004). A signed-in user's cache lives under `rondo.locale:<userId>` and holds the language
+that was settled on. The bare `rondo.locale` belongs to the sign-in
+screen, where nobody is signed in and there is no account to ask; a pick made there is shown
+until the account answers and then gives way to it.
+
+Storage access is wrapped both ways. Safari with "Block All Cookies" and a sandboxed iframe
+throw on reading `window.localStorage` at all, and this provider sits above every screen with
+no error boundary under it.
+
+The language is written back by `useLanguageChoice` in
+[`settings-locale.tsx`](src/i18n/settings-locale.tsx), which sends `PATCH /user-settings`, puts
+the answer into the settings query and, when the server refuses, returns the screen to the
+language it had. What the settings field shows is the language the screen is speaking rather
+than the one the account has answered with, so the field and the screen cannot disagree while
+the write is in flight. The settings screen is the only place that calls it,
+which is why the shell carries no language switcher any more: a control writing past the
+account is how two devices start disagreeing. The theme sits beside it and goes nowhere near
+the server, which the screen says out loud.
 
 ## Environment
 

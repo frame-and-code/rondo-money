@@ -7,8 +7,9 @@ description: Add an API module in apps/api that reads a domain table, with the c
 
 The shape every module that touches a table follows. It is not a template to fill in.
 [`apps/api/src/user-settings`](../../../apps/api/src/user-settings) is the module this
-describes, so read it alongside. It is five small files, and every decision below is visible in
-one of them.
+describes, so read it alongside. Read its `GET` half: the same module also carries a `PATCH`
+through the mutation service, which is the other skill's subject, and every decision below is
+visible in the read.
 
 Scope: the **read** path. A mutation goes through the single mutation service, which puts the
 whole user operation and its idempotency key in one transaction (ADR-006); that is

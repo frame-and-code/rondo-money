@@ -45,7 +45,10 @@ what was recorded, day by day, and income, expenses and transfers between two ac
 written, corrected and taken back there. Which account the feed covers lives in the address, so
 a link to one of them works and so does the back button. An account is also settled against what it really
 holds: the screen says what the book makes it and what the correction would come to, and one
-record dated that day closes the gap, which lands in the money that has no job yet.
+record dated that day closes the gap, which lands in the money that has no job yet. Settings
+holds the interface language, and a language chosen there is stored on the account, so it is
+the same one on the next device. The theme stays on the device it was chosen on, and the
+browser decides it until someone picks.
 
 ## What it is
 

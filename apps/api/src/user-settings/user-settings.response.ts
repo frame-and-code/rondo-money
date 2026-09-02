@@ -7,8 +7,8 @@ export class UserSettingsResponse implements UserSettingsDto {
   @ApiProperty({
     description:
       "The interface language, as a BCP 47 primary subtag. Set from the caller's " +
-      '`Accept-Language` when the settings row is first created, and changeable by the ' +
-      'user from Phase 7.',
+      '`Accept-Language` when the settings row is first created, and changed from the ' +
+      'settings screen afterwards.',
     enum: LANGUAGE_TAGS,
     enumName: 'LanguageTag',
     example: 'en',

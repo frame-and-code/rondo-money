@@ -20,7 +20,7 @@ import type { ReactNode } from 'react';
 interface LocaleContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  applySettingsLocale: (userId: string | null | undefined, locale: Locale | null) => void;
+  applySettingsLocale: (userId: string | null | undefined, language: Locale | null) => void;
   t: (key: MessageKey, vars?: Record<string, string | number>) => string;
 }
 
@@ -51,7 +51,7 @@ function storeLocaleIfPossible(userId: string | null, locale: Locale): void {
 
 interface SettingsBinding {
   identity: string | null | undefined;
-  locale: Locale | null;
+  language: Locale | null;
 }
 
 export function interpolate(template: string, vars?: Record<string, string | number>): string {
@@ -70,27 +70,30 @@ export function LocaleProvider({
 }) {
   const [settings, setSettings] = useState<SettingsBinding>({
     identity: undefined,
-    locale: null,
+    language: null,
   });
-  const [chosen, setChosen] = useState<Locale | null>(null);
+  const [picked, setPicked] = useState<Locale | null>(null);
+  const [remembered, setRemembered] = useState<Locale | null>(null);
   const [fromBrowser, setFromBrowser] = useState<Locale | null>(null);
 
   const unfiledPick = useRef<Locale | null>(null);
 
   const { identity } = settings;
+  const fromSettings = settings.language;
 
-  const locale = chosen ?? settings.locale ?? fromBrowser ?? initialLocale;
+  const locale = picked ?? fromSettings ?? remembered ?? fromBrowser ?? initialLocale;
 
   const setLocale = useCallback(
     (next: Locale) => {
-      setChosen(next);
+      setPicked(next);
+
+      if (typeof identity === 'string') return;
 
       if (identity === undefined) {
         unfiledPick.current = next;
-        return;
       }
 
-      storeLocaleIfPossible(identity, next);
+      storeLocaleIfPossible(null, next);
     },
     [identity],
   );
@@ -98,9 +101,9 @@ export function LocaleProvider({
   const applySettingsLocale = useCallback(
     (identity: string | null | undefined, next: Locale | null) => {
       setSettings((current) =>
-        current.identity === identity && current.locale === next
+        current.identity === identity && current.language === next
           ? current
-          : { identity, locale: next },
+          : { identity, language: next },
       );
     },
     [],
@@ -108,25 +111,31 @@ export function LocaleProvider({
 
   useLayoutEffect(() => {
     if (identity === undefined) {
-      setChosen(readStoredLocale(null));
+      setRemembered(readStoredLocale(null));
+      return;
+    }
+
+    if (identity === null) {
+      setRemembered(readStoredLocale(null));
       return;
     }
 
     const unfiled = unfiledPick.current;
     unfiledPick.current = null;
 
-    if (unfiled !== null) {
-      storeLocaleIfPossible(identity, unfiled);
-      setChosen(unfiled);
-      return;
-    }
-
-    setChosen(readStoredLocale(identity));
+    setPicked(null);
+    setRemembered(unfiled ?? readStoredLocale(identity));
   }, [identity]);
 
   useEffect(() => {
     setFromBrowser(detectBrowserLocale(navigator.languages ?? [navigator.language]));
   }, []);
+
+  useEffect(() => {
+    if (typeof identity !== 'string') return;
+
+    storeLocaleIfPossible(identity, locale);
+  }, [identity, locale]);
 
   useEffect(() => {
     document.documentElement.lang = locale;

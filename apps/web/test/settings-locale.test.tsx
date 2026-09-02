@@ -1,19 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { LocaleProvider, useTranslations } from '@/i18n/locale-context';
-import { localeLabels } from '@/i18n/locales';
+import { localeLabels, type Locale } from '@/i18n/locales';
 import { en } from '@/i18n/messages/en';
 import { pl } from '@/i18n/messages/pl';
 import { ru } from '@/i18n/messages/ru';
-import { SettingsLocaleSync } from '@/i18n/settings-locale';
+import { SettingsLocaleSync, useLanguageChoice } from '@/i18n/settings-locale';
 import { ApiProvider } from '@/lib/api';
 
 import type { ReactNode } from 'react';
 
-const readSettings = jest.fn<Promise<{ language: string }>, []>();
+const readSettings = jest.fn<Promise<{ language: Locale }>, []>();
+const writeSettings = jest.fn<Promise<{ language: Locale }>, [Locale]>();
 
 const settingsOptions = {
   queryKey: ['userSettingsControllerRead'],
@@ -36,6 +37,10 @@ jest.mock('@clerk/nextjs', () => ({
 
 jest.mock('@rondo/api-client/react-query', () => ({
   userSettingsControllerReadOptions: () => settingsOptions,
+  userSettingsControllerReadQueryKey: () => settingsOptions.queryKey,
+  userSettingsControllerUpdateMutation: () => ({
+    mutationFn: ({ body }: { body: { language: Locale } }) => writeSettings(body.language),
+  }),
 }));
 
 function DemoText() {
@@ -46,6 +51,16 @@ function DemoText() {
 function SettingsProbe() {
   const { data } = useQuery(settingsOptions);
   return <span>settings:{data?.language ?? 'pending'}</span>;
+}
+
+function Chooser({ to }: { to: Locale }) {
+  const { language, choose } = useLanguageChoice();
+
+  return (
+    <button type="button" onClick={() => choose(to)}>
+      chooser:{language}
+    </button>
+  );
 }
 
 function App({ children }: { children?: ReactNode }) {
@@ -60,14 +75,23 @@ function App({ children }: { children?: ReactNode }) {
   );
 }
 
+function speaks(...languages: string[]) {
+  Object.defineProperty(window.navigator, 'languages', {
+    value: languages,
+    configurable: true,
+  });
+}
+
 describe('SettingsLocaleSync', () => {
   beforeEach(() => {
     window.localStorage.clear();
     readSettings.mockReset();
+    writeSettings.mockReset();
+    writeSettings.mockImplementation((language) => Promise.resolve({ language }));
     mockUserId = 'user_a';
     mockIsSignedIn = true;
     mockIsLoaded = true;
-    Object.defineProperty(window.navigator, 'languages', { value: ['en-US'], configurable: true });
+    speaks('en-US');
   });
 
   it('renders the interface in the language the settings report', async () => {
@@ -78,30 +102,7 @@ describe('SettingsLocaleSync', () => {
     expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
   });
 
-  it('does not undo a choice the user makes afterwards', async () => {
-    const user = userEvent.setup();
-    readSettings.mockResolvedValue({ language: 'pl' });
-
-    const { rerender } = render(
-      <App>
-        <LocaleSwitcher />
-      </App>,
-    );
-    await screen.findByText(pl['nav.categories']);
-
-    await user.click(screen.getByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }));
-    await user.click(await screen.findByText(localeLabels.ru));
-
-    rerender(
-      <App>
-        <LocaleSwitcher />
-      </App>,
-    );
-
-    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
-  });
-
-  it('leaves a choice made on an earlier visit in place', async () => {
+  it('shows the stored language first, then hands the screen to the account', async () => {
     window.localStorage.setItem('rondo.locale:user_a', 'ru');
     readSettings.mockResolvedValue({ language: 'pl' });
 
@@ -114,36 +115,105 @@ describe('SettingsLocaleSync', () => {
     expect(screen.getByText(ru['nav.categories'])).toBeInTheDocument();
 
     expect(await screen.findByText('settings:pl')).toBeInTheDocument();
-    expect(screen.getByText(ru['nav.categories'])).toBeInTheDocument();
-    expect(screen.queryByText(pl['nav.categories'])).not.toBeInTheDocument();
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
   });
 
-  it("does not hand the next user to sign in the previous one's choice", async () => {
+  it('keeps a choice made while the account is still answering', async () => {
     const user = userEvent.setup();
-    readSettings.mockImplementation(() =>
-      Promise.resolve({ language: mockUserId === 'user_a' ? 'en' : 'pl' }),
+    let answer: (settings: { language: Locale }) => void = () => {};
+    readSettings.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
     );
 
-    const { rerender } = render(
+    render(
       <App>
-        <LocaleSwitcher />
+        <Chooser to="ru" />
+      </App>,
+    );
+
+    await user.click(screen.getByRole('button'));
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
+
+    answer({ language: 'pl' });
+
+    await waitFor(() => expect(writeSettings).toHaveBeenCalledWith('ru'));
+    expect(screen.getByText(ru['nav.categories'])).toBeInTheDocument();
+  });
+
+  it('sends the choice to the account and switches without a reload', async () => {
+    const user = userEvent.setup();
+    readSettings.mockResolvedValue({ language: 'en' });
+
+    render(
+      <App>
+        <Chooser to="pl" />
       </App>,
     );
     await screen.findByText(en['nav.categories']);
-    await user.click(screen.getByRole('button', { name: en['common.localeSwitcher.ariaLabel'] }));
-    await user.click(await screen.findByText(localeLabels.ru));
+
+    await user.click(screen.getByRole('button', { name: 'chooser:en' }));
+
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
+    expect(writeSettings).toHaveBeenCalledWith('pl');
+    expect(await screen.findByRole('button', { name: 'chooser:pl' })).toBeInTheDocument();
+  });
+
+  it('falls back to English when the browser speaks a language the app cannot', async () => {
+    speaks('de-DE');
+    readSettings.mockReturnValue(new Promise(() => {}));
+
+    render(<App />);
+
+    expect(await screen.findByText(en['nav.categories'])).toBeInTheDocument();
+  });
+
+  it('renders what it stored last time while the account is still answering', async () => {
+    window.localStorage.setItem('rondo.locale:user_a', 'pl');
+    speaks('ru-RU');
+    readSettings.mockReturnValue(new Promise(() => {}));
+
+    render(<App />);
+
+    expect(screen.getByText(pl['nav.categories'])).toBeInTheDocument();
+  });
+
+  it('treats an answer carrying no language as no answer yet, rather than breaking', async () => {
+    window.localStorage.setItem('rondo.locale:user_a', 'ru');
+    speaks('pl-PL');
+    readSettings.mockResolvedValue({} as { language: Locale });
+
+    render(<App />);
+
+    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
+  });
+
+  it('stores the language it settled on, so the next first frame opens on it', async () => {
+    speaks('ru-RU');
+    readSettings.mockResolvedValue({ language: 'pl' });
+
+    render(<App />);
+    await screen.findByText(pl['nav.categories']);
+
+    await waitFor(() => expect(window.localStorage.getItem('rondo.locale:user_a')).toBe('pl'));
+  });
+
+  it("does not hand the next user to sign in the previous one's language", async () => {
+    readSettings.mockImplementation(() =>
+      Promise.resolve({ language: mockUserId === 'user_a' ? 'ru' : 'pl' }),
+    );
+
+    const { rerender } = render(<App />);
     await screen.findByText(ru['nav.categories']);
+    await waitFor(() => expect(window.localStorage.getItem('rondo.locale:user_a')).toBe('ru'));
 
     mockUserId = 'user_b';
-    rerender(
-      <App>
-        <LocaleSwitcher />
-      </App>,
-    );
+    rerender(<App />);
 
     expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
     expect(window.localStorage.getItem('rondo.locale:user_a')).toBe('ru');
-    expect(window.localStorage.getItem('rondo.locale:user_b')).toBeNull();
+    await waitFor(() => expect(window.localStorage.getItem('rondo.locale:user_b')).toBe('pl'));
   });
 
   it('forgets the settings language when the user signs out', async () => {
@@ -159,10 +229,10 @@ describe('SettingsLocaleSync', () => {
     expect(await screen.findByText(en['nav.categories'])).toBeInTheDocument();
   });
 
-  it('keeps a pick made before Clerk has said who is signed in', async () => {
+  it('shows a pick made on the sign-in screen until the account answers, then follows it', async () => {
     mockIsLoaded = false;
     const user = userEvent.setup();
-    readSettings.mockResolvedValue({ language: 'en' });
+    readSettings.mockResolvedValue({ language: 'pl' });
 
     const { rerender } = render(
       <App>
@@ -181,8 +251,9 @@ describe('SettingsLocaleSync', () => {
       </App>,
     );
 
-    expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
-    expect(window.localStorage.getItem('rondo.locale:user_a')).toBe('ru');
+    expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
+    expect(window.localStorage.getItem('rondo.locale')).toBe('ru');
+    expect(window.localStorage.getItem('rondo.locale:user_a')).toBe('pl');
   });
 
   it('leaves the browser to decide while the settings are still loading', async () => {
@@ -191,5 +262,20 @@ describe('SettingsLocaleSync', () => {
     render(<App />);
 
     expect(await screen.findByText(en['nav.categories'])).toBeInTheDocument();
+  });
+
+  it('renders the account language when storage cannot be reached at all', async () => {
+    const storage = jest.spyOn(window.localStorage.__proto__, 'setItem').mockImplementation(() => {
+      throw new DOMException('The operation is insecure.', 'SecurityError');
+    });
+    readSettings.mockResolvedValue({ language: 'pl' });
+
+    try {
+      render(<App />);
+
+      expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
+    } finally {
+      storage.mockRestore();
+    }
   });
 });

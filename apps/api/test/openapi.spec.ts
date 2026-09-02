@@ -200,6 +200,26 @@ describe('OpenAPI document', () => {
     });
   });
 
+  it('publishes the way a language is changed, which a shared path list cannot show', () => {
+    expect(document.paths['/user-settings']?.patch).toBeDefined();
+    expect(
+      answersWith(
+        document.paths['/user-settings']?.patch?.responses['200'],
+        'UserSettingsResponse',
+      ),
+    ).toBe(true);
+  });
+
+  it('answers with the named language, so a screen reads a union rather than a string', () => {
+    const settings = document.components?.schemas?.['UserSettingsResponse'];
+    const language =
+      settings !== undefined && 'properties' in settings
+        ? settings.properties?.['language']
+        : undefined;
+
+    expect(referencedName(language)).toBe('LanguageTag');
+  });
+
   it('names the account type enum, so clients get a union type instead of a bare string', () => {
     expect(document.components?.schemas).toHaveProperty('AccountType');
     expect(document.components?.schemas?.['AccountType']).toMatchObject({

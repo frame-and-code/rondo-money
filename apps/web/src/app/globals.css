@@ -293,6 +293,35 @@
   }
 }
 
+/* `switchTheme` in @rondo/ui stamps this class on <html> for the length of a theme change,
+   so the surfaces cross-fade between palettes instead of snapping. It is scoped to that
+   moment on purpose: a permanent colour transition would also slow every hover and focus
+   state in the app. Change the duration here and in THEME_SWITCH_MS together, or the class
+   outlives the transition it exists for. */
+
+@layer base {
+  html.theme-switching,
+  html.theme-switching *,
+  html.theme-switching *::before,
+  html.theme-switching *::after {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      fill 200ms ease,
+      stroke 200ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.theme-switching,
+    html.theme-switching *,
+    html.theme-switching *::before,
+    html.theme-switching *::after {
+      transition: none;
+    }
+  }
+}
+
 /* The menu primitives ship `cursor-default`, a utility, so a base-layer rule would lose to
    it. This block sits in the same layer and later in the file, which is what makes it win
    without editing a generated file. */

@@ -5,8 +5,9 @@ F1.2, scoping every query for domain data to the caller since F1.3. The one deli
 exception is the healthcheck's `SELECT 1`, which touches no tenant data and is named as such
 below.
 
-[`src/user-settings`](src/user-settings) is the read path in full: controller → service →
-`SCOPED_PRISMA`. [`src/mutations`](src/mutations) is the write path, the single point where one
+[`src/user-settings`](src/user-settings) is the smallest module carrying both paths: its read
+is controller → service → `SCOPED_PRISMA`, and its write goes through the mutation point like
+every other. [`src/mutations`](src/mutations) is the write path, the single point where one
 user operation and its idempotency key are written in one transaction. Both stand on the
 request context, the auto-scoped Prisma client and the raw-SQL repository below.
 [`src/budgets`](src/budgets) uses both: `GET /budgets` reads through the scoped client, and
@@ -53,8 +54,11 @@ no such order, because both rows are new and neither is a row anyone else can be
   It is get-or-create: the first call stores the language read from `Accept-Language` (ru/en/pl,
   anything else → `en`), every later one only reads. A GET that can write is deliberate.
   There is exactly one settings row per user and nothing for a client to decide, so a
-  create-then-read handshake would add a round-trip with one possible outcome (F1.6).
-  Changing the language on its own has no endpoint yet.
+  create-then-read handshake would add a round-trip with one possible outcome.
+- `PATCH /user-settings` changes the language, and writes the row when the caller has never
+  read it. It takes one of the languages the app renders and nothing else, the same three the
+  starter categories are written in. The theme is not here. It belongs to the device rather
+  than to the account, and never reaches the server.
 - `GET /budgets` returns the caller's budgets, oldest first, with the active one marked, each
   carrying the earliest month it can hold, read from when it was created in its own timezone.
   A screen has no month to show before that one, so it stops there. A caller who has not
@@ -86,9 +90,9 @@ no such order, because both rows are new and neither is a row anyone else can be
   It is still shown in that month and gone from the next one, and the row stays.
 - `POST /budgets` creates a budget and, when asked for, the starter groups and categories, each
   carrying an icon and a colour so the screen has something to draw before the user chooses. One
-  transaction covers all of it, the caller's interface language included: the category names
-  are written in that language, and a second request to store it would leave a window where
-  the two disagree. The language stays a property of the user rather than of the budget. The
+  transaction covers all of it, the language the user picked on that screen included: the
+  category names are written in that language, and a second request to store it would leave a
+  window where the two disagree. The language stays a property of the user rather than of the budget. The
   currency is chosen here and nowhere else, so no operation in the contract accepts one
   afterwards, and its minor digit count is frozen on the row. A user holds at most one active
   budget, so creating one deactivates the previous.
@@ -412,9 +416,11 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    keeps the second out of domain code, are in
    [security](../../.claude/rules/security.md).
    `MUTATION_GUARDED_MODELS` in [`scoped-models.ts`](src/prisma/scoped-models.ts) says which
-   models it covers, and the exemption list beside it holds the two that answer to nobody's
-   mutation: a user's settings, created by their own first read, and the idempotency key, which
-   the mutation service writes on its own transaction. A new model has to be classified before
+   models it covers, and the exemption list beside it holds the two the mutator does not force
+   itself on: a user's settings, whose row their own first read creates, and the idempotency
+   key, which the mutation service writes on its own transaction. Being exempt does not bar
+   them from a mutation, which [architecture](../../.claude/rules/architecture.md) states. A new
+   model has to be classified before
    its tests pass. What the raw path may do inside a
    mutation, and what it refuses, is in [security](../../.claude/rules/security.md).
 

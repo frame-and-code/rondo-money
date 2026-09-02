@@ -234,8 +234,19 @@ export const pl: Record<MessageKey, string> = {
   'accounts.reconcileConfirm': 'Uzgodnij',
   'netWorth.slotTitle': 'Slot sekcji „Kapitał”',
   'netWorth.slotBody': 'Tu pojawi się wykres kapitału.',
-  'settings.slotTitle': 'Slot sekcji „Ustawienia”',
-  'settings.slotBody': 'Tu pojawią się waluta, strefa czasowa i język budżetu.',
+  'settings.language': 'Język interfejsu',
+  'settings.theme': 'Motyw',
+  'settings.themeSystem': 'Systemowy',
+  'settings.themeLight': 'Jasny',
+  'settings.themeDark': 'Ciemny',
+  'settings.languageNote':
+    'Zapisuje się na koncie, więc na innych urządzeniach aplikacja też będzie otwierać się w tym języku.',
+  'settings.themeNote':
+    'Zapisuje się tylko na tym urządzeniu. Na każdym urządzeniu możesz wybrać inny motyw.',
+  'settings.saveFailedTitle': 'Język nie został zapisany',
+  'settings.saveFailed':
+    'Serwer nie przyjął wyboru, więc interfejs został przy dotychczasowym języku. Spróbuj ponownie.',
+  'settings.saveFailedDismiss': 'Rozumiem',
 
   'onboarding.progress': 'Konfiguracja, krok {{step}} z 3',
   'onboarding.step1Title': 'Budżet',

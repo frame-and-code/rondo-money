@@ -235,8 +235,19 @@ export const en: Record<MessageKey, string> = {
   'accounts.reconcileConfirm': 'Reconcile',
   'netWorth.slotTitle': 'The "Net worth" slot',
   'netWorth.slotBody': 'The net worth chart lands here.',
-  'settings.slotTitle': 'The "Settings" slot',
-  'settings.slotBody': 'Currency, timezone and budget language land here.',
+  'settings.language': 'Language',
+  'settings.theme': 'Theme',
+  'settings.themeSystem': 'System',
+  'settings.themeLight': 'Light',
+  'settings.themeDark': 'Dark',
+  'settings.languageNote':
+    'Saved to your account. The app will use this language on your other devices too.',
+  'settings.themeNote':
+    'Saved on this device only. You can choose a different theme on each device.',
+  'settings.saveFailedTitle': 'The language was not saved',
+  'settings.saveFailed':
+    'The server did not take the choice, so the interface kept the language it had. Try again.',
+  'settings.saveFailedDismiss': 'Got it',
 
   'onboarding.progress': 'Setup, step {{step}} of 3',
   'onboarding.step1Title': 'Budget',
