@@ -169,6 +169,18 @@ describe('the dictionaries', () => {
     },
   );
 
+  it('writes every placeholder the way the interpolator reads them', () => {
+    const readable = /\{\{\w+\}\}/g;
+
+    const literal = locales.flatMap((locale) =>
+      Object.entries(messages[locale])
+        .filter(([, value]) => /[{}]/.test(value.replace(readable, '')))
+        .map(([key]) => `${locale}: ${key}`),
+    );
+
+    expect(literal).toEqual([]);
+  });
+
   it('answers every key in every language, so a switch never shows a raw key', () => {
     const expected = Object.keys(messages.ru).sort();
 

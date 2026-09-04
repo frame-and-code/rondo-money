@@ -14,6 +14,15 @@ jest.mock('@clerk/nextjs', () => ({
     userId: 'user_a',
     getToken: () => Promise.resolve(null),
   }),
+  useUser: () => ({
+    isLoaded: true,
+    isSignedIn: true,
+    user: { delete: () => Promise.resolve() },
+  }),
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: () => {}, push: () => {} }),
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
@@ -24,6 +33,9 @@ jest.mock('@rondo/api-client/react-query', () => ({
   userSettingsControllerReadQueryKey: () => ['userSettingsControllerRead'],
   userSettingsControllerUpdateMutation: () => ({
     mutationFn: () => Promise.resolve({ language: 'en' }),
+  }),
+  meControllerEraseMutation: () => ({
+    mutationFn: () => Promise.resolve({ userId: 'user_a' }),
   }),
 }));
 

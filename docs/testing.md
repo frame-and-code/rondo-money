@@ -111,7 +111,9 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
   `locale.spec.ts` owns `LOCALE_TEST_EMAIL`, `settings.spec.ts` owns `SETTINGS_TEST_EMAIL`, and
   a scenario that needs a language of its own adds an account rather than sharing one. The
   settings screen writes the language to the account, so that spec recreates its user at the
-  start of each test rather than keeping one.
+  start of each test rather than keeping one. The two erase scenarios own an address each and
+  recreate it the same way, because one of them deletes the account and the other empties
+  everything behind it.
 - **What a scenario writes decides how its account is made.** An account is created once and
   kept when the scenario only reads with it, and also when the scenario needs a finished setup,
   because the helper that walks one through setup checks where it stands first and is safe to

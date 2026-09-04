@@ -47,6 +47,13 @@ genuinely api-only still belongs in `apps/api`, the way
   [`scoped-models.ts`](../../../apps/api/src/prisma/scoped-models.ts) in the same change**
   (ADR-005). A model one budget owns carries `budgetId` and joins `BUDGET_SCOPED_MODELS` in
   the same file. `apps/api/test/scoped-models.spec.ts` fails the gate on either omission.
+- **That same model joins the erase**,
+  [`erase-user-data.query.ts`](../../../apps/api/src/me/erase-user-data.query.ts), which deletes
+  everything one caller owns with a statement per table. `apps/api/test/erase-user-data-query.spec.ts`
+  fails the gate on a model with no statement, and on a statement naming another model's table.
+  What no test can check for you is where the statement goes: every relation is `onDelete:
+Restrict`, so a child is deleted before its parent or the whole sweep fails on the foreign
+  key.
 - A new NOT NULL column on an existing table needs a default, or the migration will not apply.
 
 ```bash

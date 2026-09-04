@@ -29,6 +29,32 @@ export type UnauthorizedResponse = {
     message: string;
 };
 
+export type EraseMeDto = {
+    /**
+     * Minted once when the confirmation opens, never per request. A key per request makes a double click two erases again.
+     */
+    idempotencyKey: string;
+};
+
+export type ErasedUserResponse = {
+    /**
+     * The caller whose data was erased, the same id the token carried. Nothing else is returned, because nothing of theirs is left to describe.
+     */
+    userId: string;
+};
+
+export type BadRequestResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+};
+
+export type ConflictResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+};
+
 /**
  * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.
  */
@@ -50,18 +76,6 @@ export type UpdateUserSettingsDto = {
      * Minted once when the choice is made, never per request. A key per request makes a double click two writes again.
      */
     idempotencyKey: string;
-};
-
-export type BadRequestResponse = {
-    statusCode: number;
-    error: string;
-    message: string | Array<string>;
-};
-
-export type ConflictResponse = {
-    statusCode: number;
-    error: string;
-    message: string;
 };
 
 export type CreateBudgetDto = {
@@ -263,7 +277,7 @@ export type TransactionResponse = {
      */
     payee: string | null;
     /**
-     * True for a record the app wrote itself, such as an opening balance. It counts like any other and is never deleted, and it is not changed here: an opening balance is corrected through the account it belongs to.
+     * True for a record the app wrote itself, such as an opening balance. It counts like any other, no ordinary delete removes it, and it is not changed here: an opening balance is corrected through the account it belongs to.
      */
     isSystem: boolean;
     /**
@@ -941,6 +955,39 @@ export type MeControllerIdentifyResponses = {
 };
 
 export type MeControllerIdentifyResponse = MeControllerIdentifyResponses[keyof MeControllerIdentifyResponses];
+
+export type MeControllerEraseData = {
+    body: EraseMeDto;
+    path?: never;
+    query?: never;
+    url: '/me/erase';
+};
+
+export type MeControllerEraseErrors = {
+    /**
+     * The body was refused.
+     */
+    400: BadRequestResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type MeControllerEraseError = MeControllerEraseErrors[keyof MeControllerEraseErrors];
+
+export type MeControllerEraseResponses = {
+    /**
+     * The caller whose data is now gone.
+     */
+    200: ErasedUserResponse;
+};
+
+export type MeControllerEraseResponse = MeControllerEraseResponses[keyof MeControllerEraseResponses];
 
 export type UserSettingsControllerReadData = {
     body?: never;

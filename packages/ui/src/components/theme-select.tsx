@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@rondo/ui/components/ui/select';
-import { switchTheme } from '@rondo/ui/lib/theme-switch';
 
 export const THEMES = ['system', 'light', 'dark'] as const;
 
@@ -64,7 +63,7 @@ export function ThemeSelect({
         if (open || picked === null) return;
 
         setPicked(null);
-        switchTheme(() => setTheme(picked));
+        setTheme(picked);
       }}
     >
       <SelectTrigger aria-label={label} className={className}>

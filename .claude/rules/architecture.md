@@ -165,6 +165,15 @@ would be a second inverse for it to disagree with. Not left to memory: the restr
 `assignment-writes`, composed into `@rondo/config/eslint/tenant-isolation`, fails the gate on a
 write to that model anywhere but there and the tests.
 
+**Erasing everything one caller owns is the exception to every sentence above, and it is one
+statement per table rather than a domain write.** It runs inside the mutation like anything
+else, but it names no model through Prisma, so neither the assignment restriction nor the
+budget filter reaches it. Two consequences to hold. It deletes the rows of **every** budget the
+caller has, active or not, which is what the scoped client could not express. And it spares one
+row: the idempotency key that the running request claimed, because the mutation writes its
+result onto that row after the work returns, and deleting it after the commit would race a
+concurrent duplicate reading it.
+
 A mutation opened inside another one is refused. Postgres has no nested interactive
 transaction, so the inner one would commit on its own and claim a second key. Compose the whole
 operation in a single `run` instead.
@@ -204,10 +213,11 @@ server replays history.
   one reference timezone, the budget's `timezone` column, through
   [`calendar.ts`](../../packages/types/src/calendar.ts) and never a `new Date()` scattered
   across call sites.
-- The schema grows one migration per phase. A category is never deleted, only hidden
-  (`hiddenAt`). That is a visibility marker, not a soft-delete. The
+- The schema grows one migration per phase. A category is never deleted by anything a budget
+  does, only hidden (`hiddenAt`). That is a visibility marker, not a soft-delete. The
   row stays in every aggregate, so its past Activity keeps counting and an expense is
-  never orphaned.
+  never orphaned. The one thing that does delete it is the caller erasing everything they own,
+  which takes the whole budget with it and leaves no aggregate to keep counting for.
 - Naming, set by the first table in F1.3: PascalCase models and camelCase fields in Prisma,
   snake_case tables and columns in Postgres via `@@map` / `@map`; ids are
   `String @id @default(uuid(7)) @db.Uuid`. The mapping exists for the hand-written aggregates

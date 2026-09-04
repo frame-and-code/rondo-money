@@ -22,8 +22,9 @@ that menu, behind a confirmation, and while it still holds money the entry says 
 offering itself. An archived account then leaves the screen for good, so the panel
 and the account picker's list carry only what is in use, and a record whose other side sits on
 one names it as an archived account rather than by a name nothing can resolve. Settings is a
-screen too: the interface language, which follows the account rather than the device, and the
-theme, which does not. Net worth is still a slot.
+screen too: the interface language, which follows the account rather than the device, the
+theme, which does not, and a danger zone holding the two actions that erase everything the user
+owns, one keeping the sign-in and one taking the account with it. Net worth is still a slot.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
 account, is on a step of it, and every address behind the sign-in leads to that step until
@@ -71,12 +72,15 @@ src/
                               # the skeleton both show, the same one the shell draws while the
                               # gate decides
       net-worth/              # the last slot: page.tsx + loading.tsx
-      settings/               # the language and theme screen, and the skeleton it opens with
+      settings/               # the language, the theme and the danger zone, and the skeleton
+                              # it opens with
   components/                 # app-level components: the shell and its navigation, the
                               # onboarding gate and what it shows while it decides, the
                               # section slot, the loading region, the Clerk provider wrapper,
                               # the locale switcher the sign-in screen carries, the settings
-                              # screen with its language and theme, the two onboarding forms,
+                              # screen with its language, its theme and the two actions that
+                              # erase everything, with the confirmation both of them go
+                              # behind, the two onboarding forms,
                               # the field an
                               # amount is typed into, which the onboarding form and the
                               # accounts dialog share, the money flow screen and everything on
@@ -142,6 +146,9 @@ src/
   lib/category-failure.ts     # the same for a refused change to a category
   lib/account-failure.ts      # the same for a refused change to an account: a correction of an
                               # opening balance, and an archive the balance still blocks
+  lib/erase-failure.ts        # the same for a refused erase, and it also says whether the
+                              # idempotency key survives the failure, since a lost request keeps
+                              # its key and a recorded refusal does not
   lib/transaction-feed.ts     # the records of one page cut into days, each with the total the
                               # server counted for the whole day rather than for the page
   lib/sections.ts             # the sections in one place: route, message key, icon.

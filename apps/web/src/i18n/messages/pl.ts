@@ -248,6 +248,31 @@ export const pl: Record<MessageKey, string> = {
     'Serwer nie przyjął wyboru, więc interfejs został przy dotychczasowym języku. Spróbuj ponownie.',
   'settings.saveFailedDismiss': 'Rozumiem',
 
+  'settings.danger': 'Strefa niebezpieczna',
+  'settings.dangerNote':
+    'Żadnego z tych działań nie da się cofnąć. Nie zostaje historia, z której można by je odwrócić.',
+  'settings.reset': 'Usuń wszystkie dane',
+  'settings.resetTitle': 'Usunąć wszystkie dane?',
+  'settings.resetBody':
+    'Znikną wszystkie budżety, konta, wpisy i koperty. Logowanie zostaje, a aplikacja otworzy ' +
+    'się na tworzeniu budżetu.',
+  'settings.resetPhrase': 'USUŃ',
+  'settings.resetConfirm': 'Usuń dane',
+  'settings.delete': 'Skasuj konto',
+  'settings.deleteTitle': 'Skasować konto?',
+  'settings.deleteBody':
+    'Znikną wszystkie dane, a razem z nimi konto. Tym adresem nie zalogujesz się ponownie.',
+  'settings.deletePhrase': 'KASUJ',
+  'settings.deleteConfirm': 'Skasuj',
+  'settings.erasePhraseLabel': 'Wpisz {{phrase}}, aby potwierdzić',
+  'settings.eraseCancel': 'Anuluj',
+  'settings.eraseFailed': 'Nie udało się. Spróbuj ponownie.',
+  'settings.eraseFailedNetwork':
+    'Serwer nie odpowiedział. Dane mogły już zniknąć, spróbuj ponownie.',
+  'settings.eraseFailedConflict': 'Ten klucz został już użyty. Zamknij okno i zacznij od nowa.',
+  'settings.eraseFailedAccount':
+    'Dane zniknęły, ale konta nie udało się skasować. Spróbuj ponownie.',
+
   'onboarding.progress': 'Konfiguracja, krok {{step}} z 3',
   'onboarding.step1Title': 'Budżet',
   'onboarding.step1Body':

@@ -48,7 +48,10 @@ holds: the screen says what the book makes it and what the correction would come
 record dated that day closes the gap, which lands in the money that has no job yet. Settings
 holds the interface language, and a language chosen there is stored on the account, so it is
 the same one on the next device. The theme stays on the device it was chosen on, and the
-browser decides it until someone picks.
+browser decides it until someone picks. Settings is also the way out: one action erases every
+budget, account and record the user has and leaves them at the first setup screen, and the
+other erases all of it and takes the account with it. Both are physical deletion with nothing
+to undo them, so both ask for a typed word first.
 
 ## What it is
 
