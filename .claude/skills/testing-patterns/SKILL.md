@@ -24,6 +24,13 @@ against a mocked client proves the mock.
   did or did not carry are integration, because Postgres is the only thing that can answer
   them.
 - A screen wired end to end is e2e, and one or two scenarios per feature is the budget.
+- **A drag has two levels and neither one is optional.** jsdom has no pointer drag, so a unit
+  test wraps the real `DndContext`, keeps the `onDragEnd` it was given and calls it with an
+  event naming the two ids
+  ([`budget-month-drop.test.tsx`](../../../apps/web/test/budget-month-drop.test.tsx)). That
+  proves what the drop computes and what it sends, and it proves nothing about whether a
+  pointer can reach the handle, which is why the gesture itself is one e2e scenario
+  ([`month-screen.spec.ts`](../../../apps/web/e2e/month-screen.spec.ts)).
 
 ## The four ways a green run lies here
 

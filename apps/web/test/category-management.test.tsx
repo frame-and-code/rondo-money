@@ -13,6 +13,7 @@ const hideGroup = jest.fn();
 const createGroup = jest.fn();
 const editGroup = jest.fn();
 const move = jest.fn();
+const reorderGroups = jest.fn();
 
 let hideRefuses = false;
 
@@ -36,6 +37,7 @@ const view = {
       id: 'g1',
       name: 'Дом',
       hidden: false,
+      paid: false,
       categories: [
         {
           id: HOME,
@@ -47,6 +49,7 @@ const view = {
           available: '48000',
           availableAllTime: '48000',
           hidden: false,
+          paid: false,
         },
       ],
     },
@@ -54,6 +57,7 @@ const view = {
       id: 'g2',
       name: 'Досуг',
       hidden: false,
+      paid: false,
       categories: [
         {
           id: FUN,
@@ -65,6 +69,7 @@ const view = {
           available: '0',
           availableAllTime: '0',
           hidden: false,
+          paid: false,
         },
       ],
     },
@@ -114,6 +119,11 @@ jest.mock('@rondo/api-client/react-query', () => ({
   categoryGroupsControllerHideMutation: () => ({
     mutationFn: (options: unknown) => hideGroup(options) as unknown,
   }),
+  categoryGroupsControllerReorderMutation: () => ({
+    mutationFn: (options: unknown) => reorderGroups(options) as unknown,
+  }),
+  categoryPaidControllerMarkMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryPaidControllerUnmarkMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),

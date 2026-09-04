@@ -20,6 +20,7 @@ export interface BudgetViewRow {
   categoryColor: string | null;
   groupHidden: boolean;
   categoryHidden: boolean;
+  paid: boolean;
   availableAllTime: bigint;
   assigned: bigint;
   activity: bigint;
@@ -140,7 +141,8 @@ export function budgetViewStatement(
       COALESCE(tas.assigned_before, 0)::bigint AS "targetAssignedBefore",
       COALESCE(tsp.activity_before, 0)::bigint AS "targetActivityBefore",
       COALESCE(g.hidden_at < ${hiddenFrom}, false) AS "groupHidden",
-      COALESCE(c.hidden_at < ${hiddenFrom}, false) AS "categoryHidden"
+      COALESCE(c.hidden_at < ${hiddenFrom}, false) AS "categoryHidden",
+      (paid.id IS NOT NULL) AS "paid"
     FROM pool
     LEFT JOIN category_group g
       ON g.user_id = ${userId}
@@ -156,6 +158,11 @@ export function budgetViewStatement(
     LEFT JOIN active_target tgt ON tgt.category_id = c.id
     LEFT JOIN target_assigned tas ON tas.category_id = c.id
     LEFT JOIN target_spent tsp ON tsp.category_id = c.id
+    LEFT JOIN category_paid_month paid
+      ON paid.category_id = c.id
+      AND paid.user_id = ${userId}
+      AND paid.budget_id = ${budgetId}::uuid
+      AND paid.month = ${monthStart}::date
     ORDER BY g.sort_order, g.name, c.sort_order, c.name
   `;
 }

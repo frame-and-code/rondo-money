@@ -6,7 +6,8 @@ The schema grows incrementally, one migration per phase. It starts as a datasour
 generator and an empty `0_init`. `UserSettings` is the first table, then the domain core
 arrives in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
 `Transaction`, `IdempotencyKey`. `Assignment` joins them later, with the two columns that give
-a category a look of its own, and `CategoryTarget` after it. No table carries `deletedAt`.
+a category a look of its own, then `CategoryTarget`, then `CategoryPaidMonth`. No table
+carries `deletedAt`.
 ADR-006 dropped soft-delete and the change-log journal alike.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum with
@@ -74,6 +75,14 @@ before its start and not after whichever of the other two it carries, so the mon
 `dueMonth` or `endMonth` still shows it and the next one does not. All three are `date`
 columns carrying the first day, and check constraints in the migration hold them there, for
 the reason `Assignment.month` has one.
+
+`CategoryPaidMonth` is a mark the user puts on one category for one month, saying the payment
+it stands for is done. A row is the mark and taking the mark off deletes the row, so the table
+holds no flag. It is a state the user sets rather than a number the app derives, which is why
+it is not a column caching anything: an expense can be recorded while the bill is still unpaid,
+and the other way round. `@@unique([categoryId, month])` holds one mark per pair, and a check
+constraint in the migration keeps `month` on the first day, for the reason `Assignment.month`
+has one.
 
 `@@unique([categoryId, startMonth])` is what makes a second goal in the same month an edit of
 that row rather than a row beside it, and it is why a write picks its branch under the

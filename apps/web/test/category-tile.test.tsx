@@ -42,6 +42,7 @@ const category = (
   available: String(parts.available),
   availableAllTime: String(parts.available),
   hidden: false,
+  paid: false,
   target,
 });
 
@@ -308,5 +309,73 @@ describe('what a goal puts on the card', () => {
     expect(within(tileOf('Vacation')).getByTestId('assigned-Vacation')).toHaveTextContent(
       '20 000 / 26 666 ¥',
     );
+  });
+});
+
+describe('a category closed for the month', () => {
+  const drawOne = (shown: BudgetViewCategoryDto, props: { attention?: boolean } = {}) =>
+    render(
+      <LocaleProvider>
+        <DndContext>
+          <SortableContext items={[shown.id]}>
+            <CategoryTile
+              category={shown}
+              money={moneyOf('ru-RU', 'PLN', 2, { signed: true })}
+              failed={false}
+              attention={props.attention ?? false}
+              moveOpen={false}
+              movePanel={null}
+              moveInPopover
+              onMoveOpen={() => {}}
+              onMoveClose={() => {}}
+            />
+          </SortableContext>
+        </DndContext>
+      </LocaleProvider>,
+    );
+
+  it('is dimmed but keeps every amount, and names its state for a screen reader', () => {
+    drawOne({ ...PLAIN, paid: true });
+
+    const frame = screen.getByTestId('category-tile-Transport');
+    expect(frame).toHaveAttribute('data-paid', 'true');
+    expect(frame).toHaveClass('opacity-55');
+    expect(frame).toHaveClass('hover:opacity-100');
+    expect(within(frame).getByTestId('available-Transport')).toHaveTextContent('8 zł');
+    expect(within(frame).getByTestId('paid-mark')).toHaveTextContent(en['categories.paidMark']);
+  });
+
+  it('cannot be dragged, so the order it keeps is the one it had before it was closed', () => {
+    drawOne({ ...PLAIN, paid: true });
+
+    expect(
+      screen.queryByRole('button', {
+        name: en['categories.reorder'].replace('{{category}}', 'Transport'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('is plain again when open, with the handle back and no mark', () => {
+    drawOne(PLAIN);
+
+    const frame = screen.getByTestId('category-tile-Transport');
+    expect(frame).not.toHaveAttribute('data-paid');
+    expect(frame).not.toHaveClass('opacity-55');
+    expect(within(frame).queryByTestId('paid-mark')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: en['categories.reorder'].replace('{{category}}', 'Transport'),
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('takes a warning frame only when the screen asks for attention, and never a red one', () => {
+    drawOne(PLAIN, { attention: true });
+
+    const card = screen
+      .getByTestId('category-tile-Transport')
+      .querySelector('[data-slot="category-tile"]');
+    expect(card).toHaveClass('ring-warning/45');
+    expect(card).not.toHaveClass('ring-destructive/45');
   });
 });

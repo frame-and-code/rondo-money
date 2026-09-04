@@ -118,6 +118,14 @@ export class BudgetViewCategoryResponse implements BudgetViewCategoryDto {
   hidden!: boolean;
 
   @ApiProperty({
+    description:
+      'Whether the user marked this category paid in the month that was asked about. The mark ' +
+      'belongs to the pair of category and month, so the next month starts without one, and ' +
+      'it changes no amount.',
+  })
+  paid!: boolean;
+
+  @ApiProperty({
     type: BudgetViewTargetResponse,
     nullable: true,
     description:

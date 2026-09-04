@@ -292,6 +292,15 @@ specification, and prose describing it is a summary rather than a replacement.
    in one mark what the two amounts beside it already say in text, so nothing rests on the colour
    alone, and it never spreads to a number. Every colour here is a theme token, because a literal
    is right in one theme and wrong in the other.
+   **A frame or a dimming says something about a card, never about an amount.** A tile takes
+   `ring-warning/45` only while the screen is filtered to the categories below zero, which the
+   notice beside ready to assign switches on and the address remembers, so the warning token
+   names a state to act on and the amount inside keeps its red. A category closed for the month
+   rests at reduced opacity and returns to full on hover, on focus and while its surface is open,
+   with a `success` check beside the name and text for a screen reader, so the state is read
+   without the dimming. It is drawn behind the open ones of its group without moving in the
+   stored order, which is why the drop of a card is written back through `storedOrder` rather
+   than as the order shown. `ring-destructive/45` keeps its one meaning, a save that failed.
    **Money flow is the screen where both halves of that rule stop.** An expense there is the ordinary
    case rather than a warning, so an amount below zero keeps the plain colour there, and money
    arriving on an account takes `text-success`, the token the goal badge already carries, income

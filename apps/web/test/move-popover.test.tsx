@@ -7,6 +7,8 @@ import { LocaleProvider } from '@/i18n/locale-context';
 import { ru } from '@/i18n/messages/ru';
 
 const move = jest.fn();
+const markPaid = jest.fn();
+const unmarkPaid = jest.fn();
 
 let search = '';
 let view: {
@@ -59,6 +61,13 @@ jest.mock('@rondo/api-client/react-query', () => ({
   categoryGroupsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoryGroupsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoryGroupsControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerReorderMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryPaidControllerMarkMutation: () => ({
+    mutationFn: (options: unknown) => markPaid(options) as unknown,
+  }),
+  categoryPaidControllerUnmarkMutation: () => ({
+    mutationFn: (options: unknown) => unmarkPaid(options) as unknown,
+  }),
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),

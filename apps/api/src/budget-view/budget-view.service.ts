@@ -101,6 +101,7 @@ function assemble(rows: BudgetViewRow[], month: CalendarMonth): BudgetViewGroupR
         available: serializeMoney(row.available),
         availableAllTime: serializeMoney(row.availableAllTime),
         hidden: row.categoryHidden,
+        paid: row.paid,
         target: targetOf(row, month),
       });
     }

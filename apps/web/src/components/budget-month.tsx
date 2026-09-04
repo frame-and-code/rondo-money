@@ -1,5 +1,20 @@
 'use client';
 
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { type CreateMoveDto } from '@rondo/api-client';
 import {
   budgetViewControllerReadOptions,
@@ -11,7 +26,10 @@ import {
   categoriesControllerUpdateMutation,
   categoryGroupsControllerCreateMutation,
   categoryGroupsControllerHideMutation,
+  categoryGroupsControllerReorderMutation,
   categoryGroupsControllerUpdateMutation,
+  categoryPaidControllerMarkMutation,
+  categoryPaidControllerUnmarkMutation,
   categoryTargetsControllerCloseMutation,
   categoryTargetsControllerSetMutation,
   movesControllerMoveMutation,
@@ -43,6 +61,7 @@ import { GroupDialog } from '@/components/group-dialog';
 import { HideCategoryDialog } from '@/components/hide-category-dialog';
 import { HideGroupDialog } from '@/components/hide-group-dialog';
 import { MoveFields } from '@/components/move-fields';
+import { PaidDialog } from '@/components/paid-dialog';
 import { SaveFailureBanner } from '@/components/save-failure-banner';
 import { SpendRing } from '@/components/spend-ring';
 import { TargetDialog } from '@/components/target-dialog';
@@ -51,7 +70,13 @@ import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
 import { categoryRing, monthFromUrl, monthLabel, monthNow } from '@/lib/budget-month';
 import { categoryFailure } from '@/lib/category-failure';
-import { reorderedView } from '@/lib/category-order';
+import {
+  reordered,
+  reorderedGroups,
+  reorderedView,
+  shownOrder,
+  storedOrder,
+} from '@/lib/category-order';
 import { moneyOf } from '@/lib/money';
 import { moveTargets, POOL, type MoveTarget } from '@/lib/move-target';
 import {
@@ -80,7 +105,8 @@ type Managing =
   | { kind: 'editCategory'; categoryId: string }
   | { kind: 'hideCategory'; categoryId: string }
   | { kind: 'hideGroup'; groupId: string }
-  | { kind: 'goal'; categoryId: string };
+  | { kind: 'goal'; categoryId: string }
+  | { kind: 'paid'; categoryId: string };
 
 const STEP_MS = 500;
 
@@ -94,6 +120,11 @@ export function BudgetMonth() {
   const params = useSearchParams();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const groupSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const budgets = useQuery(budgetsControllerListOptions());
   const budget = budgets.data?.find((candidate) => candidate.active) ?? null;
@@ -181,6 +212,10 @@ export function BudgetMonth() {
 
   const categories = (shownData?.groups ?? []).flatMap((group) => group.categories);
   const moved = categories.find((candidate) => candidate.id === moving?.categoryId) ?? null;
+
+  const belowZero = (one: { available: string }): boolean => parseMoney(one.available) < 0n;
+  const overspentCount = categories.filter(belowZero).length;
+  const filtering = params.get('overspent') === '1' && overspentCount > 0;
 
   const movedRing = moved === null ? null : categoryRing(moved);
   const reread = () => {
@@ -290,6 +325,30 @@ export function BudgetMonth() {
     onSettled: () => reread(),
   });
 
+  const reorderGroups = useMutation({
+    ...categoryGroupsControllerReorderMutation(),
+    onError: () => setFailure({ kind: 'other', categoryId: '', categoryName: '' }),
+    onSettled: () => reread(),
+  });
+
+  const markPaid = useMutation({ ...categoryPaidControllerMarkMutation(), ...managed });
+  const unmarkPaid = useMutation({
+    ...categoryPaidControllerUnmarkMutation(),
+    onSuccess: (_, variables) => {
+      intents.current.delete(`unpaid:${variables.path.id}:${variables.body.month}`);
+    },
+    onSettled: () => reread(),
+    onError: (error, variables) => {
+      const reopened = categories.find((one) => one.id === variables.path.id);
+
+      setFailure({
+        kind: saveFailureKind(error),
+        categoryId: variables.path.id,
+        categoryName: reopened?.name ?? '',
+      });
+    },
+  });
+
   const empty = budget === null || money === null || month === null || today === null || !shownData;
 
   if (budgets.isError) {
@@ -358,6 +417,11 @@ export function BudgetMonth() {
     waited.current = false;
     discard();
     window.history.pushState(null, '', `${pathname}?month=${next}`);
+  };
+
+  const setFilter = (on: boolean): void => {
+    discard();
+    window.history.pushState(null, '', `${pathname}?month=${month}${on ? '&overspent=1' : ''}`);
   };
 
   const moveShape =
@@ -577,6 +641,14 @@ export function BudgetMonth() {
         onEdit={() => manage({ kind: 'editCategory', categoryId })}
         onHide={() => manage({ kind: 'hideCategory', categoryId })}
         onGoal={() => manage({ kind: 'goal', categoryId })}
+        onPaid={() =>
+          shown.paid
+            ? unmarkPaid.mutate({
+                path: { id: categoryId },
+                body: { month, idempotencyKey: keyFor(`unpaid:${categoryId}:${month}`) },
+              })
+            : manage({ kind: 'paid', categoryId })
+        }
       />
     );
   };
@@ -732,6 +804,23 @@ export function BudgetMonth() {
       );
     }
 
+    if (managing.kind === 'paid' && managedCategory !== null) {
+      return (
+        <PaidDialog
+          category={{ id: managedCategory.id, name: managedCategory.name }}
+          failed={refused}
+          busy={markPaid.isPending}
+          onCancel={closeManaging}
+          onConfirm={() =>
+            markPaid.mutate({
+              path: { id: managedCategory.id },
+              body: { month, idempotencyKey: keyFor('paid') },
+            })
+          }
+        />
+      );
+    }
+
     if (managing.kind === 'hideGroup' && managedGroup !== null) {
       return (
         <HideGroupDialog
@@ -768,7 +857,16 @@ export function BudgetMonth() {
     return null;
   };
 
-  const reorder = (groupId: string, categoryIds: string[]): void => {
+  const reorder = (groupId: string, shownIds: string[]): void => {
+    const group = shownData.groups.find((one) => one.id === groupId);
+    if (group === undefined) return;
+
+    const paid = new Set(group.categories.filter((one) => one.paid).map((one) => one.id));
+    const categoryIds = storedOrder(
+      group.categories.map((one) => one.id),
+      paid,
+      shownIds,
+    );
     const key = budgetViewControllerReadQueryKey({ query: { month } });
 
     queryClient.setQueryData(key, (current: typeof shownData) =>
@@ -780,6 +878,41 @@ export function BudgetMonth() {
 
     reorderCategories.mutate({ body: { groupId, categoryIds, idempotencyKey: mintKey() } });
   };
+
+  const groupIds = shownData.groups.map((one) => one.id);
+
+  const groupDropped = (event: DragEndEvent): void => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const from = groupIds.indexOf(String(active.id));
+    const to = groupIds.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+
+    const next = reordered(groupIds, from, to);
+    const key = budgetViewControllerReadQueryKey({ query: { month } });
+
+    queryClient.setQueryData(key, (current: typeof shownData) =>
+      current === undefined ? current : reorderedGroups(current, next),
+    );
+    setHeld((current) => (current === undefined ? current : reorderedGroups(current, next)));
+
+    reorderGroups.mutate({ body: { groupIds: next, idempotencyKey: mintKey() } });
+  };
+
+  const shownGroups = filtering
+    ? shownData.groups.flatMap((group) => {
+        const kept = group.categories.filter(belowZero);
+
+        return kept.length === 0 ? [] : [{ ...group, categories: kept }];
+      })
+    : shownData.groups;
+
+  const totalOf = (groupId: string): bigint =>
+    (shownData.groups.find((one) => one.id === groupId)?.categories ?? []).reduce(
+      (total, one) => total + parseMoney(one.available),
+      0n,
+    );
 
   const addGroup = (
     <div className="mt-5.5 flex justify-end">
@@ -824,7 +957,10 @@ export function BudgetMonth() {
         first={budget.firstMonth}
         readyToAssign={parseMoney(shownData.readyToAssign)}
         money={money}
+        overspent={overspentCount}
+        filtering={filtering}
         onMonth={goToMonth}
+        onFilter={setFilter}
       />
 
       {failure === null || failureInSurface ? null : (
@@ -843,43 +979,52 @@ export function BudgetMonth() {
         >
           {shownData.groups.length === 0 ? nothingYet : null}
 
-          {shownData.groups.map((group) => (
-            <CategoryGroup
-              key={group.id}
-              id={group.id}
-              name={group.name}
-              available={money.format(
-                group.categories.reduce((total, one) => total + parseMoney(one.available), 0n),
-              )}
-              onAdd={() => manage({ kind: 'newCategory', groupId: group.id })}
-              onRename={() => manage({ kind: 'editGroup', groupId: group.id })}
-              onHide={() => manage({ kind: 'hideGroup', groupId: group.id })}
-              onReorder={(categoryIds) => reorder(group.id, categoryIds)}
-              categoryIds={group.categories.map((one) => one.id)}
-            >
-              {group.categories.map((category) => (
-                <CategoryTile
-                  key={category.id}
-                  category={category}
-                  money={money}
-                  moveOpen={moveDialogOpen && moving?.categoryId === category.id}
-                  movePanel={
-                    moving?.categoryId === category.id ? (
-                      <>
-                        {movePanel()}
-                        {goalCard(category)}
-                        {managePanel(category.id)}
-                      </>
-                    ) : null
-                  }
-                  moveInPopover={!isMobile}
-                  onMoveOpen={() => openMove(category.id)}
-                  onMoveClose={cancel}
-                  failed={failure?.categoryId === category.id}
-                />
+          <DndContext
+            sensors={groupSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={groupDropped}
+          >
+            <SortableContext items={groupIds} strategy={verticalListSortingStrategy}>
+              {shownGroups.map((group) => (
+                <CategoryGroup
+                  key={group.id}
+                  id={group.id}
+                  name={group.name}
+                  available={money.format(totalOf(group.id))}
+                  sortable={!filtering}
+                  onAdd={() => manage({ kind: 'newCategory', groupId: group.id })}
+                  onRename={() => manage({ kind: 'editGroup', groupId: group.id })}
+                  onHide={() => manage({ kind: 'hideGroup', groupId: group.id })}
+                  onReorder={(categoryIds) => reorder(group.id, categoryIds)}
+                  categoryIds={shownOrder(group.categories).map((one) => one.id)}
+                >
+                  {shownOrder(group.categories).map((category) => (
+                    <CategoryTile
+                      key={category.id}
+                      category={category}
+                      money={money}
+                      attention={filtering}
+                      sortable={!filtering}
+                      moveOpen={moveDialogOpen && moving?.categoryId === category.id}
+                      movePanel={
+                        moving?.categoryId === category.id ? (
+                          <>
+                            {movePanel()}
+                            {goalCard(category)}
+                            {managePanel(category.id)}
+                          </>
+                        ) : null
+                      }
+                      moveInPopover={!isMobile}
+                      onMoveOpen={() => openMove(category.id)}
+                      onMoveClose={cancel}
+                      failed={failure?.categoryId === category.id}
+                    />
+                  ))}
+                </CategoryGroup>
               ))}
-            </CategoryGroup>
-          ))}
+            </SortableContext>
+          </DndContext>
 
           {addGroup}
         </div>

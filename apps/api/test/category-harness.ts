@@ -35,6 +35,7 @@ export interface ViewCategory {
   available: string;
   availableAllTime: string;
   hidden: boolean;
+  paid: boolean;
   target: ViewTarget | null;
 }
 
@@ -119,6 +120,12 @@ export interface CategoryHarness {
     month: string,
     amount: bigint,
   ) => Promise<unknown>;
+  seedPaid: (
+    userId: string,
+    budgetId: string,
+    categoryId: string,
+    month: string,
+  ) => Promise<{ id: string }>;
   viewOf: (userId: string, month: string, includeHidden?: boolean) => Promise<View>;
   close: () => Promise<void>;
 }
@@ -156,6 +163,7 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
       await prisma.transaction.deleteMany({ where: owned });
       await prisma.assignment.deleteMany({ where: owned });
       await prisma.categoryTarget.deleteMany({ where: owned });
+      await prisma.categoryPaidMonth.deleteMany({ where: owned });
       await prisma.category.deleteMany({ where: owned });
       await prisma.categoryGroup.deleteMany({ where: owned });
       await prisma.account.deleteMany({ where: owned });
@@ -244,6 +252,10 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
     seedAssignment: (userId, budgetId, categoryId, month, amount) =>
       prisma.assignment.create({
         data: { userId, budgetId, categoryId, month: toDbMonth(parseCalendarMonth(month)), amount },
+      }),
+    seedPaid: (userId, budgetId, categoryId, month) =>
+      prisma.categoryPaidMonth.create({
+        data: { userId, budgetId, categoryId, month: toDbMonth(parseCalendarMonth(month)) },
       }),
     viewOf: async (userId, month, includeHidden = false) => {
       const response = await request(server())
