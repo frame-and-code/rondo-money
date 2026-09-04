@@ -109,6 +109,7 @@ model Budget {
   transactions    Transaction[]
   assignments     Assignment[]
   categoryTargets CategoryTarget[]
+  paidMonths      CategoryPaidMonth[]
 
   @@unique([userId, active], map: "budget_one_active_per_user", where: { active: true })
   /// The target of every child's `(budgetId, userId)` foreign key. Two independent keys would
@@ -172,6 +173,7 @@ model Category {
   transactions Transaction[]
   assignments  Assignment[]
   targets      CategoryTarget[]
+  paidMonths   CategoryPaidMonth[]
 
   /// The target of every child's `(categoryId, budgetId)` foreign key.
   @@unique([id, budgetId])
@@ -353,4 +355,33 @@ model CategoryTarget {
   @@unique([categoryId, startMonth])
   @@index([userId, budgetId])
   @@map("category_target")
+}
+
+/// A mark the user puts on a category for one month, saying the payment it stands for is
+/// done. It is a state the user sets rather than a number the app derives: an expense can be
+/// recorded while the bill is still unpaid, and the other way round, so nothing in the
+/// transactions can stand in for it. A row is the mark, and taking the mark off deletes the
+/// row. It changes no amount anywhere.
+model CategoryPaidMonth {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  categoryId String @map("category_id") @db.Uuid
+
+  /// The first day of the month the mark belongs to, a calendar date without a time. The next
+  /// month carries no mark until the user puts one there.
+  month DateTime @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  budget   Budget   @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+  category Category @relation(fields: [categoryId, budgetId], references: [id, budgetId], onDelete: Restrict)
+
+  /// One mark per category and month. The column is held to the first of its month by a check
+  /// constraint in the migration, which Prisma has no way to declare here.
+  @@unique([categoryId, month])
+  @@index([userId, budgetId, month])
+  @@map("category_paid_month")
 }

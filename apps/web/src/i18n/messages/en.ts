@@ -128,6 +128,18 @@ export const en: Record<MessageKey, string> = {
   'categories.hideBlocked':
     'A category holding money cannot be hidden: the money would leave the screen with it.',
   'categories.reorder': 'Reorder the category {{category}}',
+  'categories.reorderGroup': 'Reorder the group {{group}}',
+  'categories.emptyGroupAdd': 'Add a category',
+  'categories.paidClose': 'Close for this month',
+  'categories.paidReopen': 'Reopen',
+  'categories.paidTitle': 'Close the category {{category}} for this month?',
+  'categories.paidBody':
+    'The card turns translucent and moves to the end of its group. The money in it stays, and no amount changes. Next month the category is open again.',
+  'categories.paidConfirm': 'Yes, close it',
+  'categories.paidMark': 'Closed for this month',
+  'categories.overspentCount': 'Categories below zero: {{count}}',
+  'categories.overspentShow': 'Show only them',
+  'categories.overspentShowAll': 'Show all',
   'categoryIcon.home': 'Housing',
   'categoryIcon.bolt': 'Electricity',
   'categoryIcon.droplet': 'Water',

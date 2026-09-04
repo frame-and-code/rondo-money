@@ -34,3 +34,53 @@ export function reorderedView<
 
   return { ...view, groups };
 }
+
+export function reorderedGroups<Group extends { id: string }, View extends { groups: Group[] }>(
+  view: View,
+  groupIds: readonly string[],
+): View {
+  const held = new Map(view.groups.map((group) => [group.id, group]));
+  const moved = groupIds.flatMap((id) => {
+    const group = held.get(id);
+
+    return group === undefined ? [] : [group];
+  });
+
+  return moved.length === view.groups.length ? { ...view, groups: moved } : view;
+}
+
+export function shownOrder<Category extends { paid: boolean }>(
+  categories: readonly Category[],
+): Category[] {
+  return [
+    ...categories.filter((category) => !category.paid),
+    ...categories.filter((category) => category.paid),
+  ];
+}
+
+export function storedOrder(
+  stored: readonly string[],
+  paid: ReadonlySet<string>,
+  shown: readonly string[],
+): string[] {
+  const sameSet =
+    stored.length === shown.length && [...stored].sort().join() === [...shown].sort().join();
+
+  if (!sameSet) {
+    throw new Error(
+      `The shown order names different categories than the stored one: ${shown.join(', ')} ` +
+        `against ${stored.join(', ')}`,
+    );
+  }
+
+  const open = shown.filter((id) => !paid.has(id));
+  const closed = shown.filter((id) => paid.has(id));
+  let nextOpen = 0;
+  let nextClosed = 0;
+
+  return stored.map((id) => {
+    const taken = paid.has(id) ? closed[nextClosed++] : open[nextOpen++];
+
+    return taken ?? id;
+  });
+}

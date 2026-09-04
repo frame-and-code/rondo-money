@@ -1623,6 +1623,150 @@
         ]
       }
     },
+    "/categories/{id}/paid": {
+      "post": {
+        "description": "Puts a mark on the pair of category and month saying the payment the category stands for is done. The mark is a state the user sets rather than a number the app derives, and it changes no amount. The next month starts without one. Marking a category that already carries the mark leaves it as it is.",
+        "operationId": "CategoryPaidController_mark",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryPaidMonthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The mark as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryPaidMonthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark a category paid for one month",
+        "tags": [
+          "CategoryPaid"
+        ]
+      }
+    },
+    "/categories/{id}/unpaid": {
+      "post": {
+        "description": "Removes the mark from the pair of category and month. A category carrying none is left as it is.",
+        "operationId": "CategoryPaidController_unmark",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryPaidMonthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The mark as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryPaidMonthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Take the paid mark off a category for one month",
+        "tags": [
+          "CategoryPaid"
+        ]
+      }
+    },
     "/moves": {
       "post": {
         "description": "Moves an amount out of one envelope and into another for one month, where ready to assign is an envelope too. Assigning money is this same operation with ready to assign as the source, so there is no separate way to set what a category holds.",
@@ -3211,6 +3355,10 @@
             "type": "boolean",
             "description": "Whether this category is hidden in the month that was asked about. A category hidden in February is not hidden in January, and only shows up here when the caller asked for the hidden ones."
           },
+          "paid": {
+            "type": "boolean",
+            "description": "Whether the user marked this category paid in the month that was asked about. The mark belongs to the pair of category and month, so the next month starts without one, and it changes no amount."
+          },
           "target": {
             "nullable": true,
             "description": "The goal this category is running in the month that was asked about, and null when it runs none. A category keeps its goals, so which one appears here is decided by the month rather than by which was written last.",
@@ -3232,6 +3380,7 @@
           "available",
           "availableAllTime",
           "hidden",
+          "paid",
           "target"
         ]
       },
@@ -3727,6 +3876,53 @@
           "kind",
           "amount",
           "startMonth"
+        ]
+      },
+      "CategoryPaidMonthDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "month": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month the mark belongs to. It is the month the screen is showing rather than the one the budget is living in, so a bill paid late can be marked in the month it was for."
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "month"
+        ],
+        "additionalProperties": false
+      },
+      "CategoryPaidMonthResponse": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The category the mark is on."
+          },
+          "month": {
+            "type": "string",
+            "pattern": "^(19\\d{2}|2\\d{3})-(0[1-9]|1[0-2])$",
+            "example": "2026-02",
+            "description": "The month the mark belongs to."
+          },
+          "paid": {
+            "type": "boolean",
+            "description": "Whether the category carries the mark in that month now. True after marking, false after taking the mark off, whichever state it was in before."
+          }
+        },
+        "required": [
+          "categoryId",
+          "month",
+          "paid"
         ]
       },
       "MoveSideKind": {

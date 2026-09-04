@@ -97,6 +97,7 @@ src/
                               # ring, the fields that move money between envelopes, the
                               # actions folded under them, the dialog a category is set up in,
                               # the one a group is, the two that hide a category and a group,
+                              # the one that closes a category for the month,
                               # the badge with its tooltip and the panel that explain a goal,
                               # the form it is set in, the amount whose digits roll when it
                               # changes, and the banner that says a save did not go through
@@ -133,8 +134,10 @@ src/
                               # budget's timezone
   lib/category-look.ts        # a category's icon and colour name to a component and a token,
                               # with the money icon for a category nobody has given one
-  lib/category-order.ts       # where a dragged category lands, as a pure list-to-list move,
-                              # so the order a drop asks for is testable without a browser
+  lib/category-order.ts       # where a dragged category or group lands, as a pure
+                              # list-to-list move, and how a group's shown order, closed
+                              # cards last, maps back to the stored one a drop writes, so
+                              # both are testable without a browser
   lib/move-target.ts          # the envelopes a move can name as its other side, built from
                               # the month on screen: what is free first, then the categories,
                               # never the one the money is leaving

@@ -14,9 +14,17 @@ import {
   SortableContext,
   rectSortingStrategy,
   sortableKeyboardCoordinates,
+  useSortable,
 } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconChevronDown, IconEyeOff, IconPencil, IconPlus } from '@tabler/icons-react';
+import {
+  IconChevronDown,
+  IconEyeOff,
+  IconGripVertical,
+  IconPencil,
+  IconPlus,
+} from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
@@ -27,6 +35,7 @@ export function CategoryGroup({
   name,
   available,
   categoryIds,
+  sortable = true,
   onAdd,
   onRename,
   onHide,
@@ -37,6 +46,7 @@ export function CategoryGroup({
   name: string;
   available: string;
   categoryIds: string[];
+  sortable?: boolean;
   onAdd: () => void;
   onRename: () => void;
   onHide: () => void;
@@ -46,6 +56,7 @@ export function CategoryGroup({
   const { t } = useTranslations();
   const [open, setOpen] = useState(true);
   const body = useId();
+  const group = useSortable({ id, disabled: !sortable });
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -64,9 +75,50 @@ export function CategoryGroup({
     onReorder(reordered(categoryIds, from, to));
   };
 
+  const empty = (
+    <button
+      type="button"
+      data-testid={`empty-group-${id}`}
+      aria-label={t('categories.addTo', { group: name })}
+      onClick={onAdd}
+      className={cn(
+        'text-muted-foreground flex min-h-36 w-full flex-col items-center justify-center gap-2',
+        'rounded-[20px] border border-dashed p-4 text-sm font-medium',
+        'transition-colors duration-[120ms] hover:bg-muted/60 hover:text-foreground',
+        'focus-visible:ring-ring/60 focus-visible:ring-2 focus-visible:outline-none',
+      )}
+    >
+      <span className="bg-muted flex size-10 items-center justify-center rounded-full">
+        <IconPlus aria-hidden className="size-5" />
+      </span>
+      {t('categories.emptyGroupAdd')}
+    </button>
+  );
+
   return (
-    <section className="flex flex-col gap-2.5">
-      <div className="flex items-center gap-3">
+    <section
+      ref={group.setNodeRef}
+      data-testid={`category-group-${id}`}
+      style={{
+        transform: CSS.Transform.toString(group.transform),
+        transition: group.transition,
+        zIndex: group.isDragging ? 1 : 0,
+      }}
+      className={cn('relative flex flex-col gap-2.5', group.isDragging && 'opacity-90')}
+    >
+      <div className="flex items-center gap-1.5">
+        {sortable ? (
+          <button
+            type="button"
+            data-testid={`reorder-group-${id}`}
+            aria-label={t('categories.reorderGroup', { group: name })}
+            className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted/60 flex size-7 shrink-0 cursor-grab items-center justify-center rounded-lg transition-colors duration-[120ms]"
+            {...group.attributes}
+            {...group.listeners}
+          >
+            <IconGripVertical aria-hidden className="size-4" />
+          </button>
+        ) : null}
         <button
           type="button"
           aria-expanded={open}
@@ -92,8 +144,8 @@ export function CategoryGroup({
             {name}
           </span>
         </button>
-        <div aria-hidden className="h-px flex-1 bg-black/6 dark:bg-white/10" />
-        <span className="flex items-center gap-0.5">
+        <div aria-hidden className="ms-1.5 h-px flex-1 bg-black/6 dark:bg-white/10" />
+        <span className="ms-1.5 flex items-center gap-0.5">
           <button
             type="button"
             aria-label={t('categories.addTo', { group: name })}
@@ -119,7 +171,7 @@ export function CategoryGroup({
             <IconEyeOff aria-hidden className="size-4" />
           </button>
         </span>
-        <span className="flex shrink-0 flex-col items-end md:flex-row md:items-baseline md:gap-1.5">
+        <span className="ms-1.5 flex shrink-0 flex-col items-end md:flex-row md:items-baseline md:gap-1.5">
           <span className="text-muted-foreground order-2 text-xs md:order-1">
             {t('categories.available')}
           </span>
@@ -150,7 +202,9 @@ export function CategoryGroup({
         >
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={dropped}>
             <SortableContext items={categoryIds} strategy={rectSortingStrategy}>
-              <div className="grid gap-4 px-1 py-1 md:grid-cols-2 xl:grid-cols-3">{children}</div>
+              <div className="grid gap-4 px-1 py-1 md:grid-cols-2 xl:grid-cols-3">
+                {categoryIds.length === 0 ? empty : children}
+              </div>
             </SortableContext>
           </DndContext>
         </div>

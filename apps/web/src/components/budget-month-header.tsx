@@ -5,7 +5,13 @@ import type { CalendarMonth } from '@rondo/types';
 import { Button } from '@rondo/ui/components/ui/button';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconCalendar, IconChevronLeft, IconChevronRight, IconLoader } from '@tabler/icons-react';
+import {
+  IconAlertTriangle,
+  IconCalendar,
+  IconChevronLeft,
+  IconChevronRight,
+  IconLoader,
+} from '@tabler/icons-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { RollingAmount } from '@/components/rolling-amount';
@@ -50,7 +56,10 @@ export function BudgetMonthHeader({
   readyToAssign,
   money,
   covered,
+  overspent = 0,
+  filtering = false,
   onMonth,
+  onFilter,
 }: {
   month: CalendarMonth;
   stepping: 'forward' | 'back' | null;
@@ -60,7 +69,10 @@ export function BudgetMonthHeader({
   readyToAssign: bigint;
   money: MoneyReader;
   covered: boolean;
+  overspent?: number;
+  filtering?: boolean;
   onMonth: (next: CalendarMonth) => void;
+  onFilter?: (on: boolean) => void;
 }) {
   const { t, locale } = useTranslations();
   const mark = useRef<HTMLDivElement>(null);
@@ -264,6 +276,27 @@ export function BudgetMonthHeader({
           >
             {t(hint)}
           </span>
+          {overspent > 0 || filtering ? (
+            <span
+              data-testid="overspent-notice"
+              className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start"
+            >
+              <IconAlertTriangle aria-hidden className="text-warning size-4 shrink-0" />
+              <span className="text-muted-foreground text-[13px]">
+                {t('categories.overspentCount', { count: String(overspent) })}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-pressed={filtering}
+                className="rounded-2xl text-xs"
+                onClick={() => onFilter?.(!filtering)}
+              >
+                {t(filtering ? 'categories.overspentShowAll' : 'categories.overspentShow')}
+              </Button>
+            </span>
+          ) : null}
         </div>
       </div>
     </>

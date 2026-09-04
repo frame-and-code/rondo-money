@@ -8,16 +8,23 @@ import { en } from '@/i18n/messages/en';
 const onEdit = jest.fn();
 const onHide = jest.fn();
 const onGoal = jest.fn();
+const onPaid = jest.fn();
 
-const draw = (options: { hidden?: boolean; currentMonth?: boolean } = {}) =>
+const draw = (options: { hidden?: boolean; currentMonth?: boolean; paid?: boolean } = {}) =>
   render(
     <LocaleProvider>
       <CategoryActions
-        category={{ id: 'c1', name: 'Кафе и рестораны', hidden: options.hidden ?? false }}
+        category={{
+          id: 'c1',
+          name: 'Кафе и рестораны',
+          hidden: options.hidden ?? false,
+          paid: options.paid ?? false,
+        }}
         currentMonth={options.currentMonth ?? true}
         onEdit={onEdit}
         onHide={onHide}
         onGoal={onGoal}
+        onPaid={onPaid}
       />
     </LocaleProvider>,
   );
@@ -58,7 +65,7 @@ describe('the actions under the move fields', () => {
 
     await user.click(screen.getByRole('button', { name: en['categories.manage'] }));
 
-    expect(screen.getAllByRole('button')).toHaveLength(4);
+    expect(screen.getAllByRole('button')).toHaveLength(5);
   });
 
   it('sends each row to its own dialog', async () => {
@@ -94,7 +101,7 @@ describe('the actions under the move fields', () => {
     expect(
       screen
         .getAllByRole('button')
-        .slice(1)
+        .slice(2)
         .map((row) => row.textContent),
     ).toEqual([en['categories.goal'], en['categories.edit'], en['categories.hide']]);
   });
@@ -147,5 +154,33 @@ describe('the actions under the move fields', () => {
 
     expect(screen.queryByText(en['categories.goalOnlyThisMonth'])).not.toBeInTheDocument();
     expect(screen.queryByText(en['categories.goalHiddenCategory'])).not.toBeInTheDocument();
+  });
+});
+
+describe('closing the category for the month', () => {
+  it('sits above the folded actions and is reachable without unfolding them', () => {
+    draw();
+
+    const [first] = screen.getAllByRole('button');
+    expect(first).toHaveTextContent(en['categories.paidClose']);
+    expect(screen.queryByRole('button', { name: en['categories.edit'] })).not.toBeInTheDocument();
+  });
+
+  it('offers to reopen a category that is already closed', () => {
+    draw({ paid: true });
+
+    expect(screen.getByRole('button', { name: en['categories.paidReopen'] })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: en['categories.paidClose'] }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('hands the click to the screen, which decides whether to ask first', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await user.click(screen.getByRole('button', { name: en['categories.paidClose'] }));
+
+    expect(onPaid).toHaveBeenCalledTimes(1);
   });
 });

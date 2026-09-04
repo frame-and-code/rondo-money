@@ -21,6 +21,8 @@ export interface BudgetViewCategoryDto {
 
   hidden: boolean;
 
+  paid: boolean;
+
   target: BudgetViewTargetDto | null;
 }
 

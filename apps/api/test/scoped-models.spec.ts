@@ -65,6 +65,7 @@ describe('the budget-scoped-model registry', () => {
       'Assignment',
       'Category',
       'CategoryGroup',
+      'CategoryPaidMonth',
       'CategoryTarget',
       'Transaction',
     ]);
@@ -101,6 +102,7 @@ describe('the mutation-guarded-model registry', () => {
       'Budget',
       'Category',
       'CategoryGroup',
+      'CategoryPaidMonth',
       'CategoryTarget',
       'Transaction',
     ]);
