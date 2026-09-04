@@ -247,6 +247,32 @@ export const ru = {
     'Сервер не принял выбор, интерфейс остался на прежнем языке. Попробуйте ещё раз.',
   'settings.saveFailedDismiss': 'Понятно',
 
+  'settings.danger': 'Опасная зона',
+  'settings.dangerNote':
+    'Эти два действия необратимы. Отменить их внутри приложения нельзя: не останется ' +
+    'истории, из которой их можно было бы откатить.',
+  'settings.reset': 'Стереть все данные',
+  'settings.resetTitle': 'Стереть все данные?',
+  'settings.resetBody':
+    'Пропадут все бюджеты, счета, записи и конверты. Вход останется, и приложение откроется ' +
+    'с создания бюджета.',
+  'settings.resetPhrase': 'СТЕРЕТЬ',
+  'settings.resetConfirm': 'Стереть',
+  'settings.delete': 'Удалить аккаунт',
+  'settings.deleteTitle': 'Удалить аккаунт?',
+  'settings.deleteBody':
+    'Пропадут все данные, а следом и сам аккаунт. Войти этой почтой снова будет нельзя, ' +
+    'придётся заводить новый.',
+  'settings.deletePhrase': 'УДАЛИТЬ',
+  'settings.deleteConfirm': 'Удалить',
+  'settings.erasePhraseLabel': 'Наберите {{phrase}}, чтобы подтвердить',
+  'settings.eraseCancel': 'Отмена',
+  'settings.eraseFailed': 'Не получилось. Попробуйте ещё раз.',
+  'settings.eraseFailedNetwork': 'Сервер не ответил. Данные могли уже стереться, повторите.',
+  'settings.eraseFailedConflict':
+    'Этим ключом уже воспользовались. Закройте окно и начните заново.',
+  'settings.eraseFailedAccount': 'Данные стёрты, но аккаунт удалить не удалось. Повторите.',
+
   'onboarding.progress': 'Настройка, шаг {{step}} из 3',
   'onboarding.step1Title': 'Бюджет',
   'onboarding.step1Body':

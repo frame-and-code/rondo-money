@@ -34,6 +34,10 @@ export const RECONCILE_TEST_EMAIL = 'e2e-reconcile+clerk_test@example.com';
 
 export const SETTINGS_TEST_EMAIL = 'e2e-settings+clerk_test@example.com';
 
+export const RESET_TEST_EMAIL = 'e2e-reset+clerk_test@example.com';
+
+export const ERASE_TEST_EMAIL = 'e2e-erase+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }
@@ -48,6 +52,12 @@ export async function ensureTestUser(email: string): Promise<void> {
   if (totalCount > 0) return;
 
   await create(clerk, email);
+}
+
+export async function hasTestUser(email: string): Promise<boolean> {
+  const { totalCount } = await client().users.getUserList({ emailAddress: [email] });
+
+  return totalCount > 0;
 }
 
 export async function recreateTestUser(email: string): Promise<void> {

@@ -28,8 +28,10 @@ judgement hold.
 [`src/budget-view`](src/budget-view) is the third shape, a read the extension cannot express at
 all: the budget numbers are aggregates over many rows, so they are hand-written SQL through the
 raw-SQL repository, which supplies the caller and leaves the budget to the service.
-[`src/moves`](src/moves) is a write and nothing else, and it is the only code that may **write**
-the `Assignment` table; `src/budget-view` reads it, as any aggregate may.
+[`src/moves`](src/moves) is a write and nothing else, and it is the only code that **writes**
+the `Assignment` table through Prisma; `src/budget-view` reads it, as any aggregate may. The
+erase in [`src/me`](src/me) deletes those rows with raw SQL, which the lint restriction cannot
+see; [architecture](../../.claude/rules/architecture.md) owns why that one exception stands.
 [`src/categories`](src/categories) is the fourth shape, writes that first have to read an
 aggregate: hiding a category is refused while it still holds money over any month, so the
 mutation locks the rows with `SELECT ... FOR UPDATE` and sums them inside its own transaction.
@@ -50,6 +52,13 @@ no such order, because both rows are new and neither is a row anyone else can be
 - `GET /me` echoes back the `userId` the guard verified. It is protected and touches no table.
   It exists so that a test can exercise the whole auth chain
   (token → guard → `@CurrentUserId()`) over HTTP, with no query in the way.
+- `POST /me/erase` deletes every row the caller owns, in one transaction, one statement per
+  table. Deletion is physical and nothing undoes it. It reaches every budget the caller has
+  rather than the active one, which is why it is raw SQL rather than the scoped client. The
+  account itself is untouched: this API holds no credential that could reach the identity
+  provider, so a client that wants the account gone deletes it with the session it already
+  has. A repeat under the same key is answered with the first result, and one row survives the
+  sweep, the idempotency key that request claimed.
 - `GET /user-settings` returns the caller's own settings, today just the interface language.
   It is get-or-create: the first call stores the language read from `Accept-Language` (ru/en/pl,
   anything else → `en`), every later one only reads. A GET that can write is deliberate.
@@ -174,7 +183,7 @@ no such order, because both rows are new and neither is a row anyone else can be
   `UNKNOWN_ACCOUNT`, `UNKNOWN_TRANSFER`, `NO_ACTIVE_BUDGET`.
 - `POST /categories`, `PATCH /categories/:id`, `POST /categories/:id/hide`, `/unhide` and
   `POST /categories/reorder` are the category's own operations, and the five under
-  `/category-groups` are the group's. There is no way to delete either: a category is hidden and
+  `/category-groups` are the group's. No budget operation deletes either: a category is hidden and
   its row, its transactions and its place in every aggregate stay where they were. Hiding is
   refused while the category holds anything over any month, in either direction of the sign, and
   the refusal carries that amount so the screen can name it. A group is hidden with its

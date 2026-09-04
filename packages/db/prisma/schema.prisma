@@ -159,8 +159,9 @@ model Category {
   icon  String? @db.VarChar(32)
   color String? @db.VarChar(32)
 
-  /// A category is hidden, never deleted, so its past Activity keeps counting and no
-  /// expense is left without one.
+  /// A category is hidden rather than deleted by anything a budget does, so its past
+  /// Activity keeps counting and no expense is left without one. The one thing that removes
+  /// the row is the caller erasing everything they own.
   hiddenAt DateTime? @map("hidden_at")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -188,8 +189,9 @@ model Account {
   name String
   type AccountType
 
-  /// Set when the account is archived. Deleting an account is not supported in v1, because
-  /// its transactions carry balances that other numbers are derived from.
+  /// Set when the account is archived. No budget operation deletes an account, because its
+  /// transactions carry balances that other numbers are derived from. The one thing that
+  /// removes the row is the caller erasing everything they own.
   archivedAt DateTime? @map("archived_at")
 
   createdAt DateTime @default(now()) @map("created_at")

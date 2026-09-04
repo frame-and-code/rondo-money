@@ -163,6 +163,7 @@ describe('OpenAPI document', () => {
       '/category-groups/{id}/unhide',
       '/health',
       '/me',
+      '/me/erase',
       '/moves',
       '/transactions',
       '/transactions/payees',

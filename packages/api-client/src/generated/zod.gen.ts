@@ -21,6 +21,29 @@ export const zUnauthorizedResponse = z.object({
     message: z.string()
 });
 
+export const zEraseMeDto = z.object({
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zErasedUserResponse = z.object({
+    userId: z.string()
+});
+
+export const zBadRequestResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ])
+});
+
+export const zConflictResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string()
+});
+
 /**
  * The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.
  */
@@ -37,21 +60,6 @@ export const zUserSettingsResponse = z.object({
 export const zUpdateUserSettingsDto = z.object({
     language: zLanguageTag,
     idempotencyKey: z.string().min(1).max(64)
-});
-
-export const zBadRequestResponse = z.object({
-    statusCode: z.number(),
-    error: z.string(),
-    message: z.union([
-        z.string(),
-        z.array(z.string())
-    ])
-});
-
-export const zConflictResponse = z.object({
-    statusCode: z.number(),
-    error: z.string(),
-    message: z.string()
 });
 
 export const zCreateBudgetDto = z.object({
@@ -582,6 +590,13 @@ export const zHealthControllerCheckResponse = zHealthResponse;
  * The token was valid.
  */
 export const zMeControllerIdentifyResponse = zCurrentUserResponse;
+
+export const zMeControllerEraseBody = zEraseMeDto;
+
+/**
+ * The caller whose data is now gone.
+ */
+export const zMeControllerEraseResponse = zErasedUserResponse;
 
 export const zUserSettingsControllerReadHeaders = z.object({
     'accept-language': z.string().optional()

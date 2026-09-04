@@ -69,6 +69,69 @@
         ]
       }
     },
+    "/me/erase": {
+      "post": {
+        "description": "Deletes every row belonging to the caller in one database transaction: budgets, accounts, records, envelopes, goals and their own settings. It is physical deletion and there is nothing to undo it with. The account itself is untouched, because this API holds no credential that could reach the identity provider; a client that wants the account gone deletes it with the session it already has. It is a POST because the idempotency key travels in the body.",
+        "operationId": "MeController_erase",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EraseMeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The caller whose data is now gone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasedUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Erase everything the caller owns",
+        "tags": [
+          "Me"
+        ]
+      }
+    },
     "/user-settings": {
       "get": {
         "description": "Creates the settings row on first call, taking the interface language from `Accept-Language`; afterwards it only reads. It never returns another user's settings. The caller is the verified token's subject and nothing else.",
@@ -2293,56 +2356,33 @@
           "message"
         ]
       },
-      "LanguageTag": {
-        "type": "string",
-        "enum": [
-          "ru",
-          "en",
-          "pl"
-        ],
-        "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards."
-      },
-      "UserSettingsResponse": {
+      "EraseMeDto": {
         "type": "object",
         "properties": {
-          "language": {
-            "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.",
-            "example": "en",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/LanguageTag"
-              }
-            ]
-          }
-        },
-        "required": [
-          "language"
-        ]
-      },
-      "UpdateUserSettingsDto": {
-        "type": "object",
-        "properties": {
-          "language": {
-            "description": "The language to speak to this user in, as a BCP 47 primary subtag.",
-            "example": "ru",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/LanguageTag"
-              }
-            ]
-          },
           "idempotencyKey": {
             "type": "string",
-            "description": "Minted once when the choice is made, never per request. A key per request makes a double click two writes again.",
+            "description": "Minted once when the confirmation opens, never per request. A key per request makes a double click two erases again.",
             "minLength": 1,
             "maxLength": 64
           }
         },
         "required": [
-          "language",
           "idempotencyKey"
         ],
         "additionalProperties": false
+      },
+      "ErasedUserResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The caller whose data was erased, the same id the token carried. Nothing else is returned, because nothing of theirs is left to describe.",
+            "example": "user_2abcDEFghiJKLmnoPQRstuVWxyz"
+          }
+        },
+        "required": [
+          "userId"
+        ]
       },
       "BadRequestResponse": {
         "type": "object",
@@ -2399,6 +2439,57 @@
           "error",
           "message"
         ]
+      },
+      "LanguageTag": {
+        "type": "string",
+        "enum": [
+          "ru",
+          "en",
+          "pl"
+        ],
+        "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards."
+      },
+      "UserSettingsResponse": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "description": "The interface language, as a BCP 47 primary subtag. Set from the caller's `Accept-Language` when the settings row is first created, and changed from the settings screen afterwards.",
+            "example": "en",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LanguageTag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "language"
+        ]
+      },
+      "UpdateUserSettingsDto": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "description": "The language to speak to this user in, as a BCP 47 primary subtag.",
+            "example": "ru",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LanguageTag"
+              }
+            ]
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the choice is made, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "language",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
       },
       "CreateBudgetDto": {
         "type": "object",
@@ -2816,7 +2907,7 @@
           },
           "isSystem": {
             "type": "boolean",
-            "description": "True for a record the app wrote itself, such as an opening balance. It counts like any other and is never deleted, and it is not changed here: an opening balance is corrected through the account it belongs to."
+            "description": "True for a record the app wrote itself, such as an opening balance. It counts like any other, no ordinary delete removes it, and it is not changed here: an opening balance is corrected through the account it belongs to."
           },
           "transferId": {
             "type": "string",

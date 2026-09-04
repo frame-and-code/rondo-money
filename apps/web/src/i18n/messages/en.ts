@@ -249,6 +249,30 @@ export const en: Record<MessageKey, string> = {
     'The server did not take the choice, so the interface kept the language it had. Try again.',
   'settings.saveFailedDismiss': 'Got it',
 
+  'settings.danger': 'Danger zone',
+  'settings.dangerNote':
+    'Neither of these can be taken back. There is no history left to undo them from.',
+  'settings.reset': 'Erase all data',
+  'settings.resetTitle': 'Erase all data?',
+  'settings.resetBody':
+    'Every budget, account, record and envelope goes. Your sign-in stays, and the app opens ' +
+    'on creating a budget.',
+  'settings.resetPhrase': 'ERASE',
+  'settings.resetConfirm': 'Erase',
+  'settings.delete': 'Delete the account',
+  'settings.deleteTitle': 'Delete the account?',
+  'settings.deleteBody':
+    'Every piece of data goes, and the account with it. This address will not sign in again.',
+  'settings.deletePhrase': 'DELETE',
+  'settings.deleteConfirm': 'Delete',
+  'settings.erasePhraseLabel': 'Type {{phrase}} to confirm',
+  'settings.eraseCancel': 'Cancel',
+  'settings.eraseFailed': 'That did not go through. Try again.',
+  'settings.eraseFailedNetwork':
+    'The server did not answer. The data may already be gone, so try again.',
+  'settings.eraseFailedConflict': 'That key has been used already. Close this and start again.',
+  'settings.eraseFailedAccount': 'The data is gone, but the account was not deleted. Try again.',
+
   'onboarding.progress': 'Setup, step {{step}} of 3',
   'onboarding.step1Title': 'Budget',
   'onboarding.step1Body':

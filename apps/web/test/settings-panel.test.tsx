@@ -1,5 +1,6 @@
 import { ThemeProvider } from '@rondo/ui/components/theme-provider';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
+import { useQuery } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -13,6 +14,16 @@ import { ApiProvider } from '@/lib/api';
 
 const readSettings = jest.fn<Promise<{ language: Locale }>, []>();
 const writeSettings = jest.fn<Promise<{ language: Locale }>, [Locale]>();
+const erases = jest.fn<Promise<{ userId: string }>, [string]>();
+const deletesTheUser = jest.fn<Promise<void>, []>();
+const replaced = jest.fn<void, [string]>();
+const probeReads = jest.fn<Promise<string>, []>();
+
+function CachedElsewhere() {
+  const { data } = useQuery({ queryKey: ['cached-elsewhere'], queryFn: () => probeReads() });
+
+  return <p data-testid="cached-elsewhere">{data ?? 'nothing'}</p>;
+}
 
 const settingsOptions = {
   queryKey: ['userSettingsControllerRead'],
@@ -27,6 +38,15 @@ jest.mock('@clerk/nextjs', () => ({
     userId: 'user_a',
     getToken: () => Promise.resolve(null),
   }),
+  useUser: () => ({
+    isLoaded: true,
+    isSignedIn: true,
+    user: { delete: () => deletesTheUser() },
+  }),
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: (path: string) => replaced(path), push: () => {} }),
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
@@ -34,6 +54,9 @@ jest.mock('@rondo/api-client/react-query', () => ({
   userSettingsControllerReadQueryKey: () => settingsOptions.queryKey,
   userSettingsControllerUpdateMutation: () => ({
     mutationFn: ({ body }: { body: { language: Locale } }) => writeSettings(body.language),
+  }),
+  meControllerEraseMutation: () => ({
+    mutationFn: ({ body }: { body: { idempotencyKey: string } }) => erases(body.idempotencyKey),
   }),
 }));
 
@@ -73,7 +96,7 @@ const themeTrigger = () => screen.getByRole('combobox', { name: en['settings.the
 describe('the settings screen', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    document.documentElement.classList.remove('dark', 'theme-switching');
+    document.documentElement.classList.remove('dark');
     readSettings.mockReset();
     readSettings.mockResolvedValue({ language: 'en' });
     writeSettings.mockReset();
@@ -220,7 +243,7 @@ describe('the settings screen', () => {
     await waitFor(() => expect(panel).toHaveClass('opacity-100'));
   });
 
-  it('marks the colours for crossing when the theme changes, and does not fade the screen', async () => {
+  it('applies the theme at once, and does not fade the screen with it', async () => {
     const user = userEvent.setup();
     renderPanel();
     await screen.findByText(en['settings.themeSystem']);
@@ -229,13 +252,8 @@ describe('the settings screen', () => {
     await user.click(await screen.findByRole('option', { name: en['settings.themeDark'] }));
 
     expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(document.documentElement.classList.contains('theme-switching')).toBe(true);
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(screen.getByTestId('settings-panel')).toHaveClass('opacity-100');
-
-    await waitFor(() =>
-      expect(document.documentElement.classList.contains('theme-switching')).toBe(false),
-    );
   });
 
   it('draws each theme with an icon of its own', async () => {
@@ -260,5 +278,188 @@ describe('the settings screen', () => {
 
     expect(await screen.findByText(en['settings.languageNote'])).toBeInTheDocument();
     expect(screen.getByText(en['settings.themeNote'])).toBeInTheDocument();
+  });
+});
+
+describe('the danger zone', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    readSettings.mockReset();
+    readSettings.mockResolvedValue({ language: 'en' });
+    erases.mockReset();
+    erases.mockResolvedValue({ userId: 'user_a' });
+    deletesTheUser.mockReset();
+    deletesTheUser.mockResolvedValue(undefined);
+    replaced.mockReset();
+    browserPrefers('light');
+  });
+
+  const open = async (user: ReturnType<typeof userEvent.setup>, action: string) => {
+    await screen.findByText(localeLabels.en);
+    await user.click(screen.getByRole('button', { name: action }));
+  };
+
+  const confirm = async (
+    user: ReturnType<typeof userEvent.setup>,
+    phrase: string,
+    button: string,
+  ) => {
+    await user.type(await screen.findByRole('textbox'), phrase);
+    await user.click(screen.getByRole('button', { name: button }));
+  };
+
+  it('offers both an erase and an account deletion', async () => {
+    renderPanel();
+    await screen.findByText(localeLabels.en);
+
+    expect(screen.getByRole('button', { name: en['settings.reset'] })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en['settings.delete'] })).toBeInTheDocument();
+  });
+
+  it('mints a key of its own for each action, and never shares one between them', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await open(user, en['settings.reset']);
+    await confirm(user, en['settings.resetPhrase'], en['settings.resetConfirm']);
+    await waitFor(() => expect(erases).toHaveBeenCalledTimes(1));
+
+    await open(user, en['settings.delete']);
+    await confirm(user, en['settings.deletePhrase'], en['settings.deleteConfirm']);
+    await waitFor(() => expect(erases).toHaveBeenCalledTimes(2));
+
+    const [first] = erases.mock.calls[0] ?? [];
+    const [second] = erases.mock.calls[1] ?? [];
+    expect(first).toEqual(expect.any(String));
+    expect(second).not.toBe(first);
+  });
+
+  it('keeps the key when the request was lost, and mints a new one once it was refused', async () => {
+    const user = userEvent.setup();
+    erases.mockRejectedValue(new Error('network'));
+    renderPanel();
+
+    await open(user, en['settings.reset']);
+    await confirm(user, en['settings.resetPhrase'], en['settings.resetConfirm']);
+    await waitFor(() => expect(erases).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole('button', { name: en['settings.resetConfirm'] }));
+    await waitFor(() => expect(erases).toHaveBeenCalledTimes(2));
+    expect(erases.mock.calls[1]?.[0]).toBe(erases.mock.calls[0]?.[0]);
+
+    erases.mockRejectedValue(Object.assign(new Error('refused'), { statusCode: 409 }));
+    await user.click(screen.getByRole('button', { name: en['settings.resetConfirm'] }));
+    await waitFor(() => expect(erases).toHaveBeenCalledTimes(3));
+
+    await user.click(screen.getByRole('button', { name: en['settings.resetConfirm'] }));
+    await waitFor(() => expect(erases).toHaveBeenCalledTimes(4));
+    expect(erases.mock.calls[3]?.[0]).not.toBe(erases.mock.calls[2]?.[0]);
+  });
+
+  it('stays open and moves nobody when the erase itself is refused', async () => {
+    const user = userEvent.setup();
+    erases.mockRejectedValue(Object.assign(new Error('refused'), { statusCode: 409 }));
+    renderPanel();
+
+    await open(user, en['settings.reset']);
+    await confirm(user, en['settings.resetPhrase'], en['settings.resetConfirm']);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['settings.eraseFailedConflict']);
+    expect(screen.getByRole('button', { name: en['settings.resetConfirm'] })).toBeInTheDocument();
+    expect(replaced).not.toHaveBeenCalled();
+  });
+
+  it('sends the reader to the budget form after an erase, still signed in', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await open(user, en['settings.reset']);
+    await confirm(user, en['settings.resetPhrase'], en['settings.resetConfirm']);
+
+    await waitFor(() => expect(replaced).toHaveBeenCalledWith('/new'));
+    expect(deletesTheUser).not.toHaveBeenCalled();
+    await waitFor(() => expect(readSettings.mock.calls.length).toBeGreaterThan(1));
+  });
+
+  it('deletes the account and sends the reader to the sign-in screen', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await open(user, en['settings.delete']);
+    await confirm(user, en['settings.deletePhrase'], en['settings.deleteConfirm']);
+
+    await waitFor(() => expect(deletesTheUser).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(replaced).toHaveBeenCalledWith('/sign-in'));
+  });
+
+  it('asks the account for nothing more while the deletion is still in flight', async () => {
+    const user = userEvent.setup();
+    deletesTheUser.mockReturnValue(new Promise(() => {}));
+    renderPanel();
+    await screen.findByText(localeLabels.en);
+    const readsBefore = readSettings.mock.calls.length;
+
+    await open(user, en['settings.delete']);
+    await confirm(user, en['settings.deletePhrase'], en['settings.deleteConfirm']);
+
+    await waitFor(() => expect(deletesTheUser).toHaveBeenCalledTimes(1));
+    expect(readSettings.mock.calls.length).toBe(readsBefore);
+    expect(replaced).not.toHaveBeenCalled();
+  });
+
+  it('moves the reader off the shell when the data went but the account stayed', async () => {
+    const user = userEvent.setup();
+    deletesTheUser.mockRejectedValue(new Error('clerk refused'));
+    renderPanel();
+
+    await open(user, en['settings.delete']);
+    await confirm(user, en['settings.deletePhrase'], en['settings.deleteConfirm']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['settings.eraseFailedAccount']);
+
+    await user.click(screen.getByRole('button', { name: en['settings.eraseCancel'] }));
+
+    await waitFor(() => expect(replaced).toHaveBeenCalledWith('/new'));
+  });
+
+  it('drops what another screen had cached, so nothing can draw the budget that is gone', async () => {
+    const user = userEvent.setup();
+    probeReads.mockReset();
+    probeReads.mockResolvedValueOnce('the erased budget').mockReturnValue(new Promise(() => {}));
+    renderPanel(<CachedElsewhere />);
+    const cached = () => screen.getByTestId('cached-elsewhere');
+
+    await waitFor(() => expect(cached()).toHaveTextContent('the erased budget'));
+
+    await open(user, en['settings.reset']);
+    await confirm(user, en['settings.resetPhrase'], en['settings.resetConfirm']);
+
+    await waitFor(() => expect(cached()).toHaveTextContent('nothing'));
+  });
+
+  it('refuses to be dismissed while the erase is still in flight', async () => {
+    const user = userEvent.setup();
+    erases.mockReturnValue(new Promise(() => {}));
+    renderPanel();
+
+    await open(user, en['settings.reset']);
+    await confirm(user, en['settings.resetPhrase'], en['settings.resetConfirm']);
+    await waitFor(() => expect(erases).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole('button', { name: en['settings.eraseCancel'] }));
+
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en['settings.eraseCancel'] })).toBeDisabled();
+  });
+
+  it('says the data is gone when the account itself could not be deleted', async () => {
+    const user = userEvent.setup();
+    deletesTheUser.mockRejectedValue(new Error('clerk refused'));
+    renderPanel();
+
+    await open(user, en['settings.delete']);
+    await confirm(user, en['settings.deletePhrase'], en['settings.deleteConfirm']);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['settings.eraseFailedAccount']);
+    expect(replaced).not.toHaveBeenCalled();
   });
 });
