@@ -125,6 +125,18 @@ export const ru = {
   'categories.hideBlocked':
     'Пока в категории лежат деньги, скрыть её нельзя: они пропали бы с экрана вместе с ней.',
   'categories.reorder': 'Переставить категорию «{{category}}»',
+  'categories.reorderGroup': 'Переставить группу «{{group}}»',
+  'categories.emptyGroupAdd': 'Добавить категорию',
+  'categories.paidClose': 'Закрыть в текущем месяце',
+  'categories.paidReopen': 'Открыть снова',
+  'categories.paidTitle': 'Закрыть категорию «{{category}}» в этом месяце?',
+  'categories.paidBody':
+    'Карточка станет полупрозрачной и уйдёт в конец группы. Деньги в ней останутся, суммы не изменятся. В следующем месяце категория снова открыта.',
+  'categories.paidConfirm': 'Да, закрыть',
+  'categories.paidMark': 'Закрыта в этом месяце',
+  'categories.overspentCount': 'Категорий в минусе: {{count}}',
+  'categories.overspentShow': 'Показать только их',
+  'categories.overspentShowAll': 'Показать все',
   'categoryIcon.home': 'жильё',
   'categoryIcon.bolt': 'электричество',
   'categoryIcon.droplet': 'вода',

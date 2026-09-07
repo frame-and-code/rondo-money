@@ -56,6 +56,7 @@ describe('POST /me/erase (integration)', () => {
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
     await prisma.categoryTarget.deleteMany({ where: owned });
+    await prisma.categoryPaidMonth.deleteMany({ where: owned });
     await prisma.category.deleteMany({ where: owned });
     await prisma.categoryGroup.deleteMany({ where: owned });
     await prisma.account.deleteMany({ where: owned });
@@ -141,6 +142,9 @@ describe('POST /me/erase (integration)', () => {
         amount: 200_000n,
         startMonth: month,
       },
+    });
+    await prisma.categoryPaidMonth.create({
+      data: { userId, budgetId: budget.id, categoryId: category.id, month },
     });
   };
 

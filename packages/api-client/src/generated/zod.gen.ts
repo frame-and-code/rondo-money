@@ -296,6 +296,7 @@ export const zBudgetViewCategoryResponse = z.object({
     available: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     availableAllTime: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     hidden: z.boolean(),
+    paid: z.boolean(),
     target: zBudgetViewTargetResponse.nullable()
 });
 
@@ -410,6 +411,17 @@ export const zCategoryTargetResponse = z.object({
     startMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
     dueMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/).optional(),
     endMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/).optional()
+});
+
+export const zCategoryPaidMonthDto = z.object({
+    idempotencyKey: z.string().min(1).max(64),
+    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/)
+});
+
+export const zCategoryPaidMonthResponse = z.object({
+    categoryId: z.uuid(),
+    month: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    paid: z.boolean()
 });
 
 /**
@@ -807,6 +819,28 @@ export const zCategoryTargetsControllerClosePath = z.object({
  * The goal, now closed.
  */
 export const zCategoryTargetsControllerCloseResponse = zCategoryTargetResponse;
+
+export const zCategoryPaidControllerMarkBody = zCategoryPaidMonthDto;
+
+export const zCategoryPaidControllerMarkPath = z.object({
+    id: z.string()
+});
+
+/**
+ * The mark as it stands now.
+ */
+export const zCategoryPaidControllerMarkResponse = zCategoryPaidMonthResponse;
+
+export const zCategoryPaidControllerUnmarkBody = zCategoryPaidMonthDto;
+
+export const zCategoryPaidControllerUnmarkPath = z.object({
+    id: z.string()
+});
+
+/**
+ * The mark as it stands now.
+ */
+export const zCategoryPaidControllerUnmarkResponse = zCategoryPaidMonthResponse;
 
 export const zMovesControllerMoveBody = zCreateMoveDto;
 

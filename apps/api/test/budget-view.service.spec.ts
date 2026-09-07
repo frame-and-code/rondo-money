@@ -19,6 +19,7 @@ const row = (over: Partial<BudgetViewRow> = {}): BudgetViewRow => ({
   categoryColor: null,
   groupHidden: false,
   categoryHidden: false,
+  paid: false,
   availableAllTime: 0n,
   assigned: 0n,
   activity: 0n,
@@ -91,6 +92,7 @@ describe('BudgetViewService', () => {
               available: '4500',
               availableAllTime: '4500',
               hidden: false,
+              paid: false,
               target: null,
             },
             {
@@ -103,6 +105,7 @@ describe('BudgetViewService', () => {
               available: '0',
               availableAllTime: '0',
               hidden: false,
+              paid: false,
               target: null,
             },
           ],

@@ -20,6 +20,7 @@ const category = (
   available,
   availableAllTime: available,
   hidden: false,
+  paid: false,
   target: null,
 });
 

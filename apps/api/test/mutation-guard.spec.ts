@@ -102,6 +102,12 @@ describe('the marker that keeps a domain write inside the mutation service', () 
     amount: 1000n,
     startMonth: new Date('2026-02-01T00:00:00Z'),
   };
+  const paidRow = {
+    userId: USER,
+    budgetId: BUDGET,
+    categoryId: 'c1',
+    month: new Date('2026-02-01T00:00:00Z'),
+  };
   const where = { id: 'r1' };
 
   const writesOf = (
@@ -204,6 +210,25 @@ describe('the marker that keeps a domain write inside the mutation service', () 
           delete: () => scoped.categoryTarget.delete({ where }),
           deleteMany: () => scoped.categoryTarget.deleteMany({}),
         };
+      case Prisma.ModelName.CategoryPaidMonth:
+        return {
+          create: () => scoped.categoryPaidMonth.create({ data: paidRow }),
+          createMany: () => scoped.categoryPaidMonth.createMany({ data: [paidRow] }),
+          createManyAndReturn: () =>
+            scoped.categoryPaidMonth.createManyAndReturn({ data: [paidRow] }),
+          update: () => scoped.categoryPaidMonth.update({ where, data: { categoryId: 'c2' } }),
+          updateMany: () => scoped.categoryPaidMonth.updateMany({ data: { categoryId: 'c2' } }),
+          updateManyAndReturn: () =>
+            scoped.categoryPaidMonth.updateManyAndReturn({ data: { categoryId: 'c2' } }),
+          upsert: () =>
+            scoped.categoryPaidMonth.upsert({
+              where,
+              create: paidRow,
+              update: { categoryId: 'c2' },
+            }),
+          delete: () => scoped.categoryPaidMonth.delete({ where }),
+          deleteMany: () => scoped.categoryPaidMonth.deleteMany({}),
+        };
       default:
         throw new Error(
           `No writes are spelled out for ${model}, so this spec would silently test another ` +
@@ -220,6 +245,7 @@ describe('the marker that keeps a domain write inside the mutation service', () 
     Prisma.ModelName.Transaction,
     Prisma.ModelName.Assignment,
     Prisma.ModelName.CategoryTarget,
+    Prisma.ModelName.CategoryPaidMonth,
   ];
 
   const inRequest = <T>(work: () => Promise<T>): Promise<T> =>

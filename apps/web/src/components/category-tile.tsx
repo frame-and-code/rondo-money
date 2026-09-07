@@ -11,7 +11,7 @@ import {
 } from '@rondo/ui/components/ui/popover';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconGripVertical } from '@tabler/icons-react';
+import { IconCheck, IconGripVertical } from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
 import { RollingAmount } from '@/components/rolling-amount';
@@ -26,6 +26,8 @@ export function CategoryTile({
   category,
   money,
   failed,
+  attention = false,
+  sortable = true,
   moveOpen,
   movePanel,
   moveInPopover,
@@ -35,6 +37,8 @@ export function CategoryTile({
   category: BudgetViewCategoryDto;
   money: MoneyReader;
   failed: boolean;
+  attention?: boolean;
+  sortable?: boolean;
   moveOpen: boolean;
   movePanel: ReactNode;
   moveInPopover: boolean;
@@ -45,22 +49,25 @@ export function CategoryTile({
   const isMobile = useIsMobile();
   const [explaining, setExplaining] = useState(false);
   const spoken = useId();
+  const closed = useId();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
+    disabled: !sortable ? true : category.paid ? { draggable: true } : false,
   });
 
-  const handle = (
-    <button
-      type="button"
-      data-testid={`reorder-${category.name}`}
-      aria-label={t('categories.reorder', { category: category.name })}
-      className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted/60 absolute inset-y-1 right-1 flex w-7 cursor-grab items-center justify-center rounded-2xl transition-colors duration-[120ms]"
-      {...attributes}
-      {...listeners}
-    >
-      <IconGripVertical aria-hidden className="size-4" />
-    </button>
-  );
+  const handle =
+    !sortable || category.paid ? null : (
+      <button
+        type="button"
+        data-testid={`reorder-${category.name}`}
+        aria-label={t('categories.reorder', { category: category.name })}
+        className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted/60 absolute inset-y-1 right-1 flex w-7 cursor-grab items-center justify-center rounded-2xl transition-colors duration-[120ms]"
+        {...attributes}
+        {...listeners}
+      >
+        <IconGripVertical aria-hidden className="size-4" />
+      </button>
+    );
 
   const assigned = parseMoney(category.assigned);
   const activity = parseMoney(category.activity);
@@ -84,14 +91,32 @@ export function CategoryTile({
     />
   );
 
+  const described =
+    [category.paid ? closed : null, target === null ? null : spoken].filter(Boolean).join(' ') ||
+    undefined;
+
   const card = (
     <>
       <span className="flex items-start justify-between gap-3">
-        <span
-          data-testid="category-name"
-          className="pt-0.5 text-left text-[15px] leading-tight font-medium md:text-base"
-        >
-          {category.name}
+        <span className="flex min-w-0 items-start gap-1.5 pt-0.5">
+          {category.paid ? (
+            <span
+              data-testid="paid-mark"
+              className={cn(
+                'text-success mt-0.5 inline-flex size-4 shrink-0 items-center justify-center',
+                'rounded-full border-[1.5px] border-current',
+              )}
+            >
+              <IconCheck aria-hidden className="size-2.5" stroke={3.5} />
+              <span className="sr-only">{t('categories.paidMark')}</span>
+            </span>
+          ) : null}
+          <span
+            data-testid="category-name"
+            className="text-left text-[15px] leading-tight font-medium md:text-base"
+          >
+            {category.name}
+          </span>
         </span>
         <span className="flex shrink-0 flex-col items-end">
           <RollingAmount
@@ -184,6 +209,12 @@ export function CategoryTile({
         </span>
       </span>
 
+      {category.paid ? (
+        <span id={closed} className="sr-only">
+          {t('categories.paidMark')}
+        </span>
+      ) : null}
+
       {target === null ? null : (
         <span id={spoken}>
           <TargetPanel spoken target={target} money={money} color={category.color} />
@@ -195,16 +226,24 @@ export function CategoryTile({
   const look = cn(
     'bg-card flex h-full w-full cursor-pointer flex-col gap-3.5 rounded-[20px] p-4 pe-11 text-left',
     'shadow-xs ring-1 ring-black/5 dark:ring-white/10',
-    'transition-shadow duration-[120ms] hover:shadow-md',
-    'aria-expanded:ring-ring/60 aria-expanded:ring-2',
+    'transition-shadow duration-[120ms] hover:shadow-md hover:shadow-primary/15',
+    'hover:ring-primary/35',
+    'aria-expanded:ring-primary/60 aria-expanded:ring-2 aria-expanded:shadow-md',
+    'aria-expanded:shadow-primary/15',
+    attention && 'ring-warning/45 ring-2',
     failed && 'ring-destructive/45',
   );
 
   const frame = {
     ref: setNodeRef,
     'data-testid': `category-tile-${category.name}`,
-    style: { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 1 : 0 },
-    className: 'relative h-full',
+    'data-paid': category.paid ? 'true' : undefined,
+    style: { transform: CSS.Translate.toString(transform), transition, zIndex: isDragging ? 1 : 0 },
+    className: cn(
+      'relative h-full',
+      category.paid &&
+        'opacity-55 transition-opacity duration-[120ms] hover:opacity-100 focus-within:opacity-100 has-aria-expanded:opacity-100',
+    ),
   };
 
   const { onKeyDown: _startsByKeyboard, ...byPointer } = listeners ?? {};
@@ -220,7 +259,7 @@ export function CategoryTile({
           data-failed={failed ? 'true' : undefined}
           aria-expanded={moveOpen}
           aria-label={t('categories.moveOpen', { category: category.name })}
-          aria-describedby={target === null ? undefined : spoken}
+          aria-describedby={described}
           onClick={onMoveOpen}
           className={look}
           {...grab}
@@ -239,7 +278,7 @@ export function CategoryTile({
           data-slot="category-tile"
           data-failed={failed ? 'true' : undefined}
           aria-label={t('categories.moveOpen', { category: category.name })}
-          aria-describedby={target === null ? undefined : spoken}
+          aria-describedby={described}
           className={look}
           {...grab}
         >

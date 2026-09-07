@@ -195,6 +195,13 @@ no such order, because both rows are new and neither is a row anyone else can be
   again.
   A reordering may name fewer rows than the group holds, because the month it came from lists
   only what is visible in it; the rest keep their order behind the named ones.
+- `POST /categories/:id/paid` and `/unpaid` put a mark on the pair of category and month, and
+  take it off. The mark says the payment the category stands for is done, it changes no amount,
+  and the next month starts without one; what the row is and why it caches nothing is
+  [`packages/db`](../../packages/db/README.md). The month view reports it as `paid` on each
+  category. Marking what is
+  already marked, and unmarking what carries no mark, are answered rather than refused. A hidden
+  category is refused with `CATEGORY_HIDDEN`.
 - `POST /moves` moves an amount out of one envelope and into another for one month, where Ready
   to Assign is an envelope too. Assigning money is this operation with the pool as the source,
   so nothing else in the contract sets what a category holds. A side names a category or the

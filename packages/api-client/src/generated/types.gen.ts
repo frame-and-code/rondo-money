@@ -395,6 +395,10 @@ export type BudgetViewCategoryResponse = {
      */
     hidden: boolean;
     /**
+     * Whether the user marked this category paid in the month that was asked about. The mark belongs to the pair of category and month, so the next month starts without one, and it changes no amount.
+     */
+    paid: boolean;
+    /**
      * The goal this category is running in the month that was asked about, and null when it runs none. A category keeps its goals, so which one appears here is decided by the month rather than by which was written last.
      */
     target: BudgetViewTargetResponse | null;
@@ -630,6 +634,32 @@ export type CategoryTargetResponse = {
      * The month the goal was closed in. It is still shown in that month and gone from the next one.
      */
     endMonth?: string;
+};
+
+export type CategoryPaidMonthDto = {
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+    /**
+     * The month the mark belongs to. It is the month the screen is showing rather than the one the budget is living in, so a bill paid late can be marked in the month it was for.
+     */
+    month: string;
+};
+
+export type CategoryPaidMonthResponse = {
+    /**
+     * The category the mark is on.
+     */
+    categoryId: string;
+    /**
+     * The month the mark belongs to.
+     */
+    month: string;
+    /**
+     * Whether the category carries the mark in that month now. True after marking, false after taking the mark off, whichever state it was in before.
+     */
+    paid: boolean;
 };
 
 /**
@@ -1762,6 +1792,76 @@ export type CategoryTargetsControllerCloseResponses = {
 };
 
 export type CategoryTargetsControllerCloseResponse = CategoryTargetsControllerCloseResponses[keyof CategoryTargetsControllerCloseResponses];
+
+export type CategoryPaidControllerMarkData = {
+    body: CategoryPaidMonthDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/categories/{id}/paid';
+};
+
+export type CategoryPaidControllerMarkErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryPaidControllerMarkError = CategoryPaidControllerMarkErrors[keyof CategoryPaidControllerMarkErrors];
+
+export type CategoryPaidControllerMarkResponses = {
+    /**
+     * The mark as it stands now.
+     */
+    201: CategoryPaidMonthResponse;
+};
+
+export type CategoryPaidControllerMarkResponse = CategoryPaidControllerMarkResponses[keyof CategoryPaidControllerMarkResponses];
+
+export type CategoryPaidControllerUnmarkData = {
+    body: CategoryPaidMonthDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/categories/{id}/unpaid';
+};
+
+export type CategoryPaidControllerUnmarkErrors = {
+    /**
+     * The body was refused, or the change names something the caller cannot reach. A refusal from the domain carries the reason it was refused for.
+     */
+    400: CategoryRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type CategoryPaidControllerUnmarkError = CategoryPaidControllerUnmarkErrors[keyof CategoryPaidControllerUnmarkErrors];
+
+export type CategoryPaidControllerUnmarkResponses = {
+    /**
+     * The mark as it stands now.
+     */
+    201: CategoryPaidMonthResponse;
+};
+
+export type CategoryPaidControllerUnmarkResponse = CategoryPaidControllerUnmarkResponses[keyof CategoryPaidControllerUnmarkResponses];
 
 export type MovesControllerMoveData = {
     body: CreateMoveDto;

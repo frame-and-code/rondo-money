@@ -74,6 +74,7 @@ describe('/budget-view keeps to one caller and one budget (integration)', () => 
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
     await prisma.categoryTarget.deleteMany({ where: owned });
+    await prisma.categoryPaidMonth.deleteMany({ where: owned });
     await prisma.category.deleteMany({ where: owned });
     await prisma.categoryGroup.deleteMany({ where: owned });
     await prisma.account.deleteMany({ where: owned });

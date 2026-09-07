@@ -16,10 +16,11 @@ const TABLES = [
   'assignment',
   'transaction',
   'category_target',
+  'category_paid_month',
 ] as const;
 
 const TABLE_REFERENCE =
-  /\b(?:from|join)\s+"?(category_group|category_target|category|assignment|transaction)"?\b/gi;
+  /\b(?:from|join)\s+"?(category_group|category_target|category_paid_month|category|assignment|transaction)"?\b/gi;
 
 function scopeOfEachTable(text: string): { table: string; scoped: boolean }[] {
   const references = [...text.matchAll(TABLE_REFERENCE)];
@@ -83,6 +84,13 @@ describe('the budget view statement', () => {
 
     expect(text).toContain('"groupHidden"');
     expect(text).toContain('"categoryHidden"');
+  });
+
+  it('reads the paid mark of the month it was asked about, and no other month', () => {
+    const { text } = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS);
+
+    expect(text).toContain('"paid"');
+    expect(text).toMatch(/category_paid_month[\s\S]*?paid\.month\s*=\s*\$\d+::date/);
   });
 
   it('answers what a category holds over every month, which is what blocks a hide', () => {

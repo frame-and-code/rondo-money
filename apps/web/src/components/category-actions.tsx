@@ -2,7 +2,14 @@
 
 import { Button } from '@rondo/ui/components/ui/button';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconChevronDown, IconEyeOff, IconPencil, IconTarget } from '@tabler/icons-react';
+import {
+  IconChevronDown,
+  IconCircleCheck,
+  IconEyeOff,
+  IconPencil,
+  IconRotateClockwise,
+  IconTarget,
+} from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
@@ -39,12 +46,14 @@ export function CategoryActions({
   onEdit,
   onHide,
   onGoal,
+  onPaid,
 }: {
-  category: { id: string; name: string; hidden: boolean };
+  category: { id: string; name: string; hidden: boolean; paid: boolean };
   currentMonth: boolean;
   onEdit: () => void;
   onHide: () => void;
   onGoal: () => void;
+  onPaid: () => void;
 }) {
   const { t } = useTranslations();
   const shut: MessageKey | null = category.hidden
@@ -58,6 +67,14 @@ export function CategoryActions({
   return (
     <div className="flex flex-col" data-testid={`category-actions-${category.id}`}>
       <div aria-hidden className="bg-border/60 mb-1 h-px w-full" />
+
+      <Row
+        label={t(category.paid ? 'categories.paidReopen' : 'categories.paidClose')}
+        icon={category.paid ? <IconRotateClockwise /> : <IconCircleCheck />}
+        onClick={onPaid}
+      />
+
+      <div aria-hidden className="bg-border/60 my-1 h-px w-full" />
 
       <button
         type="button"

@@ -40,7 +40,11 @@ everything in it. Deleting is not an operation at all, so no expense ever loses 
 category it was spent on. A category can also be given a goal, one of four kinds: hold an
 amount, set one aside every month, reach one by a chosen month, or save towards one with no
 deadline. The card then says how much of what the goal asks for this month is already inside,
-and clicking it opens the move form with the rest of it filled in. Money flow is a screen of its own: the accounts sit beside a feed of
+and clicking it opens the move form with the rest of it filled in. A category whose bill is
+paid can be closed for the month: its card dims and moves behind the open ones, no amount
+changes, and the next month opens it again. When envelopes are below zero, a notice beside
+ready to assign counts them and filters the screen down to them, a choice that lives in the
+address like the month does. Money flow is a screen of its own: the accounts sit beside a feed of
 what was recorded, day by day, and income, expenses and transfers between two accounts are
 written, corrected and taken back there. Which account the feed covers lives in the address, so
 a link to one of them works and so does the back button. An account is also settled against what it really

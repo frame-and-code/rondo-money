@@ -20,6 +20,8 @@ export const MOVE_TEST_EMAIL = 'e2e-move+clerk_test@example.com';
 
 export const MANAGE_TEST_EMAIL = 'e2e-manage+clerk_test@example.com';
 
+export const MONTH_TEST_EMAIL = 'e2e-month+clerk_test@example.com';
+
 export const TARGET_TEST_EMAIL = 'e2e-target+clerk_test@example.com';
 
 export const ACCOUNTS_TEST_EMAIL = 'e2e-accounts+clerk_test@example.com';

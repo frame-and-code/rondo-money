@@ -7,6 +7,8 @@ import { LocaleProvider } from '@/i18n/locale-context';
 import { ru } from '@/i18n/messages/ru';
 
 const move = jest.fn();
+const markPaid = jest.fn();
+const unmarkPaid = jest.fn();
 const setTarget = jest.fn();
 const closeTarget = jest.fn();
 const push = jest.fn();
@@ -58,6 +60,13 @@ jest.mock('@rondo/api-client/react-query', () => ({
   categoryGroupsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoryGroupsControllerUpdateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   categoryGroupsControllerHideMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryGroupsControllerReorderMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  categoryPaidControllerMarkMutation: () => ({
+    mutationFn: (options: unknown) => markPaid(options) as unknown,
+  }),
+  categoryPaidControllerUnmarkMutation: () => ({
+    mutationFn: (options: unknown) => unmarkPaid(options) as unknown,
+  }),
   movesControllerMoveMutation: () => ({
     mutationFn: (options: unknown) => move(options) as unknown,
   }),
@@ -78,6 +87,7 @@ const category = (over: Record<string, unknown> = {}) => ({
   activity: '-14860',
   available: '7660',
   hidden: false,
+  paid: false,
   target: null,
   ...over,
 });
@@ -496,6 +506,7 @@ describe('moving between months', () => {
           id: 'g1',
           name: 'Повседневные расходы',
           hidden: false,
+          paid: false,
           categories: [
             category({
               target: {
@@ -702,5 +713,234 @@ describe('moving between months', () => {
     );
 
     expect(fields.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe('the categories below zero', () => {
+  const twoCategories = () => ({
+    month: '2026-08',
+    readyToAssign: '85000',
+    groups: [
+      {
+        id: 'g1',
+        name: 'Повседневные расходы',
+        hidden: false,
+        categories: [
+          category(),
+          category({ id: 'c2', name: 'Транспорт', available: '-12500', activity: '-24500' }),
+        ],
+      },
+      {
+        id: 'g2',
+        name: 'Дом',
+        hidden: false,
+        categories: [category({ id: 'c3', name: 'Аренда', available: '0', activity: '0' })],
+      },
+    ],
+  });
+
+  it('are counted beside ready to assign, with a button that shows only them', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    const pushState = jest.spyOn(window.history, 'pushState');
+    view = twoCategories();
+    draw();
+
+    await screen.findByText('Транспорт');
+    const notice = screen.getByTestId('overspent-notice');
+    expect(notice).toHaveTextContent(ru['categories.overspentCount'].replace('{{count}}', '1'));
+
+    await user.click(screen.getByRole('button', { name: ru['categories.overspentShow'] }));
+
+    expect(pushState).toHaveBeenCalledWith(null, '', '/categories?month=2026-08&overspent=1');
+    pushState.mockRestore();
+  });
+
+  it('say nothing when every category holds zero or more', async () => {
+    draw();
+
+    await screen.findByText('Продукты');
+    expect(screen.queryByTestId('overspent-notice')).not.toBeInTheDocument();
+  });
+
+  it('are the only tiles left when the address asks for them, framed in warning and not draggable', async () => {
+    search = 'overspent=1';
+    view = twoCategories();
+    draw();
+
+    await screen.findByText('Транспорт');
+    expect(screen.queryByText('Продукты')).not.toBeInTheDocument();
+    expect(screen.queryByText('Дом')).not.toBeInTheDocument();
+
+    const card = screen
+      .getByTestId('category-tile-Транспорт')
+      .querySelector('[data-slot="category-tile"]');
+    expect(card).toHaveClass('ring-warning/45');
+    expect(screen.queryByTestId('reorder-Транспорт')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('reorder-group-g1')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: ru['categories.overspentShowAll'] })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('keep the whole total of the group, not the total of what is shown', async () => {
+    search = 'overspent=1';
+    view = twoCategories();
+    draw();
+
+    await screen.findByText('Транспорт');
+    expect(screen.getByTestId('group-total-g1')).toHaveTextContent('-48,40 zł');
+  });
+
+  it('are all shown again when the address asks for them and none is below zero', async () => {
+    search = 'overspent=1';
+    draw();
+
+    expect(await screen.findByText('Продукты')).toBeInTheDocument();
+    expect(screen.queryByTestId('overspent-notice')).not.toBeInTheDocument();
+  });
+});
+
+describe('a category closed for the month', () => {
+  const withPaid = () => ({
+    month: '2026-08',
+    readyToAssign: '85000',
+    groups: [
+      {
+        id: 'g1',
+        name: 'Повседневные расходы',
+        hidden: false,
+        categories: [
+          category({ id: 'c1', name: 'Аренда', paid: true }),
+          category({ id: 'c2', name: 'Продукты' }),
+        ],
+      },
+    ],
+  });
+
+  beforeEach(() => {
+    markPaid.mockResolvedValue({});
+    unmarkPaid.mockResolvedValue({});
+  });
+
+  it('is drawn behind the open ones whatever its stored place, dimmed and marked', async () => {
+    view = withPaid();
+    draw();
+
+    await screen.findByText('Аренда');
+    const names = screen.getAllByTestId('category-name').map((one) => one.textContent);
+    expect(names).toEqual(['Продукты', 'Аренда']);
+    expect(screen.getByTestId('category-tile-Аренда')).toHaveAttribute('data-paid', 'true');
+    expect(screen.getByTestId('category-tile-Продукты')).not.toHaveAttribute('data-paid');
+  });
+
+  it('is closed from the card, after the screen asks, for the month the address shows', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    search = 'month=2026-07';
+    view = { ...oneCategory(), month: '2026-07' };
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: ru['categories.paidClose'] }));
+
+    expect(markPaid).not.toHaveBeenCalled();
+    expect(screen.getByTestId('paid-dialog')).toHaveTextContent(
+      ru['categories.paidTitle'].replace('{{category}}', 'Продукты'),
+    );
+
+    await user.click(screen.getByRole('button', { name: ru['categories.paidConfirm'] }));
+
+    await waitFor(() => expect(markPaid).toHaveBeenCalledTimes(1));
+    expect(markPaid.mock.calls[0]?.[0]).toMatchObject({
+      path: { id: 'c1' },
+      body: { month: '2026-07' },
+    });
+    await waitFor(() => expect(screen.queryByTestId('paid-dialog')).not.toBeInTheDocument());
+  });
+
+  it('is left as it was when the question is answered with cancel', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: ru['categories.paidClose'] }));
+    await user.click(screen.getByRole('button', { name: ru['categories.cancel'] }));
+
+    expect(markPaid).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('paid-dialog')).not.toBeInTheDocument();
+  });
+
+  it('is reopened from the same row without a question', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = withPaid();
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Аренда'),
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: ru['categories.paidReopen'] }));
+
+    await waitFor(() => expect(unmarkPaid).toHaveBeenCalledTimes(1));
+    expect(unmarkPaid.mock.calls[0]?.[0]).toMatchObject({
+      path: { id: 'c1' },
+      body: { month: '2026-08' },
+    });
+    expect(screen.queryByTestId('paid-dialog')).not.toBeInTheDocument();
+  });
+
+  it('mints a new key for a second reopen, since the first intent was fulfilled', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = withPaid();
+    draw();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: ru['categories.moveOpen'].replace('{{category}}', 'Аренда'),
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: ru['categories.paidReopen'] }));
+    await waitFor(() => expect(unmarkPaid).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByRole('button', { name: ru['categories.paidReopen'] }));
+    await waitFor(() => expect(unmarkPaid).toHaveBeenCalledTimes(2));
+
+    const keyOf = (index: number): unknown =>
+      (unmarkPaid.mock.calls[index]?.[0] as { body: { idempotencyKey: string } }).body
+        .idempotencyKey;
+
+    expect(keyOf(0)).not.toEqual(keyOf(1));
+  });
+});
+
+describe('the order of the groups', () => {
+  it('gives every group a handle to be dragged by, named after the group', async () => {
+    view = {
+      month: '2026-08',
+      readyToAssign: '85000',
+      groups: [
+        { id: 'g1', name: 'Повседневные расходы', hidden: false, categories: [category()] },
+        { id: 'g2', name: 'Дом', hidden: false, categories: [] },
+      ],
+    };
+    draw();
+
+    await screen.findByText('Дом');
+    for (const name of ['Повседневные расходы', 'Дом']) {
+      expect(
+        screen.getByRole('button', {
+          name: ru['categories.reorderGroup'].replace('{{group}}', name),
+        }),
+      ).toBeInTheDocument();
+    }
+    expect(screen.getByTestId('empty-group-g2')).toBeInTheDocument();
   });
 });
