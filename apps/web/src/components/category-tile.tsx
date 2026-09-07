@@ -227,7 +227,7 @@ export function CategoryTile({
     ref: setNodeRef,
     'data-testid': `category-tile-${category.name}`,
     'data-paid': category.paid ? 'true' : undefined,
-    style: { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 1 : 0 },
+    style: { transform: CSS.Translate.toString(transform), transition, zIndex: isDragging ? 1 : 0 },
     className: cn(
       'relative h-full',
       category.paid &&

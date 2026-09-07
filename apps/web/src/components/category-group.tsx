@@ -100,7 +100,7 @@ export function CategoryGroup({
       ref={group.setNodeRef}
       data-testid={`category-group-${id}`}
       style={{
-        transform: CSS.Transform.toString(group.transform),
+        transform: CSS.Translate.toString(group.transform),
         transition: group.transition,
         zIndex: group.isDragging ? 1 : 0,
       }}
