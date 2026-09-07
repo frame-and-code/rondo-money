@@ -220,17 +220,25 @@ no such order, because both rows are new and neither is a row anyone else can be
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
 
-**A route that swallows another one fails the boot.** Express matches in registration order,
-so `@Get('payees')` declared after `@Get(':id')` on the same controller never runs, and the
-request lands on the parametric handler with `payees` as the id. Nothing in the code says so,
-and the screen is where you would find out. `main.ts` passes `ROUTE_CONFLICT_POLICY`
-([`src/route-conflicts.ts`](src/route-conflicts.ts)) to `NestFactory.create`, which sets both
-kinds of overlap to `error`: a duplicate registration and a shadowed path each abort the start
-with the two handlers named. The declaration order stays the thing that decides, so the fix is
-to move the literal path above the parametric one.
-[`test/route-conflicts.integration.spec.ts`](test/route-conflicts.integration.spec.ts) boots
-the whole app under that policy, so a route added into the wrong place fails the gate rather
-than the deploy.
+**Declaration order does not decide which handler answers.** Express matches in registration
+order, so `@Get('payees')` written after `@Get(':id')` on the same controller would never run,
+and the request would land on the parametric handler with `payees` as the id. Nothing in the
+code says so, and the screen is where you would find out. `main.ts` passes `ROUTING_OPTIONS`
+([`src/routing.ts`](src/routing.ts)) to `NestFactory.create`, and
+`routeResolutionStrategy: 'specificity'` registers a literal segment ahead of a parametric one
+whatever order the two were written in, so the ambiguity is resolved rather than reported.
+
+The same options refuse a start on the one overlap sorting cannot resolve:
+`routeConflictPolicy: { duplicate: 'error' }`, two handlers claiming one method and one path,
+named in the message.
+
+`shadow` is deliberately left `off`, and that is a measurement rather than a preference. It
+reports a pair the sort has already put in the right order and stays quiet on the pair the sort
+repaired, so switching it on would fail a correctly written controller and pass the one that
+needed help. [`test/routing.spec.ts`](test/routing.spec.ts) pins both halves over HTTP: the
+literal path answers even when the parameter was declared first, and a duplicated path aborts
+the start. [`test/routing.integration.spec.ts`](test/routing.integration.spec.ts) boots the
+whole app under the same options.
 
 ## The input boundary
 
