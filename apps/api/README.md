@@ -220,6 +220,18 @@ no such order, because both rows are new and neither is a row anyone else can be
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
 
+**A route that swallows another one fails the boot.** Express matches in registration order,
+so `@Get('payees')` declared after `@Get(':id')` on the same controller never runs, and the
+request lands on the parametric handler with `payees` as the id. Nothing in the code says so,
+and the screen is where you would find out. `main.ts` passes `ROUTE_CONFLICT_POLICY`
+([`src/route-conflicts.ts`](src/route-conflicts.ts)) to `NestFactory.create`, which sets both
+kinds of overlap to `error`: a duplicate registration and a shadowed path each abort the start
+with the two handlers named. The declaration order stays the thing that decides, so the fix is
+to move the literal path above the parametric one.
+[`test/route-conflicts.integration.spec.ts`](test/route-conflicts.integration.spec.ts) boots
+the whole app under that policy, so a route added into the wrong place fails the gate rather
+than the deploy.
+
 ## The input boundary
 
 Every request body **declared as a DTO class** is validated before a handler sees it. The pipe
@@ -496,6 +508,11 @@ knowing before a deploy:
 - **tsconfig:** on top of `@rondo/config/tsconfig/base.json` we add `experimentalDecorators`
   / `emitDecoratorMetadata` and `module: nodenext` (resolves as CommonJS, since the package has
   no `"type": "module"`). SWC does the actual build (`.swcrc`); `tsc` is typecheck only.
+- **The Nest packages ship as ESM only, and this app stays CommonJS.** Node's `require(esm)`
+  loads them, so the build and `node dist/main.js` need nothing extra. Jest's module registry
+  needs `--experimental-vm-modules` to do the same, and the `test:unit` / `test:integration`
+  scripts pass it through `NODE_OPTIONS`. A bare `jest` in this workspace dies on the first
+  Nest import with `Cannot use import statement outside a module`.
 - **`@/` alias at runtime:** SWC rewrites `@/*` into relative paths at build time
   (`jsc.baseUrl` + `jsc.paths`); in tests, Jest's `moduleNameMapper` does it.
 - **Type-aware ESLint:** `@rondo/config/eslint/type-checked` is enabled with

@@ -8,9 +8,10 @@ import { AppModule } from '@/app.module';
 import { assertClerkVerificationConfigured } from '@/auth/clerk-verification';
 import { assertWebOriginConfigured, enableWebCors } from '@/cors';
 import { API_DOCS_PATH, areApiDocsEnabled, buildOpenApiDocument } from '@/openapi/document';
+import { ROUTE_CONFLICT_POLICY } from '@/route-conflicts';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { routeConflictPolicy: ROUTE_CONFLICT_POLICY });
   const config = app.get(ConfigService);
   app.enableShutdownHooks();
   assertClerkVerificationConfigured(app);
