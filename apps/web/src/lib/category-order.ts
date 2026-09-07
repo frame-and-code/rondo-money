@@ -63,8 +63,11 @@ export function storedOrder(
   paid: ReadonlySet<string>,
   shown: readonly string[],
 ): string[] {
+  const held = new Set(shown);
   const sameSet =
-    stored.length === shown.length && [...stored].sort().join() === [...shown].sort().join();
+    stored.length === shown.length &&
+    held.size === shown.length &&
+    stored.every((id) => held.has(id));
 
   if (!sameSet) {
     throw new Error(

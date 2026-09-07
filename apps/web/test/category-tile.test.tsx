@@ -334,6 +334,14 @@ describe('a category closed for the month', () => {
       </LocaleProvider>,
     );
 
+  it('says it is closed in the name a screen reader reads out for the card', () => {
+    drawOne({ ...PLAIN, paid: true });
+
+    expect(screen.getByRole('button', { name: /Transport/ })).toHaveAccessibleDescription(
+      en['categories.paidMark'],
+    );
+  });
+
   it('is dimmed but keeps every amount, and names its state for a screen reader', () => {
     drawOne({ ...PLAIN, paid: true });
 

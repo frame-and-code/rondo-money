@@ -53,12 +53,13 @@ describe('a group with nothing in it', () => {
     const user = userEvent.setup();
     draw([]);
 
-    await user.click(screen.getByTestId('empty-group-g1'));
-    await user.click(
-      screen.getAllByRole('button', {
-        name: en['categories.addTo'].replace('{{group}}', 'Bills'),
-      })[0] as HTMLElement,
-    );
+    const card = screen.getByTestId('empty-group-g1');
+    const inTheHeader = screen
+      .getAllByRole('button', { name: en['categories.addTo'].replace('{{group}}', 'Bills') })
+      .find((one) => one !== card);
+
+    await user.click(card);
+    await user.click(inTheHeader as HTMLElement);
 
     expect(onAdd).toHaveBeenCalledTimes(2);
   });

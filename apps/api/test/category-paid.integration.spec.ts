@@ -16,7 +16,9 @@ const ZONE = 'Europe/Warsaw';
 describe('the paid mark of a category', () => {
   let harness: CategoryHarness;
 
-  const thisMonth = (): string => monthOf(todayIn(ZONE));
+  const FROZEN_MONTH = monthOf(todayIn(ZONE));
+
+  const thisMonth = (): string => FROZEN_MONTH;
 
   const mark = (userId: string, categoryId: string, body: Record<string, unknown>) =>
     request(harness.server())

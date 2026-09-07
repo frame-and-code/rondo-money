@@ -321,12 +321,14 @@ export function BudgetMonth() {
 
   const reorderCategories = useMutation({
     ...categoriesControllerReorderMutation(),
+    scope: { id: 'reorder' },
     onError: () => setFailure({ kind: 'other', categoryId: '', categoryName: '' }),
     onSettled: () => reread(),
   });
 
   const reorderGroups = useMutation({
     ...categoryGroupsControllerReorderMutation(),
+    scope: { id: 'reorder' },
     onError: () => setFailure({ kind: 'other', categoryId: '', categoryName: '' }),
     onSettled: () => reread(),
   });

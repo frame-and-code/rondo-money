@@ -131,4 +131,8 @@ describe('storedOrder', () => {
   it('refuses a shown order naming other categories than the stored one', () => {
     expect(() => storedOrder(['a', 'b'], paid, ['a', 'x'])).toThrow(/different categories/);
   });
+
+  it('refuses a shown order that names one category twice', () => {
+    expect(() => storedOrder(['a', 'b'], paid, ['a', 'a'])).toThrow(/different categories/);
+  });
 });

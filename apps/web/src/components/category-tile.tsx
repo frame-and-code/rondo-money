@@ -49,6 +49,7 @@ export function CategoryTile({
   const isMobile = useIsMobile();
   const [explaining, setExplaining] = useState(false);
   const spoken = useId();
+  const closed = useId();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
     disabled: !sortable ? true : category.paid ? { draggable: true } : false,
@@ -89,6 +90,10 @@ export function CategoryTile({
       size={isMobile ? 56 : 72}
     />
   );
+
+  const described =
+    [category.paid ? closed : null, target === null ? null : spoken].filter(Boolean).join(' ') ||
+    undefined;
 
   const card = (
     <>
@@ -204,6 +209,12 @@ export function CategoryTile({
         </span>
       </span>
 
+      {category.paid ? (
+        <span id={closed} className="sr-only">
+          {t('categories.paidMark')}
+        </span>
+      ) : null}
+
       {target === null ? null : (
         <span id={spoken}>
           <TargetPanel spoken target={target} money={money} color={category.color} />
@@ -248,7 +259,7 @@ export function CategoryTile({
           data-failed={failed ? 'true' : undefined}
           aria-expanded={moveOpen}
           aria-label={t('categories.moveOpen', { category: category.name })}
-          aria-describedby={target === null ? undefined : spoken}
+          aria-describedby={described}
           onClick={onMoveOpen}
           className={look}
           {...grab}
@@ -267,7 +278,7 @@ export function CategoryTile({
           data-slot="category-tile"
           data-failed={failed ? 'true' : undefined}
           aria-label={t('categories.moveOpen', { category: category.name })}
-          aria-describedby={target === null ? undefined : spoken}
+          aria-describedby={described}
           className={look}
           {...grab}
         >
