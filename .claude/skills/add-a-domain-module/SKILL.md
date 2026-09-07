@@ -123,6 +123,10 @@ DTO body always can, because the global pipe answers before it. An undocumented 
 the client's whole error type `unknown`.
 `@Public()` opens an endpoint to both the guard and the spec at once; never add a second
 decorator saying the same thing.
+A literal path beside a parametric one, `@Get('payees')` next to `@Get(':id')`, needs no
+ordering care: the app registers the literal one first whatever order they are written in. Two
+handlers on one method and one path is the case it refuses to start on
+([`apps/api/README.md`](../../../apps/api/README.md)).
 
 **`<feature>.module.ts`** needs a line in
 [`app.module.ts`](../../../apps/api/src/app.module.ts). A module nobody imports serves nothing.

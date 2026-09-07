@@ -75,7 +75,7 @@
     },
     "class-validator-nestjs-pipe": {
       "url": "https://docs.nestjs.com/techniques/validation",
-      "version": "class-validator ^0.15.1, class-transformer ^0.5.1, @nestjs/common ^11.1.28",
+      "version": "class-validator ^0.15.1, class-transformer ^0.5.1, @nestjs/common ^12.0.1",
       "why": "The global ValidationPipe is the whole input boundary, and its behaviour is entirely in its options: `whitelist` strips undeclared fields, `forbidNonWhitelisted` turns that into a 400, and `transform` is what constructs the DTO instance the validators run against. One option is deliberately OFF and must stay off: transformOptions.enableImplicitConversion coerces by the property's declared type, which silently turns a JSON number into the string a money field expects. After the precision is already lost. Two things this page does not say: a custom `registerDecorator` validator must be typed `PropertyDecorator` for `applyDecorators` to accept it (its own signature takes `propertyKey: string | symbol`), and `ApiPropertyOptions` is a union whose members disagree about required keys, so `Omit` over it collapses into a shape demanding `enumName`. Declare a narrow options interface instead.",
       "checked": "2026-08-21"
     },

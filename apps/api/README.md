@@ -220,6 +220,26 @@ no such order, because both rows are new and neither is a row anyone else can be
 `PrismaService` connects to Postgres via the `@prisma/adapter-pg` driver adapter
 (Prisma 7, Rust-free client); `DATABASE_URL` comes from `ConfigService`.
 
+**Declaration order does not decide which handler answers.** Express matches in registration
+order, so `@Get('payees')` written after `@Get(':id')` on the same controller would never run,
+and the request would land on the parametric handler with `payees` as the id. Nothing in the
+code says so, and the screen is where you would find out. `main.ts` passes `ROUTING_OPTIONS`
+([`src/routing.ts`](src/routing.ts)) to `NestFactory.create`, and
+`routeResolutionStrategy: 'specificity'` registers a literal segment ahead of a parametric one
+whatever order the two were written in, so the ambiguity is resolved rather than reported.
+
+The same options refuse a start on the one overlap sorting cannot resolve:
+`routeConflictPolicy: { duplicate: 'error' }`, two handlers claiming one method and one path,
+named in the message.
+
+`shadow` is deliberately left `off`, and that is a measurement rather than a preference. It
+reports a pair the sort has already put in the right order and stays quiet on the pair the sort
+repaired, so switching it on would fail a correctly written controller and pass the one that
+needed help. [`test/routing.spec.ts`](test/routing.spec.ts) pins both halves over HTTP: the
+literal path answers even when the parameter was declared first, and a duplicated path aborts
+the start. [`test/routing.integration.spec.ts`](test/routing.integration.spec.ts) boots the
+whole app under the same options.
+
 ## The input boundary
 
 Every request body **declared as a DTO class** is validated before a handler sees it. The pipe
@@ -496,6 +516,11 @@ knowing before a deploy:
 - **tsconfig:** on top of `@rondo/config/tsconfig/base.json` we add `experimentalDecorators`
   / `emitDecoratorMetadata` and `module: nodenext` (resolves as CommonJS, since the package has
   no `"type": "module"`). SWC does the actual build (`.swcrc`); `tsc` is typecheck only.
+- **The Nest packages ship as ESM only, and this app stays CommonJS.** Node's `require(esm)`
+  loads them, so the build and `node dist/main.js` need nothing extra. Jest's module registry
+  needs `--experimental-vm-modules` to do the same, and the `test:unit` / `test:integration`
+  scripts pass it through `NODE_OPTIONS`. A bare `jest` in this workspace dies on the first
+  Nest import with `Cannot use import statement outside a module`.
 - **`@/` alias at runtime:** SWC rewrites `@/*` into relative paths at build time
   (`jsc.baseUrl` + `jsc.paths`); in tests, Jest's `moduleNameMapper` does it.
 - **Type-aware ESLint:** `@rondo/config/eslint/type-checked` is enabled with
