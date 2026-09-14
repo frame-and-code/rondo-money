@@ -16,7 +16,7 @@
     "test": "echo \"@rondo/ui: no tests yet — components are covered by @rondo/web unit tests (see docs/testing.md)\""
   },
   "dependencies": {
-    "@base-ui/react": "^1.7.0",
+    "@base-ui/react": "^1.8.0",
     "@tabler/icons-react": "^3.46.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -35,7 +35,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "eslint": "^10.9.1",
-    "globals": "^17.11.0",
+    "globals": "^17.12.0",
     "prettier": "^3.9.6",
     "typescript": "^6.0.3"
   }
