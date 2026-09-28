@@ -34,9 +34,9 @@
     "@rondo/config": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "eslint": "^10.9.1",
+    "eslint": "^10.11.0",
     "globals": "^17.11.0",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.8",
     "typescript": "^6.0.3"
   }
 }
