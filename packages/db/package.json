@@ -24,9 +24,9 @@
     "test": "echo \"@rondo/db: no tests yet — Prisma ↔ Postgres is covered by @rondo/api integration tests (see docs/testing.md)\""
   },
   "dependencies": {
-    "@prisma/client": "^7.9.1",
+    "@prisma/client": "^7.10.0",
     "dotenv": "^17.4.2",
-    "prisma": "^7.9.1"
+    "prisma": "^7.10.0"
   },
   "devDependencies": {
     "@rondo/config": "workspace:*",
