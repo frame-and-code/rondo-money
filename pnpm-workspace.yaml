@@ -22,8 +22,12 @@ overrides:
 #   (F1.4). Same reasoning as @clerk/shared: nothing we ship needs it to have run.
 # - bufferutil / utf-8-validate: false — optional native speedups for ws (via
 #   jsdom → jest); pure-JS fallbacks are fine for tests, skip the node-gyp builds.
+# - @parcel/watcher: false, because jest-haste-map reaches it only for watch mode, which
+#   no CI job uses, and its install script compiles from source. The prebuilt binary for
+#   the platform is a separate optional package and arrives either way.
 allowBuilds:
   '@clerk/shared': false
+  '@parcel/watcher': false
   '@prisma/client': true
   '@prisma/engines': true
   '@scarf/scarf': false

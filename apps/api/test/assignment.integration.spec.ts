@@ -137,9 +137,8 @@ describe('the assignment table (integration)', () => {
     }).catch((error: unknown) => error);
 
     expect(codeOf(conflict)).toBe('P2002');
-    expect(String(conflict)).toContain(
-      'Unique constraint failed on the fields: (`category_id`, `month`)',
-    );
+    expect(String(conflict)).toContain('assignment_category_id_month_key');
+    expect(await prisma.assignment.count({ where: { userId: USER } })).toBe(1);
   });
 
   it('refuses a month that is not the first of its month, so the pair is unique per month', async () => {
