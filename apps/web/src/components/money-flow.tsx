@@ -273,7 +273,6 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
 
   const writeTransfer = useMutation({
     ...transfersControllerCreateMutation(),
-    onSuccess: settled,
     onError: refusedTransfer,
   });
 
@@ -360,6 +359,18 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
   const days = feedDays(records, totals, today);
   const filtered = Object.values(filters).some((value) => value !== null);
 
+  const remember = (entry: LastEntry): void => {
+    setLast(entry);
+    if (budgetId !== null) {
+      storeLastEntry(budgetId, entry, today);
+    }
+  };
+
+  const landed = (): void => {
+    setWritten((count) => count + 1);
+    void reread();
+  };
+
   const save = (draft: TransactionDraft, andMore: boolean): void => {
     const body = {
       accountId: draft.accountId,
@@ -377,31 +388,12 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
       return;
     }
 
-    const entry: LastEntry = {
-      date: draft.date,
-      categoryId: draft.categoryId,
-      payee: draft.payee,
-    };
+    remember({ date: draft.date, categoryId: draft.categoryId, payee: draft.payee });
 
-    setLast(entry);
-    if (budgetId !== null) {
-      storeLastEntry(budgetId, entry, today);
-    }
-
-    write.mutate(
-      { body },
-      {
-        onSuccess: andMore
-          ? () => {
-              setWritten((count) => count + 1);
-              void reread();
-            }
-          : settled,
-      },
-    );
+    write.mutate({ body }, { onSuccess: andMore ? landed : settled });
   };
 
-  const saveTransfer = (draft: TransferDraft): void => {
+  const saveTransfer = (draft: TransferDraft, andMore: boolean): void => {
     const body = {
       fromAccountId: draft.fromAccountId,
       toAccountId: draft.toAccountId,
@@ -418,7 +410,9 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
       return;
     }
 
-    writeTransfer.mutate({ body });
+    remember({ ...last, date: draft.date });
+
+    writeTransfer.mutate({ body }, { onSuccess: andMore ? landed : settled });
   };
 
   const saveOpening = (draft: OpeningDraft): void => {

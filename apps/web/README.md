@@ -125,9 +125,10 @@ src/
                               # from local parts so a day never shifts across a timezone
   lib/last-entry.ts           # what the last record was written with, kept per budget in the
                               # browser, so the next form opens on the same envelope and
-                              # counterparty. The day is remembered too, but only until the
-                              # next one starts: it carries the day it was stored, and a
-                              # memory from an earlier day opens on today instead
+                              # counterparty. A transfer has neither, so it leaves both as they
+                              # were. The day is remembered too, from a transfer as well, but
+                              # only until the next one starts: it carries the day it was
+                              # stored, and a memory from an earlier day opens on today instead
   lib/budget-month.ts         # which month the screen shows, its label, and the two arcs a
                               # tile's ring is drawn with, from the goal when there is one and
                               # from the envelope when there is not. Today comes from the
