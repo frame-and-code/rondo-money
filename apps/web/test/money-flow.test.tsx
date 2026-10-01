@@ -78,6 +78,8 @@ let viewFetched = 0;
 
 const transferred: unknown[] = [];
 
+let refusals = 0;
+
 const corrected: unknown[] = [];
 
 const wholeFeed = {
@@ -182,6 +184,12 @@ jest.mock('@rondo/api-client/react-query', () => ({
   transactionsControllerRemoveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   transfersControllerCreateMutation: () => ({
     mutationFn: (options: unknown) => {
+      if (refusals > 0) {
+        refusals -= 1;
+
+        return Promise.reject(new Error('refused'));
+      }
+
       transferred.push(options);
 
       return Promise.resolve({});
@@ -260,6 +268,7 @@ afterEach(() => {
   viewFetched = 0;
   transferred.length = 0;
   corrected.length = 0;
+  refusals = 0;
   window.localStorage.clear();
 });
 
@@ -752,6 +761,33 @@ describe('moving money between two accounts', () => {
     expect(await screen.findByTestId('entry-flash')).toBeInTheDocument();
     expect(screen.getByLabelText(en['transactions.amountLabel'])).toHaveValue('');
     expect(written).toHaveLength(0);
+  });
+
+  it('takes the refusal off the form once the next attempt to add another lands', async () => {
+    refusals = 1;
+    draw();
+
+    await userEvent.click(await screen.findByRole('button', { name: en['transactions.add'] }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: en['transactions.kindTransfer'] }),
+    );
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '500');
+    await userEvent.click(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    );
+    await userEvent.click(await screen.findByRole('option', { name: /Card/ }));
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    expect(await screen.findByText(en['transactions.failTitleTransfer'])).toBeInTheDocument();
+    expect(transferred).toHaveLength(0);
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    await waitFor(() => expect(transferred).toHaveLength(1));
+    await waitFor(() =>
+      expect(screen.queryByText(en['transactions.failTitleTransfer'])).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('entry-flash')).toBeInTheDocument();
   });
 });
 

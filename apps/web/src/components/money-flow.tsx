@@ -367,6 +367,7 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
   };
 
   const landed = (): void => {
+    setFailed(null);
     setWritten((count) => count + 1);
     void reread();
   };
