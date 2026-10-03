@@ -78,6 +78,8 @@ let viewFetched = 0;
 
 const transferred: unknown[] = [];
 
+let refusals = 0;
+
 const corrected: unknown[] = [];
 
 const wholeFeed = {
@@ -182,6 +184,12 @@ jest.mock('@rondo/api-client/react-query', () => ({
   transactionsControllerRemoveMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   transfersControllerCreateMutation: () => ({
     mutationFn: (options: unknown) => {
+      if (refusals > 0) {
+        refusals -= 1;
+
+        return Promise.reject(new Error('refused'));
+      }
+
       transferred.push(options);
 
       return Promise.resolve({});
@@ -260,6 +268,8 @@ afterEach(() => {
   viewFetched = 0;
   transferred.length = 0;
   corrected.length = 0;
+  refusals = 0;
+  window.localStorage.clear();
 });
 
 const dayName = (date: string): RegExp => {
@@ -480,8 +490,6 @@ describe('the money flow screen', () => {
     const spelled = format(new Date(Number(year), Number(month) - 1, Number(day)), 'd MMMM yyyy');
 
     expect(await screen.findByRole('button', { name: new RegExp(spelled) })).toBeInTheDocument();
-
-    window.localStorage.clear();
   });
 
   it('says the filter matched nothing, and offers to clear it', async () => {
@@ -590,6 +598,111 @@ describe('what a reopened form remembers', () => {
 
     expect(await screen.findByLabelText(en['transactions.amountLabel'])).toHaveValue('');
   });
+
+  const spelled = (date: string): RegExp => {
+    const [year = '', month = '', day = ''] = date.split('-');
+
+    return new RegExp(
+      format(new Date(Number(year), Number(month) - 1, Number(day)), 'd MMMM yyyy'),
+    );
+  };
+
+  const rememberAnEarlierDay = (today: string): void => {
+    window.localStorage.setItem(
+      'rondo.lastEntry:b1',
+      JSON.stringify({ date: '2020-01-02', categoryId: null, payee: null, storedOn: today }),
+    );
+  };
+
+  const pickToday = async (today: string): Promise<void> => {
+    await userEvent.click(screen.getByRole('button', { name: spelled('2020-01-02') }));
+    await userEvent.click(await screen.findByRole('button', { name: dayName(today) }));
+  };
+
+  it('opens on the day of the last record written, not on the first one of the session', async () => {
+    const today = todayIn(budget.timezone);
+    page = { transactions: [], days: [], nextCursor: null };
+    rememberAnEarlierDay(today);
+    draw();
+    await screen.findByText('Wallet');
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.add'] }));
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '100');
+    await pickCategory('Coffee');
+    await pickToday(today);
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    await waitFor(() => expect(written).toHaveLength(1));
+    await waitFor(() => expect(screen.queryByLabelText(en['transactions.amountLabel'])).toBeNull());
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.add'] }));
+
+    expect(await screen.findByRole('button', { name: spelled(today) })).toBeInTheDocument();
+  });
+
+  it('opens on the day of a transfer too, because a transfer is the last record as much as any', async () => {
+    const today = todayIn(budget.timezone);
+    page = { transactions: [], days: [], nextCursor: null };
+    rememberAnEarlierDay(today);
+    draw();
+    await screen.findByText('Wallet');
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.add'] }));
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.kindTransfer'] }));
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '500');
+    await userEvent.click(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    );
+    await userEvent.click(await screen.findByRole('option', { name: /Card/ }));
+    await pickToday(today);
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    await waitFor(() => expect(transferred).toHaveLength(1));
+    await waitFor(() => expect(screen.queryByLabelText(en['transactions.amountLabel'])).toBeNull());
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.add'] }));
+
+    expect(await screen.findByRole('button', { name: spelled(today) })).toBeInTheDocument();
+  });
+
+  it('keeps the envelope and the payee of the last record when a transfer moves the day', async () => {
+    const today = todayIn(budget.timezone);
+    page = { transactions: [], days: [], nextCursor: null };
+    window.localStorage.setItem(
+      'rondo.lastEntry:b1',
+      JSON.stringify({
+        date: '2020-01-02',
+        categoryId: 'c1',
+        payee: 'Corner cafe',
+        storedOn: today,
+      }),
+    );
+    draw();
+    await screen.findByText('Wallet');
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.add'] }));
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.kindTransfer'] }));
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '500');
+    await userEvent.click(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    );
+    await userEvent.click(await screen.findByRole('option', { name: /Card/ }));
+    await pickToday(today);
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.save'] }));
+
+    await waitFor(() => expect(transferred).toHaveLength(1));
+    await waitFor(() => expect(screen.queryByLabelText(en['transactions.amountLabel'])).toBeNull());
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.add'] }));
+
+    expect(
+      await screen.findByRole('combobox', { name: en['transactions.categoryLabel'] }),
+    ).toHaveTextContent('Coffee');
+    expect(
+      screen.getByRole('combobox', { name: en['transactions.payeeExpense'] }),
+    ).toHaveTextContent('Corner cafe');
+    expect(screen.getByRole('button', { name: spelled(today) })).toBeInTheDocument();
+  });
 });
 
 describe('moving money between two accounts', () => {
@@ -623,6 +736,58 @@ describe('moving money between two accounts', () => {
 
     await waitFor(() => expect(accountsFetched).toBeGreaterThan(balances));
     await waitFor(() => expect(viewFetched).toBeGreaterThan(month));
+  });
+
+  it('keeps the form open after saving a transfer and adding another, and rereads the balances', async () => {
+    draw();
+
+    await userEvent.click(await screen.findByRole('button', { name: en['transactions.add'] }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: en['transactions.kindTransfer'] }),
+    );
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '500');
+    await userEvent.click(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    );
+    await userEvent.click(await screen.findByRole('option', { name: /Card/ }));
+
+    const balances = accountsFetched;
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    await waitFor(() => expect(transferred).toHaveLength(1));
+    await waitFor(() => expect(accountsFetched).toBeGreaterThan(balances));
+
+    expect(await screen.findByTestId('entry-flash')).toBeInTheDocument();
+    expect(screen.getByLabelText(en['transactions.amountLabel'])).toHaveValue('');
+    expect(written).toHaveLength(0);
+  });
+
+  it('takes the refusal off the form once the next attempt to add another lands', async () => {
+    refusals = 1;
+    draw();
+
+    await userEvent.click(await screen.findByRole('button', { name: en['transactions.add'] }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: en['transactions.kindTransfer'] }),
+    );
+    await userEvent.type(screen.getByLabelText(en['transactions.amountLabel']), '500');
+    await userEvent.click(
+      screen.getByRole('combobox', { name: en['transactions.toAccountLabel'] }),
+    );
+    await userEvent.click(await screen.findByRole('option', { name: /Card/ }));
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    expect(await screen.findByText(en['transactions.failTitleTransfer'])).toBeInTheDocument();
+    expect(transferred).toHaveLength(0);
+
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    await waitFor(() => expect(transferred).toHaveLength(1));
+    await waitFor(() =>
+      expect(screen.queryByText(en['transactions.failTitleTransfer'])).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('entry-flash')).toBeInTheDocument();
   });
 });
 

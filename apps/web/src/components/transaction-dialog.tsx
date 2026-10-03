@@ -320,12 +320,27 @@ export function TransactionDialog({
     onSave(draftOf(), false);
   };
 
+  const nameOf = (id: string): string => accounts.find((account) => account.id === id)?.name ?? '';
+
   const again = (): void => {
     if (busy || !ready) return;
 
+    setPressed('more');
+
+    if (transferring) {
+      const transfer = transferOf();
+
+      setSent({
+        payee: `${nameOf(transfer.fromAccountId)} → ${nameOf(transfer.toAccountId)}`,
+        amount: money.format(minor ?? 0n),
+      });
+      onTransfer(transfer, true);
+
+      return;
+    }
+
     const draft = draftOf();
 
-    setPressed('more');
     setSent({
       payee: draft.payee ?? t('transactions.noPayee'),
       amount: money.format(minor ?? 0n),
@@ -620,7 +635,7 @@ export function TransactionDialog({
 
       <div className="border-border/60 flex flex-col gap-2 border-t pt-4">
         <div className="flex gap-2">
-          {record === null && !transferring ? (
+          {record === null ? (
             <Button
               type="button"
               variant="outline"

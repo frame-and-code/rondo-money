@@ -664,6 +664,66 @@ describe('the form a transfer is written in', () => {
     await userEvent.click(screen.getByRole('button', { name: en['transactions.kindTransfer'] }));
   };
 
+  it('offers to save and add another, the way a record does', async () => {
+    const { onTransfer, onSave } = show();
+
+    await chooseTransfer();
+    await typeAmount('500');
+    await pickAccount(en['transactions.toAccountLabel'], 'Card');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onTransfer).toHaveBeenCalledWith(
+      {
+        fromAccountId: 'a1',
+        toAccountId: 'a2',
+        amount: '50000',
+        date: TODAY,
+        idempotencyKey: expect.any(String),
+      },
+      true,
+    );
+  });
+
+  it('keeps the two accounts and the day after adding another, and asks for the amount again', async () => {
+    const onTransfer = jest.fn();
+    const { land } = show({
+      onTransfer,
+      defaults: { accountId: 'a1', date: '2026-08-20', categoryId: null, payee: null },
+    });
+
+    await chooseTransfer();
+    await typeAmount('500');
+    await pickAccount(en['transactions.toAccountLabel'], 'Card');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+    land();
+
+    expect(screen.getByTestId('entry-flash')).toHaveTextContent('Wallet');
+    expect(screen.getByTestId('entry-flash')).toHaveTextContent('Card');
+    expect(screen.getByLabelText(en['transactions.amountLabel'])).toHaveValue('');
+
+    await typeAmount('250');
+    await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
+
+    const [first, second] = onTransfer.mock.calls;
+
+    expect(second?.[0]).toMatchObject({
+      fromAccountId: 'a1',
+      toAccountId: 'a2',
+      amount: '25000',
+      date: '2026-08-20',
+    });
+    expect(first?.[0].idempotencyKey).not.toBe(second?.[0].idempotencyKey);
+  });
+
+  it('does not offer another while a transfer is being changed, because there is one to change', () => {
+    show({ record: leg });
+
+    expect(
+      screen.queryByRole('button', { name: en['transactions.saveAndMore'] }),
+    ).not.toBeInTheDocument();
+  });
+
   it('puts the second account where the envelope and the payee were', async () => {
     show();
     await chooseTransfer();
