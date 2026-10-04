@@ -62,11 +62,13 @@ describe('the budget-scoped-model registry', () => {
   it('covers the models a budget owns, and leaves the user-level ones out', () => {
     expect([...BUDGET_SCOPED_MODELS].sort()).toEqual([
       'Account',
+      'Asset',
       'Assignment',
       'Category',
       'CategoryGroup',
       'CategoryPaidMonth',
       'CategoryTarget',
+      'Liability',
       'Transaction',
     ]);
     expect(BUDGET_SCOPED_MODELS.has(Prisma.ModelName.Budget)).toBe(false);
@@ -98,12 +100,14 @@ describe('the mutation-guarded-model registry', () => {
   it('guards the domain models and exempts the two no mutation owns', () => {
     expect([...MUTATION_GUARDED_MODELS].sort()).toEqual([
       'Account',
+      'Asset',
       'Assignment',
       'Budget',
       'Category',
       'CategoryGroup',
       'CategoryPaidMonth',
       'CategoryTarget',
+      'Liability',
       'Transaction',
     ]);
     expect([...MUTATION_EXEMPT_MODELS].sort()).toEqual(['IdempotencyKey', 'UserSettings']);

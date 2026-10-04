@@ -13,6 +13,8 @@ const DOMAIN_MODELS = [
   'Assignment',
   'CategoryTarget',
   'CategoryPaidMonth',
+  'Asset',
+  'Liability',
   'IdempotencyKey',
 ] as const;
 
@@ -24,6 +26,8 @@ const BUDGET_OWNED_MODELS = [
   'Assignment',
   'CategoryTarget',
   'CategoryPaidMonth',
+  'Asset',
+  'Liability',
 ] as const;
 
 describe('the domain core schema', () => {

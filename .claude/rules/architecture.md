@@ -103,6 +103,12 @@ itself is published with no response shape at all, and the generated client type
   rewrite the committed contract and fail the gate on a change that touches no currency.
   [`create-budget.dto.ts`](../../apps/api/src/budgets/create-budget.dto.ts) is a request DTO
   using both.
+- **A change that takes the whole record clears an optional field by leaving it out.** The
+  body of such a `PATCH` is the record, so a field it does not carry is stored as absent. An
+  explicit `null` is not part of the contract: the decorators publish `required` and no
+  `nullable`, for the reason the money one gives, so a null is a 400.
+  [`write-net-worth-item.dto.ts`](../../apps/api/src/net-worth/write-net-worth-item.dto.ts) is
+  one DTO serving both the write and the change this way.
 - Every request body **declared as a DTO class** is validated by the global pipe
   ([`validation.options.ts`](../../apps/api/src/validation/validation.options.ts)):
   `class-validator` + `class-transformer`, whitelisted, and a field the DTO never declared is

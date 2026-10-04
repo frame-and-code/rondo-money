@@ -57,6 +57,14 @@ export function eraseUserDataStatements(scope: RawQueryScope, sparedKey: string)
       statement: Prisma.sql`DELETE FROM account WHERE user_id = ${userId}`,
     },
     {
+      model: Prisma.ModelName.Asset,
+      statement: Prisma.sql`DELETE FROM asset WHERE user_id = ${userId}`,
+    },
+    {
+      model: Prisma.ModelName.Liability,
+      statement: Prisma.sql`DELETE FROM liability WHERE user_id = ${userId}`,
+    },
+    {
       model: Prisma.ModelName.Budget,
       statement: Prisma.sql`DELETE FROM budget WHERE user_id = ${userId}`,
     },

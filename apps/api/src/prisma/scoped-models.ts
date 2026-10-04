@@ -10,6 +10,8 @@ export const SCOPED_MODELS: ReadonlySet<Prisma.ModelName> = new Set([
   Prisma.ModelName.Assignment,
   Prisma.ModelName.CategoryTarget,
   Prisma.ModelName.CategoryPaidMonth,
+  Prisma.ModelName.Asset,
+  Prisma.ModelName.Liability,
   Prisma.ModelName.IdempotencyKey,
 ]);
 
@@ -21,6 +23,8 @@ export const BUDGET_SCOPED_MODELS: ReadonlySet<Prisma.ModelName> = new Set([
   Prisma.ModelName.Assignment,
   Prisma.ModelName.CategoryTarget,
   Prisma.ModelName.CategoryPaidMonth,
+  Prisma.ModelName.Asset,
+  Prisma.ModelName.Liability,
 ]);
 
 export const MUTATION_GUARDED_MODELS: ReadonlySet<Prisma.ModelName> = new Set([
@@ -32,6 +36,8 @@ export const MUTATION_GUARDED_MODELS: ReadonlySet<Prisma.ModelName> = new Set([
   Prisma.ModelName.Assignment,
   Prisma.ModelName.CategoryTarget,
   Prisma.ModelName.CategoryPaidMonth,
+  Prisma.ModelName.Asset,
+  Prisma.ModelName.Liability,
 ]);
 
 export const MUTATION_EXEMPT_MODELS: ReadonlySet<Prisma.ModelName> = new Set([

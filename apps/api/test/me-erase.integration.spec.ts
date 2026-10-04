@@ -53,6 +53,8 @@ describe('POST /me/erase (integration)', () => {
   const owned = { userId: { startsWith: USER_PREFIX } };
 
   const removeFixtures = async (): Promise<void> => {
+    await prisma.asset.deleteMany({ where: owned });
+    await prisma.liability.deleteMany({ where: owned });
     await prisma.transaction.deleteMany({ where: owned });
     await prisma.assignment.deleteMany({ where: owned });
     await prisma.categoryTarget.deleteMany({ where: owned });
@@ -78,6 +80,12 @@ describe('POST /me/erase (integration)', () => {
 
     await prisma.account.create({
       data: { userId, budgetId: retired.id, name: 'Shoebox', type: 'CASH' },
+    });
+    await prisma.asset.create({
+      data: { userId, budgetId: retired.id, name: 'Old car', amount: 900_000n },
+    });
+    await prisma.liability.create({
+      data: { userId, budgetId: retired.id, name: 'Old loan', amount: 100_000n },
     });
 
     const group = await prisma.categoryGroup.create({
@@ -146,6 +154,12 @@ describe('POST /me/erase (integration)', () => {
     await prisma.categoryPaidMonth.create({
       data: { userId, budgetId: budget.id, categoryId: category.id, month },
     });
+    await prisma.asset.create({
+      data: { userId, budgetId: budget.id, name: 'Flat', amount: 45_000_000n, date },
+    });
+    await prisma.liability.create({
+      data: { userId, budgetId: budget.id, name: 'Debt to a friend', amount: 250_000n },
+    });
   };
 
   const seedKey = (userId: string, value: string) =>
@@ -206,6 +220,19 @@ describe('POST /me/erase (integration)', () => {
     await expect(
       prisma.account.count({ where: { userId: USER_WHOLE, name: 'Shoebox' } }),
     ).resolves.toBe(0);
+  });
+
+  it('erases what the caller wrote down as owned and owed, in every budget they had', async () => {
+    await seedEverything(USER_WHOLE);
+    await seedEverything(USER_NEIGHBOUR);
+
+    const response = await erase(USER_WHOLE, { idempotencyKey: 'erase-opened-once' });
+
+    expect(response.status).toBe(200);
+    await expect(prisma.asset.count({ where: { userId: USER_WHOLE } })).resolves.toBe(0);
+    await expect(prisma.liability.count({ where: { userId: USER_WHOLE } })).resolves.toBe(0);
+    await expect(prisma.asset.count({ where: { userId: USER_NEIGHBOUR } })).resolves.toBe(2);
+    await expect(prisma.liability.count({ where: { userId: USER_NEIGHBOUR } })).resolves.toBe(2);
   });
 
   it('spares exactly the running key, and stores the answer it gave on it', async () => {

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AccountsControllerArchiveData, AccountsControllerArchiveErrors, AccountsControllerArchiveResponses, AccountsControllerCorrectOpeningData, AccountsControllerCorrectOpeningErrors, AccountsControllerCorrectOpeningResponses, AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, AccountsControllerReconcileData, AccountsControllerReconcileErrors, AccountsControllerReconcileResponses, AccountsControllerRenameData, AccountsControllerRenameErrors, AccountsControllerRenameResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryPaidControllerMarkData, CategoryPaidControllerMarkErrors, CategoryPaidControllerMarkResponses, CategoryPaidControllerUnmarkData, CategoryPaidControllerUnmarkErrors, CategoryPaidControllerUnmarkResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, MeControllerEraseData, MeControllerEraseErrors, MeControllerEraseResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, TransactionsControllerCreateData, TransactionsControllerCreateErrors, TransactionsControllerCreateResponses, TransactionsControllerListData, TransactionsControllerListErrors, TransactionsControllerListResponses, TransactionsControllerPayeesData, TransactionsControllerPayeesErrors, TransactionsControllerPayeesResponses, TransactionsControllerRemoveData, TransactionsControllerRemoveErrors, TransactionsControllerRemoveResponses, TransactionsControllerUpdateData, TransactionsControllerUpdateErrors, TransactionsControllerUpdateResponses, TransfersControllerCreateData, TransfersControllerCreateErrors, TransfersControllerCreateResponses, TransfersControllerRemoveData, TransfersControllerRemoveErrors, TransfersControllerRemoveResponses, TransfersControllerUpdateData, TransfersControllerUpdateErrors, TransfersControllerUpdateResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses, UserSettingsControllerUpdateData, UserSettingsControllerUpdateErrors, UserSettingsControllerUpdateResponses } from './types.gen';
+import type { AccountsControllerArchiveData, AccountsControllerArchiveErrors, AccountsControllerArchiveResponses, AccountsControllerCorrectOpeningData, AccountsControllerCorrectOpeningErrors, AccountsControllerCorrectOpeningResponses, AccountsControllerCreateData, AccountsControllerCreateErrors, AccountsControllerCreateResponses, AccountsControllerListData, AccountsControllerListErrors, AccountsControllerListResponses, AccountsControllerReconcileData, AccountsControllerReconcileErrors, AccountsControllerReconcileResponses, AccountsControllerRenameData, AccountsControllerRenameErrors, AccountsControllerRenameResponses, AssetsControllerChangeData, AssetsControllerChangeErrors, AssetsControllerChangeResponses, AssetsControllerCreateData, AssetsControllerCreateErrors, AssetsControllerCreateResponses, AssetsControllerListData, AssetsControllerListErrors, AssetsControllerListResponses, AssetsControllerRemoveData, AssetsControllerRemoveErrors, AssetsControllerRemoveResponses, BudgetsControllerCreateData, BudgetsControllerCreateErrors, BudgetsControllerCreateResponses, BudgetsControllerListData, BudgetsControllerListErrors, BudgetsControllerListResponses, BudgetViewControllerReadData, BudgetViewControllerReadErrors, BudgetViewControllerReadResponses, CategoriesControllerCreateData, CategoriesControllerCreateErrors, CategoriesControllerCreateResponses, CategoriesControllerHideData, CategoriesControllerHideErrors, CategoriesControllerHideResponses, CategoriesControllerReorderData, CategoriesControllerReorderErrors, CategoriesControllerReorderResponses, CategoriesControllerUnhideData, CategoriesControllerUnhideErrors, CategoriesControllerUnhideResponses, CategoriesControllerUpdateData, CategoriesControllerUpdateErrors, CategoriesControllerUpdateResponses, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateErrors, CategoryGroupsControllerCreateResponses, CategoryGroupsControllerHideData, CategoryGroupsControllerHideErrors, CategoryGroupsControllerHideResponses, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderErrors, CategoryGroupsControllerReorderResponses, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideErrors, CategoryGroupsControllerUnhideResponses, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateErrors, CategoryGroupsControllerUpdateResponses, CategoryPaidControllerMarkData, CategoryPaidControllerMarkErrors, CategoryPaidControllerMarkResponses, CategoryPaidControllerUnmarkData, CategoryPaidControllerUnmarkErrors, CategoryPaidControllerUnmarkResponses, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseErrors, CategoryTargetsControllerCloseResponses, CategoryTargetsControllerSetData, CategoryTargetsControllerSetErrors, CategoryTargetsControllerSetResponses, HealthControllerCheckData, HealthControllerCheckErrors, HealthControllerCheckResponses, LiabilitiesControllerChangeData, LiabilitiesControllerChangeErrors, LiabilitiesControllerChangeResponses, LiabilitiesControllerCreateData, LiabilitiesControllerCreateErrors, LiabilitiesControllerCreateResponses, LiabilitiesControllerListData, LiabilitiesControllerListErrors, LiabilitiesControllerListResponses, LiabilitiesControllerRemoveData, LiabilitiesControllerRemoveErrors, LiabilitiesControllerRemoveResponses, MeControllerEraseData, MeControllerEraseErrors, MeControllerEraseResponses, MeControllerIdentifyData, MeControllerIdentifyErrors, MeControllerIdentifyResponses, MovesControllerMoveData, MovesControllerMoveErrors, MovesControllerMoveResponses, TransactionsControllerCreateData, TransactionsControllerCreateErrors, TransactionsControllerCreateResponses, TransactionsControllerListData, TransactionsControllerListErrors, TransactionsControllerListResponses, TransactionsControllerPayeesData, TransactionsControllerPayeesErrors, TransactionsControllerPayeesResponses, TransactionsControllerRemoveData, TransactionsControllerRemoveErrors, TransactionsControllerRemoveResponses, TransactionsControllerUpdateData, TransactionsControllerUpdateErrors, TransactionsControllerUpdateResponses, TransfersControllerCreateData, TransfersControllerCreateErrors, TransfersControllerCreateResponses, TransfersControllerRemoveData, TransfersControllerRemoveErrors, TransfersControllerRemoveResponses, TransfersControllerUpdateData, TransfersControllerUpdateErrors, TransfersControllerUpdateResponses, UserSettingsControllerReadData, UserSettingsControllerReadErrors, UserSettingsControllerReadResponses, UserSettingsControllerUpdateData, UserSettingsControllerUpdateErrors, UserSettingsControllerUpdateResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -528,6 +528,118 @@ export const transfersControllerUpdate = <ThrowOnError extends boolean = false>(
 export const transfersControllerRemove = <ThrowOnError extends boolean = false>(options: Options<TransfersControllerRemoveData, ThrowOnError>): RequestResult<TransfersControllerRemoveResponses, TransfersControllerRemoveErrors, ThrowOnError> => (options.client ?? client).post<TransfersControllerRemoveResponses, TransfersControllerRemoveErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/transfers/{transferId}/delete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The active budget's assets
+ *
+ * The assets of the budget the caller is working in, oldest first. No total is answered here, and none is stored.
+ */
+export const assetsControllerList = <ThrowOnError extends boolean = false>(options?: Options<AssetsControllerListData, ThrowOnError>): RequestResult<AssetsControllerListResponses, AssetsControllerListErrors, ThrowOnError> => (options?.client ?? client).get<AssetsControllerListResponses, AssetsControllerListErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/assets',
+    ...options
+});
+
+/**
+ * Write down an asset
+ *
+ * Something the user owns that sits on no account: a flat, a car. No transaction is written for it and no balance moves.
+ */
+export const assetsControllerCreate = <ThrowOnError extends boolean = false>(options: Options<AssetsControllerCreateData, ThrowOnError>): RequestResult<AssetsControllerCreateResponses, AssetsControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<AssetsControllerCreateResponses, AssetsControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/assets',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change an asset
+ *
+ * Replaces the name, the amount and the day together. The body is the whole record, so a body carrying no day takes the stored one off.
+ */
+export const assetsControllerChange = <ThrowOnError extends boolean = false>(options: Options<AssetsControllerChangeData, ThrowOnError>): RequestResult<AssetsControllerChangeResponses, AssetsControllerChangeErrors, ThrowOnError> => (options.client ?? client).patch<AssetsControllerChangeResponses, AssetsControllerChangeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/assets/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete an asset
+ *
+ * Removes the row for good. Nothing else refers to it, so nothing else moves. It is a POST rather than a DELETE because the idempotency key travels in the body.
+ */
+export const assetsControllerRemove = <ThrowOnError extends boolean = false>(options: Options<AssetsControllerRemoveData, ThrowOnError>): RequestResult<AssetsControllerRemoveResponses, AssetsControllerRemoveErrors, ThrowOnError> => (options.client ?? client).post<AssetsControllerRemoveResponses, AssetsControllerRemoveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/assets/{id}/delete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The active budget's liabilities
+ *
+ * The liabilities of the budget the caller is working in, oldest first. No total is answered here, and none is stored.
+ */
+export const liabilitiesControllerList = <ThrowOnError extends boolean = false>(options?: Options<LiabilitiesControllerListData, ThrowOnError>): RequestResult<LiabilitiesControllerListResponses, LiabilitiesControllerListErrors, ThrowOnError> => (options?.client ?? client).get<LiabilitiesControllerListResponses, LiabilitiesControllerListErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/liabilities',
+    ...options
+});
+
+/**
+ * Write down a liability
+ *
+ * Something the user owes that sits on no account: a debt to a friend. No transaction is written for it and no balance moves.
+ */
+export const liabilitiesControllerCreate = <ThrowOnError extends boolean = false>(options: Options<LiabilitiesControllerCreateData, ThrowOnError>): RequestResult<LiabilitiesControllerCreateResponses, LiabilitiesControllerCreateErrors, ThrowOnError> => (options.client ?? client).post<LiabilitiesControllerCreateResponses, LiabilitiesControllerCreateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/liabilities',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change a liability
+ *
+ * Replaces the name, the amount and the day together. The body is the whole record, so a body carrying no day takes the stored one off.
+ */
+export const liabilitiesControllerChange = <ThrowOnError extends boolean = false>(options: Options<LiabilitiesControllerChangeData, ThrowOnError>): RequestResult<LiabilitiesControllerChangeResponses, LiabilitiesControllerChangeErrors, ThrowOnError> => (options.client ?? client).patch<LiabilitiesControllerChangeResponses, LiabilitiesControllerChangeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/liabilities/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a liability
+ *
+ * Removes the row for good. Nothing else refers to it, so nothing else moves. It is a POST rather than a DELETE because the idempotency key travels in the body.
+ */
+export const liabilitiesControllerRemove = <ThrowOnError extends boolean = false>(options: Options<LiabilitiesControllerRemoveData, ThrowOnError>): RequestResult<LiabilitiesControllerRemoveResponses, LiabilitiesControllerRemoveErrors, ThrowOnError> => (options.client ?? client).post<LiabilitiesControllerRemoveResponses, LiabilitiesControllerRemoveErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/liabilities/{id}/delete',
     ...options,
     headers: {
         'Content-Type': 'application/json',

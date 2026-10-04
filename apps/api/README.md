@@ -181,6 +181,15 @@ no such order, because both rows are new and neither is a row anyone else can be
   not earlier than the day the later of the two accounts was opened. Refusals name a reason:
   `SAME_ACCOUNT`, `ACCOUNT_ARCHIVED`, `DATE_IN_FUTURE`, `DATE_BEFORE_ACCOUNT`,
   `UNKNOWN_ACCOUNT`, `UNKNOWN_TRANSFER`, `NO_ACTIVE_BUDGET`.
+- `GET`, `POST /assets`, `PATCH /assets/:id` and `POST /assets/:id/delete`, and the same four
+  under `/liabilities`, hold what the user owns and owes outside any account. One is a name, an
+  amount that is zero or above and an optional day the amount was true, which is not later than
+  today in the budget timezone. Nothing here writes a transaction, so no balance and no envelope
+  moves. A change takes the whole record: a body carrying no `date` takes the stored day off.
+  A delete removes the row for good and answers with what it removed. The two share one module
+  and one service in [`src/net-worth`](src/net-worth), and an id of one kind sent to the other's
+  route is refused like any id the budget does not hold. Refusals name a reason:
+  `DATE_IN_FUTURE`, `UNKNOWN_ASSET`, `UNKNOWN_LIABILITY`, `NO_ACTIVE_BUDGET`.
 - `POST /categories`, `PATCH /categories/:id`, `POST /categories/:id/hide`, `/unhide` and
   `POST /categories/reorder` are the category's own operations, and the five under
   `/category-groups` are the group's. No budget operation deletes either: a category is hidden and
