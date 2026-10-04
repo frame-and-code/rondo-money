@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accountsControllerArchive, accountsControllerCorrectOpening, accountsControllerCreate, accountsControllerList, accountsControllerReconcile, accountsControllerRename, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, categoryPaidControllerMark, categoryPaidControllerUnmark, categoryTargetsControllerClose, categoryTargetsControllerSet, healthControllerCheck, meControllerErase, meControllerIdentify, movesControllerMove, type Options, transactionsControllerCreate, transactionsControllerList, transactionsControllerPayees, transactionsControllerRemove, transactionsControllerUpdate, transfersControllerCreate, transfersControllerRemove, transfersControllerUpdate, userSettingsControllerRead, userSettingsControllerUpdate } from '../sdk.gen';
-import type { AccountsControllerArchiveData, AccountsControllerArchiveError, AccountsControllerArchiveResponse, AccountsControllerCorrectOpeningData, AccountsControllerCorrectOpeningError, AccountsControllerCorrectOpeningResponse, AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, AccountsControllerReconcileData, AccountsControllerReconcileError, AccountsControllerReconcileResponse, AccountsControllerRenameData, AccountsControllerRenameError, AccountsControllerRenameResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, CategoryPaidControllerMarkData, CategoryPaidControllerMarkError, CategoryPaidControllerMarkResponse, CategoryPaidControllerUnmarkData, CategoryPaidControllerUnmarkError, CategoryPaidControllerUnmarkResponse, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseError, CategoryTargetsControllerCloseResponse, CategoryTargetsControllerSetData, CategoryTargetsControllerSetError, CategoryTargetsControllerSetResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, MeControllerEraseData, MeControllerEraseError, MeControllerEraseResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, TransactionsControllerCreateData, TransactionsControllerCreateError, TransactionsControllerCreateResponse, TransactionsControllerListData, TransactionsControllerListError, TransactionsControllerListResponse, TransactionsControllerPayeesData, TransactionsControllerPayeesError, TransactionsControllerPayeesResponse, TransactionsControllerRemoveData, TransactionsControllerRemoveError, TransactionsControllerRemoveResponse, TransactionsControllerUpdateData, TransactionsControllerUpdateError, TransactionsControllerUpdateResponse, TransfersControllerCreateData, TransfersControllerCreateError, TransfersControllerCreateResponse, TransfersControllerRemoveData, TransfersControllerRemoveError, TransfersControllerRemoveResponse, TransfersControllerUpdateData, TransfersControllerUpdateError, TransfersControllerUpdateResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse, UserSettingsControllerUpdateData, UserSettingsControllerUpdateError, UserSettingsControllerUpdateResponse } from '../types.gen';
+import { accountsControllerArchive, accountsControllerCorrectOpening, accountsControllerCreate, accountsControllerList, accountsControllerReconcile, accountsControllerRename, assetsControllerChange, assetsControllerCreate, assetsControllerList, assetsControllerRemove, budgetsControllerCreate, budgetsControllerList, budgetViewControllerRead, categoriesControllerCreate, categoriesControllerHide, categoriesControllerReorder, categoriesControllerUnhide, categoriesControllerUpdate, categoryGroupsControllerCreate, categoryGroupsControllerHide, categoryGroupsControllerReorder, categoryGroupsControllerUnhide, categoryGroupsControllerUpdate, categoryPaidControllerMark, categoryPaidControllerUnmark, categoryTargetsControllerClose, categoryTargetsControllerSet, healthControllerCheck, liabilitiesControllerChange, liabilitiesControllerCreate, liabilitiesControllerList, liabilitiesControllerRemove, meControllerErase, meControllerIdentify, movesControllerMove, type Options, transactionsControllerCreate, transactionsControllerList, transactionsControllerPayees, transactionsControllerRemove, transactionsControllerUpdate, transfersControllerCreate, transfersControllerRemove, transfersControllerUpdate, userSettingsControllerRead, userSettingsControllerUpdate } from '../sdk.gen';
+import type { AccountsControllerArchiveData, AccountsControllerArchiveError, AccountsControllerArchiveResponse, AccountsControllerCorrectOpeningData, AccountsControllerCorrectOpeningError, AccountsControllerCorrectOpeningResponse, AccountsControllerCreateData, AccountsControllerCreateError, AccountsControllerCreateResponse, AccountsControllerListData, AccountsControllerListError, AccountsControllerListResponse, AccountsControllerReconcileData, AccountsControllerReconcileError, AccountsControllerReconcileResponse, AccountsControllerRenameData, AccountsControllerRenameError, AccountsControllerRenameResponse, AssetsControllerChangeData, AssetsControllerChangeError, AssetsControllerChangeResponse, AssetsControllerCreateData, AssetsControllerCreateError, AssetsControllerCreateResponse, AssetsControllerListData, AssetsControllerListError, AssetsControllerListResponse, AssetsControllerRemoveData, AssetsControllerRemoveError, AssetsControllerRemoveResponse, BudgetsControllerCreateData, BudgetsControllerCreateError, BudgetsControllerCreateResponse, BudgetsControllerListData, BudgetsControllerListError, BudgetsControllerListResponse, BudgetViewControllerReadData, BudgetViewControllerReadError, BudgetViewControllerReadResponse, CategoriesControllerCreateData, CategoriesControllerCreateError, CategoriesControllerCreateResponse, CategoriesControllerHideData, CategoriesControllerHideError, CategoriesControllerHideResponse, CategoriesControllerReorderData, CategoriesControllerReorderError, CategoriesControllerReorderResponse, CategoriesControllerUnhideData, CategoriesControllerUnhideError, CategoriesControllerUnhideResponse, CategoriesControllerUpdateData, CategoriesControllerUpdateError, CategoriesControllerUpdateResponse, CategoryGroupsControllerCreateData, CategoryGroupsControllerCreateError, CategoryGroupsControllerCreateResponse, CategoryGroupsControllerHideData, CategoryGroupsControllerHideError, CategoryGroupsControllerHideResponse, CategoryGroupsControllerReorderData, CategoryGroupsControllerReorderError, CategoryGroupsControllerReorderResponse, CategoryGroupsControllerUnhideData, CategoryGroupsControllerUnhideError, CategoryGroupsControllerUnhideResponse, CategoryGroupsControllerUpdateData, CategoryGroupsControllerUpdateError, CategoryGroupsControllerUpdateResponse, CategoryPaidControllerMarkData, CategoryPaidControllerMarkError, CategoryPaidControllerMarkResponse, CategoryPaidControllerUnmarkData, CategoryPaidControllerUnmarkError, CategoryPaidControllerUnmarkResponse, CategoryTargetsControllerCloseData, CategoryTargetsControllerCloseError, CategoryTargetsControllerCloseResponse, CategoryTargetsControllerSetData, CategoryTargetsControllerSetError, CategoryTargetsControllerSetResponse, HealthControllerCheckData, HealthControllerCheckError, HealthControllerCheckResponse, LiabilitiesControllerChangeData, LiabilitiesControllerChangeError, LiabilitiesControllerChangeResponse, LiabilitiesControllerCreateData, LiabilitiesControllerCreateError, LiabilitiesControllerCreateResponse, LiabilitiesControllerListData, LiabilitiesControllerListError, LiabilitiesControllerListResponse, LiabilitiesControllerRemoveData, LiabilitiesControllerRemoveError, LiabilitiesControllerRemoveResponse, MeControllerEraseData, MeControllerEraseError, MeControllerEraseResponse, MeControllerIdentifyData, MeControllerIdentifyError, MeControllerIdentifyResponse, MovesControllerMoveData, MovesControllerMoveError, MovesControllerMoveResponse, TransactionsControllerCreateData, TransactionsControllerCreateError, TransactionsControllerCreateResponse, TransactionsControllerListData, TransactionsControllerListError, TransactionsControllerListResponse, TransactionsControllerPayeesData, TransactionsControllerPayeesError, TransactionsControllerPayeesResponse, TransactionsControllerRemoveData, TransactionsControllerRemoveError, TransactionsControllerRemoveResponse, TransactionsControllerUpdateData, TransactionsControllerUpdateError, TransactionsControllerUpdateResponse, TransfersControllerCreateData, TransfersControllerCreateError, TransfersControllerCreateResponse, TransfersControllerRemoveData, TransfersControllerRemoveError, TransfersControllerRemoveResponse, TransfersControllerUpdateData, TransfersControllerUpdateError, TransfersControllerUpdateResponse, UserSettingsControllerReadData, UserSettingsControllerReadError, UserSettingsControllerReadResponse, UserSettingsControllerUpdateData, UserSettingsControllerUpdateError, UserSettingsControllerUpdateResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -799,6 +799,160 @@ export const transfersControllerRemoveMutation = (options?: Partial<Options<Tran
     const mutationOptions: UseMutationOptions<TransfersControllerRemoveResponse, TransfersControllerRemoveError, Options<TransfersControllerRemoveData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await transfersControllerRemove({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const assetsControllerListQueryKey = (options?: Options<AssetsControllerListData>) => createQueryKey('assetsControllerList', options);
+
+/**
+ * The active budget's assets
+ *
+ * The assets of the budget the caller is working in, oldest first. No total is answered here, and none is stored.
+ */
+export const assetsControllerListOptions = (options?: Options<AssetsControllerListData>) => queryOptions<AssetsControllerListResponse, AssetsControllerListError, AssetsControllerListResponse, ReturnType<typeof assetsControllerListQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await assetsControllerList({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: assetsControllerListQueryKey(options)
+});
+
+/**
+ * Write down an asset
+ *
+ * Something the user owns that sits on no account: a flat, a car. No transaction is written for it and no balance moves.
+ */
+export const assetsControllerCreateMutation = (options?: Partial<Options<AssetsControllerCreateData>>): UseMutationOptions<AssetsControllerCreateResponse, AssetsControllerCreateError, Options<AssetsControllerCreateData>> => {
+    const mutationOptions: UseMutationOptions<AssetsControllerCreateResponse, AssetsControllerCreateError, Options<AssetsControllerCreateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await assetsControllerCreate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Change an asset
+ *
+ * Replaces the name, the amount and the day together. The body is the whole record, so a body carrying no day takes the stored one off.
+ */
+export const assetsControllerChangeMutation = (options?: Partial<Options<AssetsControllerChangeData>>): UseMutationOptions<AssetsControllerChangeResponse, AssetsControllerChangeError, Options<AssetsControllerChangeData>> => {
+    const mutationOptions: UseMutationOptions<AssetsControllerChangeResponse, AssetsControllerChangeError, Options<AssetsControllerChangeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await assetsControllerChange({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete an asset
+ *
+ * Removes the row for good. Nothing else refers to it, so nothing else moves. It is a POST rather than a DELETE because the idempotency key travels in the body.
+ */
+export const assetsControllerRemoveMutation = (options?: Partial<Options<AssetsControllerRemoveData>>): UseMutationOptions<AssetsControllerRemoveResponse, AssetsControllerRemoveError, Options<AssetsControllerRemoveData>> => {
+    const mutationOptions: UseMutationOptions<AssetsControllerRemoveResponse, AssetsControllerRemoveError, Options<AssetsControllerRemoveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await assetsControllerRemove({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const liabilitiesControllerListQueryKey = (options?: Options<LiabilitiesControllerListData>) => createQueryKey('liabilitiesControllerList', options);
+
+/**
+ * The active budget's liabilities
+ *
+ * The liabilities of the budget the caller is working in, oldest first. No total is answered here, and none is stored.
+ */
+export const liabilitiesControllerListOptions = (options?: Options<LiabilitiesControllerListData>) => queryOptions<LiabilitiesControllerListResponse, LiabilitiesControllerListError, LiabilitiesControllerListResponse, ReturnType<typeof liabilitiesControllerListQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await liabilitiesControllerList({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: liabilitiesControllerListQueryKey(options)
+});
+
+/**
+ * Write down a liability
+ *
+ * Something the user owes that sits on no account: a debt to a friend. No transaction is written for it and no balance moves.
+ */
+export const liabilitiesControllerCreateMutation = (options?: Partial<Options<LiabilitiesControllerCreateData>>): UseMutationOptions<LiabilitiesControllerCreateResponse, LiabilitiesControllerCreateError, Options<LiabilitiesControllerCreateData>> => {
+    const mutationOptions: UseMutationOptions<LiabilitiesControllerCreateResponse, LiabilitiesControllerCreateError, Options<LiabilitiesControllerCreateData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await liabilitiesControllerCreate({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Change a liability
+ *
+ * Replaces the name, the amount and the day together. The body is the whole record, so a body carrying no day takes the stored one off.
+ */
+export const liabilitiesControllerChangeMutation = (options?: Partial<Options<LiabilitiesControllerChangeData>>): UseMutationOptions<LiabilitiesControllerChangeResponse, LiabilitiesControllerChangeError, Options<LiabilitiesControllerChangeData>> => {
+    const mutationOptions: UseMutationOptions<LiabilitiesControllerChangeResponse, LiabilitiesControllerChangeError, Options<LiabilitiesControllerChangeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await liabilitiesControllerChange({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete a liability
+ *
+ * Removes the row for good. Nothing else refers to it, so nothing else moves. It is a POST rather than a DELETE because the idempotency key travels in the body.
+ */
+export const liabilitiesControllerRemoveMutation = (options?: Partial<Options<LiabilitiesControllerRemoveData>>): UseMutationOptions<LiabilitiesControllerRemoveResponse, LiabilitiesControllerRemoveError, Options<LiabilitiesControllerRemoveData>> => {
+    const mutationOptions: UseMutationOptions<LiabilitiesControllerRemoveResponse, LiabilitiesControllerRemoveError, Options<LiabilitiesControllerRemoveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await liabilitiesControllerRemove({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

@@ -936,6 +936,70 @@ export type DeleteTransferDto = {
     idempotencyKey: string;
 };
 
+export type WriteNetWorthItemDto = {
+    /**
+     * What the user calls it.
+     */
+    name: string;
+    /**
+     * What it is worth, or what is owed, in minor units of the budget currency. Zero is a valid amount. A liability is written as a plain amount too: the section carries the sign.
+     */
+    amount: string;
+    /**
+     * The day the amount was true, not later than today in the budget timezone. The body is the whole record, so leaving this out stores no day, and on a change takes the stored one off.
+     */
+    date?: string;
+    /**
+     * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+};
+
+export type NetWorthItemResponse = {
+    id: string;
+    /**
+     * What the user calls it.
+     */
+    name: string;
+    /**
+     * What it is worth, or what is owed, in minor units of the budget currency. Never below zero: the section it sits in carries the sign.
+     */
+    amount: string;
+    /**
+     * The day the amount was true, absent when the user gave none.
+     */
+    date: string | null;
+};
+
+/**
+ * Why the operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export type NetWorthRefusal = 'DATE_IN_FUTURE' | 'NO_ACTIVE_BUDGET' | 'UNKNOWN_ASSET' | 'UNKNOWN_LIABILITY';
+
+export type NetWorthRefusedResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+    /**
+     * Why the operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+     */
+    reason?: NetWorthRefusal;
+};
+
+export type NetWorthItemsResponse = {
+    /**
+     * What the active budget holds of this kind, oldest first.
+     */
+    items: Array<NetWorthItemResponse>;
+};
+
+export type DeleteNetWorthItemDto = {
+    /**
+     * Minted once when the confirmation opens. A repeat under the same key is answered with what was removed rather than with a refusal.
+     */
+    idempotencyKey: string;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -2192,3 +2256,267 @@ export type TransfersControllerRemoveResponses = {
 };
 
 export type TransfersControllerRemoveResponse = TransfersControllerRemoveResponses[keyof TransfersControllerRemoveResponses];
+
+export type AssetsControllerListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/assets';
+};
+
+export type AssetsControllerListErrors = {
+    /**
+     * The caller has no active budget, so there is nothing to scope to.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type AssetsControllerListError = AssetsControllerListErrors[keyof AssetsControllerListErrors];
+
+export type AssetsControllerListResponses = {
+    /**
+     * The assets as they stand now.
+     */
+    200: NetWorthItemsResponse;
+};
+
+export type AssetsControllerListResponse = AssetsControllerListResponses[keyof AssetsControllerListResponses];
+
+export type AssetsControllerCreateData = {
+    body: WriteNetWorthItemDto;
+    path?: never;
+    query?: never;
+    url: '/assets';
+};
+
+export type AssetsControllerCreateErrors = {
+    /**
+     * The body was refused, or the day is after today, or the caller has no active budget.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AssetsControllerCreateError = AssetsControllerCreateErrors[keyof AssetsControllerCreateErrors];
+
+export type AssetsControllerCreateResponses = {
+    /**
+     * The asset that now exists.
+     */
+    201: NetWorthItemResponse;
+};
+
+export type AssetsControllerCreateResponse = AssetsControllerCreateResponses[keyof AssetsControllerCreateResponses];
+
+export type AssetsControllerChangeData = {
+    body: WriteNetWorthItemDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/assets/{id}';
+};
+
+export type AssetsControllerChangeErrors = {
+    /**
+     * The body was refused, or the day is after today, or this budget holds no such asset, or the caller has no active budget.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AssetsControllerChangeError = AssetsControllerChangeErrors[keyof AssetsControllerChangeErrors];
+
+export type AssetsControllerChangeResponses = {
+    /**
+     * The asset as it stands now.
+     */
+    200: NetWorthItemResponse;
+};
+
+export type AssetsControllerChangeResponse = AssetsControllerChangeResponses[keyof AssetsControllerChangeResponses];
+
+export type AssetsControllerRemoveData = {
+    body: DeleteNetWorthItemDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/assets/{id}/delete';
+};
+
+export type AssetsControllerRemoveErrors = {
+    /**
+     * The body was refused, or this budget holds no such asset, or the caller has no active budget.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type AssetsControllerRemoveError = AssetsControllerRemoveErrors[keyof AssetsControllerRemoveErrors];
+
+export type AssetsControllerRemoveResponses = {
+    /**
+     * The asset that was removed.
+     */
+    200: NetWorthItemResponse;
+};
+
+export type AssetsControllerRemoveResponse = AssetsControllerRemoveResponses[keyof AssetsControllerRemoveResponses];
+
+export type LiabilitiesControllerListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/liabilities';
+};
+
+export type LiabilitiesControllerListErrors = {
+    /**
+     * The caller has no active budget, so there is nothing to scope to.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type LiabilitiesControllerListError = LiabilitiesControllerListErrors[keyof LiabilitiesControllerListErrors];
+
+export type LiabilitiesControllerListResponses = {
+    /**
+     * The liabilities as they stand now.
+     */
+    200: NetWorthItemsResponse;
+};
+
+export type LiabilitiesControllerListResponse = LiabilitiesControllerListResponses[keyof LiabilitiesControllerListResponses];
+
+export type LiabilitiesControllerCreateData = {
+    body: WriteNetWorthItemDto;
+    path?: never;
+    query?: never;
+    url: '/liabilities';
+};
+
+export type LiabilitiesControllerCreateErrors = {
+    /**
+     * The body was refused, or the day is after today, or the caller has no active budget.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type LiabilitiesControllerCreateError = LiabilitiesControllerCreateErrors[keyof LiabilitiesControllerCreateErrors];
+
+export type LiabilitiesControllerCreateResponses = {
+    /**
+     * The liability that now exists.
+     */
+    201: NetWorthItemResponse;
+};
+
+export type LiabilitiesControllerCreateResponse = LiabilitiesControllerCreateResponses[keyof LiabilitiesControllerCreateResponses];
+
+export type LiabilitiesControllerChangeData = {
+    body: WriteNetWorthItemDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/liabilities/{id}';
+};
+
+export type LiabilitiesControllerChangeErrors = {
+    /**
+     * The body was refused, or the day is after today, or this budget holds no such liability, or the caller has no active budget.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type LiabilitiesControllerChangeError = LiabilitiesControllerChangeErrors[keyof LiabilitiesControllerChangeErrors];
+
+export type LiabilitiesControllerChangeResponses = {
+    /**
+     * The liability as it stands now.
+     */
+    200: NetWorthItemResponse;
+};
+
+export type LiabilitiesControllerChangeResponse = LiabilitiesControllerChangeResponses[keyof LiabilitiesControllerChangeResponses];
+
+export type LiabilitiesControllerRemoveData = {
+    body: DeleteNetWorthItemDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/liabilities/{id}/delete';
+};
+
+export type LiabilitiesControllerRemoveErrors = {
+    /**
+     * The body was refused, or this budget holds no such liability, or the caller has no active budget.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type LiabilitiesControllerRemoveError = LiabilitiesControllerRemoveErrors[keyof LiabilitiesControllerRemoveErrors];
+
+export type LiabilitiesControllerRemoveResponses = {
+    /**
+     * The liability that was removed.
+     */
+    200: NetWorthItemResponse;
+};
+
+export type LiabilitiesControllerRemoveResponse = LiabilitiesControllerRemoveResponses[keyof LiabilitiesControllerRemoveResponses];

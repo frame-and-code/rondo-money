@@ -1,8 +1,10 @@
 import { type OpenAPIObject, type PathItemObject } from '@nestjs/swagger';
 import {
   ACCOUNT_REFUSALS,
+  CALENDAR_DATE_PATTERN,
   CATEGORY_COLORS,
   CATEGORY_ICONS,
+  MONEY_NON_NEGATIVE_PATTERN,
   MONEY_PATTERN,
   MONEY_POSITIVE_PATTERN,
   MOVE_REFUSALS,
@@ -147,6 +149,9 @@ describe('OpenAPI document', () => {
       '/accounts/{id}/archive',
       '/accounts/{id}/opening-balance',
       '/accounts/{id}/reconcile',
+      '/assets',
+      '/assets/{id}',
+      '/assets/{id}/delete',
       '/budget-view',
       '/budgets',
       '/categories',
@@ -164,6 +169,9 @@ describe('OpenAPI document', () => {
       '/category-groups/{id}/hide',
       '/category-groups/{id}/unhide',
       '/health',
+      '/liabilities',
+      '/liabilities/{id}',
+      '/liabilities/{id}/delete',
       '/me',
       '/me/erase',
       '/moves',
@@ -471,6 +479,62 @@ describe('OpenAPI document', () => {
         expect(JSON.stringify(properties[field])).toContain('"nullable":true');
       }
     });
+  });
+
+  describe('assets and liabilities', () => {
+    const propertyOf = (name: string, field: string): Record<string, unknown> => {
+      const schema = document.components?.schemas?.[name];
+      const property = schema && 'properties' in schema ? schema.properties?.[field] : undefined;
+
+      return property && !('$ref' in property) ? { ...property } : {};
+    };
+
+    const requiredOf = (name: string): string[] => {
+      const schema = document.components?.schemas?.[name];
+
+      return schema && 'required' in schema ? (schema.required ?? []) : [];
+    };
+
+    it.each(['NetWorthItemResponse', 'WriteNetWorthItemDto'])(
+      'publishes the amount of %s as a string of minor units that cannot go below zero',
+      (name) => {
+        expect(propertyOf(name, 'amount')).toMatchObject({
+          type: 'string',
+          pattern: MONEY_NON_NEGATIVE_PATTERN.source,
+        });
+      },
+    );
+
+    it('answers with a day that is always there and may be null', () => {
+      expect(propertyOf('NetWorthItemResponse', 'date')).toMatchObject({
+        type: 'string',
+        pattern: CALENDAR_DATE_PATTERN.source,
+        nullable: true,
+      });
+      expect(requiredOf('NetWorthItemResponse')).toContain('date');
+    });
+
+    it('takes a day that may be left out, which is how one is cleared', () => {
+      expect(propertyOf('WriteNetWorthItemDto', 'date')).toMatchObject({
+        type: 'string',
+        pattern: CALENDAR_DATE_PATTERN.source,
+      });
+      expect(requiredOf('WriteNetWorthItemDto')).not.toContain('date');
+      expect(requiredOf('WriteNetWorthItemDto')).toEqual(
+        expect.arrayContaining(['name', 'amount', 'idempotencyKey']),
+      );
+    });
+
+    it.each(['/assets', '/liabilities'])(
+      'takes the same body on %s to write and to change',
+      (path) => {
+        const written = JSON.stringify(document.paths[path]?.post?.requestBody);
+        const changed = JSON.stringify(document.paths[`${path}/{id}`]?.patch?.requestBody);
+
+        expect(written).toContain('#/components/schemas/WriteNetWorthItemDto');
+        expect(changed).toContain('#/components/schemas/WriteNetWorthItemDto');
+      },
+    );
   });
 
   describe('the accounts screen', () => {

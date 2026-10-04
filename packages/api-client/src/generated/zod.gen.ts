@@ -593,6 +593,48 @@ export const zDeleteTransferDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
 
+export const zWriteNetWorthItemDto = z.object({
+    name: z.string().min(1).max(60),
+    amount: z.string().max(20).regex(/^(0|[1-9]\d*)$/),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zNetWorthItemResponse = z.object({
+    id: z.uuid(),
+    name: z.string().max(60),
+    amount: z.string().max(20).regex(/^(0|[1-9]\d*)$/),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable()
+});
+
+/**
+ * Why the operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export const zNetWorthRefusal = z.enum([
+    'DATE_IN_FUTURE',
+    'NO_ACTIVE_BUDGET',
+    'UNKNOWN_ASSET',
+    'UNKNOWN_LIABILITY'
+]);
+
+export const zNetWorthRefusedResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    reason: zNetWorthRefusal.optional()
+});
+
+export const zNetWorthItemsResponse = z.object({
+    items: z.array(zNetWorthItemResponse)
+});
+
+export const zDeleteNetWorthItemDto = z.object({
+    idempotencyKey: z.string().min(1).max(64)
+});
+
 /**
  * The database answered.
  */
@@ -927,3 +969,71 @@ export const zTransfersControllerRemovePath = z.object({
  * The pair that was removed.
  */
 export const zTransfersControllerRemoveResponse = zTransferResponse;
+
+/**
+ * The assets as they stand now.
+ */
+export const zAssetsControllerListResponse = zNetWorthItemsResponse;
+
+export const zAssetsControllerCreateBody = zWriteNetWorthItemDto;
+
+/**
+ * The asset that now exists.
+ */
+export const zAssetsControllerCreateResponse = zNetWorthItemResponse;
+
+export const zAssetsControllerChangeBody = zWriteNetWorthItemDto;
+
+export const zAssetsControllerChangePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The asset as it stands now.
+ */
+export const zAssetsControllerChangeResponse = zNetWorthItemResponse;
+
+export const zAssetsControllerRemoveBody = zDeleteNetWorthItemDto;
+
+export const zAssetsControllerRemovePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The asset that was removed.
+ */
+export const zAssetsControllerRemoveResponse = zNetWorthItemResponse;
+
+/**
+ * The liabilities as they stand now.
+ */
+export const zLiabilitiesControllerListResponse = zNetWorthItemsResponse;
+
+export const zLiabilitiesControllerCreateBody = zWriteNetWorthItemDto;
+
+/**
+ * The liability that now exists.
+ */
+export const zLiabilitiesControllerCreateResponse = zNetWorthItemResponse;
+
+export const zLiabilitiesControllerChangeBody = zWriteNetWorthItemDto;
+
+export const zLiabilitiesControllerChangePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The liability as it stands now.
+ */
+export const zLiabilitiesControllerChangeResponse = zNetWorthItemResponse;
+
+export const zLiabilitiesControllerRemoveBody = zDeleteNetWorthItemDto;
+
+export const zLiabilitiesControllerRemovePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The liability that was removed.
+ */
+export const zLiabilitiesControllerRemoveResponse = zNetWorthItemResponse;

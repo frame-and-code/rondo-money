@@ -110,6 +110,8 @@ model Budget {
   assignments     Assignment[]
   categoryTargets CategoryTarget[]
   paidMonths      CategoryPaidMonth[]
+  assets          Asset[]
+  liabilities     Liability[]
 
   @@unique([userId, active], map: "budget_one_active_per_user", where: { active: true })
   /// The target of every child's `(budgetId, userId)` foreign key. Two independent keys would
@@ -384,4 +386,57 @@ model CategoryPaidMonth {
   @@unique([categoryId, month])
   @@index([userId, budgetId, month])
   @@map("category_paid_month")
+}
+
+model Asset {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  name String
+
+  /// Minor units of the budget's currency, never below zero: a check constraint in the
+  /// migration holds it there. What the thing is worth, entered by hand. It sits on no account,
+  /// no transaction is written for it and no budget aggregate reads it.
+  amount BigInt
+
+  /// The day the amount was true, a calendar date without a time. Absent when the user gave
+  /// none.
+  date DateTime? @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget Budget @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@index([userId, budgetId])
+  @@map("asset")
+}
+
+model Liability {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  userId   String @map("user_id")
+  budgetId String @map("budget_id") @db.Uuid
+
+  name String
+
+  /// Minor units of the budget's currency, never below zero: a check constraint in the
+  /// migration holds it there. What is owed, entered by hand as a plain number, because the
+  /// table it sits in carries the sign. No transaction is written for it and no budget
+  /// aggregate reads it.
+  amount BigInt
+
+  /// The day the amount was true, a calendar date without a time. Absent when the user gave
+  /// none.
+  date DateTime? @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  budget Budget @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@index([userId, budgetId])
+  @@map("liability")
 }

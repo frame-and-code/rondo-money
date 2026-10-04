@@ -2410,6 +2410,502 @@
           "Transfers"
         ]
       }
+    },
+    "/assets": {
+      "post": {
+        "description": "Something the user owns that sits on no account: a flat, a car. No transaction is written for it and no balance moves.",
+        "operationId": "AssetsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteNetWorthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The asset that now exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the day is after today, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Write down an asset",
+        "tags": [
+          "Assets"
+        ]
+      },
+      "get": {
+        "description": "The assets of the budget the caller is working in, oldest first. No total is answered here, and none is stored.",
+        "operationId": "AssetsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The assets as they stand now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The caller has no active budget, so there is nothing to scope to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The active budget's assets",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/assets/{id}": {
+      "patch": {
+        "description": "Replaces the name, the amount and the day together. The body is the whole record, so a body carrying no day takes the stored one off.",
+        "operationId": "AssetsController_change",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteNetWorthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The asset as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the day is after today, or this budget holds no such asset, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change an asset",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/assets/{id}/delete": {
+      "post": {
+        "description": "Removes the row for good. Nothing else refers to it, so nothing else moves. It is a POST rather than a DELETE because the idempotency key travels in the body.",
+        "operationId": "AssetsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteNetWorthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The asset that was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or this budget holds no such asset, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete an asset",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/liabilities": {
+      "post": {
+        "description": "Something the user owes that sits on no account: a debt to a friend. No transaction is written for it and no balance moves.",
+        "operationId": "LiabilitiesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteNetWorthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The liability that now exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the day is after today, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Write down a liability",
+        "tags": [
+          "Liabilities"
+        ]
+      },
+      "get": {
+        "description": "The liabilities of the budget the caller is working in, oldest first. No total is answered here, and none is stored.",
+        "operationId": "LiabilitiesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The liabilities as they stand now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The caller has no active budget, so there is nothing to scope to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The active budget's liabilities",
+        "tags": [
+          "Liabilities"
+        ]
+      }
+    },
+    "/liabilities/{id}": {
+      "patch": {
+        "description": "Replaces the name, the amount and the day together. The body is the whole record, so a body carrying no day takes the stored one off.",
+        "operationId": "LiabilitiesController_change",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteNetWorthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The liability as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the day is after today, or this budget holds no such liability, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change a liability",
+        "tags": [
+          "Liabilities"
+        ]
+      }
+    },
+    "/liabilities/{id}/delete": {
+      "post": {
+        "description": "Removes the row for good. Nothing else refers to it, so nothing else moves. It is a POST rather than a DELETE because the idempotency key travels in the body.",
+        "operationId": "LiabilitiesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteNetWorthItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The liability that was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or this budget holds no such liability, or the caller has no active budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a liability",
+        "tags": [
+          "Liabilities"
+        ]
+      }
     }
   },
   "info": {
@@ -4540,6 +5036,158 @@
           "idempotencyKey": {
             "type": "string",
             "description": "Minted once when the confirmation opens. A repeat under the same key is answered with the pair that was removed rather than with a refusal.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "WriteNetWorthItemDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What the user calls it.",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What it is worth, or what is owed, in minor units of the budget currency. Zero is a valid amount. A liability is written as a plain amount too: the section carries the sign."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day the amount was true, not later than today in the budget timezone. The body is the whole record, so leaving this out stores no day, and on a change takes the stored one off."
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "name",
+          "amount",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "NetWorthItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls it.",
+            "maxLength": 60
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What it is worth, or what is owed, in minor units of the budget currency. Never below zero: the section it sits in carries the sign."
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "nullable": true,
+            "description": "The day the amount was true, absent when the user gave none."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "amount",
+          "date"
+        ]
+      },
+      "NetWorthRefusal": {
+        "type": "string",
+        "enum": [
+          "DATE_IN_FUTURE",
+          "NO_ACTIVE_BUDGET",
+          "UNKNOWN_ASSET",
+          "UNKNOWN_LIABILITY"
+        ],
+        "description": "Why the operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
+      },
+      "NetWorthRefusedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          },
+          "reason": {
+            "description": "Why the operation was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NetWorthRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "NetWorthItemsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "What the active budget holds of this kind, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetWorthItemResponse"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "DeleteNetWorthItemDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the confirmation opens. A repeat under the same key is answered with what was removed rather than with a refusal.",
             "minLength": 1,
             "maxLength": 64
           }

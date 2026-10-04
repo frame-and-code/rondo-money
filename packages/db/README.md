@@ -6,8 +6,8 @@ The schema grows incrementally, one migration per phase. It starts as a datasour
 generator and an empty `0_init`. `UserSettings` is the first table, then the domain core
 arrives in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
 `Transaction`, `IdempotencyKey`. `Assignment` joins them later, with the two columns that give
-a category a look of its own, then `CategoryTarget`, then `CategoryPaidMonth`. No table
-carries `deletedAt`.
+a category a look of its own, then `CategoryTarget`, then `CategoryPaidMonth`, then `Asset`
+and `Liability`. No table carries `deletedAt`.
 ADR-006 dropped soft-delete and the change-log journal alike.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum with
@@ -83,6 +83,14 @@ it is not a column caching anything: an expense can be recorded while the bill i
 and the other way round. `@@unique([categoryId, month])` holds one mark per pair, and a check
 constraint in the migration keeps `month` on the first day, for the reason `Assignment.month`
 has one.
+
+`Asset` and `Liability` hold what the user owns and owes outside any account: a flat, a debt
+to a friend. Each row is a name, an amount and an optional day the amount was true. Neither
+writes a transaction and neither is read by any budget aggregate. They are two tables with the
+same columns rather than one with a sign, because the table a row sits in is what says whether
+it is owned or owed, and a check
+constraint in the migration keeps `amount` at zero or above in both. A row is deleted
+physically, since nothing refers to it.
 
 `@@unique([categoryId, startMonth])` is what makes a second goal in the same month an edit of
 that row rather than a row beside it, and it is why a write picks its branch under the
