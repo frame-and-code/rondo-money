@@ -24,7 +24,9 @@ and the account picker's list carry only what is in use, and a record whose othe
 one names it as an archived account rather than by a name nothing can resolve. Settings is a
 screen too: the interface language, which follows the account rather than the device, the
 theme, which does not, and a danger zone holding the two actions that erase everything the user
-owns, one keeping the sign-in and one taking the account with it. Net worth is still a slot.
+owns, one keeping the sign-in and one taking the account with it. Net worth is a screen as well:
+the account balances, read-only there, beside the assets and liabilities the user adds, changes
+and deletes in place, under a total the server computes.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
 account, is on a step of it, and every address behind the sign-in leads to that step until
@@ -71,19 +73,20 @@ src/
                               # [id]/page.tsx over the one the address names, and loading.tsx
                               # the skeleton both show, the same one the shell draws while the
                               # gate decides
-      net-worth/              # the last slot: page.tsx + loading.tsx
+      net-worth/              # net worth: page.tsx renders NetWorth, and loading.tsx the skeleton
+                              # the shell also draws while the gate decides
       settings/               # the language, the theme and the danger zone, and the skeleton
                               # it opens with
   components/                 # app-level components: the shell and its navigation, the
                               # onboarding gate and what it shows while it decides, the
-                              # section slot, the loading region, the Clerk provider wrapper,
+                              # loading region, the Clerk provider wrapper,
                               # the locale switcher the sign-in screen carries, the settings
                               # screen with its language, its theme and the two actions that
                               # erase everything, with the confirmation both of them go
                               # behind, the two onboarding forms,
                               # the field an
-                              # amount is typed into, which the onboarding form and the
-                              # accounts dialog share, the money flow screen and everything on
+                              # amount is typed into, which the forms outside the categories
+                              # screen share, the money flow screen and everything on
                               # it (the accounts panel, the feed by days and its rows, the
                               # record form, which writes a transfer as well and picks the
                               # second account where the envelope would be, the account field
@@ -92,6 +95,8 @@ src/
                               # account is created and
                               # renamed from, the confirmation an account is archived behind,
                               # the surface an account is settled against its real balance in,
+                              # the net worth screen, with the form an asset or a liability
+                              # is written in and the confirmation one is deleted behind,
                               # and the categories screen: the month
                               # header, a group, a tile that opens the move dialog, its spend
                               # ring, the fields that move money between envelopes, the

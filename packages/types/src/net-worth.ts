@@ -1,3 +1,4 @@
+import { type AccountType } from './account.js';
 import { type CalendarDate } from './calendar.js';
 
 export const NET_WORTH_REFUSALS = [
@@ -25,4 +26,30 @@ export interface NetWorthItemDto {
 
 export interface NetWorthItemsDto {
   items: NetWorthItemDto[];
+}
+
+export interface NetWorthAccountDto {
+  id: string;
+
+  name: string;
+
+  type: AccountType;
+
+  balance: string;
+}
+
+export interface NetWorthDto {
+  total: string;
+
+  accountsTotal: string;
+
+  assetsTotal: string;
+
+  liabilitiesTotal: string;
+
+  accounts: NetWorthAccountDto[];
+
+  assets: NetWorthItemDto[];
+
+  liabilities: NetWorthItemDto[];
 }

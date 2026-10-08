@@ -635,6 +635,23 @@ export const zDeleteNetWorthItemDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
 
+export const zNetWorthAccountResponse = z.object({
+    id: z.uuid(),
+    name: z.string().max(60),
+    type: zAccountType,
+    balance: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/)
+});
+
+export const zNetWorthResponse = z.object({
+    total: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    accountsTotal: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
+    assetsTotal: z.string().max(20).regex(/^(0|[1-9]\d*)$/),
+    liabilitiesTotal: z.string().max(20).regex(/^(0|[1-9]\d*)$/),
+    accounts: z.array(zNetWorthAccountResponse),
+    assets: z.array(zNetWorthItemResponse),
+    liabilities: z.array(zNetWorthItemResponse)
+});
+
 /**
  * The database answered.
  */
@@ -1037,3 +1054,8 @@ export const zLiabilitiesControllerRemovePath = z.object({
  * The liability that was removed.
  */
 export const zLiabilitiesControllerRemoveResponse = zNetWorthItemResponse;
+
+/**
+ * Net worth as it stands now.
+ */
+export const zNetWorthControllerReadResponse = zNetWorthResponse;

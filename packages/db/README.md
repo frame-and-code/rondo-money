@@ -86,7 +86,9 @@ has one.
 
 `Asset` and `Liability` hold what the user owns and owes outside any account: a flat, a debt
 to a friend. Each row is a name, an amount and an optional day the amount was true. Neither
-writes a transaction and neither is read by any budget aggregate. They are two tables with the
+writes a transaction and neither is read by any budget number: ready to assign, an envelope
+and an account balance never see them. Net worth is the one thing that reads them, as account
+balances plus assets minus liabilities. They are two tables with the
 same columns rather than one with a sign, because the table a row sits in is what says whether
 it is owned or owed, and a check
 constraint in the migration keeps `amount` at zero or above in both. A row is deleted

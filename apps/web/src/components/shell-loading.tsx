@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { BudgetMonthLoading } from '@/components/budget-month-loading';
 import { LoadingRegion } from '@/components/loading-region';
 import { MoneyFlowLoading } from '@/components/money-flow-loading';
+import { NetWorthLoading } from '@/components/net-worth-loading';
 import { activeSection, sections } from '@/lib/sections';
 
 export function ShellLoading() {
@@ -41,6 +42,8 @@ export function ShellLoading() {
             <BudgetMonthLoading />
           ) : current?.href === '/accounts' ? (
             <MoneyFlowLoading />
+          ) : current?.href === '/net-worth' ? (
+            <NetWorthLoading />
           ) : (
             <LoadingRegion>
               <Skeleton className="h-64 w-full rounded-xl" />

@@ -49,7 +49,10 @@ what was recorded, day by day, and income, expenses and transfers between two ac
 written, corrected and taken back there. Which account the feed covers lives in the address, so
 a link to one of them works and so does the back button. An account is also settled against what it really
 holds: the screen says what the book makes it and what the correction would come to, and one
-record dated that day closes the gap, which lands in the money that has no job yet. Settings
+record dated that day closes the gap, which lands in the money that has no job yet. Net worth
+puts the account balances beside what the user owns and owes outside any account, a flat or a
+debt to a friend, each written down by hand with its amount and its day, and shows one total
+with the three sums it is made of. A total below zero is shown as it is. Settings
 holds the interface language, and a language chosen there is stored on the account, so it is
 the same one on the next device. The theme stays on the device it was chosen on, and the
 browser decides it until someone picks. Settings is also the way out: one action erases every
@@ -61,8 +64,9 @@ to undo them, so both ask for a typed word first.
 
 A personal budgeting app: money is distributed into category
 envelopes for the month _before_ it is spent, unspent remainders roll forward, and
-balances, "available" amounts and net worth are never stored. They are computed from
-transactions and assignments on demand.
+balances, "available" amounts and net worth are never stored. They are computed on demand:
+the budget numbers from transactions and assignments, and net worth from the account balances
+and what the user wrote down as owned and owed.
 
 **Transactions are entered by hand, on purpose.** There is no bank synchronisation and no
 automatic import, and that is a product decision rather than a missing feature. The moment

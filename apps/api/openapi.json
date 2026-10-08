@@ -2906,6 +2906,49 @@
           "Liabilities"
         ]
       }
+    },
+    "/net-worth": {
+      "get": {
+        "description": "What the open accounts of the active budget hold, plus the assets the user wrote down, minus the liabilities, with the three lists the total is made of. One statement answers all of it, so the total and the rows describe the same moment. Nothing here is stored.",
+        "operationId": "NetWorthController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Net worth as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The caller has no active budget, so there is nothing to scope to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "What the caller is worth",
+        "tags": [
+          "NetWorth"
+        ]
+      }
     }
   },
   "info": {
@@ -5196,6 +5239,105 @@
           "idempotencyKey"
         ],
         "additionalProperties": false
+      },
+      "NetWorthAccountResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "What the user calls this account.",
+            "maxLength": 60
+          },
+          "type": {
+            "description": "Cash or a debit account.",
+            "example": "CASH",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountType"
+              }
+            ]
+          },
+          "balance": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the account holds, summed from its transactions rather than stored. It goes below zero when the account was spent past its own money."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "balance"
+        ]
+      },
+      "NetWorthResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the accounts hold, plus what is owned, minus what is owed. Computed when it is asked for and stored nowhere. It goes below zero when more is owed than held."
+          },
+          "accountsTotal": {
+            "type": "string",
+            "pattern": "^(0|-?[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "-4500",
+            "description": "What the open accounts hold together. An archived account is not in it."
+          },
+          "assetsTotal": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the assets the user wrote down are worth together."
+          },
+          "liabilitiesTotal": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)$",
+            "maxLength": 20,
+            "example": "4500",
+            "description": "What the liabilities the user wrote down come to together, as a plain amount."
+          },
+          "accounts": {
+            "description": "The open accounts of the active budget, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetWorthAccountResponse"
+            }
+          },
+          "assets": {
+            "description": "The assets, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetWorthItemResponse"
+            }
+          },
+          "liabilities": {
+            "description": "The liabilities, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetWorthItemResponse"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "accountsTotal",
+          "assetsTotal",
+          "liabilitiesTotal",
+          "accounts",
+          "assets",
+          "liabilities"
+        ]
       }
     }
   },

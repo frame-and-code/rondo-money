@@ -397,8 +397,8 @@ model Asset {
   name String
 
   /// Minor units of the budget's currency, never below zero: a check constraint in the
-  /// migration holds it there. What the thing is worth, entered by hand. It sits on no account,
-  /// no transaction is written for it and no budget aggregate reads it.
+  /// migration holds it there. What the thing is worth, entered by hand. It sits on no account
+  /// and no transaction is written for it, so it counts toward net worth and no budget number.
   amount BigInt
 
   /// The day the amount was true, a calendar date without a time. Absent when the user gave
@@ -424,8 +424,8 @@ model Liability {
 
   /// Minor units of the budget's currency, never below zero: a check constraint in the
   /// migration holds it there. What is owed, entered by hand as a plain number, because the
-  /// table it sits in carries the sign. No transaction is written for it and no budget
-  /// aggregate reads it.
+  /// table it sits in carries the sign. No transaction is written for it, so it counts toward
+  /// net worth and no budget number.
   amount BigInt
 
   /// The day the amount was true, a calendar date without a time. Absent when the user gave

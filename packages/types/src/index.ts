@@ -45,7 +45,13 @@ export type { CategoryPaidMonthDto } from './category-paid.js';
 export type { BudgetViewCategoryDto, BudgetViewDto, BudgetViewGroupDto } from './budget-view.js';
 export type { MoveDto, MoveRefusal, MoveSideDto, MoveSideKind } from './move.js';
 export { MOVE_REFUSALS, MOVE_SIDE_KINDS, isMoveRefusal, isMoveSideKind } from './move.js';
-export type { NetWorthItemDto, NetWorthItemsDto, NetWorthRefusal } from './net-worth.js';
+export type {
+  NetWorthAccountDto,
+  NetWorthDto,
+  NetWorthItemDto,
+  NetWorthItemsDto,
+  NetWorthRefusal,
+} from './net-worth.js';
 export { NET_WORTH_REFUSALS, isNetWorthRefusal } from './net-worth.js';
 export type {
   PayeesDto,
