@@ -67,6 +67,13 @@ so no part of the scope is baked in.
   caller holding nothing still gets one row and the service reads a zero total off it instead of
   inventing one. A second statement for the total is a second scoping to get right, and an inner
   join answers an empty budget with no rows at all.
+- **A sum another statement already computes is composed, never written a second time.** The
+  builder that owns it exports the part both need as a function returning `Prisma.Sql`, and the
+  other statement embeds it
+  ([`net-worth.query.ts`](../../../apps/api/src/net-worth/net-worth.query.ts) takes the account
+  balance from `openAccountBalances`). Two copies of one sum are two screens that disagree the
+  day one of them changes. The unit test holds it: the composed statement's `sql` contains the
+  fragment's.
 
 ## The tests that are not optional
 

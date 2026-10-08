@@ -175,6 +175,7 @@ describe('OpenAPI document', () => {
       '/me',
       '/me/erase',
       '/moves',
+      '/net-worth',
       '/transactions',
       '/transactions/payees',
       '/transactions/{id}',
@@ -512,6 +513,44 @@ describe('OpenAPI document', () => {
         nullable: true,
       });
       expect(requiredOf('NetWorthItemResponse')).toContain('date');
+    });
+
+    it('publishes the total and the accounts side as signed amounts, because both go below zero', () => {
+      expect(moneyFieldsOf(document, 'NetWorthResponse').sort()).toEqual([
+        'accountsTotal',
+        'total',
+      ]);
+      expect(moneyFieldsOf(document, 'NetWorthAccountResponse')).toEqual(['balance']);
+    });
+
+    it.each(['assetsTotal', 'liabilitiesTotal'])(
+      'publishes %s as a string of minor units that cannot go below zero',
+      (field) => {
+        expect(propertyOf('NetWorthResponse', field)).toMatchObject({
+          type: 'string',
+          pattern: MONEY_NON_NEGATIVE_PATTERN.source,
+        });
+      },
+    );
+
+    it('answers the net worth read with the three lists and a refusal that names its reason', () => {
+      const read = document.paths['/net-worth']?.get;
+
+      expect(requiredOf('NetWorthResponse').sort()).toEqual([
+        'accounts',
+        'accountsTotal',
+        'assets',
+        'assetsTotal',
+        'liabilities',
+        'liabilitiesTotal',
+        'total',
+      ]);
+      expect(JSON.stringify(read?.responses['200'])).toContain(
+        '#/components/schemas/NetWorthResponse',
+      );
+      expect(JSON.stringify(read?.responses['400'])).toContain(
+        '#/components/schemas/NetWorthRefusedResponse',
+      );
     });
 
     it('takes a day that may be left out, which is how one is cleared', () => {
