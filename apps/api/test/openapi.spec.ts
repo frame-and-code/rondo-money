@@ -1,6 +1,7 @@
 import { type OpenAPIObject, type PathItemObject } from '@nestjs/swagger';
 import {
   ACCOUNT_REFUSALS,
+  BUDGET_REFUSALS,
   CALENDAR_DATE_PATTERN,
   CATEGORY_COLORS,
   CATEGORY_ICONS,
@@ -154,6 +155,8 @@ describe('OpenAPI document', () => {
       '/assets/{id}/delete',
       '/budget-view',
       '/budgets',
+      '/budgets/{id}',
+      '/budgets/{id}/activate',
       '/categories',
       '/categories/reorder',
       '/categories/{id}',
@@ -222,6 +225,19 @@ describe('OpenAPI document', () => {
     ).toBe(true);
   });
 
+  it('publishes the rename and the switch of a budget, each answering with the budget and its refusal', () => {
+    const operations = [
+      document.paths['/budgets/{id}']?.patch,
+      document.paths['/budgets/{id}/activate']?.post,
+    ];
+
+    for (const operation of operations) {
+      expect(operation).toBeDefined();
+      expect(answersWith(operation?.responses['200'], 'BudgetResponse')).toBe(true);
+      expect(answersWith(operation?.responses['400'], 'BudgetRefusedResponse')).toBe(true);
+    }
+  });
+
   it('answers with the named language, so a screen reads a union rather than a string', () => {
     const settings = document.components?.schemas?.['UserSettingsResponse'];
     const language =
@@ -264,6 +280,9 @@ describe('OpenAPI document', () => {
     });
     expect(document.components?.schemas?.['AccountRefusal']).toMatchObject({
       enum: [...ACCOUNT_REFUSALS],
+    });
+    expect(document.components?.schemas?.['BudgetRefusal']).toMatchObject({
+      enum: [...BUDGET_REFUSALS],
     });
   });
 

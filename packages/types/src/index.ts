@@ -29,7 +29,8 @@ export type {
   ReconciliationDto,
 } from './account.js';
 export { ACCOUNT_REFUSALS, ACCOUNT_TYPES, isAccountRefusal, isAccountType } from './account.js';
-export type { BudgetDto } from './budget.js';
+export type { BudgetDto, BudgetRefusal } from './budget.js';
+export { BUDGET_REFUSALS } from './budget.js';
 export type { CategoryColor, CategoryIcon } from './category-look.js';
 export {
   CATEGORY_COLORS,

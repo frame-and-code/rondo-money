@@ -355,7 +355,12 @@ one client component in the layout of the route group
 ([`apps/web/src/components/onboarding-gate.tsx`](../../apps/web/src/components/onboarding-gate.tsx)),
 and the reading of the state lives beside it as a plain function
 ([`lib/onboarding.ts`](../../apps/web/src/lib/onboarding.ts)), so what each answer means is
-written once and testable without a browser. Three rules make one work:
+written once and testable without a browser. Which answers a step lets in is written there
+too, and a step may let in more than one: the budget step opens to a user with no budget and
+to one who finished setup, which is where another budget is made. The gate hands the answer
+that let a visitor in to what it protects, so a screen that differs by it reads the gate's
+verdict and never the query behind it, which changes the moment the screen does its work.
+Three rules make one work:
 
 - **it decides on this mount's own answer.** A cached one can be older than the row it is being
   asked about, and a failed read knows nothing at all. Neither is a reason to move a user, so
@@ -413,7 +418,14 @@ component therefore never touches a token, a header or a base URL, and never wri
   base URL and the request, so a hand-written literal matches nothing and the screen goes on
   showing money the server has already moved past. Expect the invalidation to be wide. No
   derived value is stored, so one assignment moves RTA and every later month's Available at
-  once. Their idempotency key belongs to the user's intent, so it is minted once when the form
+  once. **A change of the active budget re-reads everything**, because every read a budget
+  owns is scoped to it on the server and the cache holds nothing that says which budget an
+  entry was read for. Switching in settings and making another budget both call
+  `readAnotherBudget` beside the gate, and neither loads the page again: it resets every query
+  except the two the gate itself reads, which it invalidates, and the user's own settings, which
+  no budget owns and which it leaves alone. Resetting the gate's own reads would strand it, because an observer counts an answer
+  as its own only when the query has been updated more times than when it mounted, and a
+  reset starts that count again. Their idempotency key belongs to the user's intent, so it is minted once when the form
   opens, not per HTTP request. Otherwise a double click writes twice. A field that edits an
   amount has more rules than that, and
   [`edit-money-on-a-screen`](../skills/edit-money-on-a-screen/SKILL.md) holds them.

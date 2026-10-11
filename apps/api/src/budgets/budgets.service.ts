@@ -1,22 +1,35 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { type Budget, type Language, type Prisma } from '@rondo/db';
-import { calendarDateIn, minorDigits, monthOf, parseCalendarMonth } from '@rondo/types';
+import {
+  calendarDateIn,
+  minorDigits,
+  monthOf,
+  parseCalendarDate,
+  parseCalendarMonth,
+} from '@rondo/types';
 
+import { budgetsLockStatement } from '@/budgets/budget-lock.query';
+import { refuseBudget } from '@/budgets/budget-refusal';
 import { BudgetResponse } from '@/budgets/budget.response';
 import { CreateBudgetDto } from '@/budgets/create-budget.dto';
 import { defaultCategories } from '@/budgets/default-categories';
+import { RenameBudgetDto } from '@/budgets/rename-budget.dto';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
+import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 import { toLanguage } from '@/user-settings/language';
 
 function serialize(budget: Budget): Prisma.JsonObject {
+  const createdOn = calendarDateIn(budget.createdAt, budget.timezone);
+
   return {
     id: budget.id,
     name: budget.name,
     currency: budget.currency,
     minorDigits: budget.minorDigits,
     timezone: budget.timezone,
-    firstMonth: monthOf(calendarDateIn(budget.createdAt, budget.timezone)),
+    firstMonth: monthOf(createdOn),
+    createdOn,
     active: budget.active,
   };
 }
@@ -26,7 +39,16 @@ function decodeBudget(stored: Prisma.JsonValue): BudgetResponse {
     throw new Error(`A stored budget is not an object: ${JSON.stringify(stored)}`);
   }
 
-  const { id, name, currency, minorDigits: digits, timezone, firstMonth, active } = stored;
+  const {
+    id,
+    name,
+    currency,
+    minorDigits: digits,
+    timezone,
+    firstMonth,
+    createdOn,
+    active,
+  } = stored;
   if (
     typeof id !== 'string' ||
     typeof name !== 'string' ||
@@ -34,6 +56,7 @@ function decodeBudget(stored: Prisma.JsonValue): BudgetResponse {
     typeof digits !== 'number' ||
     typeof timezone !== 'string' ||
     typeof firstMonth !== 'string' ||
+    typeof createdOn !== 'string' ||
     typeof active !== 'boolean'
   ) {
     throw new Error(`A stored budget is missing fields: ${JSON.stringify(stored)}`);
@@ -46,6 +69,7 @@ function decodeBudget(stored: Prisma.JsonValue): BudgetResponse {
     minorDigits: digits,
     timezone,
     firstMonth: parseCalendarMonth(firstMonth),
+    createdOn: parseCalendarDate(createdOn),
     active,
   };
 }
@@ -55,6 +79,7 @@ export class BudgetsService {
   constructor(
     @Inject(SCOPED_PRISMA) private readonly prisma: ScopedPrismaClient,
     private readonly mutations: MutationService,
+    private readonly raw: ScopedRawRepository,
   ) {}
 
   create(userId: string, body: CreateBudgetDto): Promise<BudgetResponse> {
@@ -73,6 +98,7 @@ export class BudgetsService {
         decode: decodeBudget,
       },
       async (tx) => {
+        await this.holdBudgets(tx);
         await this.deactivateCurrent(tx);
 
         await tx.userSettings.upsert({
@@ -108,6 +134,56 @@ export class BudgetsService {
     });
 
     return budgets.map((budget) => decodeBudget(serialize(budget)));
+  }
+
+  rename(id: string, body: RenameBudgetDto): Promise<BudgetResponse> {
+    return this.mutations.run(
+      {
+        key: body.idempotencyKey,
+        request: { id, name: body.name },
+        decode: decodeBudget,
+      },
+      async (tx) => {
+        await this.ownedBudget(tx, id);
+
+        return serialize(await tx.budget.update({ where: { id }, data: { name: body.name } }));
+      },
+    );
+  }
+
+  activate(id: string, key: string): Promise<BudgetResponse> {
+    return this.mutations.run(
+      {
+        key,
+        request: { id, act: 'activate' },
+        decode: decodeBudget,
+      },
+      async (tx) => {
+        await this.holdBudgets(tx);
+
+        const target = await this.ownedBudget(tx, id);
+        if (target.active) {
+          return serialize(target);
+        }
+
+        await this.deactivateCurrent(tx);
+
+        return serialize(await tx.budget.update({ where: { id }, data: { active: true } }));
+      },
+    );
+  }
+
+  private async holdBudgets(tx: MutationClient): Promise<void> {
+    await this.raw.query<{ id: string }>((scope) => budgetsLockStatement(scope), tx);
+  }
+
+  private async ownedBudget(tx: MutationClient, id: string): Promise<Budget> {
+    const budget = await tx.budget.findFirst({ where: { id } });
+    if (!budget) {
+      throw refuseBudget('UNKNOWN_BUDGET');
+    }
+
+    return budget;
   }
 
   private async deactivateCurrent(tx: MutationClient): Promise<void> {

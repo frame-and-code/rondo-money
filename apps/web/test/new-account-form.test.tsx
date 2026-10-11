@@ -9,6 +9,16 @@ import { en } from '@/i18n/messages/en';
 import { ru } from '@/i18n/messages/ru';
 
 const submit = jest.fn();
+const replaced = jest.fn<void, [string]>();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    replace: (path: string) => {
+      replaced(path);
+    },
+    push: () => {},
+  }),
+}));
 
 let budget: { id: string; currency: string; minorDigits: number; active: boolean } | null = null;
 let budgetFails = false;
@@ -84,6 +94,7 @@ describe('the first account form', () => {
   beforeEach(() => {
     submit.mockReset();
     submit.mockResolvedValue({ id: 'acc-1', name: 'Кошелёк', type: 'CASH' });
+    replaced.mockReset();
     budget = { id: 'b-1', currency: 'PLN', minorDigits: 2, active: true };
     budgetFails = false;
   });
@@ -352,7 +363,7 @@ describe('the first account form', () => {
     expect(bodyOf(0)['name']).toBe('Кошелёк');
   });
 
-  it('says the account exists before it moves on', async () => {
+  it('opens the app on Categories once the account exists, with no screen in between', async () => {
     const user = userEvent.setup();
     draw();
     const invalidate = jest.spyOn(client, 'invalidateQueries');
@@ -360,32 +371,42 @@ describe('the first account form', () => {
     await fillOut(user, { amount: '1000' });
     await send(user);
 
-    expect(
-      await screen.findByText(interpolate(ru['newAccount.doneTitle'], { name: 'Кошелёк' })),
-    ).toBeInTheDocument();
-    expect(screen.queryByLabelText(ru['newAccount.nameLabel'])).not.toBeInTheDocument();
-    expect(screen.queryByText(ru['newAccount.cardDescription'])).not.toBeInTheDocument();
-    await waitFor(() =>
-      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['accountsControllerList'] }),
+    await waitFor(() => expect(replaced).toHaveBeenCalledWith('/categories'));
+    expect(replaced).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['accountsControllerList'] });
+    expect(invalidate.mock.invocationCallOrder[0]).toBeLessThan(
+      replaced.mock.invocationCallOrder[0] ?? 0,
     );
+    expect(screen.queryByRole('link', { name: ru['nav.accounts'] })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: ru['nav.categories'] })).not.toBeInTheDocument();
   });
 
-  it('offers both ways on, and takes neither by itself', async () => {
+  it('keeps the form closed while it leaves, so a second click cannot write a second account', async () => {
     const user = userEvent.setup();
     draw();
 
     await fillOut(user, { amount: '1000' });
     await send(user);
-    await screen.findByText(interpolate(ru['newAccount.doneTitle'], { name: 'Кошелёк' }));
+    await waitFor(() => expect(replaced).toHaveBeenCalledTimes(1));
 
-    expect(screen.getByRole('link', { name: ru['nav.accounts'] })).toHaveAttribute(
-      'href',
-      '/accounts',
-    );
-    expect(screen.getByRole('link', { name: ru['nav.categories'] })).toHaveAttribute(
-      'href',
-      '/categories',
-    );
+    const button = screen.getByRole('button', { name: ru['newAccount.submitting'] });
+    expect(button).toBeDisabled();
+    await user.click(button);
+
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText(ru['newAccount.nameLabel'])).toBeDisabled();
+  });
+
+  it('goes nowhere when the account was not created', async () => {
+    const user = userEvent.setup();
+    submit.mockRejectedValue(new Error('the network was unkind'));
+    draw();
+
+    await fillOut(user);
+    await send(user);
+    await screen.findByRole('alert');
+
+    expect(replaced).not.toHaveBeenCalled();
   });
 
   it('says the budget could not be read rather than drawing a field with no currency', async () => {
@@ -420,7 +441,7 @@ describe('the first account form', () => {
     ).toBeDisabled();
 
     settle();
-    await screen.findByText(interpolate(ru['newAccount.doneTitle'], { name: 'Кошелёк' }));
+    await waitFor(() => expect(replaced).toHaveBeenCalledWith('/categories'));
   });
 
   it('writes the placeholder with the decimal mark the locale uses', async () => {

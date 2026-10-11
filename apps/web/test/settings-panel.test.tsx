@@ -50,6 +50,25 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
+  budgetsControllerListOptions: () => ({
+    queryKey: ['budgetsControllerList'],
+    queryFn: () =>
+      Promise.resolve([
+        {
+          id: 'budget-1',
+          name: 'Household',
+          currency: 'PLN',
+          minorDigits: 2,
+          timezone: 'Europe/Warsaw',
+          firstMonth: '2026-01',
+          createdOn: '2026-01-15',
+          active: true,
+        },
+      ]),
+  }),
+  budgetsControllerListQueryKey: () => ['budgetsControllerList'],
+  budgetsControllerRenameMutation: () => ({ mutationFn: () => new Promise(() => {}) }),
+  budgetsControllerActivateMutation: () => ({ mutationFn: () => new Promise(() => {}) }),
   userSettingsControllerReadOptions: () => settingsOptions,
   userSettingsControllerReadQueryKey: () => settingsOptions.queryKey,
   userSettingsControllerUpdateMutation: () => ({
@@ -106,6 +125,17 @@ describe('the settings screen', () => {
       value: ['en-US'],
       configurable: true,
     });
+  });
+
+  it('opens with the budget the screens follow, above the language and the theme', async () => {
+    renderPanel();
+
+    const name = await screen.findByRole('textbox', { name: en['settings.budgetName'] });
+
+    expect(name).toHaveValue('Household');
+    expect(
+      name.compareDocumentPosition(languageTrigger()) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('shows the language the account holds', async () => {

@@ -1,7 +1,7 @@
 import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 
-import { OnboardingGate } from '@/components/onboarding-gate';
+import { OnboardingGate, readAnotherBudget, useAdmittedState } from '@/components/onboarding-gate';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { ru } from '@/i18n/messages/ru';
 import type { OnboardingState } from '@/lib/onboarding';
@@ -13,6 +13,7 @@ const push = jest.fn();
 
 const BUDGETS_KEY = ['budgetsControllerList'];
 const ACCOUNTS_KEY = ['accountsControllerList'];
+const SETTINGS_KEY = ['userSettingsControllerRead'];
 
 const CHILD = 'what the gate protects';
 const WAITING = 'while the gate decides';
@@ -45,6 +46,9 @@ jest.mock('@clerk/nextjs', () => ({
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
+  budgetsControllerListQueryKey: () => BUDGETS_KEY,
+  accountsControllerListQueryKey: () => ACCOUNTS_KEY,
+  userSettingsControllerReadQueryKey: () => SETTINGS_KEY,
   budgetsControllerListOptions: () => ({
     queryKey: BUDGETS_KEY,
     queryFn: async () => {
@@ -71,11 +75,16 @@ jest.mock('@rondo/api-client/react-query', () => ({
 
 const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
+function AdmittedAs() {
+  return <p data-testid="admitted-as">{useAdmittedState()}</p>;
+}
+
 const tree = (expects: OnboardingState, client: QueryClient): ReactElement => (
   <QueryClientProvider client={client}>
     <LocaleProvider>
       <OnboardingGate expects={expects} fallback={<p>{WAITING}</p>}>
         <p>{CHILD}</p>
+        <AdmittedAs />
       </OnboardingGate>
     </LocaleProvider>
   </QueryClientProvider>
@@ -198,14 +207,166 @@ describe('the onboarding gate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('takes a user who finished setup off step 1, so a second budget is never offered', async () => {
+  it('opens step 1 to a user who finished setup, which is where a second budget is made', async () => {
     budgets = [{ id: 'budget-1', active: true }];
     accounts = [{ id: 'account-1' }];
 
     draw('budget');
 
+    expect(await screen.findByText(CHILD)).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('tells what it protects which state let it in, so the step knows a budget exists already', async () => {
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+
+    draw('budget');
+
+    expect(await screen.findByTestId('admitted-as')).toHaveTextContent('app');
+  });
+
+  it('tells a first-time user they were let in with no budget, and keeps saying so once one exists', async () => {
+    const { client } = draw('budget');
+
+    expect(await screen.findByTestId('admitted-as')).toHaveTextContent('budget');
+
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: BUDGETS_KEY });
+    });
+    await waitFor(() => expect(accountsAsked).toBe(1));
+    await settle();
+
+    expect(screen.getByTestId('admitted-as')).toHaveTextContent('budget');
+  });
+
+  it('still takes a user who finished setup off step 2', async () => {
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+
+    draw('account');
+
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/categories'));
     expect(screen.queryByText(CHILD)).not.toBeInTheDocument();
+  });
+
+  it('opens step 2 for a second budget made over a cache other screens had already filled', async () => {
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+    const client = newClient();
+    client.setQueryData(BUDGETS_KEY, budgets);
+    client.setQueryData(ACCOUNTS_KEY, { accounts, total: '0' });
+    client.setQueryData(['read-by-another-screen'], 'the first budget');
+
+    const { rerender } = draw('budget', client);
+    await screen.findByText(CHILD);
+
+    budgets = [
+      { id: 'budget-1', active: false },
+      { id: 'budget-2', active: true },
+    ];
+    accounts = [];
+    await act(async () => {
+      await readAnotherBudget(client);
+    });
+
+    rerender(tree('account', client));
+
+    expect(await screen.findByText(CHILD)).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+    expect(client.getQueryData(['read-by-another-screen'])).toBeUndefined();
+  });
+
+  it('keeps what belongs to the user rather than to a budget, so the language does not blink', async () => {
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+    const client = newClient();
+    client.setQueryData(SETTINGS_KEY, { language: 'pl' });
+    client.setQueryData(['read-by-another-screen'], 'the first budget');
+
+    draw('app', client);
+    await screen.findByText(CHILD);
+
+    const reread = readAnotherBudget(client);
+
+    expect(client.getQueryData(SETTINGS_KEY)).toEqual({ language: 'pl' });
+    expect(client.getQueryData(['read-by-another-screen'])).toBeUndefined();
+
+    await act(async () => {
+      await reread;
+    });
+
+    expect(client.getQueryData(SETTINGS_KEY)).toEqual({ language: 'pl' });
+  });
+
+  it('opens step 2 for a second budget when the user moves on before the re-read lands', async () => {
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+    const client = newClient();
+    client.setQueryData(BUDGETS_KEY, budgets);
+    client.setQueryData(ACCOUNTS_KEY, { accounts, total: '0' });
+
+    const { rerender } = draw('budget', client);
+    await screen.findByText(CHILD);
+
+    budgets = [
+      { id: 'budget-1', active: false },
+      { id: 'budget-2', active: true },
+    ];
+    accounts = [];
+    let land = () => {};
+    budgetsGate = new Promise((resolve) => {
+      land = resolve;
+    });
+    const reread = readAnotherBudget(client);
+    await settle();
+
+    rerender(tree('account', client));
+    await settle();
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.queryByText(CHILD)).not.toBeInTheDocument();
+
+    land();
+    await act(async () => {
+      await reread;
+    });
+
+    expect(await screen.findByText(CHILD)).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('leaves step 2 of a second budget standing when the account it just created arrives', async () => {
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+    const client = newClient();
+    client.setQueryData(BUDGETS_KEY, budgets);
+    client.setQueryData(ACCOUNTS_KEY, { accounts, total: '0' });
+
+    const { rerender } = draw('budget', client);
+    await screen.findByText(CHILD);
+
+    budgets = [
+      { id: 'budget-1', active: false },
+      { id: 'budget-2', active: true },
+    ];
+    accounts = [];
+    await act(async () => {
+      await readAnotherBudget(client);
+    });
+    rerender(tree('account', client));
+    await screen.findByText(CHILD);
+
+    accounts = [{ id: 'account-2' }];
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: ACCOUNTS_KEY });
+    });
+    await settle();
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByText(CHILD)).toBeInTheDocument();
   });
 
   it('resumes an interrupted setup at step 2 rather than at step 1', async () => {

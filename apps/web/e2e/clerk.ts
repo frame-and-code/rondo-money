@@ -42,6 +42,8 @@ export const ERASE_TEST_EMAIL = 'e2e-erase+clerk_test@example.com';
 
 export const NET_WORTH_TEST_EMAIL = 'e2e-net-worth+clerk_test@example.com';
 
+export const SWITCH_TEST_EMAIL = 'e2e-switch+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }

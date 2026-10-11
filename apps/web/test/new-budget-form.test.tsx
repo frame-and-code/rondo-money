@@ -1,9 +1,10 @@
 import { supportedCurrencyCodes } from '@rondo/types';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { NewBudgetForm } from '@/components/new-budget-form';
+import { AdmittedStateContext } from '@/components/onboarding-gate';
 import { interpolate, LocaleProvider } from '@/i18n/locale-context';
 import { localeLabels } from '@/i18n/locales';
 import { en } from '@/i18n/messages/en';
@@ -22,6 +23,8 @@ jest.mock('@rondo/api-client/react-query', () => ({
     mutationFn: (options: unknown) => submit(options) as unknown,
   }),
   budgetsControllerListQueryKey: () => ['budgetsControllerList'],
+  accountsControllerListQueryKey: () => ['accountsControllerList'],
+  userSettingsControllerReadQueryKey: () => ['userSettingsControllerRead'],
 }));
 
 const TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -579,5 +582,164 @@ describe('the new budget form on a phone', () => {
     await screen.findAllByRole('option');
 
     expect(highlighted()).toEqual([picked]);
+  });
+});
+
+describe('the new budget form for a user who already has a budget', () => {
+  const probeReads = jest.fn<Promise<string>, []>();
+
+  function CachedElsewhere() {
+    const { data } = useQuery({ queryKey: ['cached-elsewhere'], queryFn: () => probeReads() });
+
+    return <p data-testid="cached-elsewhere">{data ?? 'nothing'}</p>;
+  }
+
+  const drawSecond = () =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <LocaleProvider initialLocale="ru">
+          <AdmittedStateContext.Provider value="app">
+            <CachedElsewhere />
+            <NewBudgetForm nameIndex={0} />
+          </AdmittedStateContext.Provider>
+        </LocaleProvider>
+      </QueryClientProvider>,
+    );
+
+  const consent = () => screen.getByRole('checkbox', { name: ru['newBudget.consentLabel'] });
+  const starters = () =>
+    screen.getByRole('checkbox', { name: new RegExp(ru['newBudget.defaultsLabel']) });
+
+  beforeEach(() => {
+    submit.mockReset();
+    submit.mockResolvedValue({ id: 'budget-2' });
+    probeReads.mockReset();
+    probeReads.mockResolvedValue('the first budget');
+    window.localStorage.clear();
+    Object.defineProperty(window.navigator, 'languages', { value: ['ru-RU'], configurable: true });
+  });
+
+  it('says this is another budget rather than greeting a first one', () => {
+    drawSecond();
+
+    expect(
+      screen.getByRole('heading', { name: ru['newBudget.secondHeading'] }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: ru['newBudget.heading'] }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('asks for no language, and sends the one the screen is speaking', async () => {
+    const user = userEvent.setup();
+    drawSecond();
+
+    expect(
+      screen.queryByRole('combobox', { name: ru['newBudget.languageLabel'] }),
+    ).not.toBeInTheDocument();
+
+    await fillOut(user);
+    await user.click(consent());
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    expect(bodyOf(0)).toMatchObject({ language: 'ru' });
+  });
+
+  it('leaves the starter categories off unless they are asked for', async () => {
+    const user = userEvent.setup();
+    drawSecond();
+
+    expect(starters()).not.toBeChecked();
+    expect(screen.getByText(ru['newBudget.defaultsOff'])).toBeInTheDocument();
+
+    await fillOut(user);
+    await user.click(consent());
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    expect(bodyOf(0)).toMatchObject({ withDefaultCategories: false });
+  });
+
+  it('keeps submit closed until the user agrees the current budget stops being active', async () => {
+    const user = userEvent.setup();
+    drawSecond();
+
+    await fillOut(user);
+    const button = screen.getByRole('button', { name: ru['newBudget.submit'] });
+
+    expect(consent()).not.toBeChecked();
+    expect(button).toBeDisabled();
+    expect(screen.getByText(ru['newBudget.consentHint'])).toBeInTheDocument();
+
+    await user.click(consent());
+    expect(button).toBeEnabled();
+
+    await user.click(consent());
+    expect(button).toBeDisabled();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('stays the form for another budget after a refused submit', async () => {
+    const user = userEvent.setup();
+    submit.mockRejectedValue(new Error('the network was unkind'));
+    drawSecond();
+
+    await fillOut(user);
+    await user.click(consent());
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(ru['newBudget.submitFailed']);
+    expect(consent()).toBeChecked();
+    expect(
+      screen.queryByRole('combobox', { name: ru['newBudget.languageLabel'] }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('drops everything read for the previous budget once the new one exists', async () => {
+    const user = userEvent.setup();
+    probeReads.mockReset();
+    probeReads.mockResolvedValueOnce('the first budget').mockReturnValue(new Promise(() => {}));
+    drawSecond();
+    const cached = () => screen.getByTestId('cached-elsewhere');
+
+    await waitFor(() => expect(cached()).toHaveTextContent('the first budget'));
+
+    await fillOut(user);
+    await user.click(consent());
+    await user.click(screen.getByRole('button', { name: ru['newBudget.submit'] }));
+
+    await waitFor(() => expect(cached()).toHaveTextContent('nothing'));
+    expect(
+      await screen.findByText(interpolate(ru['newBudget.doneTitle'], { name: 'Семейный' })),
+    ).toBeInTheDocument();
+  });
+});
+
+describe('the new budget form for a user with no budget', () => {
+  beforeEach(() => {
+    submit.mockReset();
+    submit.mockResolvedValue({ id: 'budget-1' });
+    window.localStorage.clear();
+    Object.defineProperty(window.navigator, 'languages', { value: ['ru-RU'], configurable: true });
+  });
+
+  it('asks for no agreement, because there is no budget to stop being active', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <LocaleProvider initialLocale="ru">
+          <AdmittedStateContext.Provider value="budget">
+            <NewBudgetForm nameIndex={0} />
+          </AdmittedStateContext.Provider>
+        </LocaleProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: ru['newBudget.languageLabel'] }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.getByRole('checkbox')).toBeChecked();
+    expect(screen.getByRole('heading', { name: ru['newBudget.heading'] })).toBeInTheDocument();
   });
 });

@@ -115,6 +115,15 @@ switched budgets is answered with the row made in the old one, reporting a write
 never made. A mutation that **creates** the budget has nothing to resolve and skips all three
 steps.
 
+**A mutation that changes which budget is active holds the caller's budget rows first.** The
+index that keeps one budget active is checked on every statement, so two such mutations that
+both read the same active row and then write end with one of them failing on it, and the
+caller gets a 500 for an operation nothing was wrong with. `budgetsLockStatement` in
+[`budget-lock.query.ts`](../../../apps/api/src/budgets/budget-lock.query.ts) takes the rows
+for update in id order, on the mutation's client. Read the active budget **after** it, in a
+statement of its own: the lock cannot cover a row a concurrent creation inserts, and only a
+fresh statement sees it. Deactivate before activating, for the same per-statement reason.
+
 ## Scoping still applies, unchanged
 
 The extension stamps the caller onto every write and filters the writes that pick out existing

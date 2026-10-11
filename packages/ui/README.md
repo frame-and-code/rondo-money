@@ -15,7 +15,7 @@ avoids a barrel file that pulls every primitive into every bundle.
 ```text
 src/
   components/
-    ui/                 # shadcn/ui primitives, generated: alert, button, card, checkbox,
+    ui/                 # shadcn/ui primitives, generated: alert, badge, button, card, checkbox,
                         # combobox, calendar, command, dialog, drawer, dropdown-menu, input,
                         # input-group, item, label, popover, radio-group, select, separator,
                         # skeleton, textarea, tooltip
@@ -97,6 +97,10 @@ drifting from the rest.
 The one thing a new file gets afterwards is `eslint --fix` and Prettier. The generator writes
 double quotes, no semicolons and its own import order, all of which the gate refuses. That
 pass changes no markup, and a regeneration simply needs it again.
+
+Read the imports of a generated file before keeping it. The generator can resolve the `cn`
+helper to an npm package of that name and add it to `package.json`. Point the import at
+`@rondo/ui/lib/utils`, where every other primitive takes it from, and remove the dependency.
 
 A primitive may arrive with company. Asking for `command` also writes `dialog`, `input-group`
 and `textarea`, because it is built on them. Keep those; a later `add` would fetch them anyway.

@@ -3,17 +3,40 @@
 import { useAuth } from '@clerk/nextjs';
 import {
   accountsControllerListOptions,
+  accountsControllerListQueryKey,
   budgetsControllerListOptions,
+  budgetsControllerListQueryKey,
+  userSettingsControllerReadQueryKey,
 } from '@rondo/api-client/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/i18n/locale-context';
-import { onboardingRoute, onboardingState, type OnboardingState } from '@/lib/onboarding';
+import { admits, onboardingRoute, onboardingState, type OnboardingState } from '@/lib/onboarding';
 
-import type { FetchStatus } from '@tanstack/react-query';
+import type { FetchStatus, QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+
+export const AdmittedStateContext = createContext<OnboardingState | null>(null);
+
+export function useAdmittedState(): OnboardingState | null {
+  return useContext(AdmittedStateContext);
+}
+
+export async function readAnotherBudget(queryClient: QueryClient): Promise<void> {
+  const cache = queryClient.getQueryCache();
+  const ownReads = [budgetsControllerListQueryKey(), accountsControllerListQueryKey()];
+  const ofTheUser = [userSettingsControllerReadQueryKey()];
+  const kept = new Set(
+    [...ownReads, ...ofTheUser].flatMap((queryKey) => cache.findAll({ queryKey })),
+  );
+
+  await Promise.all([
+    queryClient.resetQueries({ predicate: (query) => !kept.has(query) }),
+    ...ownReads.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+  ]);
+}
 
 function unreachable(query: { isError: boolean; fetchStatus: FetchStatus }): boolean {
   return query.isError || query.fetchStatus === 'paused';
@@ -69,11 +92,13 @@ export function OnboardingGate({
     setVerdict(answer);
   }
 
+  const admitted = answer !== null && admits(expects, answer);
+
   useEffect(() => {
-    if (answer !== null && answer !== expects) {
+    if (answer !== null && !admitted) {
       router.replace(onboardingRoute(answer));
     }
-  }, [answer, expects, router]);
+  }, [answer, admitted, router]);
 
   if (answer === null && (unreachable(budgets) || unreachable(accounts))) {
     return (
@@ -83,5 +108,9 @@ export function OnboardingGate({
     );
   }
 
-  return answer === expects ? children : fallback;
+  return admitted ? (
+    <AdmittedStateContext.Provider value={answer}>{children}</AdmittedStateContext.Provider>
+  ) : (
+    fallback
+  );
 }

@@ -316,6 +316,24 @@ export const ru = {
   'settings.eraseFailedConflict':
     'Этим ключом уже воспользовались. Закройте окно и начните заново.',
   'settings.eraseFailedAccount': 'Данные стёрты, но аккаунт удалить не удалось. Повторите.',
+  'settings.budget': 'Бюджет',
+  'settings.budgetNote':
+    'Валюта выбирается при создании бюджета, и поменять её нельзя. Все разделы показывают бюджет, отмеченный в списке.',
+  'settings.budgetName': 'Название бюджета',
+  'settings.budgetSave': 'Сохранить',
+  'settings.budgetCurrency': 'Валюта',
+  'settings.budgets': 'Ваши бюджеты',
+  'settings.budgetActive': 'Активный',
+  'settings.budgetActivate': 'Сделать активным',
+  'settings.budgetActivateNamed': 'Сделать «{{name}}» активным',
+  'settings.budgetActiveNamed': '«{{name}}» активный бюджет',
+  'settings.budgetSwitchTitle': 'Сделать «{{name}}» активным?',
+  'settings.budgetSwitchBody': 'К прежнему бюджету можно будет вернуться в любой момент.',
+  'settings.budgetSwitchConfirm': 'Сделать активным',
+  'settings.budgetSwitchCancel': 'Отмена',
+  'settings.budgetNew': 'Новый бюджет',
+  'settings.budgetFailedTitle': 'Произошла ошибка',
+  'settings.budgetFailed': 'Попробуйте позже.',
 
   'onboarding.progress': 'Настройка, шаг {{step}} из 3',
   'onboarding.step1Title': 'Бюджет',
@@ -363,6 +381,11 @@ export const ru = {
   'newBudget.doneWithoutDefaults': 'Категорий пока нет, добавите свои',
   'newBudget.doneCurrency': 'Валюта',
   'newBudget.continue': 'Создать счёт',
+  'newBudget.secondHeading': 'Ещё один бюджет',
+  'newBudget.secondLead':
+    'У него будут своя валюта, свои категории и счета. Нынешний бюджет сохранит всё, что в нём есть.',
+  'newBudget.consentLabel': 'Сделать новый бюджет активным',
+  'newBudget.consentHint': 'Прежний бюджет сохранится. Вернуться к нему можно в настройках.',
 
   'newAccount.heading': 'Теперь заведём первый счёт',
   'newAccount.lead':
@@ -393,10 +416,6 @@ export const ru = {
   'newAccount.submitting': 'Сохраняем…',
   'newAccount.budgetUnavailable': 'Не удалось прочитать ваш бюджет. Обновите страницу.',
   'newAccount.submitFailed': 'Не получилось создать счёт. Попробуйте ещё раз.',
-  'newAccount.doneTitle': 'Счёт «{{name}}» создан',
-  'newAccount.doneReady': 'В «Свободные деньги»',
-  'newAccount.moreAccounts': 'Хотите добавить ещё счета?',
-  'newAccount.startAssigning': 'Готовы распределить деньги?',
   'newAccount.footnote': 'Это последний шаг настройки.',
 
   'transactions.panelTitle': 'Счета',
