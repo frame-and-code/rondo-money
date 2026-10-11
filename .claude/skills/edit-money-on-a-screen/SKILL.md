@@ -119,6 +119,10 @@ Two things that are easy to miss and both cost money:
   that already happened. Firing that re-read and forgetting it leaves the same hole open for as
   long as the request takes. Hold every write, and the opening of every surface, until the
   re-read lands;
+- **a write that is still out holds the openings too.** Where several surfaces share one pair of
+  mutation callbacks, an answer lands on whichever surface is open when it arrives: a late
+  success closes it, and a late refusal puts its notice there. So no surface opens while any
+  write is pending, the same hold as for the re-read;
 - **the notice has to render where the reader is looking.** On a phone the field lives in a
   modal, and a banner mounted in the page body sits behind its overlay: inert, out of the
   accessibility tree, and often scrolled off a page the modal has locked. Put the notice inside

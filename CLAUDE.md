@@ -29,7 +29,8 @@ is a stack in the browser, and the single write point stays for atomicity).
 - `apps/web` is Next.js (App Router): the app shell and its navigation, the sign-in screen and
   the two onboarding screens, which sit outside the shell and end by opening it on Categories.
   A gate in each group's layout decides which of the three a visitor gets, so setup cannot be
-  skipped and cannot be repeated. The screens behind the shell's sections arrive per phase.
+  skipped and cannot be repeated. Behind the shell sit its sections, which
+  [`apps/web/README.md`](apps/web/README.md) describes.
 - `apps/api` is NestJS (REST). Skeleton F0.4.
 - `packages/db` holds the Prisma schema and migrations (F0.4); it grows incrementally per phase.
 - `packages/types` holds the shared DTOs, money as `bigint` in minor units with the

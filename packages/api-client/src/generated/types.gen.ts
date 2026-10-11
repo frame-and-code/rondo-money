@@ -1000,6 +1000,53 @@ export type DeleteNetWorthItemDto = {
     idempotencyKey: string;
 };
 
+export type NetWorthAccountResponse = {
+    id: string;
+    /**
+     * What the user calls this account.
+     */
+    name: string;
+    /**
+     * Cash or a debit account.
+     */
+    type: AccountType;
+    /**
+     * What the account holds, summed from its transactions rather than stored. It goes below zero when the account was spent past its own money.
+     */
+    balance: string;
+};
+
+export type NetWorthResponse = {
+    /**
+     * What the accounts hold, plus what is owned, minus what is owed. Computed when it is asked for and stored nowhere. It goes below zero when more is owed than held.
+     */
+    total: string;
+    /**
+     * What the open accounts hold together. An archived account is not in it.
+     */
+    accountsTotal: string;
+    /**
+     * What the assets the user wrote down are worth together.
+     */
+    assetsTotal: string;
+    /**
+     * What the liabilities the user wrote down come to together, as a plain amount.
+     */
+    liabilitiesTotal: string;
+    /**
+     * The open accounts of the active budget, oldest first.
+     */
+    accounts: Array<NetWorthAccountResponse>;
+    /**
+     * The assets, oldest first.
+     */
+    assets: Array<NetWorthItemResponse>;
+    /**
+     * The liabilities, oldest first.
+     */
+    liabilities: Array<NetWorthItemResponse>;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -2520,3 +2567,32 @@ export type LiabilitiesControllerRemoveResponses = {
 };
 
 export type LiabilitiesControllerRemoveResponse = LiabilitiesControllerRemoveResponses[keyof LiabilitiesControllerRemoveResponses];
+
+export type NetWorthControllerReadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/net-worth';
+};
+
+export type NetWorthControllerReadErrors = {
+    /**
+     * The caller has no active budget, so there is nothing to scope to.
+     */
+    400: NetWorthRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+};
+
+export type NetWorthControllerReadError = NetWorthControllerReadErrors[keyof NetWorthControllerReadErrors];
+
+export type NetWorthControllerReadResponses = {
+    /**
+     * Net worth as it stands now.
+     */
+    200: NetWorthResponse;
+};
+
+export type NetWorthControllerReadResponse = NetWorthControllerReadResponses[keyof NetWorthControllerReadResponses];

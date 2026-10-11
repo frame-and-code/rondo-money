@@ -181,6 +181,12 @@ no such order, because both rows are new and neither is a row anyone else can be
   not earlier than the day the later of the two accounts was opened. Refusals name a reason:
   `SAME_ACCOUNT`, `ACCOUNT_ARCHIVED`, `DATE_IN_FUTURE`, `DATE_BEFORE_ACCOUNT`,
   `UNKNOWN_ACCOUNT`, `UNKNOWN_TRANSFER`, `NO_ACTIVE_BUDGET`.
+- `GET /net-worth` answers with what the caller is worth: the open accounts with their balances,
+  the assets, the liabilities, the sum of each side and the total, which is accounts plus assets
+  minus liabilities. One statement answers all of it, so the total and the rows describe the
+  same moment, and it sums an account the way `GET /accounts` does because both statements are
+  built from one fragment. Nothing is stored, an archived account is in neither the list nor the
+  sum, and a total below zero is answered as it is.
 - `GET`, `POST /assets`, `PATCH /assets/:id` and `POST /assets/:id/delete`, and the same four
   under `/liabilities`, hold what the user owns and owes outside any account. One is a name, an
   amount that is zero or above and an optional day the amount was true, which is not later than

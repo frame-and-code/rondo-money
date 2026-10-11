@@ -11,11 +11,11 @@ export interface AccountBalanceRow {
   entries: bigint;
 }
 
-export function accountBalancesStatement(scope: RawQueryScope, budgetId: string): Prisma.Sql {
+export function openAccountBalances(scope: RawQueryScope, budgetId: string): Prisma.Sql {
   const { userId } = scope;
 
   return Prisma.sql`
-    WITH balances AS (
+    balances AS (
       SELECT
         t.account_id,
         SUM(t.amount) AS amount,
@@ -37,7 +37,12 @@ export function accountBalancesStatement(scope: RawQueryScope, budgetId: string)
       WHERE a.user_id = ${userId}
         AND a.budget_id = ${budgetId}::uuid
         AND a.archived_at IS NULL
-    ),
+    )`;
+}
+
+export function accountBalancesStatement(scope: RawQueryScope, budgetId: string): Prisma.Sql {
+  return Prisma.sql`
+    WITH ${openAccountBalances(scope, budgetId)},
     pool AS (
       SELECT COALESCE(SUM(balance), 0) AS total FROM visible
     )

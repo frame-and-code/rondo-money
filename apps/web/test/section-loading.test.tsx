@@ -59,6 +59,20 @@ describe('the loading screen of money flow', () => {
   });
 });
 
+describe('the loading screen of net worth', () => {
+  it('draws the total and the three blocks it is about to show', () => {
+    render(
+      <LocaleProvider>
+        <NetWorthLoading />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByTestId('loading-net-worth-total')).toBeInTheDocument();
+    expect(screen.getAllByTestId('loading-net-worth-block')).toHaveLength(3);
+    expect(screen.getAllByTestId('loading-net-worth-row').length).toBeGreaterThan(3);
+  });
+});
+
 describe('the shell the gate shows before it knows where the user belongs', () => {
   const draw = () =>
     render(
@@ -83,6 +97,15 @@ describe('the shell the gate shows before it knows where the user belongs', () =
 
     expect(screen.getAllByTestId('loading-record').length).toBeGreaterThan(2);
     expect(screen.queryByTestId('loading-tile')).not.toBeInTheDocument();
+  });
+
+  it('draws net worth on its own section, so the screen does not change shape twice there', () => {
+    route = '/net-worth';
+    draw();
+
+    expect(screen.getAllByTestId('loading-net-worth-block')).toHaveLength(3);
+    expect(screen.queryByTestId('loading-tile')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('loading-record')).not.toBeInTheDocument();
   });
 
   it('draws no month on a section that has none', () => {

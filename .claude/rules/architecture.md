@@ -142,9 +142,11 @@ itself is published with no response shape at all, and the generated client type
 
 ## Never store derived state
 
-Balance, RTA, Assigned, Activity, Available and net worth are computed from transactions
-and assignments on demand. A column caching one of them is not an optimisation. It is a
-second source of truth that will disagree with the first.
+Balance, RTA, Assigned, Activity and Available are computed from transactions and assignments
+on demand, and net worth from the account balances and the assets and liabilities the user
+wrote down. A column caching one of them is not an optimisation. It is a second source of truth
+that will disagree with the first. An asset's amount is not derived state: the user entered it,
+and nothing else could produce it.
 
 ## One write point
 
@@ -320,6 +322,11 @@ specification, and prose describing it is a summary rather than a replacement.
    tone of its own so the chosen one is read without its label: the primary for an expense,
    `success` for income and `warning` for a transfer. Two of them sharing a tone would leave the
    pressed state saying nothing.
+   **Net worth is the other screen where red stops.** Its total takes the colour of the pool,
+   `text-primary` with `dark:text-chart-2` behind it, whatever its sign, and every amount under
+   it stays plain, an account balance below zero included. A total below zero there is a fact
+   about what the user owes rather than an envelope to act on, so the minus says it and no
+   colour does.
 
 Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
 (the theme and the generator settings are described in
