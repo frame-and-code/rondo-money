@@ -333,6 +333,150 @@
         ]
       }
     },
+    "/budgets/{id}": {
+      "patch": {
+        "description": "Changes what the budget is called and nothing else, whether or not it is the active one. The currency and the timezone are chosen when the budget is created and no operation accepts either afterwards.",
+        "operationId": "BudgetsController_rename",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameBudgetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The budget as it stands now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the caller holds no such budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rename a budget",
+        "tags": [
+          "Budgets"
+        ]
+      }
+    },
+    "/budgets/{id}/activate": {
+      "post": {
+        "description": "Takes the active mark off the budget that carried it and puts it on this one, in one database transaction, so the caller never holds two active budgets or none. Every read that belongs to a budget answers for this one from the next request on. A budget that is active already is answered as it stands.",
+        "operationId": "BudgetsController_activate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateBudgetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The budget that is active now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body was refused, or the caller holds no such budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetRefusedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token was missing, malformed, expired or not minted for this app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The idempotency key was claimed by a different request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Make a budget the active one",
+        "tags": [
+          "Budgets"
+        ]
+      }
+    },
     "/accounts": {
       "post": {
         "description": "Creates the account and its opening balance in one database transaction. The balance is an income transaction dated today in the budget timezone, carrying no category, so the money lands in Ready to Assign. It is written even when the balance is zero.",
@@ -3258,6 +3402,12 @@
             "example": "2026-02",
             "description": "The earliest month this budget can hold, read from when it was created in its own timezone. Nothing happened before it, so a screen has no month to show there."
           },
+          "createdOn": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-08-31",
+            "description": "The day this budget was created, read in its own timezone, so it is the same day whichever device asks."
+          },
           "active": {
             "type": "boolean",
             "description": "A user holds at most one active budget, and the screens follow that one."
@@ -3270,8 +3420,95 @@
           "minorDigits",
           "timezone",
           "firstMonth",
+          "createdOn",
           "active"
         ]
+      },
+      "RenameBudgetDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What to call this budget now.",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the edit opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "name",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
+      },
+      "BudgetRefusal": {
+        "type": "string",
+        "enum": [
+          "UNKNOWN_BUDGET"
+        ],
+        "description": "Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
+      },
+      "BudgetRefusedResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "name must be longer than or equal to 1 characters"
+            ]
+          },
+          "reason": {
+            "description": "Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BudgetRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ]
+      },
+      "ActivateBudgetDto": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the budget is chosen, never per request. A key per request makes a double click two switches again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
       },
       "AccountType": {
         "type": "string",

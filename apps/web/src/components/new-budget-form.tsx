@@ -54,6 +54,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
+import { readAnotherBudget, useAdmittedState } from '@/components/onboarding-gate';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { localeLabels, locales, type Locale } from '@/i18n/locales';
@@ -130,10 +131,12 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
   const { t, locale, setLocale } = useTranslations();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const another = useAdmittedState() === 'app';
 
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState('');
-  const [withDefaultCategories, setWithDefaultCategories] = useState(true);
+  const [withDefaultCategories, setWithDefaultCategories] = useState(!another);
+  const [agreed, setAgreed] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -147,7 +150,9 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
     ...budgetsControllerCreateMutation(),
     onSuccess: async () => {
       setCreated({ name: name.trim(), currency });
-      await queryClient.invalidateQueries({ queryKey: budgetsControllerListQueryKey() });
+      await (another
+        ? readAnotherBudget(queryClient)
+        : queryClient.invalidateQueries({ queryKey: budgetsControllerListQueryKey() }));
     },
     onError: () => {
       setFailed(true);
@@ -368,9 +373,11 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
           <div className="flex flex-col gap-3">
             <h1 className="text-[26px] font-semibold tracking-tight md:text-[34px]">
-              {t('newBudget.heading')}
+              {t(another ? 'newBudget.secondHeading' : 'newBudget.heading')}
             </h1>
-            <p className="text-muted-foreground text-sm">{t('newBudget.lead')}</p>
+            <p className="text-muted-foreground text-sm">
+              {t(another ? 'newBudget.secondLead' : 'newBudget.lead')}
+            </p>
           </div>
 
           <OnboardingSteps done={created === null ? 0 : 1} />
@@ -422,11 +429,13 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
               </div>
             ) : (
               <form onSubmit={submit} className="flex flex-col gap-6">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="budget-language">{t('newBudget.languageLabel')}</Label>
-                  {languageField}
-                  <p className="text-muted-foreground text-xs">{t('newBudget.languageHint')}</p>
-                </div>
+                {another ? null : (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="budget-language">{t('newBudget.languageLabel')}</Label>
+                    {languageField}
+                    <p className="text-muted-foreground text-xs">{t('newBudget.languageHint')}</p>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="budget-name">{t('newBudget.nameLabel')}</Label>
@@ -475,6 +484,24 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                   </Label>
                 </div>
 
+                {another ? (
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="budget-consent"
+                      checked={agreed}
+                      onCheckedChange={(next) => {
+                        setAgreed(next);
+                        edited();
+                      }}
+                      className="mt-1"
+                    />
+                    <div className="flex flex-col items-start gap-1">
+                      <Label htmlFor="budget-consent">{t('newBudget.consentLabel')}</Label>
+                      <p className="text-muted-foreground text-xs">{t('newBudget.consentHint')}</p>
+                    </div>
+                  </div>
+                ) : null}
+
                 {failed ? (
                   <p role="alert" className="text-destructive text-sm">
                     {t('newBudget.submitFailed')}
@@ -483,7 +510,12 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
                 <Button
                   type="submit"
-                  disabled={name.trim() === '' || currency === '' || create.isPending}
+                  disabled={
+                    name.trim() === '' ||
+                    currency === '' ||
+                    (another && !agreed) ||
+                    create.isPending
+                  }
                   className={CONTROL}
                 >
                   {create.isPending ? <IconLoader className="size-4 animate-spin" /> : null}

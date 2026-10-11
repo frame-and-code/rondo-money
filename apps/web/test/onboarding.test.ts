@@ -1,4 +1,4 @@
-import { onboardingRoute, onboardingState } from '@/lib/onboarding';
+import { admits, onboardingRoute, onboardingState } from '@/lib/onboarding';
 
 const active = { active: true };
 const inactive = { active: false };
@@ -32,5 +32,23 @@ describe('where a user stands in setup', () => {
     expect(onboardingRoute('budget')).toBe('/new');
     expect(onboardingRoute('account')).toBe('/new/account');
     expect(onboardingRoute('app')).toBe('/categories');
+  });
+
+  it('opens the budget step to a user with no budget and to one who finished setup', () => {
+    expect(admits('budget', 'budget')).toBe(true);
+    expect(admits('budget', 'app')).toBe(true);
+    expect(admits('budget', 'account')).toBe(false);
+  });
+
+  it('opens the account step only to a user whose budget has no account yet', () => {
+    expect(admits('account', 'account')).toBe(true);
+    expect(admits('account', 'budget')).toBe(false);
+    expect(admits('account', 'app')).toBe(false);
+  });
+
+  it('opens the app only to a user who finished setup', () => {
+    expect(admits('app', 'app')).toBe(true);
+    expect(admits('app', 'budget')).toBe(false);
+    expect(admits('app', 'account')).toBe(false);
   });
 });

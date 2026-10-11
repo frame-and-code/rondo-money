@@ -23,3 +23,13 @@ export function onboardingState({ budgets, accounts }: OnboardingReads): Onboard
 export function onboardingRoute(state: OnboardingState): string {
   return ROUTES[state];
 }
+
+const ADMITTED: Record<OnboardingState, readonly OnboardingState[]> = {
+  budget: ['budget', 'app'],
+  account: ['account'],
+  app: ['app'],
+};
+
+export function admits(step: OnboardingState, state: OnboardingState): boolean {
+  return ADMITTED[step].includes(state);
+}

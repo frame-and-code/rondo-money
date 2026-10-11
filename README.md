@@ -53,7 +53,8 @@ record dated that day closes the gap, which lands in the money that has no job y
 puts the account balances beside what the user owns and owes outside any account, a flat or a
 debt to a friend, each written down by hand with its amount and its day, and shows one total
 with the three sums it is made of. A total below zero is shown as it is. Settings
-holds the interface language, and a language chosen there is stored on the account, so it is
+holds the budgets: the active one is renamed there, another is made from there, and the
+screens follow whichever one is switched to. It also holds the interface language, and a language chosen there is stored on the account, so it is
 the same one on the next device. The theme stays on the device it was chosen on, and the
 browser decides it until someone picks. Settings is also the way out: one action erases every
 budget, account and record the user has and leaves them at the first setup screen, and the

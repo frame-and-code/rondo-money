@@ -22,7 +22,9 @@ that menu, behind a confirmation, and while it still holds money the entry says 
 offering itself. An archived account then leaves the screen for good, so the panel
 and the account picker's list carry only what is in use, and a record whose other side sits on
 one names it as an archived account rather than by a name nothing can resolve. Settings is a
-screen too: the interface language, which follows the account rather than the device, the
+screen too: the budget the screens follow, whose name can be changed there and whose currency
+is only shown, beside the list of the user's budgets and the switch between them, then the
+interface language, which follows the account rather than the device, the
 theme, which does not, and a danger zone holding the two actions that erase everything the user
 owns, one keeping the sign-in and one taking the account with it. Net worth is a screen as well:
 the account balances, read-only there, beside the assets and liabilities the user adds, changes
@@ -30,7 +32,10 @@ and deletes in place, under a total the server computes.
 
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
 account, is on a step of it, and every address behind the sign-in leads to that step until
-both exist. Once they do, the steps themselves are closed.
+both exist. Once they do, the account step is closed, and the budget step opens as the form
+for another budget: it asks for no language, leaves the starter categories off and waits for
+the user to agree that the current budget stops being active. Making one resumes setup at the
+account step, and the previous budget comes back from settings.
 
 ## Structure
 
@@ -75,15 +80,16 @@ src/
                               # gate decides
       net-worth/              # net worth: page.tsx renders NetWorth, and loading.tsx the skeleton
                               # the shell also draws while the gate decides
-      settings/               # the language, the theme and the danger zone, and the skeleton
-                              # it opens with
+      settings/               # the budget, the language, the theme and the danger zone, and
+                              # the skeleton it opens with
   components/                 # app-level components: the shell and its navigation, the
                               # onboarding gate and what it shows while it decides, the
                               # loading region, the Clerk provider wrapper,
                               # the locale switcher the sign-in screen carries, the settings
-                              # screen with its language, its theme and the two actions that
-                              # erase everything, with the confirmation both of them go
-                              # behind, the two onboarding forms,
+                              # screen with its budget card, the confirmation a switch of
+                              # budget goes behind, its language, its theme and the two
+                              # actions that erase everything, with the confirmation both of
+                              # them go behind, the two onboarding forms,
                               # the field an
                               # amount is typed into, which the forms outside the categories
                               # screen share, the money flow screen and everything on
@@ -163,9 +169,10 @@ src/
   lib/sections.ts             # the sections in one place: route, message key, icon.
                               # The navigation, the header title and the browser tab all
                               # read it, so a section is named the same in every one
-  lib/onboarding.ts           # how far setup got, and the route each answer belongs on.
-                              # The gate reads it, and nothing else decides where a user
-                              # part way through setup is sent
+  lib/onboarding.ts           # how far setup got, the route each answer belongs on, and
+                              # which answers each step lets in. The gate reads it, and
+                              # nothing else decides where a user part way through setup
+                              # is sent
   lib/auth.ts                 # SIGN_IN_URL and HEALTH_URL — the paths proxy.ts,
                               # railway.json and the routes must agree on
   proxy.ts                    # clerkMiddleware: everything is protected except the

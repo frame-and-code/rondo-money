@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { type BudgetDto, type CalendarMonth } from '@rondo/types';
+import { type BudgetDto, type CalendarDate, type CalendarMonth } from '@rondo/types';
 
 import { ApiCurrencyProperty } from '@/validation/currency.decorator';
+import { ApiCalendarDateProperty } from '@/validation/date.decorator';
 import { ApiCalendarMonthProperty } from '@/validation/month.decorator';
 import { ApiTimeZoneProperty } from '@/validation/timezone.decorator';
 
@@ -37,6 +38,13 @@ export class BudgetResponse implements BudgetDto {
       'timezone. Nothing happened before it, so a screen has no month to show there.',
   })
   firstMonth!: CalendarMonth;
+
+  @ApiCalendarDateProperty({
+    description:
+      'The day this budget was created, read in its own timezone, so it is the same day ' +
+      'whichever device asks.',
+  })
+  createdOn!: CalendarDate;
 
   @ApiProperty({
     description: 'A user holds at most one active budget, and the screens follow that one.',

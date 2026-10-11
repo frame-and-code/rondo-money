@@ -128,9 +128,46 @@ export type BudgetResponse = {
      */
     firstMonth: string;
     /**
+     * The day this budget was created, read in its own timezone, so it is the same day whichever device asks.
+     */
+    createdOn: string;
+    /**
      * A user holds at most one active budget, and the screens follow that one.
      */
     active: boolean;
+};
+
+export type RenameBudgetDto = {
+    /**
+     * What to call this budget now.
+     */
+    name: string;
+    /**
+     * Minted once when the edit opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
+};
+
+/**
+ * Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export type BudgetRefusal = 'UNKNOWN_BUDGET';
+
+export type BudgetRefusedResponse = {
+    statusCode: number;
+    error: string;
+    message: string | Array<string>;
+    /**
+     * Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+     */
+    reason?: BudgetRefusal;
+};
+
+export type ActivateBudgetDto = {
+    /**
+     * Minted once when the budget is chosen, never per request. A key per request makes a double click two switches again.
+     */
+    idempotencyKey: string;
 };
 
 /**
@@ -1251,6 +1288,76 @@ export type BudgetsControllerCreateResponses = {
 };
 
 export type BudgetsControllerCreateResponse = BudgetsControllerCreateResponses[keyof BudgetsControllerCreateResponses];
+
+export type BudgetsControllerRenameData = {
+    body: RenameBudgetDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/budgets/{id}';
+};
+
+export type BudgetsControllerRenameErrors = {
+    /**
+     * The body was refused, or the caller holds no such budget.
+     */
+    400: BudgetRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type BudgetsControllerRenameError = BudgetsControllerRenameErrors[keyof BudgetsControllerRenameErrors];
+
+export type BudgetsControllerRenameResponses = {
+    /**
+     * The budget as it stands now.
+     */
+    200: BudgetResponse;
+};
+
+export type BudgetsControllerRenameResponse = BudgetsControllerRenameResponses[keyof BudgetsControllerRenameResponses];
+
+export type BudgetsControllerActivateData = {
+    body: ActivateBudgetDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/budgets/{id}/activate';
+};
+
+export type BudgetsControllerActivateErrors = {
+    /**
+     * The body was refused, or the caller holds no such budget.
+     */
+    400: BudgetRefusedResponse;
+    /**
+     * The token was missing, malformed, expired or not minted for this app.
+     */
+    401: UnauthorizedResponse;
+    /**
+     * The idempotency key was claimed by a different request.
+     */
+    409: ConflictResponse;
+};
+
+export type BudgetsControllerActivateError = BudgetsControllerActivateErrors[keyof BudgetsControllerActivateErrors];
+
+export type BudgetsControllerActivateResponses = {
+    /**
+     * The budget that is active now.
+     */
+    200: BudgetResponse;
+};
+
+export type BudgetsControllerActivateResponse = BudgetsControllerActivateResponses[keyof BudgetsControllerActivateResponses];
 
 export type AccountsControllerListData = {
     body?: never;

@@ -78,7 +78,32 @@ export const zBudgetResponse = z.object({
     minorDigits: z.number(),
     timezone: z.string(),
     firstMonth: z.string().regex(/^(19\d{2}|2\d{3})-(0[1-9]|1[0-2])$/),
+    createdOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     active: z.boolean()
+});
+
+export const zRenameBudgetDto = z.object({
+    name: z.string().min(1).max(60),
+    idempotencyKey: z.string().min(1).max(64)
+});
+
+/**
+ * Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
+ */
+export const zBudgetRefusal = z.enum(['UNKNOWN_BUDGET']);
+
+export const zBudgetRefusedResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.union([
+        z.string(),
+        z.array(z.string())
+    ]),
+    reason: zBudgetRefusal.optional()
+});
+
+export const zActivateBudgetDto = z.object({
+    idempotencyKey: z.string().min(1).max(64)
 });
 
 /**
@@ -696,6 +721,28 @@ export const zBudgetsControllerCreateBody = zCreateBudgetDto;
  * The budget that now exists.
  */
 export const zBudgetsControllerCreateResponse = zBudgetResponse;
+
+export const zBudgetsControllerRenameBody = zRenameBudgetDto;
+
+export const zBudgetsControllerRenamePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The budget as it stands now.
+ */
+export const zBudgetsControllerRenameResponse = zBudgetResponse;
+
+export const zBudgetsControllerActivateBody = zActivateBudgetDto;
+
+export const zBudgetsControllerActivatePath = z.object({
+    id: z.string()
+});
+
+/**
+ * The budget that is active now.
+ */
+export const zBudgetsControllerActivateResponse = zBudgetResponse;
 
 /**
  * The accounts as they stand now.

@@ -26,6 +26,25 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
+  budgetsControllerListOptions: () => ({
+    queryKey: ['budgetsControllerList'],
+    queryFn: () =>
+      Promise.resolve([
+        {
+          id: 'budget-1',
+          name: 'Household',
+          currency: 'PLN',
+          minorDigits: 2,
+          timezone: 'Europe/Warsaw',
+          firstMonth: '2026-01',
+          createdOn: '2026-01-15',
+          active: true,
+        },
+      ]),
+  }),
+  budgetsControllerListQueryKey: () => ['budgetsControllerList'],
+  budgetsControllerRenameMutation: () => ({ mutationFn: () => new Promise(() => {}) }),
+  budgetsControllerActivateMutation: () => ({ mutationFn: () => new Promise(() => {}) }),
   userSettingsControllerReadOptions: () => ({
     queryKey: ['userSettingsControllerRead'],
     queryFn: () => Promise.resolve({ language: 'en' }),

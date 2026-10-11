@@ -105,6 +105,15 @@ no such order, because both rows are new and neither is a row anyone else can be
   currency is chosen here and nowhere else, so no operation in the contract accepts one
   afterwards, and its minor digit count is frozen on the row. A user holds at most one active
   budget, so creating one deactivates the previous.
+- `PATCH /budgets/{id}` renames a budget, the active one or not, and changes nothing else.
+- `POST /budgets/{id}/activate` makes a budget the active one. The mark comes off the budget
+  that carried it and goes onto this one in one transaction, and every read a budget owns
+  answers for the new one from the next request on. Both operations answer a budget the caller
+  does not hold with a 400 naming `UNKNOWN_BUDGET`. Creating a budget and activating one hold
+  the caller's budget rows first, so for a caller who already has a budget two of them arriving
+  together wait for each other rather than one failing on the index that keeps a single budget
+  active. A caller with no budget has no row to hold, so two first creations arriving together
+  are not put in a queue.
 - `GET /accounts` returns the active budget's accounts, oldest first, each with its balance,
   and what they hold together. Nothing here is stored: a balance is the sum of the account's
   transactions, over every date rather than up to today, and the total covers exactly the

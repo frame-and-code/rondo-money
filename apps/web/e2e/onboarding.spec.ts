@@ -63,30 +63,28 @@ test('a new user is taken through setup and lands in the app', async ({ page }) 
   await expect(finish).toBeEnabled();
   await finish.click();
 
-  await expect(page.getByText(pl['newAccount.startAssigning'])).toBeVisible();
-  await expect(page).toHaveURL(/\/new\/account$/);
-
-  await page.getByRole('link', { name: pl['nav.categories'] }).click();
-
+  await expect(page).toHaveURL(/\/categories$/);
   await expect(page.getByTestId('ready-to-assign')).toBeVisible();
 });
 
-test('a user who finished setup cannot open the wizard again', async ({ page }) => {
+test('a user who finished setup cannot repeat the account step, and is offered another budget on the first', async ({
+  page,
+}) => {
   await signInAsFresh(page, FINISHED_TEST_EMAIL);
   await onboard(page);
 
-  const steps = [
-    { address: '/new', heading: en['newBudget.heading'] },
-    { address: '/new/account', heading: en['newAccount.heading'] },
-  ];
+  await page.goto('/new/account');
 
-  for (const step of steps) {
-    await page.goto(step.address);
+  await expect(page).toHaveURL(/\/categories$/);
+  await expect(page.getByRole('heading', { name: en['newAccount.heading'] })).toBeHidden();
+  await expect(page.getByTestId('ready-to-assign')).toBeVisible();
 
-    await expect(page).toHaveURL(/\/categories$/);
-    await expect(page.getByRole('heading', { name: step.heading })).toBeHidden();
-    await expect(page.getByTestId('ready-to-assign')).toBeVisible();
-  }
+  await page.goto('/new');
+
+  await expect(page.getByRole('heading', { name: en['newBudget.secondHeading'] })).toBeVisible();
+  await expect(page).toHaveURL(/\/new$/);
+  await expect(page.getByRole('heading', { name: en['newBudget.heading'] })).toBeHidden();
+  await expect(page.getByRole('checkbox', { name: en['newBudget.consentLabel'] })).toBeVisible();
 });
 
 test('setup broken off after the budget resumes at the account step', async ({ page }) => {

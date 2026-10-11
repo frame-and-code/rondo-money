@@ -17,7 +17,8 @@ export async function submitAccount(page: Page, name = 'Main card'): Promise<voi
   await page.getByRole('textbox', { name: en['newAccount.nameLabel'], exact: true }).fill(name);
   await page.getByLabel(en['newAccount.balanceLabel'], { exact: true }).fill('1000');
   await page.getByRole('button', { name: en['newAccount.submit'] }).click();
-  await expect(page.getByText(en['newAccount.startAssigning'])).toBeVisible();
+  await expect(page).toHaveURL(/\/categories$/);
+  await expect(page.getByTestId('ready-to-assign')).toBeVisible();
 }
 
 export async function onboard(page: Page): Promise<void> {
@@ -37,7 +38,6 @@ export async function onboard(page: Page): Promise<void> {
 
   if (await accountStep.isVisible()) {
     await submitAccount(page);
-    await page.getByRole('link', { name: en['nav.categories'] }).click();
   }
 
   await expect(app).toBeVisible();

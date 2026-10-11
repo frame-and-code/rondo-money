@@ -26,7 +26,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
 
+import { BudgetSection } from '@/components/budget-section';
 import { EraseDataDialog, type EraseIntent } from '@/components/erase-data-dialog';
+import { SettingsSection } from '@/components/settings-section';
 import { useTranslations } from '@/i18n/locale-context';
 import { isLocale, locales, localeLabels, type Locale } from '@/i18n/locales';
 import type { MessageKey } from '@/i18n/messages';
@@ -35,24 +37,12 @@ import { SIGN_IN_URL } from '@/lib/auth';
 import { eraseFailure } from '@/lib/erase-failure';
 import { onboardingRoute } from '@/lib/onboarding';
 
-import type { ReactNode } from 'react';
-
 interface Erasing {
   intent: EraseIntent;
   key: string;
 }
 
 const FADE_MS = 150;
-
-function Section({ title, note, children }: { title: string; note: string; children: ReactNode }) {
-  return (
-    <section className="flex max-w-md flex-col gap-3">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      {children}
-      <p className="text-muted-foreground text-sm">{note}</p>
-    </section>
-  );
-}
 
 export function SettingsPanel() {
   const { t } = useTranslations();
@@ -171,12 +161,12 @@ export function SettingsPanel() {
     <div
       data-testid="settings-panel"
       className={cn(
-        'flex flex-col gap-10 transition-opacity duration-150',
+        'flex flex-col gap-6 transition-opacity duration-150',
         fading ? 'opacity-0' : 'opacity-100',
       )}
     >
       {failed ? (
-        <Alert variant="destructive" className="max-w-md">
+        <Alert variant="destructive">
           <IconAlertCircle />
           <AlertTitle>{t('settings.saveFailedTitle')}</AlertTitle>
           <AlertDescription>{t('settings.saveFailed')}</AlertDescription>
@@ -191,59 +181,63 @@ export function SettingsPanel() {
         </Alert>
       ) : null}
 
-      <Section title={t('settings.language')} note={t('settings.languageNote')}>
-        <Select
-          value={language}
-          disabled={saving}
-          onValueChange={(next: string | null) => {
-            if (next !== null && isLocale(next) && next !== language) {
-              setPicked(next);
-            }
-          }}
-          onOpenChangeComplete={(open: boolean) => {
-            if (open || picked === null) return;
+      <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <BudgetSection />
 
-            setPicked(null);
-            fadeThen(() => choose(picked));
-          }}
-        >
-          <SelectTrigger aria-label={t('settings.language')} className="w-full">
-            <SelectValue>{(picked: Locale) => localeLabels[picked]}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {locales.map((option) => (
-              <SelectItem key={option} value={option}>
-                {localeLabels[option]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Section>
+        <SettingsSection title={t('settings.language')} note={t('settings.languageNote')}>
+          <Select
+            value={language}
+            disabled={saving}
+            onValueChange={(next: string | null) => {
+              if (next !== null && isLocale(next) && next !== language) {
+                setPicked(next);
+              }
+            }}
+            onOpenChangeComplete={(open: boolean) => {
+              if (open || picked === null) return;
 
-      <Section title={t('settings.theme')} note={t('settings.themeNote')}>
-        <ThemeSelect label={t('settings.theme')} labels={themeLabels} className="w-full" />
-      </Section>
-
-      <Section title={t('settings.danger')} note={t('settings.dangerNote')}>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-2xl"
-            onClick={() => openErasing('reset')}
+              setPicked(null);
+              fadeThen(() => choose(picked));
+            }}
           >
-            {t('settings.reset')}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            className="rounded-2xl"
-            onClick={() => openErasing('delete')}
-          >
-            {t('settings.delete')}
-          </Button>
-        </div>
-      </Section>
+            <SelectTrigger aria-label={t('settings.language')} className="w-full">
+              <SelectValue>{(picked: Locale) => localeLabels[picked]}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {locales.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {localeLabels[option]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingsSection>
+
+        <SettingsSection title={t('settings.theme')} note={t('settings.themeNote')}>
+          <ThemeSelect label={t('settings.theme')} labels={themeLabels} className="w-full" />
+        </SettingsSection>
+
+        <SettingsSection title={t('settings.danger')} note={t('settings.dangerNote')}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl"
+              onClick={() => openErasing('reset')}
+            >
+              {t('settings.reset')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="rounded-2xl"
+              onClick={() => openErasing('delete')}
+            >
+              {t('settings.delete')}
+            </Button>
+          </div>
+        </SettingsSection>
+      </div>
 
       {isMobile ? (
         <Drawer

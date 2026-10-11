@@ -316,6 +316,24 @@ export const pl: Record<MessageKey, string> = {
   'settings.eraseFailedConflict': 'Ten klucz został już użyty. Zamknij okno i zacznij od nowa.',
   'settings.eraseFailedAccount':
     'Dane zniknęły, ale konta nie udało się skasować. Spróbuj ponownie.',
+  'settings.budget': 'Budżet',
+  'settings.budgetNote':
+    'Walutę wybiera się przy tworzeniu budżetu i nie da się jej zmienić. Wszystkie sekcje pokazują budżet zaznaczony na liście.',
+  'settings.budgetName': 'Nazwa budżetu',
+  'settings.budgetSave': 'Zapisz',
+  'settings.budgetCurrency': 'Waluta',
+  'settings.budgets': 'Twoje budżety',
+  'settings.budgetActive': 'Aktywny',
+  'settings.budgetActivate': 'Ustaw jako aktywny',
+  'settings.budgetActivateNamed': 'Ustaw „{{name}}” jako aktywny',
+  'settings.budgetActiveNamed': '„{{name}}” to aktywny budżet',
+  'settings.budgetSwitchTitle': 'Ustawić „{{name}}” jako aktywny?',
+  'settings.budgetSwitchBody': 'Do poprzedniego budżetu można wrócić w każdej chwili.',
+  'settings.budgetSwitchConfirm': 'Ustaw jako aktywny',
+  'settings.budgetSwitchCancel': 'Anuluj',
+  'settings.budgetNew': 'Nowy budżet',
+  'settings.budgetFailedTitle': 'Wystąpił błąd',
+  'settings.budgetFailed': 'Spróbuj później.',
 
   'onboarding.progress': 'Konfiguracja, krok {{step}} z 3',
   'onboarding.step1Title': 'Budżet',
@@ -363,6 +381,11 @@ export const pl: Record<MessageKey, string> = {
   'newBudget.doneWithoutDefaults': 'Na razie brak kategorii, dodasz własne',
   'newBudget.doneCurrency': 'Waluta',
   'newBudget.continue': 'Utwórz konto',
+  'newBudget.secondHeading': 'Kolejny budżet',
+  'newBudget.secondLead':
+    'Będzie miał własną walutę, kategorie i konta. Obecny budżet zachowa wszystko, co zawiera.',
+  'newBudget.consentLabel': 'Ustaw nowy budżet jako aktywny',
+  'newBudget.consentHint': 'Obecny budżet zostanie. Wrócisz do niego w ustawieniach.',
 
   'newAccount.heading': 'Teraz dodaj pierwsze konto',
   'newAccount.lead':
@@ -393,10 +416,6 @@ export const pl: Record<MessageKey, string> = {
   'newAccount.submitting': 'Zapisujemy…',
   'newAccount.budgetUnavailable': 'Nie udało się odczytać budżetu. Odśwież stronę.',
   'newAccount.submitFailed': 'Nie udało się utworzyć konta. Spróbuj ponownie.',
-  'newAccount.doneTitle': 'Konto „{{name}}” utworzone',
-  'newAccount.doneReady': 'W „Do rozdania”',
-  'newAccount.moreAccounts': 'Chcesz dodać więcej kont?',
-  'newAccount.startAssigning': 'Gotów rozdzielić pieniądze?',
   'newAccount.footnote': 'To ostatni krok konfiguracji.',
   'transactions.panelTitle': 'Konta',
   'transactions.heldNote': 'razem',

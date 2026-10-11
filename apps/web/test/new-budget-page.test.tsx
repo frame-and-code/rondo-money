@@ -12,6 +12,7 @@ jest.mock('next/navigation', () => ({
 jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerCreateMutation: () => ({ mutationFn: async () => ({ id: 'budget-1' }) }),
   budgetsControllerListQueryKey: () => ['budgetsControllerList'],
+  accountsControllerListQueryKey: () => ['accountsControllerList'],
 }));
 
 describe('the /new page', () => {
