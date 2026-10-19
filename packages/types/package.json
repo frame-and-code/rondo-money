@@ -21,13 +21,13 @@
   },
   "devDependencies": {
     "@rondo/config": "workspace:*",
-    "@swc/core": "^1.16.2",
+    "@swc/core": "^1.16.18",
     "@swc/jest": "^0.2.39",
     "@types/jest": "^30.0.0",
-    "eslint": "^10.11.0",
+    "eslint": "^10.12.0",
     "fast-check": "^4.10.2",
     "jest": "^30.5.2",
-    "prettier": "^3.9.8",
+    "prettier": "^3.9.10",
     "typescript": "^6.0.3"
   }
 }
