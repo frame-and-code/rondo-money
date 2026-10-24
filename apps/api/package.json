@@ -33,21 +33,21 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "@nestjs/cli": "^12.0.5",
-    "@nestjs/schematics": "^12.0.4",
-    "@nestjs/testing": "^12.0.4",
+    "@nestjs/cli": "^12.0.8",
+    "@nestjs/schematics": "^12.0.7",
+    "@nestjs/testing": "^12.1.2",
     "@rondo/config": "workspace:*",
     "@swc/cli": "^0.8.1",
-    "@swc/core": "^1.16.2",
+    "@swc/core": "^1.16.18",
     "@swc/jest": "^0.2.39",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.5",
     "@types/supertest": "^7.2.1",
-    "eslint": "^10.11.0",
+    "eslint": "^10.12.0",
     "fast-check": "^4.10.2",
     "jest": "^30.5.2",
-    "prettier": "^3.9.8",
-    "supertest": "^7.3.0",
+    "prettier": "^3.9.10",
+    "supertest": "^7.3.1",
     "typescript": "^6.0.3"
   }
 }
