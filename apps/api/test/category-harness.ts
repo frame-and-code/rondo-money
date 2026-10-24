@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { type Server } from 'node:http';
 
-import { type INestApplication } from '@nestjs/common';
+import { type INestApplication, type Type } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Test, type TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule, type TestingModuleBuilder } from '@nestjs/testing';
 import { TransactionType } from '@rondo/db';
 import { parseCalendarDate, parseCalendarMonth, toDbDate, toDbMonth } from '@rondo/types';
 import request from 'supertest';
@@ -126,18 +126,38 @@ export interface CategoryHarness {
     categoryId: string,
     month: string,
   ) => Promise<{ id: string }>;
+  seedAsset: (
+    userId: string,
+    budgetId: string,
+    item: { name: string; amount: bigint; date?: string | null },
+  ) => Promise<{ id: string }>;
+  seedLiability: (
+    userId: string,
+    budgetId: string,
+    item: { name: string; amount: bigint; date?: string | null },
+  ) => Promise<{ id: string }>;
   viewOf: (userId: string, month: string, includeHidden?: boolean) => Promise<View>;
   close: () => Promise<void>;
 }
 
-export async function startCategoryHarness(prefix: string): Promise<CategoryHarness> {
+export interface CategoryHarnessOptions {
+  controllers?: Type[];
+  customise?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
+}
+
+export async function startCategoryHarness(
+  prefix: string,
+  options: CategoryHarnessOptions = {},
+): Promise<CategoryHarness> {
   const key: TestSigningKey = createTestSigningKey();
   const originalJwtKey = process.env.CLERK_JWT_KEY;
   process.env.CLERK_JWT_KEY = key.publicKeyPem;
 
-  const moduleRef: TestingModule = await Test.createTestingModule({
+  const builder = Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+    controllers: options.controllers ?? [],
+  });
+  const moduleRef: TestingModule = await (options.customise?.(builder) ?? builder).compile();
 
   const app: INestApplication = moduleRef.createNestApplication();
   await app.listen(0);
@@ -167,6 +187,8 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
       await prisma.category.deleteMany({ where: owned });
       await prisma.categoryGroup.deleteMany({ where: owned });
       await prisma.account.deleteMany({ where: owned });
+      await prisma.asset.deleteMany({ where: owned });
+      await prisma.liability.deleteMany({ where: owned });
       await prisma.idempotencyKey.deleteMany({ where: owned });
       await prisma.budget.deleteMany({ where: owned });
       await prisma.userSettings.deleteMany({ where: owned });
@@ -256,6 +278,26 @@ export async function startCategoryHarness(prefix: string): Promise<CategoryHarn
     seedPaid: (userId, budgetId, categoryId, month) =>
       prisma.categoryPaidMonth.create({
         data: { userId, budgetId, categoryId, month: toDbMonth(parseCalendarMonth(month)) },
+      }),
+    seedAsset: (userId, budgetId, item) =>
+      prisma.asset.create({
+        data: {
+          userId,
+          budgetId,
+          name: item.name,
+          amount: item.amount,
+          date: item.date ? toDbDate(parseCalendarDate(item.date)) : null,
+        },
+      }),
+    seedLiability: (userId, budgetId, item) =>
+      prisma.liability.create({
+        data: {
+          userId,
+          budgetId,
+          name: item.name,
+          amount: item.amount,
+          date: item.date ? toDbDate(parseCalendarDate(item.date)) : null,
+        },
       }),
     viewOf: async (userId, month, includeHidden = false) => {
       const response = await request(server())

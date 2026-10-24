@@ -11,3 +11,10 @@ export function budgetsLockStatement(scope: RawQueryScope): Prisma.Sql {
     FOR UPDATE
   `;
 }
+
+export function budgetsGateStatement(scope: RawQueryScope): Prisma.Sql {
+  return Prisma.sql`
+    SELECT 1 AS "held"
+    FROM (SELECT pg_advisory_xact_lock(hashtextextended(${scope.userId}, 0))) AS gate
+  `;
+}

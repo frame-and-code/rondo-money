@@ -319,6 +319,7 @@ export const en: Record<MessageKey, string> = {
   'settings.budgetNote':
     'The currency is chosen when a budget is created and cannot be changed. Every section shows the budget marked in the list.',
   'settings.budgetName': 'Budget name',
+  'settings.budgetNameTaken': 'You already have a budget with this name.',
   'settings.budgetSave': 'Save',
   'settings.budgetCurrency': 'Currency',
   'settings.budgets': 'Your budgets',
@@ -331,32 +332,38 @@ export const en: Record<MessageKey, string> = {
   'settings.budgetSwitchConfirm': 'Make active',
   'settings.budgetSwitchCancel': 'Cancel',
   'settings.budgetNew': 'New budget',
+  'settings.budgetNewTitle': 'New budget',
+  'settings.budgetNewBody':
+    "You can start the new budget from scratch or copy this budget's categories and accounts into it. Money and records are not copied.",
+  'settings.budgetNewClean': 'Start from scratch',
+  'settings.budgetNewFrom': 'Copy categories and accounts',
   'settings.budgetFailedTitle': 'Something went wrong',
   'settings.budgetFailed': 'Try again later.',
 
   'onboarding.progress': 'Setup, step {{step}} of 3',
   'onboarding.step1Title': 'Budget',
   'onboarding.step1Body':
-    'You pick the app language, name the budget and choose its currency. The currency is chosen once and stays with the budget for good.',
-  'onboarding.step2Title': 'First account',
-  'onboarding.step2Body':
-    'You say how much money it holds today. That amount is what lands in Ready to Assign.',
-  'onboarding.step3Title': 'Money into categories',
-  'onboarding.step3Body':
-    'You create categories and hand the free money out until nothing is left.',
+    'Pick the app language, enter a name for the budget and choose its currency.',
+  'onboarding.step1BodyAnother': 'Enter a name for the budget and choose its currency.',
+  'onboarding.step1BodyCopy':
+    'Pick the budget to copy from, enter a name for the new budget and choose its currency.',
+  'onboarding.step2Title': 'Accounts',
+  'onboarding.step2Body': 'Add an account and enter how much money it holds today.',
+  'onboarding.step2BodyCopy': 'Enter the opening balance of each account.',
+  'onboarding.step3Title': 'Categories',
+  'onboarding.step3Body': 'Hand out the free money to categories until nothing is left.',
   'onboarding.unavailable':
     'We could not check where your setup stands. Reload the page to try again.',
 
-  'newBudget.heading': 'Let us set up your first budget',
+  'newBudget.heading': 'Create a new budget',
   'newBudget.lead':
     'Every amount sitting in your accounts has a job. You are not guessing at future income, you are handing out the money that is already there.',
   'newBudget.cardTitle': 'New budget',
-  'newBudget.cardDescription':
-    'Language, name and currency. Everything else comes in the next steps.',
   'newBudget.languageLabel': 'Language',
   'newBudget.languageHint':
     'Category names and the app labels will be in it. You can switch later, the category names stay as they are.',
   'newBudget.nameLabel': 'Name',
+  'newBudget.nameTaken': 'You already have a budget with this name.',
   'newBudget.namePlaceholder.0': 'Family budget',
   'newBudget.namePlaceholder.1': 'Personal budget',
   'newBudget.namePlaceholder.2': 'Household finances',
@@ -381,11 +388,24 @@ export const en: Record<MessageKey, string> = {
   'newBudget.doneWithoutDefaults': 'No categories yet, you will add your own',
   'newBudget.doneCurrency': 'Currency',
   'newBudget.continue': 'Create an account',
-  'newBudget.secondHeading': 'One more budget',
   'newBudget.secondLead':
     'It gets a currency, categories and accounts of its own. The budget you have now keeps everything it holds.',
   'newBudget.consentLabel': 'Make the new budget active',
   'newBudget.consentHint': 'The budget you have now stays. You can return to it in settings.',
+  'newBudget.templateLabel': 'Take categories and accounts from',
+  'newBudget.templateLead':
+    'Categories, accounts, assets and liabilities will match the budget you pick.',
+  'newBudget.templateConsentHint': 'The new budget starts with no money and no records.',
+  'newBudget.templateGoalsStay': "Goals won't be copied because the currency is different.",
+  'newBudget.doneFromTemplate': 'Categories and accounts copied',
+  'newBudget.balances': 'Go to accounts',
+
+  'balances.heading': 'Opening balances',
+  'balances.lead': 'How much money is in each account today.',
+  'balances.cardTitle': 'Accounts',
+  'balances.submit': 'Done',
+  'balances.failedTitle': 'Something went wrong',
+  'balances.failed': 'Try again later.',
 
   'newAccount.heading': 'Now add your first account',
   'newAccount.lead':

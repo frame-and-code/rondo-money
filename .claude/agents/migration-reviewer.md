@@ -69,8 +69,12 @@ diff and takes the site down during the rollout window, or on any rollback.
 - **A hand-edited generated migration.** The SQL is produced from `schema.prisma`. An edit
   that the schema does not produce becomes drift on the next generate. A `CHECK` constraint is
   the one exception, and for one reason: the differ reads it from neither side, so a hand-written
-  one survives and drifts nothing. Nothing else qualifies, and each for its own reason. An index
-  the differ does read, so the next `migrate dev` offers to drop it. A trigger it never reads,
+  one survives and drifts nothing. An index on an expression is the second, for the same
+  reason: the schema cannot declare one, and the differ leaves it where it is (checked on
+  Prisma 7.10 with `migrate diff` against a database holding one; check again on an upgrade).
+  It holds under the same conditions as a `CHECK` below, and the one it has is
+  `budget_name_per_user`. Nothing else qualifies, and each for its own reason. An index on
+  columns the differ does read, so the next `migrate dev` offers to drop it. A trigger it never reads,
   but a trigger is a domain write outside the single write point. An EXCLUDE constraint and a
   generated column go unread too, and unlike a `CHECK` nothing in the schema or the tests would
   show one going missing. Even a `CHECK` is sound only when the edit adds and leaves every

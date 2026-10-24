@@ -143,7 +143,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
             <p className="text-muted-foreground text-sm">{t('newAccount.lead')}</p>
           </div>
 
-          <OnboardingSteps done={1} />
+          <OnboardingSteps done={1} variant={(budgets?.length ?? 0) > 1 ? 'another' : 'first'} />
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">

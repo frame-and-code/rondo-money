@@ -20,6 +20,14 @@ export function onboardingState({ budgets, accounts }: OnboardingReads): Onboard
   return accounts.accounts.length === 0 ? 'account' : 'app';
 }
 
+export const BALANCES_ROUTE = '/new/balances';
+
+export function stepAt(pathname: string): OnboardingState {
+  if (pathname === BALANCES_ROUTE) return 'app';
+
+  return pathname === ROUTES.account ? 'account' : 'budget';
+}
+
 export function onboardingRoute(state: OnboardingState): string {
   return ROUTES[state];
 }

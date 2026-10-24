@@ -238,6 +238,20 @@ describe('OpenAPI document', () => {
     }
   });
 
+  it('publishes the budget a new one may start from, optional and a uuid, and the refusal it can meet', () => {
+    const operation = document.paths['/budgets']?.post;
+    const body = requestSchemaOf(document, operation);
+    const templateId =
+      body !== undefined && 'properties' in body ? body.properties?.['templateId'] : undefined;
+    const required = body !== undefined && 'required' in body ? (body.required ?? []) : [];
+
+    expect(templateId).toMatchObject({ type: 'string', format: 'uuid' });
+    expect(templateId).not.toHaveProperty('nullable');
+    expect(required).not.toContain('templateId');
+    expect(answersWith(operation?.responses['400'], 'BudgetRefusedResponse')).toBe(true);
+    expect(answersWith(operation?.responses['201'], 'BudgetResponse')).toBe(true);
+  });
+
   it('answers with the named language, so a screen reads a union rather than a string', () => {
     const settings = document.components?.schemas?.['UserSettingsResponse'];
     const language =

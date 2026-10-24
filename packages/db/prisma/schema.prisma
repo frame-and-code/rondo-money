@@ -83,6 +83,11 @@ enum TransactionType {
 /// conflict target Postgres cannot match to an index carrying a predicate, and fails there.
 /// So read with `active: true`, and create or activate a budget with an explicit read and
 /// then a write.
+///
+/// A caller's budgets carry different names, compared without regard to case. The index that
+/// holds it, `budget_name_per_user` on `lower(name)`, cannot be declared here, so it lives in
+/// migration `20261024180000_budget_name_per_user` alone, and
+/// `budget-names.integration.spec.ts` pins it against the applied schema.
 model Budget {
   id String @id @default(uuid(7)) @db.Uuid
 

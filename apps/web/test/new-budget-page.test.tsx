@@ -7,10 +7,15 @@ import { en } from '@/i18n/messages/en';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: () => {} }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
   budgetsControllerCreateMutation: () => ({ mutationFn: async () => ({ id: 'budget-1' }) }),
+  budgetsControllerListOptions: () => ({
+    queryKey: ['budgetsControllerList'],
+    queryFn: () => Promise.resolve([]),
+  }),
   budgetsControllerListQueryKey: () => ['budgetsControllerList'],
   accountsControllerListQueryKey: () => ['accountsControllerList'],
 }));

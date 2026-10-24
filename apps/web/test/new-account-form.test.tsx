@@ -22,6 +22,7 @@ jest.mock('next/navigation', () => ({
 
 let budget: { id: string; currency: string; minorDigits: number; active: boolean } | null = null;
 let budgetFails = false;
+let earlier: { id: string; currency: string; minorDigits: number; active: boolean }[] = [];
 
 jest.mock('@rondo/api-client/react-query', () => ({
   accountsControllerCreateMutation: () => ({
@@ -33,7 +34,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
     queryFn: async () => {
       if (budgetFails) throw new Error('the api was unreachable');
 
-      return budget === null ? [] : [budget];
+      return budget === null ? [] : [...earlier, budget];
     },
   }),
 }));
@@ -97,6 +98,23 @@ describe('the first account form', () => {
     replaced.mockReset();
     budget = { id: 'b-1', currency: 'PLN', minorDigits: 2, active: true };
     budgetFails = false;
+    earlier = [];
+  });
+
+  it('describes the budget step without a language for a user who already had a budget', async () => {
+    earlier = [{ id: 'b-0', currency: 'EUR', minorDigits: 2, active: false }];
+    draw();
+
+    expect(await screen.findByText(ru['onboarding.step1BodyAnother'])).toBeInTheDocument();
+    expect(screen.queryByText(ru['onboarding.step1Body'])).not.toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step2Body'])).toBeInTheDocument();
+  });
+
+  it('describes the budget step with the language for a first budget', async () => {
+    draw();
+
+    expect(await screen.findByText(ru['onboarding.step1Body'])).toBeInTheDocument();
+    expect(screen.queryByText(ru['onboarding.step1BodyAnother'])).not.toBeInTheDocument();
   });
 
   it('sends zero when the amount is left empty', async () => {

@@ -320,6 +320,7 @@ export const ru = {
   'settings.budgetNote':
     'Валюта выбирается при создании бюджета, и поменять её нельзя. Все разделы показывают бюджет, отмеченный в списке.',
   'settings.budgetName': 'Название бюджета',
+  'settings.budgetNameTaken': 'Бюджет с таким названием уже есть.',
   'settings.budgetSave': 'Сохранить',
   'settings.budgetCurrency': 'Валюта',
   'settings.budgets': 'Ваши бюджеты',
@@ -332,31 +333,37 @@ export const ru = {
   'settings.budgetSwitchConfirm': 'Сделать активным',
   'settings.budgetSwitchCancel': 'Отмена',
   'settings.budgetNew': 'Новый бюджет',
+  'settings.budgetNewTitle': 'Новый бюджет',
+  'settings.budgetNewBody':
+    'Новый бюджет можно начать с нуля или скопировать в него категории и счета этого бюджета. Деньги и записи не копируются.',
+  'settings.budgetNewClean': 'Начать с нуля',
+  'settings.budgetNewFrom': 'Скопировать категории и счета',
   'settings.budgetFailedTitle': 'Произошла ошибка',
   'settings.budgetFailed': 'Попробуйте позже.',
 
   'onboarding.progress': 'Настройка, шаг {{step}} из 3',
   'onboarding.step1Title': 'Бюджет',
-  'onboarding.step1Body':
-    'Язык приложения, имя бюджета и его валюта. Валюту выбирают один раз, она остаётся с бюджетом навсегда.',
-  'onboarding.step2Title': 'Первый счёт',
-  'onboarding.step2Body':
-    'Сколько денег лежит на нём сегодня. Эта сумма и попадёт в «Свободные деньги».',
-  'onboarding.step3Title': 'Деньги по категориям',
-  'onboarding.step3Body':
-    'Создаёте категории и распределяете по ним свободные деньги, пока не останется ноль.',
+  'onboarding.step1Body': 'Выберите язык, введите имя бюджета и укажите его валюту.',
+  'onboarding.step1BodyAnother': 'Введите имя бюджета и укажите его валюту.',
+  'onboarding.step1BodyCopy':
+    'Выберите бюджет, с которого копировать, введите имя для нового бюджета и укажите его валюту.',
+  'onboarding.step2Title': 'Счета',
+  'onboarding.step2Body': 'Добавьте счёт и укажите, сколько на нём денег сегодня.',
+  'onboarding.step2BodyCopy': 'Укажите начальный остаток каждого счёта.',
+  'onboarding.step3Title': 'Категории',
+  'onboarding.step3Body': 'Распределите свободные деньги по категориям, пока не останется ноль.',
   'onboarding.unavailable':
     'Не удалось узнать, на каком вы шаге настройки. Перезагрузите страницу.',
 
-  'newBudget.heading': 'Соберём ваш первый бюджет',
+  'newBudget.heading': 'Создать новый бюджет',
   'newBudget.lead':
     'У каждой суммы на счетах есть задача. Вы не гадаете про будущие доходы, вы распределяете деньги, которые уже лежат на счетах.',
   'newBudget.cardTitle': 'Новый бюджет',
-  'newBudget.cardDescription': 'Язык, имя и валюта. Всё остальное настроим на следующих шагах.',
   'newBudget.languageLabel': 'Язык',
   'newBudget.languageHint':
     'На нём будут названия категорий и подписи в приложении. Поменять язык можно потом, названия категорий останутся.',
   'newBudget.nameLabel': 'Название',
+  'newBudget.nameTaken': 'Бюджет с таким названием уже есть.',
   'newBudget.namePlaceholder.0': 'Семейный бюджет',
   'newBudget.namePlaceholder.1': 'Личный бюджет',
   'newBudget.namePlaceholder.2': 'Домашние финансы',
@@ -381,11 +388,23 @@ export const ru = {
   'newBudget.doneWithoutDefaults': 'Категорий пока нет, добавите свои',
   'newBudget.doneCurrency': 'Валюта',
   'newBudget.continue': 'Создать счёт',
-  'newBudget.secondHeading': 'Ещё один бюджет',
   'newBudget.secondLead':
     'У него будут своя валюта, свои категории и счета. Нынешний бюджет сохранит всё, что в нём есть.',
   'newBudget.consentLabel': 'Сделать новый бюджет активным',
   'newBudget.consentHint': 'Прежний бюджет сохранится. Вернуться к нему можно в настройках.',
+  'newBudget.templateLabel': 'Откуда взять категории и счета',
+  'newBudget.templateLead': 'Категории, счета, активы и пассивы будут как в выбранном бюджете.',
+  'newBudget.templateConsentHint': 'В новом бюджете не будет ни денег, ни записей.',
+  'newBudget.templateGoalsStay': 'Цели не скопируются, потому что валюта другая.',
+  'newBudget.doneFromTemplate': 'Категории и счета скопированы',
+  'newBudget.balances': 'Перейти к счетам',
+
+  'balances.heading': 'Начальные остатки',
+  'balances.lead': 'Сколько денег на каждом счёте сегодня.',
+  'balances.cardTitle': 'Счета',
+  'balances.submit': 'Готово',
+  'balances.failedTitle': 'Произошла ошибка',
+  'balances.failed': 'Попробуйте позже.',
 
   'newAccount.heading': 'Теперь заведём первый счёт',
   'newAccount.lead':

@@ -320,6 +320,7 @@ export const pl: Record<MessageKey, string> = {
   'settings.budgetNote':
     'Walutę wybiera się przy tworzeniu budżetu i nie da się jej zmienić. Wszystkie sekcje pokazują budżet zaznaczony na liście.',
   'settings.budgetName': 'Nazwa budżetu',
+  'settings.budgetNameTaken': 'Masz już budżet o tej nazwie.',
   'settings.budgetSave': 'Zapisz',
   'settings.budgetCurrency': 'Waluta',
   'settings.budgets': 'Twoje budżety',
@@ -332,31 +333,37 @@ export const pl: Record<MessageKey, string> = {
   'settings.budgetSwitchConfirm': 'Ustaw jako aktywny',
   'settings.budgetSwitchCancel': 'Anuluj',
   'settings.budgetNew': 'Nowy budżet',
+  'settings.budgetNewTitle': 'Nowy budżet',
+  'settings.budgetNewBody':
+    'Nowy budżet możesz zacząć od zera albo skopiować do niego kategorie i konta z tego budżetu. Pieniądze i wpisy nie są kopiowane.',
+  'settings.budgetNewClean': 'Zacznij od zera',
+  'settings.budgetNewFrom': 'Skopiuj kategorie i konta',
   'settings.budgetFailedTitle': 'Wystąpił błąd',
   'settings.budgetFailed': 'Spróbuj później.',
 
   'onboarding.progress': 'Konfiguracja, krok {{step}} z 3',
   'onboarding.step1Title': 'Budżet',
-  'onboarding.step1Body':
-    'Wybierasz język aplikacji, nazwę budżetu i jego walutę. Walutę wybiera się raz i zostaje z budżetem na zawsze.',
-  'onboarding.step2Title': 'Pierwsze konto',
-  'onboarding.step2Body':
-    'Mówisz, ile pieniędzy jest na nim dzisiaj. Ta kwota trafi do „Do rozdania”.',
-  'onboarding.step3Title': 'Pieniądze do kategorii',
-  'onboarding.step3Body':
-    'Tworzysz kategorie i rozdzielasz między nie wolne pieniądze, aż zostanie zero.',
+  'onboarding.step1Body': 'Wybierz język aplikacji, wpisz nazwę budżetu i wybierz jego walutę.',
+  'onboarding.step1BodyAnother': 'Wpisz nazwę budżetu i wybierz jego walutę.',
+  'onboarding.step1BodyCopy':
+    'Wybierz budżet, z którego kopiujesz, wpisz nazwę nowego budżetu i wybierz jego walutę.',
+  'onboarding.step2Title': 'Konta',
+  'onboarding.step2Body': 'Dodaj konto i wpisz, ile jest na nim dziś pieniędzy.',
+  'onboarding.step2BodyCopy': 'Wpisz saldo początkowe każdego konta.',
+  'onboarding.step3Title': 'Kategorie',
+  'onboarding.step3Body': 'Rozdziel wolne pieniądze między kategorie, aż zostanie zero.',
   'onboarding.unavailable':
     'Nie udało się sprawdzić, na którym kroku konfiguracji jesteś. Odśwież stronę.',
 
-  'newBudget.heading': 'Zbudujmy twój pierwszy budżet',
+  'newBudget.heading': 'Utwórz nowy budżet',
   'newBudget.lead':
     'Każda kwota na twoich kontach ma swoje zadanie. Nie zgadujesz przyszłych przychodów, rozdzielasz pieniądze, które już masz.',
   'newBudget.cardTitle': 'Nowy budżet',
-  'newBudget.cardDescription': 'Język, nazwa i waluta. Resztę ustawimy w kolejnych krokach.',
   'newBudget.languageLabel': 'Język',
   'newBudget.languageHint':
     'W nim będą nazwy kategorii i etykiety w aplikacji. Język można zmienić później, nazwy kategorii zostaną.',
   'newBudget.nameLabel': 'Nazwa',
+  'newBudget.nameTaken': 'Masz już budżet o tej nazwie.',
   'newBudget.namePlaceholder.0': 'Budżet rodzinny',
   'newBudget.namePlaceholder.1': 'Budżet osobisty',
   'newBudget.namePlaceholder.2': 'Finanse domowe',
@@ -381,11 +388,24 @@ export const pl: Record<MessageKey, string> = {
   'newBudget.doneWithoutDefaults': 'Na razie brak kategorii, dodasz własne',
   'newBudget.doneCurrency': 'Waluta',
   'newBudget.continue': 'Utwórz konto',
-  'newBudget.secondHeading': 'Kolejny budżet',
   'newBudget.secondLead':
     'Będzie miał własną walutę, kategorie i konta. Obecny budżet zachowa wszystko, co zawiera.',
   'newBudget.consentLabel': 'Ustaw nowy budżet jako aktywny',
   'newBudget.consentHint': 'Obecny budżet zostanie. Wrócisz do niego w ustawieniach.',
+  'newBudget.templateLabel': 'Skąd wziąć kategorie i konta',
+  'newBudget.templateLead':
+    'Kategorie, konta, aktywa i pasywa będą takie same jak w wybranym budżecie.',
+  'newBudget.templateConsentHint': 'W nowym budżecie nie będzie pieniędzy ani wpisów.',
+  'newBudget.templateGoalsStay': 'Cele nie zostaną skopiowane, bo waluta jest inna.',
+  'newBudget.doneFromTemplate': 'Kategorie i konta skopiowane',
+  'newBudget.balances': 'Przejdź do kont',
+
+  'balances.heading': 'Salda początkowe',
+  'balances.lead': 'Ile pieniędzy jest dziś na każdym koncie.',
+  'balances.cardTitle': 'Konta',
+  'balances.submit': 'Gotowe',
+  'balances.failedTitle': 'Wystąpił błąd',
+  'balances.failed': 'Spróbuj później.',
 
   'newAccount.heading': 'Teraz dodaj pierwsze konto',
   'newAccount.lead':

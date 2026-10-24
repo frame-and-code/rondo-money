@@ -17,7 +17,6 @@ import { BudgetsService } from '@/budgets/budgets.service';
 import { CreateBudgetDto } from '@/budgets/create-budget.dto';
 import { RenameBudgetDto } from '@/budgets/rename-budget.dto';
 import { ConflictResponse } from '@/mutations/conflict.response';
-import { BadRequestResponse } from '@/openapi/bad-request.response';
 
 @Controller('budgets')
 export class BudgetsController {
@@ -30,12 +29,17 @@ export class BudgetsController {
       'Creates the budget and, when asked for, the starter groups and categories, in one ' +
       "database transaction. The chosen language is stored in the caller's settings by the " +
       'same transaction, because the category names are written in it. A user holds at most ' +
-      'one active budget, so a previous one stops being active here.',
+      'one active budget, so a previous one stops being active here. Given a budget to start ' +
+      'from, the same transaction copies its groups, categories, open accounts, assets and ' +
+      'liabilities, each account opening at zero, and leaves every record behind.',
   })
   @ApiCreatedResponse({ description: 'The budget that now exists.', type: BudgetResponse })
   @ApiBadRequestResponse({
-    description: 'The body was refused: a field is missing, malformed or not declared at all.',
-    type: BadRequestResponse,
+    description:
+      'The body was refused, the caller holds no budget to start from under that id, the ' +
+      'starter set was asked for together with one, or the caller already has a budget under ' +
+      'that name, whatever its case.',
+    type: BudgetRefusedResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
@@ -75,7 +79,9 @@ export class BudgetsController {
   })
   @ApiOkResponse({ description: 'The budget as it stands now.', type: BudgetResponse })
   @ApiBadRequestResponse({
-    description: 'The body was refused, or the caller holds no such budget.',
+    description:
+      'The body was refused, the caller holds no such budget, or the caller already has ' +
+      'another budget under that name, whatever its case.',
     type: BudgetRefusedResponse,
   })
   @ApiConflictResponse({

@@ -54,7 +54,7 @@ describe('the assignment table (integration)', () => {
     prisma.budget.create({
       data: {
         userId,
-        name: 'Main',
+        name: active ? 'Main' : 'Spare',
         currency: 'USD',
         minorDigits: 2,
         timezone: 'Europe/Warsaw',

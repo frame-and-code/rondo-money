@@ -238,7 +238,7 @@
     },
     "/budgets": {
       "post": {
-        "description": "Creates the budget and, when asked for, the starter groups and categories, in one database transaction. The chosen language is stored in the caller's settings by the same transaction, because the category names are written in it. A user holds at most one active budget, so a previous one stops being active here.",
+        "description": "Creates the budget and, when asked for, the starter groups and categories, in one database transaction. The chosen language is stored in the caller's settings by the same transaction, because the category names are written in it. A user holds at most one active budget, so a previous one stops being active here. Given a budget to start from, the same transaction copies its groups, categories, open accounts, assets and liabilities, each account opening at zero, and leaves every record behind.",
         "operationId": "BudgetsController_create",
         "parameters": [],
         "requestBody": {
@@ -263,11 +263,11 @@
             }
           },
           "400": {
-            "description": "The body was refused: a field is missing, malformed or not declared at all.",
+            "description": "The body was refused, the caller holds no budget to start from under that id, the starter set was asked for together with one, or the caller already has a budget under that name, whatever its case.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BadRequestResponse"
+                  "$ref": "#/components/schemas/BudgetRefusedResponse"
                 }
               }
             }
@@ -369,7 +369,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or the caller holds no such budget.",
+            "description": "The body was refused, the caller holds no such budget, or the caller already has another budget under that name, whatever its case.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3351,6 +3351,11 @@
             "type": "boolean",
             "description": "Whether to create the starter groups and categories alongside the budget. Required: a default here would mean the server decided what the user wanted."
           },
+          "templateId": {
+            "type": "string",
+            "description": "A budget of the caller to start this one from. Its groups, categories, open accounts, assets and liabilities are written into the new budget, with no records and every amount at zero. Goals come along only when the currency is the same. Left out, the budget starts empty or with the starter set.",
+            "format": "uuid"
+          },
           "idempotencyKey": {
             "type": "string",
             "description": "Minted once when the form opens, never per request. A key per request makes a double click two budgets again.",
@@ -3424,32 +3429,12 @@
           "active"
         ]
       },
-      "RenameBudgetDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "What to call this budget now.",
-            "minLength": 1,
-            "maxLength": 60
-          },
-          "idempotencyKey": {
-            "type": "string",
-            "description": "Minted once when the edit opens, never per request. A key per request makes a double click two writes again.",
-            "minLength": 1,
-            "maxLength": 64
-          }
-        },
-        "required": [
-          "name",
-          "idempotencyKey"
-        ],
-        "additionalProperties": false
-      },
       "BudgetRefusal": {
         "type": "string",
         "enum": [
-          "UNKNOWN_BUDGET"
+          "UNKNOWN_BUDGET",
+          "TEMPLATE_WITH_DEFAULTS",
+          "NAME_TAKEN"
         ],
         "description": "Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give."
       },
@@ -3494,6 +3479,28 @@
           "error",
           "message"
         ]
+      },
+      "RenameBudgetDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "What to call this budget now.",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Minted once when the edit opens, never per request. A key per request makes a double click two writes again.",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "name",
+          "idempotencyKey"
+        ],
+        "additionalProperties": false
       },
       "ActivateBudgetDto": {
         "type": "object",

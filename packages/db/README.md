@@ -42,6 +42,12 @@ Postgres cannot match to an index carrying a predicate, and fails there. So read
 the mutation's own transaction. `budget-core.integration.spec.ts` pins all four, because this
 paragraph is the only warning a caller gets.
 
+A user's budgets also carry different names, compared without regard to case. The unique index
+behind that is on `(user_id, lower(name))`. Prisma cannot declare an index on an expression, so
+it lives in its migration alone, and `prisma migrate diff` leaves an index it does not model
+where it is. The mutations check the name first, so a refusal names a reason; the index is
+what holds when a path forgets to.
+
 `Assignment` holds what one category was given for one month. `month` is a `date` column
 carrying the first day, so which month a date falls in is decided once, in the budget's
 timezone, by the calendar helpers in [`@rondo/types`](../types/README.md). One row per category

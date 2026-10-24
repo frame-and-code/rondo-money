@@ -81,9 +81,9 @@ test('a user who finished setup cannot repeat the account step, and is offered a
 
   await page.goto('/new');
 
-  await expect(page.getByRole('heading', { name: en['newBudget.secondHeading'] })).toBeVisible();
+  await expect(page.getByText(en['newBudget.secondLead'])).toBeVisible();
   await expect(page).toHaveURL(/\/new$/);
-  await expect(page.getByRole('heading', { name: en['newBudget.heading'] })).toBeHidden();
+  await expect(page.getByText(en['newBudget.lead'])).toBeHidden();
   await expect(page.getByRole('checkbox', { name: en['newBudget.consentLabel'] })).toBeVisible();
 });
 
