@@ -28,6 +28,7 @@ tester.run('no-ui-literals', noUiLiterals, {
     { code: 'const a = <input type="text" id="amount" inputMode="decimal" />;' },
     { code: 'const a = <span title={label} />;' },
     { code: 'const a = <p>{count}</p>;' },
+    { code: 'const a = <p>{count + " / " + total}</p>;' },
     { code: 'const a = <p>{busy ? t("a") : t("b")}</p>;' },
     { code: 'const a = <p>{failed && t("common.close")}</p>;' },
     { code: 'const a = <span className={open ? "flex" : "hidden"} />;' },
@@ -55,6 +56,18 @@ tester.run('no-ui-literals', noUiLiterals, {
     },
     {
       code: 'const a = <span>{failed && "Try again"}</span>;',
+      errors: [{ messageId: 'text' }],
+    },
+    {
+      code: 'const a = <p>{"Hello, " + name}</p>;',
+      errors: [{ messageId: 'text' }],
+    },
+    {
+      code: 'const a = <p>{name + " saved"}</p>;',
+      errors: [{ messageId: 'text' }],
+    },
+    {
+      code: 'const a = <p>{"Untitled" || name}</p>;',
       errors: [{ messageId: 'text' }],
     },
     {

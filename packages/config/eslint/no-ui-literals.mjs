@@ -29,7 +29,9 @@ function spellsWords(node) {
   if (node.type === 'ConditionalExpression') {
     return spellsWords(node.consequent) || spellsWords(node.alternate);
   }
-  if (node.type === 'LogicalExpression') return spellsWords(node.right);
+  if (node.type === 'LogicalExpression' || node.type === 'BinaryExpression') {
+    return spellsWords(node.left) || spellsWords(node.right);
+  }
 
   return false;
 }

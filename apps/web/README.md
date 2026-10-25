@@ -137,10 +137,10 @@ src/
   lib/money.ts                # reading an amount a person typed through their locale's own
                               # marks, and showing one at the budget's digit count. Every
                               # screen that touches money uses it, so a sign is refused or
-                              # allowed in one place. Four ways out, and the difference
-                              # matters: `format` for a shown amount, which drops a fraction
-                              # that is all zeros and writes symbol, marks and minus the way
-                              # Intl writes the locale's money, `plain` for one whose currency
+                              # allowed in one place. Which way out matters: `format` for a
+                              # shown amount, which drops a fraction that is all zeros and
+                              # writes symbol, marks and minus the way Intl writes the
+                              # locale's money, `plain` for one whose currency
                               # is carried by a neighbour, `pairStart` for the first amount of
                               # a pair, which carries the symbol only where the locale puts it
                               # first, and `typed` for a field, which keeps every decimal
