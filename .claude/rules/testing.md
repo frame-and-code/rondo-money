@@ -6,8 +6,9 @@ how to write one that proves something is [`testing-patterns`](../skills/testing
 - A feature without its tests is not done, and there is no "follow-up" for them.
   [`/tdd`](../commands/tdd.md) writes them first.
 - Unit covers domain logic and components with no DB or network. Integration covers API and
-  Postgres with the real module, and is the only level that proves atomicity, scoping and
-  idempotency. E2E covers one or two user scenarios per feature, to prove the screens are
+  Postgres with the real module, and is the only level that proves atomicity, idempotency and
+  the scoping a real query carried; the scoping extension's own rules are unit-testable
+  without a database. E2E covers one or two user scenarios per feature, to prove the screens are
   wired, not to cover branches.
 - Mandatory: invariant 5.5 as a property-based test (fast-check) over random operation
   sequences, asserted on all-time aggregates after every step; a cross-tenant test for every

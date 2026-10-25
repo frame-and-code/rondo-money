@@ -131,13 +131,11 @@ coverage, and the fix is a test, not a threshold.
 Batch the tick's fixes and push once, so the reviewers see the final state rather than
 every intermediate commit.
 
-**Git remains the user's call throughout** ([`communication.md`](../rules/communication.md)).
-On its own the loop only ever `git add`s. Merging `main` in, committing and pushing are
-_proposed_, and each reaches the user as a permission prompt, because none of them sits in
-the allow list. That pause, roughly once per tick, is the design and not friction to route
-around. Invoking `/babysit-pr` asks for a PR to be watched, it does not hand over standing
-authority to move the branch. A user who wants it unattended widens their own git-ignored
-`settings.local.json`, an explicit choice, made once, in writing.
+**Asking for the PR to be watched is the ask to commit and push its fixes**
+([`communication.md`](../rules/communication.md)). Commit the tick's fixes with a message in
+the shape that rule gives and push them to this PR's branch, without asking in words. The
+harness still confirms each, because neither sits in the allow list. Merging `main` in stays
+_proposed_, as step (a) says, and so does anything on another branch.
 
 ## Step 3. Stop condition
 

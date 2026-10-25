@@ -7,8 +7,8 @@ are inputs to the work, not paperwork after it.
 ## Notion
 
 - PRD (RU) is the source of truth; PRD (EN) mirrors it. Development Plan v1 holds the phases
-  and their DoD. The ADRs hold the decisions (ADR-001 revised by ADR-006, ADR-002, ADR-003,
-  ADR-004 deferred, ADR-005, ADR-006). The phase ticket holds the Acceptance Criteria.
+  and their DoD. The ADRs hold the decisions, and [`CLAUDE.md`](../../CLAUDE.md) names each
+  one with its status. The phase ticket holds the Acceptance Criteria.
 - Before a feature, read its ticket and the ADRs covering the area. During it, do not
   reintroduce what a decision moved away from: RLS, stored balances and a hand-written API
   layer are decisions. After it, when the work supersedes a decision, update the ADR or ticket

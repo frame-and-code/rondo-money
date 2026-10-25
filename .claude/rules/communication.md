@@ -10,8 +10,9 @@ user in Russian. Translate a Russian comment when you touch a file that may hold
 Everything here is read by someone: a chat reply, a commit, a PR description, a Notion ticket.
 Before any of them leaves you, run the `unslop` skill over it (`unslop-ru` for Russian). It is a
 user-level skill rather than part of this repository, so when it is not available apply the
-list below by hand. The mechanical part of it, the dash, the quotes and the word list, is
-also what `pnpm lint:docs` refuses in tracked prose.
+list below by hand. `pnpm lint:docs` refuses only part of it in tracked prose: the em dash,
+curly quotes and some of the words, as listed in
+[`docs-ownership.json`](../config/docs-ownership.json).
 
 - No em dash. End the sentence or use a comma.
 - A colon introduces a list or an example, never a mid-sentence connector.
@@ -32,8 +33,11 @@ also what `pnpm lint:docs` refuses in tracked prose.
 On your own, only `git add`. Commit, push, branching, rebasing and opening a PR wait for the
 user to ask. Typing [`/prep-pr`](../commands/prep-pr.md) or [`/close-ticket`](../commands/close-ticket.md)
 is that ask for what each command does and nothing past it; a merge still waits, and a force
-push is denied outright. One exception: when a new feature starts on `main`, create the feature
-branch first.
+push is denied outright. Asking to watch an open PR, in words or with
+[`/babysit-pr`](../commands/babysit-pr.md), is the ask to commit the fixes its review and CI
+call for and push them to that PR's branch; merging `main` in, rebasing and merging the PR
+still wait. One exception: when a new feature starts on `main`, create the feature branch
+first.
 
 ## Naming and messages describe behaviour
 
