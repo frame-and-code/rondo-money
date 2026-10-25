@@ -20,13 +20,19 @@ each kind of file may cost and what it may contain:
 A rule is a sentence you must not break. A hook is a rule that cannot be broken. Anything
 that must hold every time belongs in a hook or in `settings.json`, not only in prose.
 
-One layer lives outside this directory: [`apps/web/AGENTS.md`](../apps/web/AGENTS.md), loaded
+Two layers live outside this directory. The first is [`apps/web/AGENTS.md`](../apps/web/AGENTS.md), loaded
 through the one-line `apps/web/CLAUDE.md` when work happens in that workspace. It exists
 because **Next 16 writes it itself**: `next dev` detects a coding agent and inserts a managed
 block (`writeAgentFiles` in `node_modules/next/dist/server/lib/generate-agent-files.js`). Rather
 than fight a dependency that writes into the agent's context, we made the file ours. Next
 maintains only what is between its markers, the rest is the workspace's own guidance, and any
 change Next makes shows up in a diff.
+
+The second is the root [`AGENTS.md`](../AGENTS.md), and `turbo` writes it the same way: it
+detects an agent and keeps a managed block there that points to the docs bundled with the
+installed version. Removing the file only makes the next `turbo` run write it again, so it is
+committed as `turbo` leaves it. Nothing imports it into the context;
+[model integrity](rules/model-integrity.md) links to it where it tells an agent where to look.
 
 ## Rules (`rules/`)
 
