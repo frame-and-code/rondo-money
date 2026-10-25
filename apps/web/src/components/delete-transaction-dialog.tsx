@@ -1,11 +1,10 @@
 'use client';
 
 import { parseMoney, type TransactionDto } from '@rondo/types';
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Button } from '@rondo/ui/components/ui/button';
-import { IconAlertCircle } from '@tabler/icons-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
 import type { MoneyReader } from '@/lib/money';
@@ -38,8 +37,8 @@ export function DeleteTransactionDialog({
 
   const amount = parseMoney(record.amount);
   const spending = amount < 0n;
-  const back = -amount;
   const moved = amount < 0n ? -amount : amount;
+  const shown = money.format(moved);
   const transfer = record.transferId !== null;
   const counter = record.counterAccountId ?? '';
   const returnedTo = spending ? record.accountId : counter;
@@ -55,66 +54,65 @@ export function DeleteTransactionDialog({
   const landed = accountName(transfer ? returnedTo : record.accountId);
   const left = accountName(takenFrom);
 
+  const title = (): string => {
+    if (transfer) return t('transactions.deleteTransferTitle', { amount: shown });
+    if (record.payee === null) {
+      return t(spending ? 'transactions.deleteExpenseTitle' : 'transactions.deleteIncomeTitle', {
+        amount: shown,
+      });
+    }
+
+    return t('transactions.deleteTitle', { payee: record.payee, amount: shown });
+  };
+
+  const accountLine = (): string => {
+    if (transfer) {
+      return landed === null
+        ? t('transactions.deleteArchivedLine', { amount: shown })
+        : t('transactions.deleteTransferLine', { name: landed, amount: shown });
+    }
+    if (landed === null) {
+      return t(
+        spending ? 'transactions.deleteArchivedLine' : 'transactions.deleteArchivedCounterLine',
+        { amount: shown },
+      );
+    }
+
+    return t(spending ? 'transactions.deleteAccountLine' : 'transactions.deleteAccountTakenLine', {
+      name: landed,
+      amount: shown,
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold">
-        {transfer
-          ? t('transactions.deleteTransferTitle', { amount: money.format(moved) })
-          : t('transactions.deleteTitle', {
-              payee: record.payee ?? t('transactions.noPayee'),
-              amount: money.format(amount),
-            })}
-      </h2>
+      <h2 className="text-lg font-semibold">{title()}</h2>
 
       <ul className="text-muted-foreground flex flex-col gap-1 text-sm">
-        <li data-testid="delete-account-line">
-          {landed === null
-            ? t('transactions.deleteArchivedLine', {
-                amount: money.format(transfer ? moved : back),
-              })
-            : t(transfer ? 'transactions.deleteTransferLine' : 'transactions.deleteAccountLine', {
-                name: landed,
-                amount: money.format(transfer ? moved : back),
-              })}
-        </li>
+        <li data-testid="delete-account-line">{accountLine()}</li>
         {transfer ? (
           <li data-testid="delete-counter-line">
             {left === null
-              ? t('transactions.deleteArchivedCounterLine', { amount: money.format(moved) })
-              : t('transactions.deleteTransferCounterLine', {
-                  name: left,
-                  amount: money.format(moved),
-                })}
+              ? t('transactions.deleteArchivedCounterLine', { amount: shown })
+              : t('transactions.deleteTransferCounterLine', { name: left, amount: shown })}
           </li>
         ) : record.categoryId === null ? (
           <li data-testid="delete-pool-line">
-            {t('transactions.deletePoolLine', { amount: money.format(back) })}
+            {t(spending ? 'transactions.deletePoolLine' : 'transactions.deletePoolTakenLine', {
+              amount: shown,
+            })}
           </li>
         ) : (
           <li data-testid="delete-category-line">
-            {t('transactions.deleteCategoryLine', {
-              name: categoryName(record.categoryId) ?? '',
-              amount: money.format(back),
-            })}
+            {t(
+              spending ? 'transactions.deleteCategoryLine' : 'transactions.deleteCategoryTakenLine',
+              { name: categoryName(record.categoryId) ?? '', amount: shown },
+            )}
           </li>
         )}
       </ul>
 
-      {failed === null ? null : (
-        <Alert variant="destructive">
-          <IconAlertCircle />
-          <AlertTitle>
-            {t(
-              transfer
-                ? 'transactions.failTitleTransfer'
-                : spending
-                  ? 'transactions.failTitleExpense'
-                  : 'transactions.failTitleIncome',
-            )}
-          </AlertTitle>
-          <AlertDescription>{t(failed)}</AlertDescription>
-        </Alert>
-      )}
+      {failed === null ? null : <FailureAlert>{t(failed)}</FailureAlert>}
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" className="rounded-2xl" onClick={onCancel}>

@@ -46,7 +46,7 @@ export function SaveFailureBanner({
     >
       <IconAlertTriangle className="text-destructive mt-0.5 size-[18px] shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-medium">{t('categories.failTitle')}</span>
+        <span className="text-sm font-medium">{t('common.failTitle')}</span>
         <span className="text-muted-foreground text-sm">
           {t(TEXT[failure.kind], { category: failure.categoryName })}
         </span>

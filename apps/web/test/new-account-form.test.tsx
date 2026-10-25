@@ -189,7 +189,7 @@ describe('the first account form', () => {
 
     await fillOut(user, { amount: '-40' });
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(ru['newAccount.balanceNegative']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(ru['common.amountNegative']);
     expect(screen.getByRole('button', { name: ru['newAccount.submit'] })).toBeDisabled();
     expect(submit).not.toHaveBeenCalled();
   });

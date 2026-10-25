@@ -84,13 +84,7 @@ export function TransactionRow({
     return record.payee ?? t('transactions.noPayee');
   };
 
-  const badge = record.isSystem
-    ? t('transactions.systemBadge')
-    : record.transferId !== null
-      ? t('transactions.transferBadge')
-      : record.type === 'ADJUSTMENT'
-        ? t('transactions.adjustmentBadge')
-        : null;
+  const badge = record.transferId === null ? null : t('transactions.transferBadge');
 
   const parts = [category?.name ?? null, showAccount ? accountName(record.accountId) : null].filter(
     (part): part is string => part !== null && part !== '',

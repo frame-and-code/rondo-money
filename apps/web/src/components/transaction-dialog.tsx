@@ -26,7 +26,6 @@ import { Label } from '@rondo/ui/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@rondo/ui/components/ui/popover';
 import { cn } from '@rondo/ui/lib/utils';
 import {
-  IconAlertCircle,
   IconArrowDownLeft,
   IconArrowsExchange,
   IconArrowUpRight,
@@ -40,6 +39,7 @@ import { format } from 'date-fns';
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
 import { AccountField } from '@/components/account-field';
+import { FailureAlert } from '@/components/failure-alert';
 import { FIELD_SHAPE } from '@/components/field-shape';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { PayeeField } from '@/components/payee-field';
@@ -509,9 +509,11 @@ export function TransactionDialog({
             aria-label={t('transactions.categoryLabel')}
             className={cn(MONEY_FIELD, FIELD_SHAPE, 'gap-2')}
           >
-            <CategoryMark category={chosen ?? pool} />
+            {chosen === null && type !== 'INCOME' ? null : (
+              <CategoryMark category={chosen ?? pool} />
+            )}
             <span className="flex-1 text-left">
-              <ComboboxValue placeholder={t('transactions.pool')} />
+              <ComboboxValue placeholder={t('transactions.pickCategory')} />
             </span>
           </ComboboxTrigger>
           <ComboboxContent align="start">
@@ -617,21 +619,7 @@ export function TransactionDialog({
         </Alert>
       ) : null}
 
-      {failed === null ? null : (
-        <Alert variant="destructive">
-          <IconAlertCircle />
-          <AlertTitle>
-            {t(
-              transferring
-                ? 'transactions.failTitleTransfer'
-                : spending
-                  ? 'transactions.failTitleExpense'
-                  : 'transactions.failTitleIncome',
-            )}
-          </AlertTitle>
-          <AlertDescription>{t(worded(failed, spending))}</AlertDescription>
-        </Alert>
-      )}
+      {failed === null ? null : <FailureAlert>{t(worded(failed, spending))}</FailureAlert>}
 
       <div className="border-border/60 flex flex-col gap-2 border-t pt-4">
         <div className="flex gap-2">

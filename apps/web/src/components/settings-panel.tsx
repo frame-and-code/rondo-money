@@ -168,8 +168,8 @@ export function SettingsPanel() {
       {failed ? (
         <Alert variant="destructive">
           <IconAlertCircle />
-          <AlertTitle>{t('settings.saveFailedTitle')}</AlertTitle>
-          <AlertDescription>{t('settings.saveFailed')}</AlertDescription>
+          <AlertTitle>{t('common.failTitle')}</AlertTitle>
+          <AlertDescription>{t('common.failLater')}</AlertDescription>
           <Button
             type="button"
             variant="ghost"

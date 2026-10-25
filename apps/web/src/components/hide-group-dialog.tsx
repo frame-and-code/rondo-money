@@ -4,6 +4,7 @@ import { Button } from '@rondo/ui/components/ui/button';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconCircleCheck, IconCircleX } from '@tabler/icons-react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
 import type { MoneyReader } from '@/lib/money';
@@ -115,11 +116,7 @@ export function HideGroupDialog({
           : t('categories.hideTransactionWarning')}
       </p>
 
-      {failed === null ? null : (
-        <p role="alert" className="text-destructive text-sm">
-          {t(failed)}
-        </p>
-      )}
+      {failed === null ? null : <FailureAlert>{t(failed)}</FailureAlert>}
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>

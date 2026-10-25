@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
@@ -230,11 +231,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                 />
               </div>
 
-              {failed ? (
-                <p role="alert" className="text-destructive text-sm">
-                  {t('newAccount.submitFailed')}
-                </p>
-              ) : null}
+              {failed ? <FailureAlert>{t('newAccount.submitFailed')}</FailureAlert> : null}
 
               <Button
                 type="submit"

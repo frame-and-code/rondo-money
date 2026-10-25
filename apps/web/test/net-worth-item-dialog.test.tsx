@@ -157,8 +157,7 @@ describe('writing down something owned or owed', () => {
     await userEvent.type(nameField(), 'Garage');
     await userEvent.type(amountField(), '100-200');
 
-    expect(screen.getByText(en['netWorth.amountNegative'])).toBeInTheDocument();
-    expect(screen.queryByText(en['newAccount.balanceNegative'])).not.toBeInTheDocument();
+    expect(screen.getByText(en['common.amountNegative'])).toBeInTheDocument();
 
     await userEvent.click(save());
 
@@ -226,8 +225,8 @@ describe('a form whose request went wrong', () => {
       const { again } = show({ item: flat, failure });
 
       const alert = screen.getByRole('alert');
-      expect(alert).toHaveTextContent(en['netWorth.failTitle']);
-      expect(alert).toHaveTextContent(en['netWorth.failBody']);
+      expect(alert).toHaveTextContent(en['common.failTitle']);
+      expect(alert).toHaveTextContent(en['common.failLater']);
 
       again({ failure: null });
 

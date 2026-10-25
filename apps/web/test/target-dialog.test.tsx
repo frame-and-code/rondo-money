@@ -218,6 +218,12 @@ describe('the form a goal is set in', () => {
     expect(screen.getByText(en['categories.goalClosing'])).toBeInTheDocument();
   });
 
+  it('says nothing about closing a goal the category does not have', () => {
+    draw();
+
+    expect(screen.queryByText(en['categories.goalClosing'])).not.toBeInTheDocument();
+  });
+
   it('refuses to save a goal of nothing, which the server would refuse anyway', async () => {
     const user = userEvent.setup();
     draw();

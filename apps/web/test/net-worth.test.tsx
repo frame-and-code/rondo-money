@@ -491,7 +491,7 @@ describe('a write the server did not take', () => {
 
     const alert = await screen.findByRole('alert');
 
-    expect(alert).toHaveTextContent(en['netWorth.failTitle']);
+    expect(alert).toHaveTextContent(en['common.failTitle']);
     expect(alert.closest('[data-slot="dialog-content"]')).not.toBeNull();
     expect(screen.getByLabelText(en['netWorth.nameLabel'])).toHaveValue('Garage');
     await waitFor(() => expect(reads).toBe(2));
@@ -504,7 +504,7 @@ describe('a write the server did not take', () => {
     await userEvent.click(await screen.findByRole('button', { name: en['netWorth.addAsset'] }));
     await fillAndSave('Garage', '100');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(en['netWorth.failBody']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['common.failLater']);
     expect(reads).toBe(1);
     expect(screen.getByLabelText(en['netWorth.nameLabel'])).toBeDisabled();
 
@@ -522,7 +522,7 @@ describe('a write the server did not take', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: en['netWorth.delete'] }));
     await userEvent.click(await screen.findByRole('button', { name: en['netWorth.delete'] }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(en['netWorth.failTitle']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['common.failTitle']);
 
     await userEvent.click(screen.getByRole('button', { name: en['netWorth.delete'] }));
 

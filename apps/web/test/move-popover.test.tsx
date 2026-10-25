@@ -732,7 +732,7 @@ describe('the key the move is written under', () => {
 
     const notice = await within(surface()).findByRole('alert');
 
-    expect(notice).toHaveTextContent(ru['categories.failTitle']);
+    expect(notice).toHaveTextContent(ru['common.failTitle']);
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
@@ -905,7 +905,7 @@ describe('the key the move is written under', () => {
     const notice = await screen.findByRole('alert');
     const tile = screen.getByTestId('available-Продукты').closest('[data-slot="category-tile"]');
 
-    expect(notice).toHaveTextContent(ru['categories.failTitle']);
+    expect(notice).toHaveTextContent(ru['common.failTitle']);
     await waitFor(() => expect(tile).toHaveAttribute('data-failed', 'true'));
   });
 
@@ -1039,7 +1039,7 @@ describe('on a phone', () => {
 
     const notice = await within(drawer).findByRole('alert');
 
-    expect(notice).toHaveTextContent(ru['categories.failTitle']);
+    expect(notice).toHaveTextContent(ru['common.failTitle']);
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 });

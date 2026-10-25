@@ -50,6 +50,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { readAnotherBudget, useAdmittedState } from '@/components/onboarding-gate';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
@@ -643,9 +644,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                 ) : null}
 
                 {failed && !nameTaken ? (
-                  <p role="alert" className="text-destructive text-sm">
-                    {t('newBudget.submitFailed')}
-                  </p>
+                  <FailureAlert>{t('newBudget.submitFailed')}</FailureAlert>
                 ) : null}
 
                 <Button

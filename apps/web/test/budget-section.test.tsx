@@ -228,8 +228,8 @@ describe('the budget section of settings', () => {
       await user.click(save());
 
       const alert = await screen.findByRole('alert');
-      expect(alert).toHaveTextContent(en['settings.budgetFailedTitle']);
-      expect(alert).toHaveTextContent(en['settings.budgetFailed']);
+      expect(alert).toHaveTextContent(en['common.failTitle']);
+      expect(alert).toHaveTextContent(en['common.failLater']);
       expect(await nameField()).toHaveValue('Family');
       expect(within(list()).getByText('Household')).toBeInTheDocument();
       expect(within(list()).queryByText('Family')).not.toBeInTheDocument();
@@ -246,7 +246,7 @@ describe('the budget section of settings', () => {
       await user.click(save());
 
       expect(await screen.findByText(en['settings.budgetNameTaken'])).toBeInTheDocument();
-      expect(screen.queryByText(en['settings.budgetFailed'])).not.toBeInTheDocument();
+      expect(screen.queryByText(en['common.failLater'])).not.toBeInTheDocument();
       expect(await nameField()).toHaveValue('Trip');
 
       await user.type(await nameField(), ' 2');
@@ -588,8 +588,8 @@ describe('the budget section of settings', () => {
       await choose(user, 'Trip');
 
       const alert = await within(await screen.findByRole('dialog')).findByRole('alert');
-      expect(alert).toHaveTextContent(en['settings.budgetFailedTitle']);
-      expect(alert).toHaveTextContent(en['settings.budgetFailed']);
+      expect(alert).toHaveTextContent(en['common.failTitle']);
+      expect(alert).toHaveTextContent(en['common.failLater']);
       expect(await confirmButton()).toBeEnabled();
 
       await user.click(await cancelButton());

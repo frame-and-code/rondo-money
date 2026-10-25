@@ -1,12 +1,11 @@
 'use client';
 
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Button } from '@rondo/ui/components/ui/button';
 import { Input } from '@rondo/ui/components/ui/input';
 import { Label } from '@rondo/ui/components/ui/label';
-import { IconAlertCircle } from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
 
@@ -71,13 +70,7 @@ export function EraseDataDialog({
         />
       </div>
 
-      {failed === null ? null : (
-        <Alert variant="destructive">
-          <IconAlertCircle />
-          <AlertTitle>{t(wording.title)}</AlertTitle>
-          <AlertDescription>{t(failed)}</AlertDescription>
-        </Alert>
-      )}
+      {failed === null ? null : <FailureAlert>{t(failed)}</FailureAlert>}
 
       <div className="flex justify-end gap-2">
         <Button

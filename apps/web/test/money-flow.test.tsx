@@ -778,15 +778,13 @@ describe('moving money between two accounts', () => {
     await userEvent.click(await screen.findByRole('option', { name: /Card/ }));
     await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
 
-    expect(await screen.findByText(en['transactions.failTitleTransfer'])).toBeInTheDocument();
+    expect(await screen.findByText(en['common.failTitle'])).toBeInTheDocument();
     expect(transferred).toHaveLength(0);
 
     await userEvent.click(screen.getByRole('button', { name: en['transactions.saveAndMore'] }));
 
     await waitFor(() => expect(transferred).toHaveLength(1));
-    await waitFor(() =>
-      expect(screen.queryByText(en['transactions.failTitleTransfer'])).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByText(en['common.failTitle'])).not.toBeInTheDocument());
     expect(screen.getByTestId('entry-flash')).toBeInTheDocument();
   });
 });

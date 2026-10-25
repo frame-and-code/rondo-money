@@ -11,16 +11,16 @@ import {
 } from '@rondo/api-client/react-query';
 import { parseMoney } from '@rondo/types';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Button } from '@rondo/ui/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@rondo/ui/components/ui/card';
 import { Label } from '@rondo/ui/components/ui/label';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconAlertCircle, IconLoader } from '@tabler/icons-react';
+import { IconLoader } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
@@ -208,13 +208,7 @@ export function BalancesForm() {
                 }}
                 className="flex flex-col gap-6"
               >
-                {failed.size > 0 ? (
-                  <Alert variant="destructive">
-                    <IconAlertCircle />
-                    <AlertTitle>{t('balances.failedTitle')}</AlertTitle>
-                    <AlertDescription>{t('balances.failed')}</AlertDescription>
-                  </Alert>
-                ) : null}
+                {failed.size > 0 ? <FailureAlert>{t('common.failLater')}</FailureAlert> : null}
 
                 {money === null
                   ? null

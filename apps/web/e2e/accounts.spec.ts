@@ -41,7 +41,7 @@ test('the accounts screen carries the balances, takes another account and rename
 
   await page.getByRole('button', { name: en['transactions.addAccount'] }).click();
   await page.getByLabel(en['newAccount.nameLabel'], { exact: true }).fill(ADDED);
-  await page.getByLabel(en['newAccount.balanceLabel'], { exact: true }).fill('250');
+  await page.getByRole('textbox', { name: en['newAccount.balanceLabel'], exact: true }).fill('250');
   await page.getByRole('button', { name: en['accounts.save'] }).click();
 
   await expect(panel.getByText(ADDED)).toBeVisible();
@@ -80,7 +80,7 @@ test('an account is archived once it holds nothing, and leaves the screen for go
 
   await page.getByRole('button', { name: en['transactions.addAccount'] }).click();
   await page.getByLabel(en['newAccount.nameLabel'], { exact: true }).fill(ADDED);
-  await page.getByLabel(en['newAccount.balanceLabel'], { exact: true }).fill('250');
+  await page.getByRole('textbox', { name: en['newAccount.balanceLabel'], exact: true }).fill('250');
   await page.getByRole('button', { name: en['accounts.save'] }).click();
 
   await expect(panel.getByText(ADDED)).toBeVisible();

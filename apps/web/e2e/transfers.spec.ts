@@ -35,7 +35,7 @@ test('money moves between two accounts, changes amount, and comes back when the 
 
   await page.getByRole('button', { name: en['transactions.addAccount'] }).click();
   await page.getByLabel(en['newAccount.nameLabel'], { exact: true }).fill(SAVINGS);
-  await page.getByLabel(en['newAccount.balanceLabel'], { exact: true }).fill('0');
+  await page.getByRole('textbox', { name: en['newAccount.balanceLabel'], exact: true }).fill('0');
   await page.getByRole('button', { name: en['accounts.save'] }).click();
 
   const panel = page.getByTestId('account-panel');
