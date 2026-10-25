@@ -1,5 +1,6 @@
 ---
 description: 'Shepherd a pull request to merge-ready: poll CI, Sonar and the AI reviewers, fix what they find, and stop when everything is green.'
+disable-model-invocation: true
 argument-hint: '[PR number, defaults to the current branch]'
 ---
 
@@ -15,8 +16,8 @@ Everything runs on its own on every `pull_request` event; nothing needs to be su
 
 - **`gate`** is the aggregate status check, and the only one the branch ruleset requires.
   Which jobs it needs is in [`docs/ci.md`](../../docs/ci.md); do not keep a second list here.
-- **`Sonar analysis`** is part of `gate` since F1.12 was finished, and on a pull request it
-  really does block. The job waits for the quality gate verdict
+- **`Sonar analysis`** is part of `gate`, and on a pull request it really does block. The job
+  waits for the quality gate verdict
   (`-Dsonar.qualitygate.wait=true`) rather than reporting success as soon as the analysis
   uploads. The wait is switched off on pushes to `main`, so a green `gate` there says
   nothing about Sonar's **verdict** (see [`docs/ci.md`](../../docs/ci.md)). On the PR

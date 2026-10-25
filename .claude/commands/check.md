@@ -55,14 +55,13 @@ mv packages/types/dist /tmp/dist-aside && pnpm lint --force; mv /tmp/dist-aside 
 command would otherwise miss. The job list lives in [`docs/ci.md`](../../docs/ci.md) and is
 not restated here. Without them this command can pass while CI fails. `sonar` is the one
 member with no local counterpart. The analysis needs a token and the server's verdict, so
-this command cannot anticipate it. On a pull request it blocks (F1.12), so a green run here
+this command cannot anticipate it. On a pull request it blocks, so a green run here
 is not a promise that `gate` will be green.
 
-`build` is not covered by `typecheck`. [`docs/ci.md`](../../docs/ci.md)
-records the case where a TypeScript bump left `apps/api` unbuildable while `tsc --noEmit`
-stayed green. `scan:secrets` needs gitleaks on `PATH`; if it is missing, say so rather than
+`build` is not covered by `typecheck`: `tsc --noEmit` can stay green while `apps/api` no
+longer builds. `scan:secrets` needs gitleaks on `PATH`; if it is missing, say so rather than
 reporting a gate that did not run. `./codegen.sh check` is the `static` job's contract drift
-step (F1.5). It regenerates `apps/api/openapi.json` and the client and fails if either moved,
+step. It regenerates `apps/api/openapi.json` and the client and fails if either moved,
 which on a clean tree means the committed pair is stale. It runs last because everything
 above has already warmed turbo's cache for it.
 

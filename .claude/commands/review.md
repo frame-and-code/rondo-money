@@ -19,8 +19,7 @@ This does not replace the generic pass (`/code-review`, CodeRabbit on the PR). I
 is the pass that knows ADR-005 exists.
 
 **Invoking this command _is_ the explicit request to spawn subagents**, whether you type it
-or reach it through [`/prep-pr`](prep-pr.md), which calls it at step 5. Say so plainly,
-because the opposite reading has cost real reviews. A session may carry a standing
+or reach it through [`/prep-pr`](prep-pr.md), which calls it at step 5. A session may carry a standing
 instruction like "do not use subagents unless the user requested it", and an agent that reads
 it narrowly does the review itself, reports a weaker pass, and the user finds out afterwards.
 Asking for a command whose definition is a fan-out asks for the fan-out; there is no version
@@ -166,10 +165,9 @@ report; a bar applied silently reads as a bar not applied.
 ## How many rounds, and on what
 
 Fixing changes the code, so a second round reads something that did not exist when the first
-one ran. And **the fix is where the next bug lives**. This is not theory: the round that
-closed a bare `git push` on `main` is the round that left `git push origin HEAD` open, and the
-round that closed that one left `+main` open. Each was found by the next round, never by
-re-reading the same round's output.
+one ran. And **the fix is where the next bug lives**: a fix that closes one spelling of a
+problem is read by the next round for the spellings it left open, and re-reading the same
+round's output finds none of them.
 
 So **run again after fixing, and stop at the first round that produces nothing which changes
 the code.** NICE TO HAVE findings are not a reason to go again. Past that point what improves
@@ -177,14 +175,12 @@ is the reviewers' taste, not the change. Three rounds is the ceiling; needing a 
 the change is too large to review, not that the reviewing is going well.
 
 **For code with an adversarial surface, such as a guard, a parser or a validator, that rule
-is wrong and this repository has the scar to prove it.** A reviewer told to find a way past a
-guard always finds one, so "stop when a round finds nothing" never fires: eight rounds over
-`guard-bash` each produced real bypasses, and the eighth was still finding them. What ends it
-is the code's own charter. That guard refuses **accidents**, and its header lists the
-deliberate spellings it does not cover, so the stop condition is **"no findings of the class
-the code is for"**. An accident still getting through means keep going; another way for
-someone determined does not. Write that class down in the code before the first round, or
-there is nothing to stop against.
+is wrong.** A reviewer told to find a way past a guard always finds one, so "stop when a round
+finds nothing" never fires. What ends it is the code's own charter. A guard here refuses
+**accidents**, and its header lists the deliberate spellings it does not cover, so the stop
+condition is **"no findings of the class the code is for"**. An accident still getting through
+means keep going; another way for someone determined does not. Write that class down in the
+code before the first round, or there is nothing to stop against.
 
 Nothing loops this command, and deliberately so: a round can only follow a fix. The loop lives
 one level up, in [`/prep-pr`](prep-pr.md) step 5, which fixes what blocks and rounds again on

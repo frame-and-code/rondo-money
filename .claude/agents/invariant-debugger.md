@@ -13,8 +13,9 @@ failing test, query the local database read-only and grep the tree. You never ch
 make it pass: a test that demands the wrong behaviour is reported as such, with what it should
 assert instead, and the decision belongs to whoever spawned you.
 
-**You start with no conversation history.** The project rules are in your context; the failure
-is not. Read the counterexample first, then the two pieces of code the equation is made of:
+**You start with no conversation history.** The always-on rules are in your context, and
+`.claude/rules/api.md` arrives when you open a file under `apps/api`; the failure is not.
+Read the counterexample first, then the two pieces of code the equation is made of:
 [`budget-view.query.ts`](../../apps/api/src/budget-view/budget-view.query.ts) and the spec that
 failed. The formulas themselves live in
 [`budget-invariant`](../skills/budget-invariant/SKILL.md), which is where you check what a

@@ -1,6 +1,7 @@
 ---
 description: 'After the PR is merged, close the Notion ticket: tick the AC/DoD items that have evidence, correct what the work made false, record the PRs and the decisions, put ✅ in the title, return to a fresh main and delete the merged local branches.'
-argument-hint: '<F1.x ticket or Notion link>'
+disable-model-invocation: true
+argument-hint: '<ticket, e.g. F7.3, or its Notion link>'
 ---
 
 # Close ticket
@@ -81,16 +82,17 @@ user has merged, never to make an unmerged ticket look finished.
      cannot show: the option that was rejected and why, the boundary that was drawn, the rule
      that changed. That is what [specs.md](../rules/specs.md) means by the ticket being the
      decision memory, and it is the difference between a ticket that stops the next agent from
-     re-deciding and one that only says the work is done. Keep it concise - 2-3 sentences max.
+     re-deciding and one that only says the work is done. Write only what the diff cannot
+     show, and stop there.
 6. **Tick the title** once every item is either ticked or explicitly declared out of scope
    by the user: prefix the page title with `✅ ` (the phase page lists child titles, so
    nothing else needs editing). It is idempotent, and a title already carrying ✅ is left
    alone.
 7. **Leave the ground ready for the next ticket.** The work has landed, so this branch is
-   history, and a session that stays on it starts the next feature there. That is not
-   hypothetical: the rule in `CLAUDE.md` about branching only fires when the branch _is_
-   `main`, so a flow that never returns there never fires it, and F1.11 duly began on F1.9's
-   branch. Closing the ticket is the moment the ground can be cleared, so clear it:
+   history, and a session that stays on it starts the next feature there: the rule in
+   `CLAUDE.md` about branching only fires when the branch _is_ `main`, so a flow that never
+   returns there never fires it. Closing the ticket is the moment the ground can be cleared,
+   so clear it:
 
    **Ask before you move, not after.** `git switch main` followed by a `git pull` that cannot
    fast-forward leaves the session standing on a diverged `main`, the one state this step

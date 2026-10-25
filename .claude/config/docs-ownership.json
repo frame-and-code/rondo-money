@@ -3,7 +3,7 @@
   "owned": [
     {
       "phrase": "top-level operations only",
-      "owner": ".claude/rules/security.md",
+      "owner": ".claude/rules/api.md",
       "note": "the scoping extension's boundary (ADR-005)"
     },
     {
@@ -41,7 +41,7 @@
     },
     {
       "phrase": "reaching every budget the caller owns",
-      "owner": ".claude/rules/security.md",
+      "owner": ".claude/rules/api.md",
       "note": "which operations the budget filter covers, and which take their budget from the payload"
     },
     {
@@ -51,22 +51,22 @@
     },
     {
       "phrase": "refuses outside a mutation",
-      "owner": ".claude/rules/security.md",
+      "owner": ".claude/rules/api.md",
       "note": "what the raw repository refuses inside a mutation and outside one"
     },
     {
       "phrase": "while a mutation is open",
-      "owner": ".claude/rules/security.md",
+      "owner": ".claude/rules/api.md",
       "note": "which client a mutation's work may use, and what the other one refuses"
     },
     {
       "phrase": "a result that describes a write it never made",
-      "owner": ".claude/rules/architecture.md",
+      "owner": ".claude/rules/api.md",
       "note": "why a repeat carrying a different request is refused rather than replayed"
     },
     {
       "phrase": "changed inside a mutation like anything else",
-      "owner": ".claude/rules/architecture.md",
+      "owner": ".claude/rules/api.md",
       "note": "what an exempt model may still do; it moved once already"
     }
   ],

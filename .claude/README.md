@@ -9,7 +9,8 @@ each kind of file may cost and what it may contain:
 
 | Layer                  | Loaded                            | Contains                                           |
 | ---------------------- | --------------------------------- | -------------------------------------------------- |
-| `CLAUDE.md` + `rules/` | every turn, via `@` imports       | short imperatives: what must and must not happen   |
+| `CLAUDE.md` + `rules/` | every turn                        | short imperatives: what must and must not happen   |
+| `rules/` with `paths:` | while work touches matching files | how one workspace implements those imperatives     |
 | `commands/`            | when the user types `/name`       | workflow entry points                              |
 | `skills/`              | when a task matches one           | how a recurring piece of work is actually done     |
 | `agents/`              | when one is spawned               | a reviewer's brief, read with no session history   |
@@ -36,18 +37,24 @@ committed as `turbo` leaves it. Nothing imports it into the context;
 
 ## Rules (`rules/`)
 
-All seven are imported by [`CLAUDE.md`](../CLAUDE.md) and are therefore in context on every
-turn. They stay short deliberately. Detail belongs in `docs/`, and the rule links to it.
+Claude Code loads every file in this directory on its own; `CLAUDE.md` imports none of them.
+A rule without a `paths:` frontmatter is in context on every turn, so those stay short:
+imperatives and pointers, with the mechanism in the workspace rule, a skill or `docs/`. A rule
+with `paths:` loads only while the session works with a matching file, which is where the
+detail goes. A subagent gets the same treatment: the always-on rules at spawn, a workspace
+rule once it opens a file there.
 
-| Rule                                             | Holds                                                                                                          |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| [`model-integrity.md`](rules/model-integrity.md) | do not invent version-dependent detail; open questions go to the user; report what actually happened           |
-| [`architecture.md`](rules/architecture.md)       | layer boundaries (ADR-002), no derived state, one write point (ADR-006), money/dates, invariant 5.5            |
-| [`security.md`](rules/security.md)               | tenant isolation without RLS (ADR-005), secrets in a public repository (ADR-003), destructive DB commands      |
-| [`code-quality.md`](rules/code-quality.md)       | types, errors, comments, dead code, dependencies                                                               |
-| [`specs.md`](rules/specs.md)                     | Notion as the decision memory; docs corrected in the same PR; one home per fact, and writing that cannot drift |
-| [`testing.md`](rules/testing.md)                 | tests written with the feature; invariant 5.5 and cross-tenant tests are mandatory                             |
-| [`communication.md`](rules/communication.md)     | English in git, Russian in chat; git is the user's call; branch/commit/PR wording; the writing rule            |
+| Rule                                             | Holds                                                                                                                                  |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [`model-integrity.md`](rules/model-integrity.md) | do not invent version-dependent detail; open questions go to the user; report what actually happened                                   |
+| [`architecture.md`](rules/architecture.md)       | layer boundaries (ADR-002), no derived state, one write point (ADR-006), money/dates, invariant 5.5                                    |
+| [`security.md`](rules/security.md)               | tenant isolation without RLS (ADR-005), secrets in a public repository (ADR-003), destructive DB commands                              |
+| [`code-quality.md`](rules/code-quality.md)       | types, errors, comments, dead code, dependencies                                                                                       |
+| [`specs.md`](rules/specs.md)                     | Notion as the decision memory; docs corrected in the same PR; one home per fact, and writing that cannot drift                         |
+| [`testing.md`](rules/testing.md)                 | tests written with the feature; invariant 5.5 and cross-tenant tests are mandatory                                                     |
+| [`communication.md`](rules/communication.md)     | English in git, Russian in chat; the unslop pass over everything written; git is the user's call; branch/commit/PR wording             |
+| [`api.md`](rules/api.md)                         | `apps/api`, `packages/db`, `packages/types`: how a request reaches a row, the single write point, how an endpoint reaches the contract |
+| [`web.md`](rules/web.md)                         | `apps/web`, `packages/ui`, `packages/api-client`: the one API path, where a screen's look comes from, gates and the address            |
 
 ## Skills (`skills/`)
 
@@ -86,19 +93,19 @@ as much as a real one.
 
 ## Commands (`commands/`)
 
-| Command                | Does                                                                                                                                                                                                                  |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/dev`                 | brings up Postgres, migrations, api and web, and reports what is actually running                                                                                                                                     |
-| `/check`               | the CI gate locally, `.claude/` included; the step list lives in [`check.md`](commands/check.md)                                                                                                                      |
-| `/plan <F1.x>`         | reads the ticket and returns an ordered, file-scoped plan; writes no code                                                                                                                                             |
-| `/grill-me <task>`     | interviews until the scope is shared, then hands off to `/plan`                                                                                                                                                       |
-| `/tdd <F1.x>`          | derives the test scenarios from the ticket, stops for confirmation, writes them red, then implements until green                                                                                                      |
-| `/sync-docs`           | sweeps the documentation the change touched and corrects what went stale                                                                                                                                              |
-| `/review [target]`     | fans four parallel reviewer subagents over the branch, verifies each finding, reports; changes nothing                                                                                                                |
-| `/phase-done <F1.x>`   | verifies the ticket's Acceptance Criteria one by one, runs the gate, drafts the PR text                                                                                                                               |
-| `/prep-pr <F1.x>`      | tidies, gates, sweeps the docs, reviews in rounds and fixes what blocks, then commits, pushes and opens the PR; a third round still blocking stops it before any git action                                           |
-| `/babysit-pr [#N]`     | polls CI, Sonar and the AI reviewers on an open PR, fixes what they find, stops at merge-ready                                                                                                                        |
-| `/close-ticket <F1.x>` | after the merge: ticks the ticket's AC/DoD with evidence, corrects what the work made false, records the PRs and the decisions, puts ✅ in the title, returns to a fresh `main` and deletes the merged local branches |
+| Command                  | Does                                                                                                                                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/dev`                   | brings up Postgres, migrations, api and web, and reports what is actually running                                                                                                                                     |
+| `/check`                 | the CI gate locally, `.claude/` included; the step list lives in [`check.md`](commands/check.md)                                                                                                                      |
+| `/plan <ticket>`         | reads the ticket and returns an ordered, file-scoped plan; writes no code                                                                                                                                             |
+| `/grill-me <task>`       | interviews until the scope is shared, then hands off to `/plan`                                                                                                                                                       |
+| `/tdd <ticket>`          | derives the test scenarios from the ticket, stops for confirmation, writes them red, then implements until green                                                                                                      |
+| `/sync-docs`             | sweeps the documentation the change touched and corrects what went stale                                                                                                                                              |
+| `/review [target]`       | fans four parallel reviewer subagents over the branch, verifies each finding, reports; changes nothing                                                                                                                |
+| `/phase-done <ticket>`   | verifies the ticket's Acceptance Criteria one by one, runs the gate, drafts the PR text                                                                                                                               |
+| `/prep-pr <ticket>`      | tidies, gates, sweeps the docs, reviews in rounds and fixes what blocks, then commits, pushes and opens the PR; a third round still blocking stops it before any git action                                           |
+| `/babysit-pr [#N]`       | polls CI, Sonar and the AI reviewers on an open PR, fixes what they find, stops at merge-ready                                                                                                                        |
+| `/close-ticket <ticket>` | after the merge: ticks the ticket's AC/DoD with evidence, corrects what the work made false, records the PRs and the decisions, puts ✅ in the title, returns to a fresh `main` and deletes the merged local branches |
 
 ## Hooks (`hooks/`)
 
@@ -150,7 +157,7 @@ run unattended, which is not what "which tools may run without asking" was meant
 point. Rules resolve deny → ask → allow, first match wins, and specificity never changes that
 order. So a deny cannot carry an exception, and denying `pnpm dlx` would have taken
 `pnpm dlx shadcn@latest add` (the documented way to add a UI component, see
-[`architecture.md`](rules/architecture.md)) away for good. An `ask` beats the broad
+[`web.md`](rules/web.md)) away for good. An `ask` beats the broad
 `Bash(pnpm *)` the same way a deny would, so nothing fetches and executes a package
 unattended, four reviewers spawned with no user turn between them least of all. The
 legitimate use stays one confirmation away. Reach for `ask` whenever the answer is "not
@@ -176,10 +183,14 @@ a link list nobody can justify becomes a link list nobody opens.
 
 ## Extending
 
-- **New rule:** add `rules/<name>.md`, keep it to imperatives, and import it from
-  `CLAUDE.md`. An unimported rule is a file nobody reads.
+- **New rule:** add `rules/<name>.md`; Claude Code picks it up without an import. Keep an
+  always-on rule to imperatives. Anything that matters only inside one workspace gets a
+  `paths:` frontmatter and goes in the rule for that workspace, so the rest of the session
+  never pays for it.
 - **New command:** add `commands/<name>.md` with `description` (and `argument-hint` when it
-  takes one). Give it an explicit output shape; that is what makes commands composable.
+  takes one). Give it an explicit output shape; that is what makes commands composable. One
+  that commits, pushes or writes to Notion also carries `disable-model-invocation: true`, so
+  only the user can start it.
 - **New agent:** add `agents/<name>.md` with `name` and `description` in the frontmatter,
   and write the body for a reader who has none of this session's context. That is the
   point of spawning one.

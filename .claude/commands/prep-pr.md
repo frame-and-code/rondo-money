@@ -1,6 +1,7 @@
 ---
 description: Tidy what the change touched, prove it is ready (gate, docs sweep, a review round), then commit with a convention-shaped message, push, and open the PR.
-argument-hint: '<F1.x ticket>'
+disable-model-invocation: true
+argument-hint: '<ticket, e.g. F7.3>'
 ---
 
 # Prep PR
@@ -57,8 +58,8 @@ git-ignored `settings.local.json`.
      reported at its grade and left alone: nothing settled it either way, and rewriting code on
      a claim nobody could confirm is how a review round starts costing more than it returns. An
      unproven finding schedules no round of its own. **The fix is where the next bug
-     lives** (`review.md` records the chain that proved it), so the round after a fix is the
-     one worth having, and it is the reason this loop exists rather than a single pass;
+     lives** ([`/review`](review.md) says why), so the round after a fix is the one worth
+     having, and it is the reason this loop exists rather than a single pass;
    - **the loop runs at most three rounds.** Stop at the first round that finds nothing
      blocking. A blocking finding in the third round is fixed like any other, and then the run
      **stops before the commit**, reaching no git action at all: that fix goes unreviewed, and
@@ -86,9 +87,8 @@ git-ignored `settings.local.json`.
    **After the gate and the sweep, and that ordering is load-bearing.** After the gate, because
    there is no sense spending four agents on a tree that does not compile; after the tidy-up
    and the sweep, because the first round must read a tree whose prose is already corrected.
-   The other order was tried and is worse in both directions. The prose reviewer would find the
-   sentences the sweep had not corrected yet and block on them, so the run never reached the
-   step written to fix exactly that. This step does change the tree, which is why a round that
+   Reviewed before the sweep, the prose reviewer blocks on sentences the sweep is about to
+   correct, and the run never reaches the step written for them. This step does change the tree, which is why a round that
    fixed something is followed by another one rather than by the commit.
 
 6. **Stage what is about to ship.** `git status` and the diff: stage what belongs to the
@@ -101,7 +101,10 @@ git-ignored `settings.local.json`.
 8. **Push** the branch: `git push -u origin <branch>`.
 9. **Open the PR** with `gh pr create`, base `main`, title and description in the shape
    communication.md defines: What & why always; Changes / Testing / Notes only when they
-   add something the diff does not say.
+   add something the diff does not say. Run the `unslop` skill over the title and the body
+   before `gh pr create`, or apply the list in [communication](../rules/communication.md) by
+   hand when the skill is not installed; the description is the one text on the PR nothing
+   else checks.
 10. **Report** in the shape below, short and readable: what changed for the app, what was
     committed, and the gate as a table. Merging stays with the user (`gh pr merge` is
     deny-listed); [`/babysit-pr`](babysit-pr.md) takes it from here, and after the merge

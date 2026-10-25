@@ -1,6 +1,6 @@
 ---
 description: 'Build a ticket test-first: derive the scenarios, confirm them, write them red, then implement until green.'
-argument-hint: '<F1.x ticket, or a task description>'
+argument-hint: '<ticket, e.g. F7.3, or a task description>'
 ---
 
 # TDD
@@ -29,8 +29,8 @@ cannot, because the code it would mirror does not exist yet.
    picks an answer.
 
 2. **If the ticket carries a design, open it now.** Duplicated here from
-   [architecture](../rules/architecture.md), which owns it, because skipping it costs a rebuild
-   of the whole screen and every test written against it:
+   [web](../rules/web.md), which owns it and loads with the web workspaces, because skipping it
+   costs a rebuild of the whole screen and every test written against it:
    - the design is the specification, and a plan describing it is a summary rather than a
      replacement. Read every artboard and take the copy, the fields, their order, the states
      and the responsive behaviour from there;
@@ -41,8 +41,8 @@ cannot, because the code it would mirror does not exist yet.
      settings;
    - only if it is in neither, compose it from the primitives, never from bare markup;
    - **the control plan comes before the first component file**, one line per control naming
-     its artboard, its width and its primitive, as [architecture](../rules/architecture.md)
-     asks. It is written into the session, not kept in your head: an unwritten plan is how a
+     its artboard, its width and its primitive, as [web](../rules/web.md) asks. It is
+     written into the session, not kept in your head: an unwritten plan is how a
      hand-rolled picker reaches review.
 
    A scenario written against a screen you invented passes against that invention.

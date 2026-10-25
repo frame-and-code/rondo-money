@@ -6,10 +6,11 @@
 # CLAUDE.md
 
 Context for Claude in the **Rondo Money** repository: what this project is, where things
-live, and which rules are in force. The rules themselves live in
-[`.claude/rules/`](.claude/rules/) and are imported below;
-[`.claude/README.md`](.claude/README.md) holds the full map of the agent setup, its commands,
-hooks and permissions.
+live, and which rules are in force. The rules live in [`.claude/rules/`](.claude/rules/) and
+Claude Code loads them itself: the ones without a `paths:` frontmatter on every turn, and
+[`api.md`](.claude/rules/api.md) and [`web.md`](.claude/rules/web.md) only while work touches
+the workspace each describes.
+[`.claude/README.md`](.claude/README.md) holds the full map of the agent setup.
 
 ## Project
 
@@ -27,60 +28,46 @@ is a stack in the browser, and the single write point stays for atomicity).
 ## Structure
 
 - `apps/web` is Next.js (App Router): the app shell and its navigation, the sign-in screen and
-  the onboarding screens, which sit outside the shell and end by opening it on Categories.
-  A gate in each group's layout decides which of the three a visitor gets, so setup cannot be
-  skipped, and the first screen opens again only to make another budget. Behind the shell sit
-  its sections, which
-  [`apps/web/README.md`](apps/web/README.md) describes.
-- `apps/api` is NestJS (REST). Skeleton F0.4.
-- `packages/db` holds the Prisma schema and migrations (F0.4); it grows incrementally per phase.
+  the onboarding screens, which sit outside the shell and end by opening it on Categories. A
+  gate in each group's layout decides which of the three a visitor gets. Behind the shell sit
+  its sections, which [`apps/web/README.md`](apps/web/README.md) describes.
+- `apps/api` is NestJS (REST).
+- `packages/db` holds the Prisma schema and migrations; it grows one migration per phase.
 - `packages/types` holds the shared DTOs, money as `bigint` in minor units with the
   currency's digit count, and calendar dates. It emits to `dist`, so `apps/api` can call its
-  functions and not merely name their types.
-- `packages/api-client` is the typed API client generated from the NestJS OpenAPI spec
-  (F1.4, ADR-002); `apps/web` consumes it instead of hand-written fetch.
-- `packages/config` holds the shared configs: eslint / tsconfig / prettier (F0.2).
-- `packages/ui` holds the UI components, shadcn/ui (F0.6).
+  functions.
+- `packages/api-client` is the typed API client generated from the NestJS OpenAPI spec;
+  `apps/web` consumes it instead of hand-written fetch.
+- `packages/config` holds the shared configs: eslint / tsconfig / prettier.
+- `packages/ui` holds the UI components, shadcn/ui.
 - `.claude/` holds the agent setup: rules, commands, skills, agents, hooks, permissions.
 
 ## Commands
 
 `pnpm install`; then `pnpm dev | build | lint | typecheck | test`, and `pnpm format`. The
 first five are Turborepo tasks across all workspaces, the last is Prettier at the root.
-`pnpm dev` also watches `@rondo/types` and `@rondo/db`, so a change in a package reaches the
-running app without a manual build ([`apps/api/README.md`](apps/api/README.md)).
+`pnpm dev` also watches `@rondo/types` and `@rondo/db`
+([`apps/api/README.md`](apps/api/README.md)).
 
 `format:check`, `scan:secrets`, `lint:hooks`, `test:hooks` and `lint:docs` are root scripts
-rather than turbo tasks, and every one of them is a gate step. A turbo task only reaches a
-workspace, and `.claude/` is not one. The gate's own membership lives in
+rather than turbo tasks, and every one of them is a gate step, because a turbo task only
+reaches a workspace and `.claude/` is not one. The gate's membership lives in
 [`docs/ci.md`](docs/ci.md).
 
 In a session: `/dev` brings the local stack up, `/check` runs the gate, `/plan` decomposes a
-ticket, `/grill-me` clarifies a fuzzy one, `/sync-docs` sweeps the documentation, `/review`
-runs parallel reviewers with clean context over the branch, `/phase-done` closes a ticket out,
-`/prep-pr` commits, pushes and opens the PR, and `/babysit-pr` shepherds it to merge-ready.
-`/tdd` builds a ticket test-first, in this order: scenarios, your confirmation, red tests, then
-the implementation that turns them green. `/close-ticket` records the merged result in the
-Notion ticket, the PRs that carried it and the decisions it took, not only the ✅. It then
-returns you to a fresh `main` and deletes the local branches it just closed, so the next ticket
-starts where it should.
+ticket, `/grill-me` clarifies a fuzzy one, `/tdd` builds a ticket test-first, `/sync-docs`
+sweeps the documentation, `/review` runs parallel reviewers with clean context over the
+branch, `/phase-done` closes a ticket out, `/prep-pr` commits, pushes and opens the PR,
+`/babysit-pr` shepherds it to merge-ready, and `/close-ticket` records the merged result in
+Notion, returns you to a fresh `main` and deletes the local branches it closed.
 
 ## Process
 
 We work feature by feature from "Plan v1", which owns the phase list. Stay inside the scope
-of the ticket you were given. Don't pull in work from later features, and don't widen the
-ticket into cleanups it never opened. If a session starts without a ticket, ask which one
-before writing code. No phase number here on purpose. It belongs to the ticket and the
-branch, which move on their own, and a stale one in this file reads as current.
-When in doubt, check against the PRD (RU, source of truth) and the ADRs. A green `main`
-ships to the dev environment on Railway; see [`docs/deploy-railway.md`](docs/deploy-railway.md).
+of the ticket you were given: no work from later features, no cleanups the ticket never
+opened. If a session starts without a ticket, ask which one before writing code. When in
+doubt, check against the PRD (RU) and the ADRs. A green `main` ships to the dev environment on
+Railway ([`docs/deploy-railway.md`](docs/deploy-railway.md)).
 
-## Rules
-
-@.claude/rules/model-integrity.md
-@.claude/rules/architecture.md
-@.claude/rules/security.md
-@.claude/rules/code-quality.md
-@.claude/rules/specs.md
-@.claude/rules/testing.md
-@.claude/rules/communication.md
+When compacting, keep the ticket, the list of files changed, the gate commands that ran and
+their results, and any decision the user took in the session.

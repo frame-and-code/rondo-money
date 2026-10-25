@@ -12,7 +12,7 @@ one, so a service that reaches for `SCOPED_PRISMA` directly fails its first test
 shipping. Two models sit beside that list on purpose: a user's settings, whose row their own
 first read creates, and the idempotency key, which this service writes on its own transaction.
 Being exempt does not bar them from one, which
-[architecture](../../rules/architecture.md) states.
+[api](../../rules/api.md) states.
 
 Read [`mutation.service.ts`](../../../apps/api/src/mutations/mutation.service.ts) alongside
 this file. It is one method, and every rule below is visible in it.
@@ -47,7 +47,7 @@ const created = await this.mutations.run(
 
 - **`work` receives the transactional client and uses nothing else.** Any query issued on the
   injected `SCOPED_PRISMA` inside `work` is **refused**, a read as much as a write; what the
-  boundary between the two clients covers is in [security](../../rules/security.md).
+  boundary between the two clients covers is in [api](../../rules/api.md).
 - **Await everything, because the boundary stops at the mutation's own lifetime.** A promise
   the mutation never awaits settles after the marker is gone, and from there the two halves
   part company. A write is still refused, by the guard that keeps a domain write inside a
@@ -85,7 +85,7 @@ const created = await this.mutations.run(
   it does not recognise, and let it propagate.
 - **Raw SQL takes the transactional client**: `raw.execute(build, tx)` to write,
   `raw.query(build, tx)` to read. Inside a mutation neither runs without it, and what each
-  refuses is in [security](../../rules/security.md).
+  refuses is in [api](../../rules/api.md).
 
 ## The idempotency key
 
@@ -101,7 +101,7 @@ What the service does with it, and why the order matters:
    stored result cannot be read inside it. The service reads it afterwards, on a separate
    query, and answers with it.
 4. A repeat whose request fingerprint differs is refused rather than replayed, for the reason
-   [architecture](../../rules/architecture.md) gives.
+   [api](../../rules/api.md) gives.
 
 A mutation that fails leaves no key row, so an honest retry goes through. And a user who
 enters the same coffee twice gets two transactions, which is correct: the key catches a
@@ -149,7 +149,7 @@ rows. Two things it does not do, and one of them is now the schema's job:
   rather than a leak. A mutation that wants a friendlier answer than a foreign-key error reads
   the parent first, inside the transaction;
 - it does not reach a nested write, which keeps whatever owner the payload put on the nested
-  rows. Where that boundary runs is [security](../../rules/security.md); write the rows as
+  rows. Where that boundary runs is [api](../../rules/api.md); write the rows as
   separate operations inside the same transaction and it does not arise.
 
 A write that creates rows takes its budget from the payload and needs no active budget in the

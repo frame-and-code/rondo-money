@@ -78,7 +78,7 @@ so no part of the scope is baked in.
 ## The tests that are not optional
 
 - **Cross-tenant**, because this path bypasses the extension: another caller's rows reach
-  neither the totals nor the list ([security](../../rules/security.md)). Copy
+  neither the totals nor the list ([api](../../rules/api.md)). Copy
   [`budget-view-scoping.integration.spec.ts`](../../../apps/api/test/budget-view-scoping.integration.spec.ts).
 - **The second budget of the same caller**, which the cross-tenant test cannot catch, in that
   same file.
@@ -90,4 +90,4 @@ so no part of the scope is baked in.
 
 A raw statement issued on the pooled client would land beside the mutation's transaction rather
 than in it. So inside one, pass the client the mutation handed you, and what each half refuses
-is in [security](../../rules/security.md).
+is in [api](../../rules/api.md).

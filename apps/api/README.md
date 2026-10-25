@@ -31,7 +31,7 @@ raw-SQL repository, which supplies the caller and leaves the budget to the servi
 [`src/moves`](src/moves) is a write and nothing else, and it is the only code that **writes**
 the `Assignment` table through Prisma; `src/budget-view` reads it, as any aggregate may. The
 erase in [`src/me`](src/me) deletes those rows with raw SQL, which the lint restriction cannot
-see; [architecture](../../.claude/rules/architecture.md) owns why that one exception stands.
+see; [api](../../.claude/rules/api.md) owns why that one exception stands.
 [`src/categories`](src/categories) is the fourth shape, writes that first have to read an
 aggregate: hiding a category is refused while it still holds money over any month, so the
 mutation locks the rows with `SELECT ... FOR UPDATE` and sums them inside its own transaction.
@@ -347,7 +347,7 @@ definition both callers share.
   suite for that reason.
 - **A handler gets into the spec** through a response class with `@ApiProperty`, named in the
   handler's success decorator; see
-  [`.claude/rules/architecture.md`](../../.claude/rules/architecture.md), which owns which
+  [`.claude/rules/api.md`](../../.claude/rules/api.md), which owns which
   decorator that is. An interface produces an endpoint with no documented shape at all.
 - **`@Public()` also opens the endpoint in the spec.** It stamps the `x-public` extension, and
   [`buildOpenApiDocument`](src/openapi/document.ts) clears the document-wide bearer requirement
@@ -439,18 +439,18 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    operation it has no rule for (`groupBy`, `aggregate`) is **refused unless the caller scoped
    it explicitly**; see [`user-scoping.extension.ts`](src/prisma/user-scoping.extension.ts).
    `PrismaService` itself is the unscoped client underneath; where it may be imported is a lint
-   rule, and the list lives in [security](../../.claude/rules/security.md).
+   rule, and the list lives in [api](../../.claude/rules/api.md).
    - A model a budget owns is filtered by `budgetId` too, on reads and on the writes that pick
      out existing rows. Which operations those are, and why the ones that create rows take
      their budget from the payload instead, is in
-     [security](../../.claude/rules/security.md).
+     [api](../../.claude/rules/api.md).
    - Note on types: a write payload names an owner, and the extension overwrites it with the
      verified caller, which is what makes naming the wrong one harmless. Which of Prisma's two
      write inputs still asks for `userId`, and why the other one must be left alone, is in
-     [security](../../.claude/rules/security.md). On a read a caller passes no `userId` at all;
+     [api](../../.claude/rules/api.md). On a read a caller passes no `userId` at all;
      `SCOPED_PRISMA` adds the filter. That is a property of _this_ client, not permission to
      use another one.
-   - Its boundary is in [security](../../.claude/rules/security.md) too: what the extension
+   - Its boundary is in [api](../../.claude/rules/api.md) too: what the extension
      does and does not cover, and what a nested write has to do about it. The domain models
      carry relations, so a nested write is reachable now, and it keeps whatever owner the
      caller put on the nested rows. A transfer's two legs sidestep the question: they are two
@@ -483,15 +483,15 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    out. `SCOPED_PRISMA` is what domain code injects and `MUTATOR_PRISMA` is what the mutation
    opens its transaction from; which operations the first one refuses, and the lint rule that
    keeps the second out of domain code, are in
-   [security](../../.claude/rules/security.md).
+   [api](../../.claude/rules/api.md).
    `MUTATION_GUARDED_MODELS` in [`scoped-models.ts`](src/prisma/scoped-models.ts) says which
    models it covers, and the exemption list beside it holds the two the mutator does not force
    itself on: a user's settings, whose row their own first read creates, and the idempotency
    key, which the mutation service writes on its own transaction. Being exempt does not bar
-   them from a mutation, which [architecture](../../.claude/rules/architecture.md) states. A new
+   them from a mutation, which [api](../../.claude/rules/api.md) states. A new
    model has to be classified before
    its tests pass. What the raw path may do inside a
-   mutation, and what it refuses, is in [security](../../.claude/rules/security.md).
+   mutation, and what it refuses, is in [api](../../.claude/rules/api.md).
 
 What none of this can prove is that a raw statement actually _uses_ the scope it was given;
 that is what the cross-tenant tests are for, on every phase that adds an aggregate.
