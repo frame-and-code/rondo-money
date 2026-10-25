@@ -467,6 +467,7 @@ export const ru = {
   'transactions.deleteTitle': 'Удалить «{{payee}}» на {{amount}}?',
   'transactions.deleteExpenseTitle': 'Удалить расход на {{amount}}?',
   'transactions.deleteIncomeTitle': 'Удалить доход на {{amount}}?',
+  'transactions.deleteAdjustmentTitle': 'Удалить сверку на {{amount}}?',
   'transactions.archivedAccount': 'Архивный счёт',
   'transactions.deleteAccountLine': 'На счёт «{{name}}» вернётся {{amount}}',
   'transactions.deleteArchivedLine': 'На архивный счёт вернётся {{amount}}',

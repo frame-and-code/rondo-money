@@ -150,6 +150,14 @@ describe('confirming that a record goes', () => {
     );
   });
 
+  it('asks about a reconciliation as one, whichever way it moved the balance', () => {
+    show({ id: 'r6', type: 'ADJUSTMENT', amount: '2500', categoryId: null, payee: null });
+
+    expect(screen.getByRole('heading')).toHaveTextContent(
+      said(en['transactions.deleteAdjustmentTitle'], { amount: money.format(2500n) }),
+    );
+  });
+
   it('says a refused delete went wrong, not that a save did', () => {
     render(
       <LocaleProvider initialLocale="en">

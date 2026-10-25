@@ -56,6 +56,9 @@ export function DeleteTransactionDialog({
 
   const title = (): string => {
     if (transfer) return t('transactions.deleteTransferTitle', { amount: shown });
+    if (record.type === 'ADJUSTMENT') {
+      return t('transactions.deleteAdjustmentTitle', { amount: shown });
+    }
     if (record.payee === null) {
       return t(spending ? 'transactions.deleteExpenseTitle' : 'transactions.deleteIncomeTitle', {
         amount: shown,

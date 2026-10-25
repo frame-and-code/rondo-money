@@ -469,6 +469,7 @@ export const en: Record<MessageKey, string> = {
   'transactions.deleteTitle': 'Delete "{{payee}}" for {{amount}}?',
   'transactions.deleteExpenseTitle': 'Delete the expense of {{amount}}?',
   'transactions.deleteIncomeTitle': 'Delete the income of {{amount}}?',
+  'transactions.deleteAdjustmentTitle': 'Delete the reconciliation of {{amount}}?',
   'transactions.archivedAccount': 'Archived account',
   'transactions.deleteAccountLine': '{{amount}} goes back to "{{name}}"',
   'transactions.deleteArchivedLine': '{{amount}} goes back to an archived account',
