@@ -183,7 +183,7 @@ describe('a group dropped onto another', () => {
 
     drop('g2', 'g1');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(ru['categories.failTitle']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(ru['common.failTitle']);
   });
 
   it('ignores a drop that names no group, and one that lands on itself', async () => {
@@ -227,7 +227,7 @@ describe('reopening a closed card that the server refuses', () => {
     );
     await user.click(screen.getByRole('button', { name: ru['categories.paidReopen'] }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(ru['categories.failTitle']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(ru['common.failTitle']);
     expect(screen.getByTestId('category-tile-Аренда')).toHaveAttribute('data-paid', 'true');
   });
 });

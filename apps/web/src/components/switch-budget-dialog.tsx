@@ -2,6 +2,7 @@
 
 import { Button } from '@rondo/ui/components/ui/button';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { useTranslations } from '@/i18n/locale-context';
 
 export function SwitchBudgetDialog({
@@ -28,12 +29,7 @@ export function SwitchBudgetDialog({
         <p className="text-muted-foreground text-sm">{t('settings.budgetSwitchBody')}</p>
       </div>
 
-      {failed ? (
-        <p role="alert" className="text-destructive text-sm">
-          <span className="font-medium">{t('settings.budgetFailedTitle')}</span>{' '}
-          {t('settings.budgetFailed')}
-        </p>
-      ) : null}
+      {failed ? <FailureAlert>{t('common.failLater')}</FailureAlert> : null}
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="outline" disabled={busy} onClick={onCancel}>

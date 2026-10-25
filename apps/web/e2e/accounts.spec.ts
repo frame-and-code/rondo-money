@@ -41,7 +41,7 @@ test('the accounts screen carries the balances, takes another account and rename
 
   await page.getByRole('button', { name: en['transactions.addAccount'] }).click();
   await page.getByLabel(en['newAccount.nameLabel'], { exact: true }).fill(ADDED);
-  await page.getByLabel(en['newAccount.balanceLabel'], { exact: true }).fill('250');
+  await page.getByRole('textbox', { name: en['newAccount.balanceLabel'], exact: true }).fill('250');
   await page.getByRole('button', { name: en['accounts.save'] }).click();
 
   await expect(panel.getByText(ADDED)).toBeVisible();
@@ -80,7 +80,7 @@ test('an account is archived once it holds nothing, and leaves the screen for go
 
   await page.getByRole('button', { name: en['transactions.addAccount'] }).click();
   await page.getByLabel(en['newAccount.nameLabel'], { exact: true }).fill(ADDED);
-  await page.getByLabel(en['newAccount.balanceLabel'], { exact: true }).fill('250');
+  await page.getByRole('textbox', { name: en['newAccount.balanceLabel'], exact: true }).fill('250');
   await page.getByRole('button', { name: en['accounts.save'] }).click();
 
   await expect(panel.getByText(ADDED)).toBeVisible();
@@ -131,7 +131,7 @@ test('a declared balance settles the difference, and the pool follows it', async
   });
 
   await onboard(page);
-  await expect(readyToAssign(page)).toHaveText('1,000 $');
+  await expect(readyToAssign(page)).toHaveText('$1,000');
 
   await page.goto('/accounts');
 
@@ -146,7 +146,7 @@ test('a declared balance settles the difference, and the pool follows it', async
 
   await form.getByLabel(en['accounts.reconcileLabel'], { exact: true }).fill('880');
   await expect(
-    form.getByText(en['accounts.reconcileWillWrite'].replace('{{amount}}', '-120 $')),
+    form.getByText(en['accounts.reconcileWillWrite'].replace('{{amount}}', '-$120')),
   ).toBeVisible();
 
   await page.getByRole('button', { name: en['accounts.reconcileConfirm'] }).click();
@@ -156,5 +156,5 @@ test('a declared balance settles the difference, and the pool follows it', async
   await expect(page.getByText(en['transactions.adjustment'])).toBeVisible();
 
   await page.getByRole('link', { name: en['nav.categories'] }).click();
-  await expect(readyToAssign(page)).toHaveText('880 $');
+  await expect(readyToAssign(page)).toHaveText('$880');
 });

@@ -210,7 +210,7 @@ describe('the settings screen', () => {
     await user.click(languageTrigger());
     await user.click(await screen.findByRole('option', { name: localeLabels.pl }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(en['settings.saveFailed']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['common.failLater']);
     expect(within(languageTrigger()).getByText(localeLabels.en)).toBeInTheDocument();
   });
 

@@ -32,6 +32,7 @@ const draw = (
     busy?: boolean;
     digits?: number;
     currency?: string;
+    locale?: string;
   } = {},
 ) =>
   render(
@@ -40,7 +41,7 @@ const draw = (
         category={{ id: 'c1', name: 'Vacation' }}
         target={options.target ?? null}
         month="2026-08"
-        money={moneyOf('ru-RU', options.currency ?? 'PLN', options.digits ?? 2)}
+        money={moneyOf(options.locale ?? 'ru-RU', options.currency ?? 'PLN', options.digits ?? 2)}
         failed={options.failed ?? null}
         busy={options.busy ?? false}
         onSave={onSave}
@@ -100,6 +101,25 @@ describe('the form a goal is set in', () => {
     expect(
       screen.queryByRole('button', { name: en['categories.goalDueMonth'] }),
     ).not.toBeInTheDocument();
+  });
+
+  it('puts the symbol on the side of the amount its locale writes it', async () => {
+    const user = userEvent.setup();
+
+    draw({ locale: 'en-US', currency: 'USD' });
+    await pick(user, en['categories.goalRefillTo']);
+    const leading = screen.getByText('$');
+    expect(
+      amountField().compareDocumentPosition(leading) & Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
+    cleanup();
+
+    draw({ locale: 'pl-PL', currency: 'PLN' });
+    await pick(user, en['categories.goalRefillTo']);
+    const trailing = screen.getByText('zł');
+    expect(
+      amountField().compareDocumentPosition(trailing) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('sends each kind with the amount that was typed, in minor units', async () => {
@@ -196,6 +216,12 @@ describe('the form a goal is set in', () => {
       expect.objectContaining({ kind: null, amount: '', dueMonth: null }),
     );
     expect(screen.getByText(en['categories.goalClosing'])).toBeInTheDocument();
+  });
+
+  it('says nothing about closing a goal the category does not have', () => {
+    draw();
+
+    expect(screen.queryByText(en['categories.goalClosing'])).not.toBeInTheDocument();
   });
 
   it('refuses to save a goal of nothing, which the server would refuse anyway', async () => {

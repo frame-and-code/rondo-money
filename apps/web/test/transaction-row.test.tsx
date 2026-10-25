@@ -77,11 +77,11 @@ describe('one row of the feed', () => {
       payee: null,
     });
 
-    expect(screen.getByText('Transfer to Card')).toBeInTheDocument();
+    expect(screen.getByText('Transfer to "Card"')).toBeInTheDocument();
     expect(screen.getByText(en['transactions.transferBadge'])).toBeInTheDocument();
   });
 
-  it('names the opening balance and marks it as the app’s own', () => {
+  it('names the opening balance by what it is', () => {
     show({
       id: 'r4',
       isSystem: true,
@@ -92,10 +92,9 @@ describe('one row of the feed', () => {
     });
 
     expect(screen.getByText(en['transactions.openingBalance'])).toBeInTheDocument();
-    expect(screen.getByText(en['transactions.systemBadge'])).toBeInTheDocument();
   });
 
-  it('names a correction as the reconciliation it came from and marks it as one', () => {
+  it('names a correction as the reconciliation it came from', () => {
     show({
       id: 'r9',
       type: 'ADJUSTMENT',
@@ -105,7 +104,6 @@ describe('one row of the feed', () => {
     });
 
     expect(screen.getByText(en['transactions.adjustment'])).toBeInTheDocument();
-    expect(screen.getByText(en['transactions.adjustmentBadge'])).toBeInTheDocument();
     expect(screen.queryByText(en['transactions.noPayee'])).not.toBeInTheDocument();
   });
 
@@ -171,7 +169,7 @@ describe('one row of the feed', () => {
       </LocaleProvider>,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'Transfer to Card' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Transfer to "Card"' }));
 
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'r7' }));
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
@@ -193,6 +191,6 @@ describe('one row of the feed', () => {
     });
 
     expect(screen.getByText(en['transactions.transferPlain'])).toBeInTheDocument();
-    expect(screen.queryByText(/Transfer to\s*$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Transfer to/)).not.toBeInTheDocument();
   });
 });

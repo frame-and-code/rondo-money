@@ -287,7 +287,7 @@ describe('the opening balances of a copied budget', () => {
     await user.type(await field('Наличные'), '20');
     await user.click(done());
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(ru['balances.failed']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(ru['common.failLater']);
     expect(replace).not.toHaveBeenCalled();
     expect(await field('Наличные')).toHaveValue('20');
 

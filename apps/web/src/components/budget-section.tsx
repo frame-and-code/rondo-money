@@ -6,7 +6,6 @@ import {
   budgetsControllerListQueryKey,
   budgetsControllerRenameMutation,
 } from '@rondo/api-client/react-query';
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Badge } from '@rondo/ui/components/ui/badge';
 import { Button } from '@rondo/ui/components/ui/button';
 import {
@@ -38,11 +37,11 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@rondo/ui/components/ui/tooltip';
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconAlertCircle } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useState, type FormEvent } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { NewBudgetDialog } from '@/components/new-budget-dialog';
 import { readAnotherBudget } from '@/components/onboarding-gate';
 import { SettingsSection } from '@/components/settings-section';
@@ -177,13 +176,7 @@ export function BudgetSection() {
 
   return (
     <SettingsSection title={t('settings.budget')} note={t('settings.budgetNote')}>
-      {renameFailed && !renameTaken ? (
-        <Alert variant="destructive">
-          <IconAlertCircle />
-          <AlertTitle>{t('settings.budgetFailedTitle')}</AlertTitle>
-          <AlertDescription>{t('settings.budgetFailed')}</AlertDescription>
-        </Alert>
-      ) : null}
+      {renameFailed && !renameTaken ? <FailureAlert>{t('common.failLater')}</FailureAlert> : null}
 
       <form onSubmit={saveName} className="flex flex-col gap-2">
         <Label htmlFor="settings-budget-name">{t('settings.budgetName')}</Label>
@@ -322,7 +315,10 @@ export function BudgetSection() {
         </Drawer>
       ) : (
         <Dialog open={startingOpen} onOpenChange={setStartingOpen}>
-          <DialogContent className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]">
+          <DialogContent
+            closeLabel={t('common.close')}
+            className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]"
+          >
             <DialogTitle className="sr-only">{t('settings.budget')}</DialogTitle>
             <DialogDescription className="sr-only">{t('settings.budgetNote')}</DialogDescription>
             <NewBudgetDialog activeId={active.id} />
@@ -346,7 +342,7 @@ export function BudgetSection() {
       ) : (
         <Dialog open={askingOpen} onOpenChange={(next: boolean) => (next ? null : closeAsking())}>
           <DialogContent
-            showCloseButton={!activate.isPending}
+            closeLabel={activate.isPending ? undefined : t('common.close')}
             className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]"
           >
             <DialogTitle className="sr-only">{t('settings.budgets')}</DialogTitle>

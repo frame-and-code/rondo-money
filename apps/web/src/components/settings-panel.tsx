@@ -168,8 +168,8 @@ export function SettingsPanel() {
       {failed ? (
         <Alert variant="destructive">
           <IconAlertCircle />
-          <AlertTitle>{t('settings.saveFailedTitle')}</AlertTitle>
-          <AlertDescription>{t('settings.saveFailed')}</AlertDescription>
+          <AlertTitle>{t('common.failTitle')}</AlertTitle>
+          <AlertDescription>{t('common.failLater')}</AlertDescription>
           <Button
             type="button"
             variant="ghost"
@@ -258,7 +258,7 @@ export function SettingsPanel() {
           onOpenChange={(next: boolean) => (next ? null : closeErasing())}
         >
           <DialogContent
-            showCloseButton={!erase.isPending && !leaving}
+            closeLabel={erase.isPending || leaving ? undefined : t('common.close')}
             className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]"
           >
             <DialogTitle className="sr-only">{t('settings.danger')}</DialogTitle>

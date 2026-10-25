@@ -17,8 +17,10 @@ export interface Amount {
 export interface MoneyReader {
   format: (minor: bigint) => string;
   plain: (minor: bigint) => string;
+  pairStart: (minor: bigint) => string;
   typed: (minor: bigint) => string;
   symbol: string;
+  symbolFirst: boolean;
   digits: number;
   currency: string;
   marks: Marks;
@@ -191,67 +193,53 @@ export function readAmount(
   return { minor: total, fault: null, typed: true, partial };
 }
 
+function numericLiteral(decimal: string): `${number}` {
+  if (!isNumericLiteral(decimal)) {
+    throw new Error(`Not a decimal amount: ${decimal}`);
+  }
+
+  return decimal;
+}
+
+function isNumericLiteral(value: string): value is `${number}` {
+  return /^-?\d+(?:\.\d+)?$/.test(value);
+}
+
 export function moneyOf(
   locale: string,
   currency: string,
   digits: number,
   options: { signed?: boolean } = {},
 ): MoneyReader {
+  const shape = {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    trailingZeroDisplay: 'stripIfInteger',
+  } as const;
   const formatter = new Intl.NumberFormat(locale, {
+    ...shape,
     style: 'currency',
     currency,
     currencyDisplay: 'narrowSymbol',
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
   });
-  const bare = new Intl.NumberFormat(locale, {
-    style: 'decimal',
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-    useGrouping: true,
-  });
-  const roundBare = new Intl.NumberFormat(locale, {
-    style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-    useGrouping: true,
-  });
-  const scale = 10n ** BigInt(digits);
-  const whole = (minor: bigint): boolean => minor % scale === 0n;
+  const bare = new Intl.NumberFormat(locale, { ...shape, style: 'decimal' });
   const parts = formatter.formatToParts(0);
   const symbolAt = parts.findIndex((part) => part.type === 'currency');
+  const numberAt = parts.findIndex((part) => part.type === 'integer');
   const symbol = parts[symbolAt]?.value ?? currency;
+  const symbolFirst = symbolAt !== -1 && symbolAt < numberAt;
   const marks = marksOf(locale);
-  const withSymbol = (amount: string): string => `${amount}\u00a0${symbol}`;
-  const exactly = (minor: bigint): string => {
-    const decimal = toDecimalString(minor, digits);
-
-    return digits > 0 && whole(minor) ? decimal.slice(0, -(digits + 1)) : decimal;
-  };
+  const decimalOf = (minor: bigint): `${number}` => numericLiteral(toDecimalString(minor, digits));
+  const format = (minor: bigint): string => formatter.format(decimalOf(minor));
+  const plain = (minor: bigint): string => bare.format(decimalOf(minor));
 
   return {
-    format: (minor) => {
-      const decimal = toDecimalString(minor, digits);
-      const asNumber = Number(decimal);
-
-      if (asNumber.toFixed(digits) !== decimal) {
-        return withSymbol(exactly(minor));
-      }
-
-      return withSymbol(whole(minor) ? roundBare.format(asNumber) : bare.format(asNumber));
-    },
-    plain: (minor) => {
-      const decimal = toDecimalString(minor, digits);
-      const asNumber = Number(decimal);
-
-      if (asNumber.toFixed(digits) !== decimal) {
-        return exactly(minor);
-      }
-
-      return whole(minor) ? roundBare.format(asNumber) : bare.format(asNumber);
-    },
+    format,
+    plain,
+    pairStart: (minor) => (symbolFirst ? format(minor) : plain(minor)),
     typed: (minor) => toDecimalString(minor, digits).replace('.', marks.decimal),
     symbol,
+    symbolFirst,
     digits,
     currency,
     marks,

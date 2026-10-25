@@ -217,7 +217,7 @@ not a level of the app at all. Tests are written together with the feature:
 
 ```bash
 pnpm test               # all levels (turbo run test)
-pnpm test:unit          # unit (Jest + fast-check)
+pnpm test:unit          # unit (Jest + fast-check; node --test for the lint rules)
 pnpm test:integration   # API ↔ Postgres (needs docker compose up -d)
 pnpm test:e2e           # Playwright: browser → web → api → Postgres
 pnpm test:hooks         # the guard hooks and the docs checker (bash; no DB, no keys)

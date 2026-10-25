@@ -77,7 +77,7 @@ export function TargetPanel({
           <Line label={t('categories.goalAssignThisMonth')}>
             <TargetMark covered={needed === 0n} />
             <span className={cn('font-semibold', monthTarget - needed < 0n && 'text-destructive')}>
-              {money.plain(monthTarget - needed)}
+              {money.pairStart(monthTarget - needed)}
             </span>
             <span className="text-muted-foreground">{' / '}</span>
             <span className="text-muted-foreground font-normal">{money.format(monthTarget)}</span>

@@ -1,17 +1,17 @@
 'use client';
 
 import { parseMoney, type CalendarDate, type NetWorthItemDto } from '@rondo/types';
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Button } from '@rondo/ui/components/ui/button';
 import { Calendar } from '@rondo/ui/components/ui/calendar';
 import { Input } from '@rondo/ui/components/ui/input';
 import { Label } from '@rondo/ui/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@rondo/ui/components/ui/popover';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconAlertCircle, IconCalendar, IconCheck, IconLoader, IconX } from '@tabler/icons-react';
+import { IconCalendar, IconCheck, IconLoader, IconX } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
@@ -151,7 +151,6 @@ export function NetWorthItemDialog({
           amount={amount}
           read={read}
           disabled={held}
-          negativeText={t('netWorth.amountNegative')}
           className={FIELD}
           onChange={(next) => {
             setAmount(next);
@@ -204,13 +203,7 @@ export function NetWorthItemDialog({
         </Popover>
       </div>
 
-      {failure === null ? null : (
-        <Alert variant="destructive">
-          <IconAlertCircle />
-          <AlertTitle>{t('netWorth.failTitle')}</AlertTitle>
-          <AlertDescription>{t('netWorth.failBody')}</AlertDescription>
-        </Alert>
-      )}
+      {failure === null ? null : <FailureAlert>{t('common.failLater')}</FailureAlert>}
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>

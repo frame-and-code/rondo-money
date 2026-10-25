@@ -6,7 +6,7 @@
   "extends": "@rondo/config/tsconfig/base.json",
   "compilerOptions": {
     "jsx": "preserve",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2023.Intl"],
     "allowJs": true,
     "incremental": true,
     // The base keeps emit off (typecheck-only); Next/Turbopack does the real build.

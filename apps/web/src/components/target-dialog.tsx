@@ -24,6 +24,7 @@ import { cn } from '@rondo/ui/lib/utils';
 import { IconSelector } from '@tabler/icons-react';
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
 import { monthLabel } from '@/lib/budget-month';
@@ -126,6 +127,12 @@ export function TargetDialog({
     });
   };
 
+  const symbol = (
+    <InputGroupAddon align={money.symbolFirst ? 'inline-start' : 'inline-end'}>
+      <InputGroupText>{money.symbol}</InputGroupText>
+    </InputGroupAddon>
+  );
+
   return (
     <form
       noValidate
@@ -159,14 +166,17 @@ export function TargetDialog({
       </RadioGroup>
 
       {kind === null ? (
-        <p className="bg-muted/60 text-muted-foreground rounded-2xl px-3.5 py-3 text-xs leading-snug">
-          {t('categories.goalClosing')}
-        </p>
+        target === null ? null : (
+          <p className="bg-muted/60 text-muted-foreground rounded-2xl px-3.5 py-3 text-xs leading-snug">
+            {t('categories.goalClosing')}
+          </p>
+        )
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor={amountField}>{t('categories.goalAmount')}</Label>
             <InputGroup>
+              {money.symbolFirst ? symbol : null}
               <InputGroupInput
                 id={amountField}
                 inputMode="decimal"
@@ -174,9 +184,7 @@ export function TargetDialog({
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
               />
-              <InputGroupAddon align="inline-end">
-                <InputGroupText>{money.symbol}</InputGroupText>
-              </InputGroupAddon>
+              {money.symbolFirst ? null : symbol}
             </InputGroup>
           </div>
 
@@ -238,11 +246,7 @@ export function TargetDialog({
         </div>
       )}
 
-      {failed === null ? null : (
-        <p role="alert" className="text-destructive text-sm">
-          {t(failed)}
-        </p>
-      )}
+      {failed === null ? null : <FailureAlert>{t(failed)}</FailureAlert>}
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel}>

@@ -1,10 +1,10 @@
 'use client';
 
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Button } from '@rondo/ui/components/ui/button';
-import { IconAlertCircle, IconTrash, IconX } from '@tabler/icons-react';
+import { IconTrash, IconX } from '@tabler/icons-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { type NetWorthEntity } from '@/components/net-worth-item-dialog';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
@@ -60,13 +60,7 @@ export function DeleteNetWorthItemDialog({
         <li>{t('netWorth.deleteNote')}</li>
       </ul>
 
-      {failed ? (
-        <Alert variant="destructive">
-          <IconAlertCircle />
-          <AlertTitle>{t('netWorth.failTitle')}</AlertTitle>
-          <AlertDescription>{t('netWorth.failBody')}</AlertDescription>
-        </Alert>
-      ) : null}
+      {failed ? <FailureAlert>{t('common.failLater')}</FailureAlert> : null}
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel}>

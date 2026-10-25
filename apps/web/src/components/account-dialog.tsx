@@ -8,6 +8,7 @@ import { cn } from '@rondo/ui/lib/utils';
 import { IconCash, IconCreditCard, IconLoader } from '@tabler/icons-react';
 import { useEffect, useId, useRef, useState } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { MoneyField } from '@/components/money-field';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
@@ -183,9 +184,7 @@ export function AccountDialog({
       )}
 
       {failure === null ? null : (
-        <p role="alert" className="text-destructive text-sm">
-          {t(frozen ? 'accounts.saveLost' : 'accounts.saveFailed')}
-        </p>
+        <FailureAlert>{t(frozen ? 'accounts.saveLost' : 'common.failLater')}</FailureAlert>
       )}
 
       <div className="flex flex-wrap justify-end gap-2">

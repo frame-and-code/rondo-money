@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { interpolate, LocaleProvider, useTranslations } from '@/i18n/locale-context';
 import { localeLabels, locales } from '@/i18n/locales';
-import { messages } from '@/i18n/messages';
+import { messages, plurals } from '@/i18n/messages';
 import { pl } from '@/i18n/messages/pl';
 import { ru } from '@/i18n/messages/ru';
 import {
@@ -190,6 +190,36 @@ describe('the dictionaries', () => {
         expect(value.trim()).not.toBe('');
       }
     }
+  });
+
+  it('fills the same placeholders in every language, so no translation drops a name or an amount', () => {
+    const named = (value: string): string[] =>
+      [...value.matchAll(/\{\{(\w+)\}\}/g)].map(([, name]) => name ?? '').sort();
+
+    const reference = new Map(Object.entries(messages.ru));
+    const drifted = locales.flatMap((locale) =>
+      Object.entries(messages[locale])
+        .filter(([key, value]) => named(value).join() !== named(reference.get(key) ?? '').join())
+        .map(([key]) => `${locale}: ${key}`),
+    );
+
+    expect(drifted).toEqual([]);
+  });
+
+  it('fills the same placeholders in every form of a counted phrase', () => {
+    const named = (value: string): string[] =>
+      [...value.matchAll(/\{\{(\w+)\}\}/g)].map(([, name]) => name ?? '').sort();
+    const reference = new Map(Object.entries(plurals.ru).map(([key, forms]) => [key, forms.other]));
+
+    const drifted = locales.flatMap((locale) =>
+      Object.entries(plurals[locale]).flatMap(([key, forms]) =>
+        Object.entries(forms)
+          .filter(([, form]) => named(form).join() !== named(reference.get(key) ?? '').join())
+          .map(([category]) => `${locale}: ${key}.${category}`),
+      ),
+    );
+
+    expect(drifted).toEqual([]);
   });
 });
 

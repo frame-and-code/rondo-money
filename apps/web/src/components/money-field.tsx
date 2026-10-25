@@ -21,7 +21,6 @@ export function MoneyField({
   disabled = false,
   hint,
   preview,
-  negativeText,
   className,
 }: {
   id: string;
@@ -32,19 +31,20 @@ export function MoneyField({
   disabled?: boolean;
   hint?: string;
   preview?: (amount: bigint) => string;
-  negativeText?: string;
   className?: string;
 }) {
-  const { t } = useTranslations();
+  const { t, tn } = useTranslations();
 
   const faultMessage = (): string => {
-    if (read.fault === 'negative') return negativeText ?? t('newAccount.balanceNegative');
+    if (read.fault === 'negative') return t('common.amountNegative');
     if (read.fault === 'shape') return t('newAccount.balanceDigitsOnly');
 
     return money.digits === 0
-      ? t('newAccount.balanceNoDecimals', { currency: money.currency })
-      : t('newAccount.balanceDecimals', { currency: money.currency, digits: money.digits });
+      ? t('newAccount.balanceNoDecimals')
+      : tn('newAccount.balanceDecimals', money.digits, { digits: money.digits });
   };
+
+  const symbol = <span className="text-muted-foreground shrink-0 text-sm">{money.symbol}</span>;
 
   return (
     <>
@@ -54,6 +54,7 @@ export function MoneyField({
           read.fault !== null && 'border-destructive ring-destructive/20 ring-3',
         )}
       >
+        {money.symbolFirst ? symbol : null}
         <InputGroupInput
           id={id}
           inputMode="decimal"
@@ -63,7 +64,7 @@ export function MoneyField({
           disabled={disabled}
           className="h-auto min-w-0 flex-1 p-0 text-sm"
         />
-        <span className="text-muted-foreground shrink-0 text-sm">{money.symbol}</span>
+        {money.symbolFirst ? null : symbol}
       </div>
 
       {read.fault === null ? null : (

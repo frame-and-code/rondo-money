@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
@@ -30,6 +31,7 @@ import { type MessageKey } from '@/i18n/messages';
 import { accountNamePlaceholderKey } from '@/i18n/name-placeholders';
 import { moneyOf } from '@/lib/money';
 import { onboardingRoute } from '@/lib/onboarding';
+import { APP_MARK, APP_NAME } from '@/lib/sections';
 
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
@@ -131,9 +133,9 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
         <div className="flex flex-col gap-8">
           <div className="hidden items-center gap-2 md:flex">
             <span className="bg-primary text-primary-foreground grid size-8 place-items-center rounded-lg text-sm font-semibold">
-              R
+              {APP_MARK}
             </span>
-            <span className="font-semibold">Rondo Money</span>
+            <span className="font-semibold">{APP_NAME}</span>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -229,11 +231,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
                 />
               </div>
 
-              {failed ? (
-                <p role="alert" className="text-destructive text-sm">
-                  {t('newAccount.submitFailed')}
-                </p>
-              ) : null}
+              {failed ? <FailureAlert>{t('newAccount.submitFailed')}</FailureAlert> : null}
 
               <Button
                 type="submit"

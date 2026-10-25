@@ -136,72 +136,129 @@ describe('arithmetic a person types instead of doing it in their head', () => {
   });
 });
 
-describe('showing an amount', () => {
-  it('renders at the digit count the budget was frozen at, not at two', () => {
-    expect(moneyOf('ru-RU', 'JPY', 0).format(1000n).replace(/\s/gu, ' ')).toContain('1 000');
-    expect(moneyOf('ru-RU', 'JPY', 0).format(1000n)).not.toContain(',00');
-    expect(moneyOf('ru-RU', 'PLN', 2).format(1050n)).toContain('10,50');
-    expect(moneyOf('ru-RU', 'KWD', 3).format(1005n)).toContain('1,005');
+const LOCALES = ['en-US', 'ru-RU', 'pl-PL'] as const;
+
+describe('showing an amount the way its locale writes money', () => {
+  it.each([
+    ['en-US', 'USD', 2, 1234567n, '$12,345.67'],
+    ['en-US', 'EUR', 2, 1234567n, '€12,345.67'],
+    ['en-US', 'JPY', 0, 12345n, '¥12,345'],
+    ['en-US', 'KWD', 3, 12345678n, 'KWD 12,345.678'],
+    ['en-US', 'CLF', 4, 12345n, 'CLF\u00a01.2345'],
+    ['en-US', 'USD', 2, -5n, '-$0.05'],
+    ['ru-RU', 'USD', 2, 1234567n, '12 345,67 $'],
+    ['ru-RU', 'EUR', 2, 1234567n, '12 345,67 €'],
+    ['ru-RU', 'JPY', 0, 12345n, '12 345 ¥'],
+    ['ru-RU', 'KWD', 3, 12345678n, '12 345,678 KWD'],
+    ['pl-PL', 'USD', 2, 1234567n, '12 345,67 $'],
+    ['pl-PL', 'EUR', 2, 1234567n, '12 345,67 €'],
+    ['pl-PL', 'JPY', 0, 12345n, '12 345 ¥'],
+    ['pl-PL', 'KWD', 3, 12345678n, '12 345,678 KWD'],
+  ] as const)('writes %s %s at %i digits as %#', (locale, currency, digits, minor, expected) => {
+    expect(moneyOf(locale, currency, digits).format(minor)).toBe(expected);
   });
 
-  it('keeps the sign of an amount that went below zero', () => {
-    expect(moneyOf('ru-RU', 'PLN', 2).format(-1250n)).toMatch(/^[−-]/);
+  it.each([
+    ['en-US', '-$1,250.50'],
+    ['ru-RU', '-1 250,50 $'],
+    ['pl-PL', '-1250,50 $'],
+  ] as const)('puts the minus where %s puts it', (locale, expected) => {
+    expect(moneyOf(locale, 'USD', 2, { signed: true }).format(-125050n)).toBe(expected);
   });
 
-  it('reads back with its own marks what it just rendered', () => {
+  it.each([
+    ['en-US', '$1,234.56', '1,234.56'],
+    ['ru-RU', '1 234,56 $', '1 234,56'],
+    ['pl-PL', '1234,56 $', '1234,56'],
+  ] as const)(
+    'groups four digits the way %s does, with or without the symbol',
+    (locale, shown, bare) => {
+      const money = moneyOf(locale, 'USD', 2);
+
+      expect(money.format(123456n)).toBe(shown);
+      expect(money.plain(123456n)).toBe(bare);
+    },
+  );
+
+  it('renders at the digit count the budget was frozen at, not at the currency default', () => {
+    expect(moneyOf('en-US', 'USD', 3).format(1005n)).toBe('$1.005');
+    expect(moneyOf('ru-RU', 'KWD', 2).format(1050n)).toBe('10,50 KWD');
+  });
+
+  it.each(LOCALES)('reads back in %s what it just rendered, below zero too', (locale) => {
     for (const [currency, digits] of [
-      ['PLN', 2],
+      ['USD', 2],
+      ['EUR', 2],
       ['JPY', 0],
       ['KWD', 3],
     ] as const) {
-      const money = moneyOf('ru-RU', currency, digits, { signed: true });
-      const shown = money.format(-123456n).replace(money.symbol, '').trim();
+      const money = moneyOf(locale, currency, digits, { signed: true });
 
-      expect(money.read(shown).minor).toBe(-123456n);
+      for (const minor of [123456n, -123456n, 12345678n, -5n]) {
+        const shown = money.format(minor).replace(money.symbol, '').trim();
+
+        expect(money.read(shown).minor).toBe(minor);
+      }
     }
   });
 
-  it('does not lose precision on an amount larger than a safe number', () => {
-    const huge = 9_007_199_254_740_993n;
-
-    expect(moneyOf('ru-RU', 'PLN', 2).format(huge)).toContain('90071992547409.93');
-  });
+  it.each([
+    ['en-US', '$90,071,992,547,409.93'],
+    ['ru-RU', '90 071 992 547 409,93 $'],
+  ] as const)(
+    'does not lose a cent in %s on an amount larger than a safe number',
+    (locale, expected) => {
+      expect(moneyOf(locale, 'USD', 2).format(9_007_199_254_740_993n)).toBe(expected);
+    },
+  );
 });
 
 describe('showing an amount with no currency beside it', () => {
   it('keeps the budget digit count rather than falling back to two', () => {
-    expect(moneyOf('ru-RU', 'JPY', 0).plain(1000n)).not.toContain(',');
-    expect(moneyOf('ru-RU', 'PLN', 2).plain(1050n)).toContain('10,50');
-    expect(moneyOf('ru-RU', 'KWD', 3).plain(1005n)).toContain('1,005');
+    expect(moneyOf('ru-RU', 'JPY', 0).plain(1000n)).toBe('1 000');
+    expect(moneyOf('ru-RU', 'PLN', 2).plain(1050n)).toBe('10,50');
+    expect(moneyOf('ru-RU', 'KWD', 3).plain(1005n)).toBe('1,005');
   });
 
-  it('leaves the currency out, so the pair beside it reads as one amount', () => {
+  it('leaves the currency out', () => {
     const money = moneyOf('ru-RU', 'PLN', 2);
 
-    expect(money.plain(2000050n)).not.toContain(money.symbol);
-    expect(money.plain(2000050n).replace(/\s/gu, ' ')).toContain('20 000,50');
+    expect(money.plain(2000050n)).toBe('20 000,50');
+  });
+});
+
+describe('the first amount of a pair that shares one currency', () => {
+  it('leaves the currency to the second where the locale writes it after a number', () => {
+    expect(moneyOf('ru-RU', 'PLN', 2).pairStart(20000n)).toBe('200');
+    expect(moneyOf('pl-PL', 'PLN', 2).pairStart(20000n)).toBe('200');
+  });
+
+  it('names it where the locale writes it first, so the first amount never reads as bare', () => {
+    expect(moneyOf('en-US', 'USD', 2).pairStart(20000n)).toBe('$200');
   });
 });
 
 describe('an amount whose fraction is nothing', () => {
-  it('drops the decimals rather than printing zeros nobody reads', () => {
-    const money = moneyOf('ru-RU', 'PLN', 2);
+  it.each([
+    ['en-US', '$500', '$0'],
+    ['ru-RU', '500 zł', '0 zł'],
+    ['pl-PL', '500 zł', '0 zł'],
+  ] as const)('drops the decimals in %s rather than printing zeros', (locale, whole, zero) => {
+    const currency = locale === 'en-US' ? 'USD' : 'PLN';
+    const money = moneyOf(locale, currency, 2);
 
-    expect(money.format(50000n)).not.toContain(',');
-    expect(money.format(50000n)).toContain('500');
+    expect(money.format(50000n)).toBe(whole);
     expect(money.plain(50000n)).toBe('500');
-    expect(money.format(0n)).not.toContain(',');
+    expect(money.format(0n)).toBe(zero);
   });
 
   it('drops the zeros on a whole amount too big for a double to carry', () => {
-    const money = moneyOf('ru-RU', 'PLN', 2);
+    const money = moneyOf('en-US', 'USD', 2);
     const huge = 900719925474099300n;
 
-    expect(money.plain(huge)).toBe('9007199254740993');
-    expect(money.format(huge)).not.toContain(',00');
-    expect(money.plain(huge + 7n)).toBe('9007199254740993.07');
+    expect(money.plain(huge)).toBe('9,007,199,254,740,993');
+    expect(money.plain(huge + 7n)).toBe('9,007,199,254,740,993.07');
   });
-
   it('keeps every decimal the moment one of them is not a zero', () => {
     const money = moneyOf('ru-RU', 'PLN', 2);
 

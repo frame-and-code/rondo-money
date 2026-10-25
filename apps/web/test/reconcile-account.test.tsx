@@ -172,10 +172,8 @@ describe('reconciling an account with what it really holds', () => {
     await user.type(field(), '1,500.00');
 
     expect(surface().getByText(en['accounts.reconcileComputed'])).toBeInTheDocument();
-    expect(surface().getByText('1,250.50 $')).toBeInTheDocument();
-    expect(
-      surface().getByText(said('accounts.reconcileWillWrite', '249.50 $')),
-    ).toBeInTheDocument();
+    expect(surface().getByText('$1,250.50')).toBeInTheDocument();
+    expect(surface().getByText(said('accounts.reconcileWillWrite', '$249.50'))).toBeInTheDocument();
     expect(reconcile).not.toHaveBeenCalled();
   });
 
@@ -202,7 +200,7 @@ describe('reconciling an account with what it really holds', () => {
     await user.type(field(), '-45');
 
     expect(
-      surface().getByText(said('accounts.reconcileWillWrite', '-1,295.50 $')),
+      surface().getByText(said('accounts.reconcileWillWrite', '-$1,295.50')),
     ).toBeInTheDocument();
 
     await user.click(confirm());
@@ -243,9 +241,9 @@ describe('reconciling an account with what it really holds', () => {
     await openReconcile(user);
     await user.type(field(), '2000');
 
-    expect(surface().getByText('125,050 ¥')).toBeInTheDocument();
+    expect(surface().getByText('¥125,050')).toBeInTheDocument();
     expect(
-      surface().getByText(said('accounts.reconcileWillWrite', '-123,050 ¥')),
+      surface().getByText(said('accounts.reconcileWillWrite', '-¥123,050')),
     ).toBeInTheDocument();
   });
 
@@ -255,11 +253,11 @@ describe('reconciling an account with what it really holds', () => {
 
     await openReconcile(user);
 
-    expect(surface().getByText('-45 $')).toHaveClass('text-destructive');
+    expect(surface().getByText('-$45')).toHaveClass('text-destructive');
 
     await user.type(field(), '-100');
 
-    expect(surface().getByText(said('accounts.reconcileWillWrite', '-55 $'))).not.toHaveClass(
+    expect(surface().getByText(said('accounts.reconcileWillWrite', '-$55'))).not.toHaveClass(
       'text-destructive',
     );
   });
@@ -277,13 +275,13 @@ describe('reconciling an account with what it really holds', () => {
     );
 
     await openReconcile(user);
-    expect(surface().getByText('1,250.50 $')).toBeInTheDocument();
+    expect(surface().getByText('$1,250.50')).toBeInTheDocument();
 
     WALLET = { ...WALLET, balance: '90000' };
     await client.invalidateQueries();
 
-    expect(await surface().findByText('900 $')).toBeInTheDocument();
-    expect(surface().queryByText('1,250.50 $')).not.toBeInTheDocument();
+    expect(await surface().findByText('$900')).toBeInTheDocument();
+    expect(surface().queryByText('$1,250.50')).not.toBeInTheDocument();
   });
 
   it('carries no field for the day, because a reconciliation happens today', async () => {

@@ -11,22 +11,23 @@ import {
 } from '@rondo/api-client/react-query';
 import { parseMoney } from '@rondo/types';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Button } from '@rondo/ui/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@rondo/ui/components/ui/card';
 import { Label } from '@rondo/ui/components/ui/label';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconAlertCircle, IconLoader } from '@tabler/icons-react';
+import { IconLoader } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { moneyOf } from '@/lib/money';
 import { onboardingRoute } from '@/lib/onboarding';
 import { keepsTheKey, saveFailureKind } from '@/lib/save-failure';
+import { APP_MARK, APP_NAME } from '@/lib/sections';
 
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
@@ -175,9 +176,9 @@ export function BalancesForm() {
         <div className="flex flex-col gap-8">
           <div className="hidden items-center gap-2 md:flex">
             <span className="bg-primary text-primary-foreground grid size-8 place-items-center rounded-lg text-sm font-semibold">
-              R
+              {APP_MARK}
             </span>
-            <span className="font-semibold">Rondo Money</span>
+            <span className="font-semibold">{APP_NAME}</span>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -207,13 +208,7 @@ export function BalancesForm() {
                 }}
                 className="flex flex-col gap-6"
               >
-                {failed.size > 0 ? (
-                  <Alert variant="destructive">
-                    <IconAlertCircle />
-                    <AlertTitle>{t('balances.failedTitle')}</AlertTitle>
-                    <AlertDescription>{t('balances.failed')}</AlertDescription>
-                  </Alert>
-                ) : null}
+                {failed.size > 0 ? <FailureAlert>{t('common.failLater')}</FailureAlert> : null}
 
                 {money === null
                   ? null

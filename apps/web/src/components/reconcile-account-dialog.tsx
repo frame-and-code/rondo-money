@@ -1,12 +1,12 @@
 'use client';
 
-import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Button } from '@rondo/ui/components/ui/button';
 import { Label } from '@rondo/ui/components/ui/label';
 import { cn } from '@rondo/ui/lib/utils';
-import { IconAlertCircle, IconLoader } from '@tabler/icons-react';
+import { IconLoader } from '@tabler/icons-react';
 import { useId, useState, type ReactNode } from 'react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { MoneyField, MONEY_FIELD } from '@/components/money-field';
 import { useTranslations } from '@/i18n/locale-context';
 import { type MessageKey } from '@/i18n/messages';
@@ -106,11 +106,7 @@ export function ReconcileAccountDialog({
       </div>
 
       {failed === null ? null : (
-        <Alert variant="destructive">
-          <IconAlertCircle />
-          <AlertTitle>{t('accounts.reconcile')}</AlertTitle>
-          <AlertDescription>{t(frozen ? 'accounts.saveLost' : failed)}</AlertDescription>
-        </Alert>
+        <FailureAlert>{t(frozen ? 'accounts.saveLost' : failed)}</FailureAlert>
       )}
 
       <div className="flex flex-wrap justify-end gap-2">

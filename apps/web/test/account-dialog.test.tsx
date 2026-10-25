@@ -253,7 +253,7 @@ describe('a failure that lands after the dialog was dismissed', () => {
     await user.click(panel.getByRole('button', { name: en['transactions.addAccount'] }));
 
     expect(await screen.findByLabelText(en['newAccount.nameLabel'])).toBeInTheDocument();
-    expect(screen.queryByText(en['accounts.saveFailed'])).not.toBeInTheDocument();
+    expect(screen.queryByText(en['common.failLater'])).not.toBeInTheDocument();
   });
 });
 
@@ -309,7 +309,7 @@ describe('renaming an account from the screen', () => {
     await user.type(field, 'Cash');
     await user.click(screen.getByRole('button', { name: en['accounts.save'] }));
 
-    expect(await screen.findByText(en['accounts.saveFailed'])).toBeInTheDocument();
+    expect(await screen.findByText(en['common.failLater'])).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(en['newAccount.nameLabel']), ' at home');
     await user.click(screen.getByRole('button', { name: en['accounts.save'] }));

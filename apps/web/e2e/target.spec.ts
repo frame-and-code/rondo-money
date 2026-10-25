@@ -48,7 +48,7 @@ async function setGoal(
   await page.getByRole('radio', { name: new RegExp(options.kind) }).click();
 
   if (options.amount !== '') {
-    await page.getByLabel(en['categories.goalAmount']).fill(options.amount);
+    await page.getByRole('textbox', { name: en['categories.goalAmount'] }).fill(options.amount);
   }
 
   if (options.due !== undefined) {
@@ -64,7 +64,7 @@ async function setGoal(
   }
 
   await page.getByRole('button', { name: en['categories.save'] }).click();
-  await expect(page.getByLabel(en['categories.goalAmount'])).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: en['categories.goalAmount'] })).toHaveCount(0);
 }
 
 test('a goal asks for the month, says so in colour and in words, and closes when it is covered', async ({
@@ -80,7 +80,7 @@ test('a goal asks for the month, says so in colour and in words, and closes when
 
   await badgeOf(page).hover();
   await expect(
-    page.getByText(en['categories.goalShortfallTip'].replace('{{amount}}', '300 $')),
+    page.getByText(en['categories.goalShortfallTip'].replace('{{amount}}', '$300')),
   ).toBeVisible();
 
   const free = await freeMoney(page);

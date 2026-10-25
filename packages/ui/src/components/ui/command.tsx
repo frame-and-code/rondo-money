@@ -28,17 +28,17 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 }
 
 function CommandDialog({
-  title = 'Command Palette',
-  description = 'Search for a command to run...',
+  title,
+  description,
   children,
   className,
-  showCloseButton = false,
+  closeLabel,
   ...props
 }: Omit<React.ComponentProps<typeof Dialog>, 'children'> & {
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   className?: string;
-  showCloseButton?: boolean;
+  closeLabel?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -49,7 +49,7 @@ function CommandDialog({
       </DialogHeader>
       <DialogContent
         className={cn('top-1/3 translate-y-0 overflow-hidden rounded-3xl! p-0', className)}
-        showCloseButton={showCloseButton}
+        closeLabel={closeLabel}
       >
         {children}
       </DialogContent>

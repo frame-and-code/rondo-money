@@ -65,7 +65,14 @@ specification.
    class assembled from a variable was never generated. A custom animation goes in `@theme` in
    [`globals.css`](../../apps/web/src/app/globals.css).
 6. No hardcoded UI strings. They go through `src/i18n` (ru, en, pl; en is the fallback) from
-   the first line, and `useTranslations()` resolves the locale.
+   the first line, and `useTranslations()` resolves the locale. `rondo/no-ui-literals` fails
+   the gate on text in JSX and on a literal label, placeholder or title. A phrase with a number
+   whose word bends with it goes into the plural dictionary and is read with `tn()`; a
+   `{{count}}` inside a plain key is right in one language and wrong in the next. A component
+   in `packages/ui` takes its text as a prop, never in English of its own. A save or a delete
+   that failed shows [`FailureAlert`](../../apps/web/src/components/failure-alert.tsx): one
+   title on every screen, and a body that says what to do next. A cause the reader cannot act
+   on is never explained; a refusal the reader can fix names the fix.
 
 ### Colour on an amount
 

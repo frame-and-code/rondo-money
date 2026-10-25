@@ -89,6 +89,27 @@ describe('an amount that changes', () => {
     expect(classesOf()).not.toContain('animate-roll-in-down');
   });
 
+  it('keeps a symbol written before the number in its own place while the digits roll', () => {
+    render(
+      <Stage
+        steps={[
+          ['$880', 88000n],
+          ['$1,000', 100000n],
+        ]}
+      />,
+    );
+
+    step();
+
+    const pairs = Array.from(rolled().children).map((cell) =>
+      Array.from(cell.children).map((half) => half.textContent),
+    );
+
+    expect(pairs[0]).toEqual(['$', '$']);
+    expect(pairs.filter((pair) => pair.includes('$'))).toHaveLength(1);
+    expect(rolled().textContent?.startsWith('$')).toBe(true);
+  });
+
   it('does not roll on the first render, because nothing changed yet', () => {
     render(<RollingAmount data-testid="amount" amount="1,00 zł" value={100n} />);
 

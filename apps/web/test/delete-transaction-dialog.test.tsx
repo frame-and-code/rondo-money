@@ -3,11 +3,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { DeleteTransactionDialog } from '@/components/delete-transaction-dialog';
+import { interpolate } from '@/i18n/interpolate';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { en } from '@/i18n/messages/en';
 import { moneyOf } from '@/lib/money';
 
 const money = moneyOf('en-US', 'PLN', 2);
+const said = (key: Parameters<typeof interpolate>[0], vars: Record<string, string>): string =>
+  interpolate(key, vars).replace(/\u00a0/g, ' ');
 
 const record = (over: Partial<TransactionDto> = {}): TransactionDto => ({
   id: 'r1',
@@ -106,11 +109,72 @@ describe('confirming that a record goes', () => {
     expect(screen.getByTestId('delete-category-line')).toHaveTextContent('Coffee');
   });
 
-  it('says the money goes back to ready to assign when the record had no envelope', () => {
+  it('gives an expense back to its account and its category, without a minus', () => {
+    show();
+
+    const amount = money.format(12050n);
+    expect(screen.getByTestId('delete-account-line')).toHaveTextContent(
+      said(en['transactions.deleteAccountLine'], { name: 'Wallet', amount }),
+    );
+    expect(screen.getByTestId('delete-category-line')).toHaveTextContent(
+      said(en['transactions.deleteCategoryLine'], { name: 'Coffee', amount }),
+    );
+  });
+
+  it('takes an income back out of its account and its category', () => {
+    show({ id: 'r3', type: 'INCOME', amount: '50000' });
+
+    const amount = money.format(50000n);
+    expect(screen.getByTestId('delete-account-line')).toHaveTextContent(
+      said(en['transactions.deleteAccountTakenLine'], { name: 'Wallet', amount }),
+    );
+    expect(screen.getByTestId('delete-category-line')).toHaveTextContent(
+      said(en['transactions.deleteCategoryTakenLine'], { name: 'Coffee', amount }),
+    );
+  });
+
+  it('takes an income with no category back out of ready to assign', () => {
     show({ id: 'r2', categoryId: null, type: 'INCOME', amount: '50000' });
 
-    expect(screen.getByTestId('delete-pool-line')).toBeInTheDocument();
+    expect(screen.getByTestId('delete-pool-line')).toHaveTextContent(
+      said(en['transactions.deletePoolTakenLine'], { amount: money.format(50000n) }),
+    );
     expect(screen.queryByTestId('delete-category-line')).not.toBeInTheDocument();
+  });
+
+  it('asks about a record with no payee by its kind and amount', () => {
+    show({ id: 'r5', payee: null });
+
+    expect(screen.getByRole('heading')).toHaveTextContent(
+      said(en['transactions.deleteExpenseTitle'], { amount: money.format(12050n) }),
+    );
+  });
+
+  it('asks about a reconciliation as one, whichever way it moved the balance', () => {
+    show({ id: 'r6', type: 'ADJUSTMENT', amount: '2500', categoryId: null, payee: null });
+
+    expect(screen.getByRole('heading')).toHaveTextContent(
+      said(en['transactions.deleteAdjustmentTitle'], { amount: money.format(2500n) }),
+    );
+  });
+
+  it('says a refused delete went wrong, not that a save did', () => {
+    render(
+      <LocaleProvider initialLocale="en">
+        <DeleteTransactionDialog
+          record={record()}
+          money={money}
+          accountName={() => 'Wallet'}
+          categoryName={() => 'Coffee'}
+          failed="transactions.failOther"
+          busy={false}
+          onDelete={jest.fn()}
+          onCancel={jest.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(en['common.failTitle']);
   });
 
   it('names both accounts of a transfer and mentions no envelope at all', () => {
@@ -207,7 +271,7 @@ describe('confirming that a record goes', () => {
     );
 
     expect(screen.getByTestId('delete-counter-line')).toHaveTextContent(
-      en['transactions.deleteArchivedCounterLine'].replace('{{amount}}', '500 zł'),
+      en['transactions.deleteArchivedCounterLine'].replace('{{amount}}', 'zł 500'),
     );
   });
 });

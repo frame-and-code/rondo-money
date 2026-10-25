@@ -127,6 +127,14 @@ describe('the form a record is written in', () => {
     ).toHaveTextContent('Coffee');
   });
 
+  it('asks for a category on an expense instead of showing one it cannot take', () => {
+    show();
+
+    const field = screen.getByRole('combobox', { name: en['transactions.categoryLabel'] });
+    expect(field).toHaveTextContent(en['transactions.pickCategory']);
+    expect(field).not.toHaveTextContent(en['transactions.pool']);
+  });
+
   it('refuses to save an expense with no category', async () => {
     show();
     await typeAmount('120.50');
@@ -581,7 +589,7 @@ describe('the form a record is written in', () => {
 
     const alert = screen.getByRole('alert');
 
-    expect(alert).toHaveTextContent(en['transactions.failTitleExpense']);
+    expect(alert).toHaveTextContent(en['common.failTitle']);
     expect(alert).toHaveTextContent(en['transactions.failFuture']);
   });
 
@@ -883,36 +891,6 @@ describe('what a record already written may become', () => {
       screen.getByRole('button', { name: en['transactions.kindExpense'] }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: en['transactions.kindIncome'] })).toBeInTheDocument();
-  });
-
-  it('names the transfer in the refusal, rather than the income it is not', async () => {
-    render(
-      <LocaleProvider initialLocale="en">
-        <TransactionDialog
-          record={null}
-          accounts={accounts}
-          groups={groups}
-          kept={null}
-          payees={[]}
-          money={money}
-          today={TODAY}
-          defaults={{ accountId: 'a1', date: TODAY, categoryId: null, payee: null }}
-          failed="transactions.failSameAccount"
-          busy={false}
-          written={0}
-          onSave={jest.fn()}
-          onTransfer={jest.fn()}
-          onCorrectOpening={jest.fn()}
-          onDelete={jest.fn()}
-        />
-      </LocaleProvider>,
-    );
-
-    expect(screen.getByText(en['transactions.failTitleExpense'])).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: en['transactions.kindTransfer'] }));
-
-    expect(screen.getByText(en['transactions.failTitleTransfer'])).toBeInTheDocument();
   });
 });
 

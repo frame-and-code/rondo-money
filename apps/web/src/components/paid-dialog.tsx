@@ -3,6 +3,7 @@
 import { Button } from '@rondo/ui/components/ui/button';
 import { IconCircleCheck } from '@tabler/icons-react';
 
+import { FailureAlert } from '@/components/failure-alert';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
 
@@ -30,11 +31,7 @@ export function PaidDialog({
         <p className="text-muted-foreground text-sm">{t('categories.paidBody')}</p>
       </div>
 
-      {failed === null ? null : (
-        <p role="alert" className="text-destructive text-sm">
-          {t(failed)}
-        </p>
-      )}
+      {failed === null ? null : <FailureAlert>{t(failed)}</FailureAlert>}
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>

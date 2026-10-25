@@ -97,8 +97,8 @@ describe('confirming that something owned or owed goes away', () => {
     again({ failed: true, refusals: 1 });
 
     const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent(en['netWorth.failTitle']);
-    expect(alert).toHaveTextContent(en['netWorth.failBody']);
+    expect(alert).toHaveTextContent(en['common.failTitle']);
+    expect(alert).toHaveTextContent(en['common.failLater']);
 
     await userEvent.click(remove());
 

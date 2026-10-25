@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 
 import { SectionNav } from '@/components/section-nav';
 import { useTranslations } from '@/i18n/locale-context';
-import { activeSection, APP_NAME, documentTitle } from '@/lib/sections';
+import { activeSection, APP_MARK, APP_NAME, documentTitle } from '@/lib/sections';
 
 import type { ReactNode } from 'react';
 
@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-hidden
             className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground"
           >
-            R
+            {APP_MARK}
           </div>
           {collapsed ? null : <span className="text-sm font-semibold">{APP_NAME}</span>}
         </div>

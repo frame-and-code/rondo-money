@@ -109,6 +109,14 @@ describe('what a goal puts on the card', () => {
     );
   });
 
+  it('names the currency on both amounts of the month where the locale writes it first', () => {
+    draw([SHORT], moneyOf('en-US', 'USD', 2, { signed: true }));
+
+    expect(within(tileOf('Vacation')).getByTestId('assigned-Vacation')).toHaveTextContent(
+      '$200 / $266.66',
+    );
+  });
+
   it('calls the row a monthly target when the goal asks for one, and assigned when it does not', () => {
     draw([SHORT, SAVING, PLAIN]);
 

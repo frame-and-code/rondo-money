@@ -777,7 +777,10 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
         </Drawer>
       ) : (
         <Dialog open={editing !== null} onOpenChange={(next) => (next ? null : close())}>
-          <DialogContent className="max-h-[85dvh] gap-0 overflow-x-hidden overflow-y-auto rounded-[24px] p-6 sm:max-w-[480px]">
+          <DialogContent
+            closeLabel={t('common.close')}
+            className="max-h-[85dvh] gap-0 overflow-x-hidden overflow-y-auto rounded-[24px] p-6 sm:max-w-[480px]"
+          >
             <DialogTitle className="sr-only">{titleOf(editing)}</DialogTitle>
             <DialogDescription className="sr-only">{t('transactions.add')}</DialogDescription>
             {surface}

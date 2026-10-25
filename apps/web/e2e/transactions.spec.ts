@@ -52,7 +52,7 @@ test('an expense is recorded on the screen, lands in its envelope, and can be ta
   await expect(page.getByTestId('accounts-total')).toContainText('975');
 
   await page.goto('/categories');
-  await expect(availableOf(page, CATEGORY)).toContainText('-25');
+  await expect(availableOf(page, CATEGORY)).toContainText('-$25');
 
   await page.goto('/accounts');
   await page.getByRole('button', { name: PAYEE, exact: true }).click();

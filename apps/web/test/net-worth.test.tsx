@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { NetWorth } from '@/components/net-worth';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { en } from '@/i18n/messages/en';
+import { ru } from '@/i18n/messages/ru';
 import { moneyOf } from '@/lib/money';
 
 const WORTH_KEY = [{ _id: 'what-the-generator-minted', baseUrl: 'http://api.test' }];
@@ -113,12 +114,12 @@ jest.mock('@rondo/api-client/react-query', () => ({
   liabilitiesControllerRemoveMutation: () => write('liabilities.remove'),
 }));
 
-const draw = () => {
+const draw = (locale: 'en' | 'ru' = 'en') => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   return render(
     <QueryClientProvider client={client}>
-      <LocaleProvider initialLocale="en">
+      <LocaleProvider initialLocale={locale}>
         <NetWorth />
       </LocaleProvider>
     </QueryClientProvider>,
@@ -323,6 +324,24 @@ describe('what the screen does when it could not be read', () => {
   });
 });
 
+const speak = (language: string): void => {
+  Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
+  Object.defineProperty(window.navigator, 'languages', { value: [language], configurable: true });
+};
+
+describe('a form in another language', () => {
+  afterEach(() => speak('en-US'));
+
+  it('names the button that closes it in the language of the screen', async () => {
+    speak('ru-RU');
+    draw('ru');
+
+    await userEvent.click(await screen.findByRole('button', { name: ru['netWorth.addAsset'] }));
+
+    expect(await screen.findByRole('button', { name: ru['common.close'] })).toBeInTheDocument();
+  });
+});
+
 describe('writing from the screen', () => {
   it('opens the form of the side whose button was pressed', async () => {
     draw();
@@ -472,7 +491,7 @@ describe('a write the server did not take', () => {
 
     const alert = await screen.findByRole('alert');
 
-    expect(alert).toHaveTextContent(en['netWorth.failTitle']);
+    expect(alert).toHaveTextContent(en['common.failTitle']);
     expect(alert.closest('[data-slot="dialog-content"]')).not.toBeNull();
     expect(screen.getByLabelText(en['netWorth.nameLabel'])).toHaveValue('Garage');
     await waitFor(() => expect(reads).toBe(2));
@@ -485,7 +504,7 @@ describe('a write the server did not take', () => {
     await userEvent.click(await screen.findByRole('button', { name: en['netWorth.addAsset'] }));
     await fillAndSave('Garage', '100');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(en['netWorth.failBody']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['common.failLater']);
     expect(reads).toBe(1);
     expect(screen.getByLabelText(en['netWorth.nameLabel'])).toBeDisabled();
 
@@ -503,7 +522,7 @@ describe('a write the server did not take', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: en['netWorth.delete'] }));
     await userEvent.click(await screen.findByRole('button', { name: en['netWorth.delete'] }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(en['netWorth.failTitle']);
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['common.failTitle']);
 
     await userEvent.click(screen.getByRole('button', { name: en['netWorth.delete'] }));
 

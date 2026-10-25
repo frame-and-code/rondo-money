@@ -19,6 +19,8 @@ export const sections: Section[] = [
 
 export const APP_NAME = 'Rondo Money';
 
+export const APP_MARK = 'R';
+
 export function documentTitle(
   section: Section | undefined,
   label: (of: Section) => string,

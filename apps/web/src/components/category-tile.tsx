@@ -146,8 +146,9 @@ export function CategoryTile({
               data-testid="target-hover"
               aria-label={t('categories.goalExplain', { category: category.name })}
               onClick={(event) => event.stopPropagation()}
-              onPointerEnter={() => setExplaining(true)}
-              onPointerLeave={() => setExplaining(false)}
+              openOnHover
+              delay={0}
+              closeDelay={0}
             >
               {disc}
             </PopoverTrigger>
@@ -195,7 +196,7 @@ export function CategoryTile({
               {monthly ? (
                 <>
                   <TargetBadge needed={needed} money={money} />
-                  <span className="font-semibold">{money.plain(laid)}</span>
+                  <span className="font-semibold">{money.pairStart(laid)}</span>
                   <span className="text-muted-foreground">{' / '}</span>
                   <span className="text-muted-foreground font-normal">
                     {money.format(monthTarget)}
