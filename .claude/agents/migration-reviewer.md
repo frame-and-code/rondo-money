@@ -15,8 +15,8 @@ locally. `guard-db.sh` blocks the non-local ones and you have no business runnin
 ones either: applying the thing you are reviewing destroys the state the next reviewer needs.
 
 **You start with no conversation history.** Whoever spawned you has read the schema change
-and you have not. The project rules (`CLAUDE.md` and `.claude/rules/*.md`) are in your
-context automatically; the migration is not. Read it: the SQL under
+and you have not. The always-on rules are in your context, and `.claude/rules/api.md` arrives
+when you open a file under `packages/db`; the migration is not. Read it: the SQL under
 `packages/db/prisma/migrations/`, the `schema.prisma` diff that produced it, and the code
 that reads or writes the affected columns.
 
@@ -70,8 +70,7 @@ diff and takes the site down during the rollout window, or on any rollback.
   that the schema does not produce becomes drift on the next generate. A `CHECK` constraint is
   the one exception, and for one reason: the differ reads it from neither side, so a hand-written
   one survives and drifts nothing. An index on an expression is the second, for the same
-  reason: the schema cannot declare one, and the differ leaves it where it is (checked on
-  Prisma 7.10 with `migrate diff` against a database holding one; check again on an upgrade).
+  reason: the schema cannot declare one, and the differ leaves it where it is. Confirm that against the installed Prisma after every upgrade, with `migrate diff` against a database holding one.
   It holds under the same conditions as a `CHECK` below, and the one it has is
   `budget_name_per_user`. Nothing else qualifies, and each for its own reason. An index on
   columns the differ does read, so the next `migrate dev` offers to drop it. A trigger it never reads,

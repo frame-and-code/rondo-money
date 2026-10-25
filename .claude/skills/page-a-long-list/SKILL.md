@@ -76,7 +76,7 @@ groupBy({
 ```
 
 `groupBy` has no scoping rule of its own, so the `where` names the caller and the budget
-explicitly or the extension refuses it (see [security](../../rules/security.md)).
+explicitly or the extension refuses it (see [api](../../rules/api.md)).
 
 ## What the tests have to prove
 

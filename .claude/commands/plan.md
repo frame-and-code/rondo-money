@@ -1,6 +1,6 @@
 ---
 description: Turn a ticket into an ordered, file-scoped implementation plan. Plans only, and writes no code.
-argument-hint: '<F1.x ticket, or a task description>'
+argument-hint: '<ticket, e.g. F7.3, or a task description>'
 ---
 
 # Plan

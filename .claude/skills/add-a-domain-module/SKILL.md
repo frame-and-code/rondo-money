@@ -33,9 +33,9 @@ it ever becomes ESM, where they would stop being optional.
 
 Values may be imported from `@rondo/types` at runtime. The package emits to `dist`
 (`exports.default`), which is what lets `apps/api` call `parseMoney` and not merely name its
-type. Before that it had no build step, and a value import left `require('@rondo/types')` in
-`dist` pointing at a `.ts` file, so the api built and then failed to boot. Two things follow: a
-new runtime export has to be reachable from `src/index.ts`, and a domain constant that is
+type. Two things follow: a new runtime export has to be reachable from `src/index.ts`, or
+the api builds and then fails to boot on a `require` of a `.ts` file; and a domain constant
+that is
 genuinely api-only still belongs in `apps/api`, the way
 [`language.ts`](../../../apps/api/src/user-settings/language.ts) keeps the Prisma-enum mapping.
 
@@ -95,7 +95,7 @@ A model a budget owns gets a second filter, taken from the caller's active budge
 extension looks up on the first query that needs it and remembers for the rest of the request.
 It covers reads and the writes that pick out existing rows; a write that creates them carries
 its own budget in the payload instead. Which operations fall on
-which side, and why, is in [security](../../rules/security.md). An operation issued when the
+which side, and why, is in [api](../../rules/api.md). An operation issued when the
 caller has no active budget is **refused**, and what that refusal is depends on who asks first.
 The extension raises a plain `Error`, which reaches the caller as a 500 for an ordinary state,
 a user part way through onboarding. So a service reading a budget-owned model asks for the
@@ -110,7 +110,7 @@ sets the budget itself. The pattern is in
 Pass the verified caller's `userId` on a write and let the extension overwrite it. That the
 wrong value is harmless is the property being relied on, not an invitation to be careless.
 Which of Prisma's two write inputs carries the field at all is in
-[security](../../rules/security.md), and taking the wrong one is a runtime failure the types
+[api](../../rules/api.md), and taking the wrong one is a runtime failure the types
 do not catch.
 
 **`<feature>.controller.ts`** takes its identity from `@CurrentUserId()` and nothing else.

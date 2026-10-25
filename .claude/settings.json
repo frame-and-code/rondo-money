@@ -2,10 +2,8 @@
   "permissions": {
     "allow": [
       "Read(**)",
-      "Glob(**)",
       "Grep(**)",
       "Edit(**)",
-      "Write(**)",
       "Bash(pnpm *)",
       "Bash(node --version)",
       "Bash(ls *)",
@@ -39,8 +37,6 @@
       "Read(./apps/*/.env.local)",
       "Edit(./.env)",
       "Edit(./apps/*/.env.local)",
-      "Write(./.env)",
-      "Write(./apps/*/.env.local)",
       "Bash(npm *)",
       "Bash(yarn *)",
       "Bash(rm -rf *)",

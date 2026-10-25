@@ -138,7 +138,7 @@ category, but it means the key says nothing about a row without one.
 `IdempotencyKey` carries a `request_fingerprint` beside the key. A repeat is answered with the
 stored `result`; a repeat whose fingerprint differs is a second intent wearing the first one's
 key, and the api refuses it. Why it refuses rather than replaying is in
-[architecture](../../.claude/rules/architecture.md).
+[api](../../.claude/rules/api.md).
 
 ## Conventions
 

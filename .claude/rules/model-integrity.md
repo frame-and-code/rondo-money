@@ -1,51 +1,33 @@
 # Model integrity
 
 Most of the code here is written by an agent, so a confident invention is not caught by a
-second pair of eyes. It ships. This file is the rule that protects everything else: **an
-answer that sounds right is worth nothing if it is not true.**
+second pair of eyes. It ships. An answer that sounds right is worth nothing if it is not true.
 
 ## Do not invent version-dependent detail
 
-API surfaces, flag names, config keys and library behaviour change between versions.
-Never answer from memory when the answer depends on a version. Look, in this order:
+API surfaces, flag names, config keys and library behaviour change between versions. Never
+answer one from memory. Look, in this order:
 
-1. [`.claude/config/external-docs.json`](../config/external-docs.json), which lists the
-   external documentation this project actually depends on and says why we go to each;
-2. the installed source under `node_modules/` and `pnpm-lock.yaml`, the truth about what
-   is installed _here_, not what the latest release does. For Turborepo,
-   [`AGENTS.md`](../../AGENTS.md) says where the docs bundled with the installed `turbo`
-   live. `turbo` writes that block itself, so it is not edited by hand;
+1. [`.claude/config/external-docs.json`](../config/external-docs.json), the external docs this
+   project depends on and why;
+2. the installed source under `node_modules/` and `pnpm-lock.yaml`. For Turborepo,
+   [`AGENTS.md`](../../AGENTS.md) says where the bundled docs live;
 3. this repository's own code.
 
-If none of them answers it, fetch the documentation or say you don't know. "I think the
-Prisma extension covers `$queryRaw`" is exactly the sentence that costs a cross-tenant
-leak.
+If none of them answers, fetch the documentation or say you do not know.
 
-## Open questions go to the user, not to a guess
+## Open questions go to the user
 
-The plan leaves decisions deliberately open, and the ticket that reaches one is where it gets
-answered. When work reaches one:
-
-1. State the question, the options, and your recommendation with a reason.
-2. Let the user decide.
-3. Record the decision in the Notion ticket that owns it (see [specs](specs.md)).
-
-Filling an open question with a plausible default and moving on is the failure this rule
-exists to stop.
+When work reaches a decision the plan left open: state the question, the options and your
+recommendation with a reason, let the user decide, then record the decision in the Notion
+ticket ([specs](specs.md)). Filling it with a plausible default is the failure this rule exists
+to stop.
 
 ## Report what happened, not what should have happened
 
-- Ran the checks? Say which passed and which failed, with the output. **A cache hit is a
-  replay, not a run.** Turbo reprints a previous result verbatim, exit code included, so
-  "lint passed" after a hit means it passed at whatever state produced that entry.
-  [`/check`](../commands/check.md) forces the cached tasks so the report describes the tree in
-  front of you.
-- Skipped a step? Name it and say why.
-- Verified nothing? Say "not verified", and never imply a check you did not run.
+- Say which checks passed and which failed, with the output. A turbo cache hit is a replay,
+  not a run; [`/check`](../commands/check.md) forces the cached tasks.
+- Skipped a step? Name it and say why. Verified nothing? Say "not verified".
 - Cite `file:line` for claims about this codebase. If you did not open the file, say so.
-
-## Half-true prose is worse than none
-
-A sentence in a document is trusted and acted on. If a change makes one false, fix it or
-delete it in the same PR. Do not leave it standing because it is "mostly right". Where
-to sweep: [specs](specs.md).
+- A sentence a change made false is fixed or deleted in the same PR, never left "mostly
+  right".

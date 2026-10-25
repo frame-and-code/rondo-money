@@ -177,7 +177,7 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
   [`scoped-models.ts`](../apps/api/src/prisma/scoped-models.ts); a write to a model on the
   exemption list beside it needs no marker. And the write goes through `MUTATOR_PRISMA`, the client a
   mutation's transaction comes from, rather than the `SCOPED_PRISMA` a handler injects. Why the
-  two are separate is in [security](../.claude/rules/security.md). A spec that asserts something about
+  two are separate is in [api](../.claude/rules/api.md). A spec that asserts something about
   scoping on a write enters the marker first, so that the refusal it is testing is the one it
   means. [`apps/api/test/mutation.integration.spec.ts`](../apps/api/test/mutation.integration.spec.ts)
   drives the real service instead, which is what an endpoint will do.

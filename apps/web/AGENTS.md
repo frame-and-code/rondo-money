@@ -12,9 +12,9 @@ really do ship inside the package (`node_modules/next/dist/docs/`).
 
 ## Read first
 
-- the repository rules in [`.claude/rules/`](../../.claude/rules/), imported by the root
-  [`CLAUDE.md`](../../CLAUDE.md). They are in context on every turn and they win over anything
-  here;
+- the repository rules in [`.claude/rules/`](../../.claude/rules/). The always-on ones are in
+  context on every turn, [`web.md`](../../.claude/rules/web.md) loads with this workspace, and
+  all of them win over anything here;
 - this workspace's [`README.md`](README.md) for structure, scripts, the env contract and why
   `proxy.ts`, `lib/auth.ts` and `railway.json` have to agree on the same paths.
 
@@ -23,28 +23,16 @@ really do ship inside the package (`node_modules/next/dist/docs/`).
 - **No database.** `apps/web` never imports Prisma and never reaches Postgres (ADR-002); it
   only talks to `@rondo/api` over HTTP.
 - **One API path.** [`src/lib/api/client.tsx`](src/lib/api/client.tsx) configures the generated
-  `@rondo/api-client` (F1.4) with the base URL and the Clerk token, and provides the TanStack
-  Query cache. That is all it is allowed to do. Screens fetch through the generated query
-  options (`useQuery(meControllerIdentifyOptions())`), and **the token attaches itself**, so
-  never set `Authorization` or call `getToken()` in a component. Do not hand-write a request
-  beside them and do not add a second `fetch` path; add a missing endpoint to `apps/api` and
-  regenerate, never work around it here. **Server code must not use the module-level client.**
-  It is one instance per process, so configuring it during SSR would share one visitor's token
-  with every concurrent request. `ApiProvider` configures it in the browser only; server code
-  that needs the API builds its own client per request from `await auth()` and passes it
-  explicitly, never with a bare `fetch`.
+  client and nothing else; screens read through the generated query options and the token
+  attaches itself; server code never uses the module-level client. The rule and its reasons are
+  in [web](../../.claude/rules/web.md), which loads with this workspace.
 - **No hand-written CSS files, and an inline `style` only for a value computed per element**,
-  which [architecture](../../.claude/rules/architecture.md) bounds, along with where a custom
+  which [web](../../.claude/rules/web.md) bounds, along with where a custom
   animation goes. Screens are Tailwind utilities plus shadcn/ui components from `@rondo/ui`,
   whose README describes the theme. Missing a primitive? Add it with
   `pnpm dlx shadcn@latest add <component>` into `packages/ui`, not here.
-- **No hardcoded UI strings.** They go through `src/i18n` (ru, en and pl; en is the fallback)
-  from the first line, not "once the screen works". The active locale is not a component's to
-  guess: `useTranslations()` resolves it, and the order it resolves in is written once, in
-  [README.md](README.md).
-- **Money arrives as a string**, and the helpers in `@rondo/types` parse it, because JSON has no
-  bigint. Never do arithmetic on the raw response value.
-- **DTOs come from `@rondo/types`.** A type restated here is a second source of truth.
+- **No hardcoded UI strings.** They go through `src/i18n` from the first line; the order the
+  locale resolves in is written once, in [README.md](README.md).
 
 ## Traps worth knowing
 

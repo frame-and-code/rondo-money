@@ -1,6 +1,6 @@
 ---
 description: 'Close out a ticket: verify its Acceptance Criteria one by one, run the gate, sweep the docs, draft the PR text.'
-argument-hint: '<F1.x ticket>'
+argument-hint: '<ticket, e.g. F7.3>'
 ---
 
 # Phase done

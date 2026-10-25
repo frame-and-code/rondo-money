@@ -1,432 +1,55 @@
 # Architecture
 
-Boundaries and invariants that outlive any single feature. The phase plan and the ADRs
-live in Notion (see [specs](specs.md)); this file holds the part you must not have to look
-up.
+The invariants that outlive any feature. How each is implemented is in [api](api.md) and
+[web](web.md), which load with the workspace they describe; the ADRs are in Notion
+([specs](specs.md)).
 
 ## Boundaries
 
-- **The backend owns every database access** (ADR-002). `apps/web` never imports Prisma
-  and never reaches Postgres.
-- `apps/web` talks to the API through the typed client generated from the OpenAPI spec
-  (`packages/api-client`, F1.4). Its single entry point is
-  [`apps/web/src/lib/api/client.tsx`](../../apps/web/src/lib/api/client.tsx), an `ApiProvider`
-  that supplies the base URL, the Clerk token and the TanStack Query cache, and nothing else.
-  Screens read through the generated query options (`useQuery(xxxOptions())`); do not
-  hand-write a request beside them, and do not add a second `fetch` path.
-- DTOs have one home: `packages/types`. A type restated in `apps/web` or `apps/api` is two
-  sources of truth waiting to drift. The response classes under `apps/api` (F1.4) are not an
-  exception. They _are_ the OpenAPI schema, declared once, and what `apps/web` uses is
-  generated from the document they produce rather than hand-copied. A shape that outlives one
-  endpoint's response, such as money or a domain model, still belongs in `packages/types`, with
-  the response class referencing it.
+- The backend owns every database access (ADR-002). `apps/web` never imports Prisma and never
+  reaches Postgres.
+- `apps/web` talks to the API only through the generated client (`packages/api-client`), with
+  one entry point, [`client.tsx`](../../apps/web/src/lib/api/client.tsx). No hand-written
+  request beside it and no second `fetch` path. A missing endpoint is added to `apps/api` and
+  regenerated.
+- DTOs have one home, `packages/types`. The response classes in `apps/api` are the OpenAPI
+  schema itself; a shape that outlives one response (money, a domain model) still belongs in
+  `packages/types`.
 - The Prisma schema and its migrations live only in `packages/db`. The code that scopes
-  queries to a caller lives only in `apps/api` (`src/prisma`, `src/raw-sql`), because it reads
-  the request context.
-
-## How a module reaches the database
-
-[`apps/api/src/user-settings`](../../apps/api/src/user-settings) holds the read path whole,
-controller → service → `SCOPED_PRISMA`, beside the smallest write there is, and
-[`add-a-domain-module`](../skills/add-a-domain-module/SKILL.md) walks a new module through the
-read part file by file. The write path is [`apps/api/src/mutations`](../../apps/api/src/mutations), and
-[`add-a-mutation`](../skills/add-a-mutation/SKILL.md) walks that one. What follows holds for
-both, and is not optional:
-
-- a handler takes the caller from `@CurrentUserId()`, never from the body, a query parameter
-  or a header;
-- outside a mutation, everything that reads or writes a domain model injects `SCOPED_PRISMA`,
-  never `PrismaService`. Inside one, the work uses the client the mutation handed it and
-  nothing else, which is a refusal rather than a convention. Where each client may be imported
-  is a lint rule, listed in [security](security.md);
-- a write to a **guarded** model happens inside `MutationService.run`, and the scoping
-  extension **throws** on one that is not, so the single write point is a mechanism rather than
-  a convention. Which models are guarded is `MUTATION_GUARDED_MODELS` in
-  [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), and the exemption list
-  beside it holds the two that are not: a user's settings, whose row their own first read
-  creates, and the idempotency key, which the mutation service writes on its own transaction.
-  Exempt means the mutator does not force itself on the model, not that it is barred from one:
-  the settings row is created by a read and changed inside a mutation like anything else;
-- raw SQL only through `ScopedRawRepository`, which supplies `userId` itself; a lint rule
-  fails the gate anywhere else;
-- a new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), both
-  registries where it belongs to a budget, and gets a cross-tenant test in the same change
-  (see [security](security.md)).
-
-## How an endpoint reaches the contract
-
-The OpenAPI document is built from the code (F1.4), so an endpoint that says nothing about
-itself is published with no response shape at all, and the generated client types it
-`unknown` without failing anything.
-
-- The response is a **class** carrying `@ApiProperty` on every field, named by whichever
-  success decorator the handler carries: `@ApiOkResponse` for a read, `@ApiCreatedResponse`
-  for a create. A TypeScript interface leaves no metadata after compilation, which is exactly
-  the silent version of this mistake. A handler that takes an idempotency key also names
-  [`ConflictResponse`](../../apps/api/src/mutations/conflict.response.ts) on
-  `@ApiConflictResponse`, because every one of them can answer with it, and an undocumented
-  status collapses the whole error type of that operation to `unknown` in the client. A
-  handler that can answer 400 names
-  [`BadRequestResponse`](../../apps/api/src/openapi/bad-request.response.ts) on
-  `@ApiBadRequestResponse` for the same reason, and one taking a DTO body always can, whatever
-  the handler itself does, because the pipe answers before it. That one class covers both raisers, which is why it lives with the document
-  rather than beside either of them.
-- `@Public()` carries one decision to both readers. It opens the handler to the guard _and_
-  stamps `x-public`, which is what clears the global bearer requirement in the spec. Never add
-  a second decorator saying the same thing. The two would eventually disagree.
-- Money crosses the wire as a string of minor units
-  ([`money.ts`](../../packages/types/src/money.ts)), in both directions. Every money field, in a
-  request DTO or a response class, is declared with
-  [`@ApiMoneyProperty()`](../../apps/api/src/validation/money.decorator.ts), which publishes it
-  as a `string` carrying `MONEY_PATTERN` _and_ refuses anything else at the pipe. The two must
-  never be written separately, because with no Swagger CLI plugin here a validation decorator
-  adds nothing to the spec and nothing would catch the drift. Its options type is deliberately
-  narrow, and `required` is the one bound that moves both halves: it publishes the field as
-  optional _and_ lets the validator accept its absence, so the spec and the pipe cannot say
-  different things. `nullable` has no such pair and is therefore not an option, because it
-  would reach `@ApiProperty` alone and publish a field the client may send as null while the
-  pipe answers 400. The conversion to
-  `bigint` is explicit, at `serializeMoney` / `parseMoney` in the service, and **never** a
-  global interceptor, which would leave the code and the published schema saying different
-  things. The bound an amount lives under is one option, `sign`, reading `nonNegative` for one
-  that may not go below zero and `positive` for one that would do nothing at zero, and that one
-  word moves the published pattern and the pipe's together; stating the bound in only one of
-  them would promise a field the other refuses, and a flag per bound would let a field ask for
-  two and get whichever was tested first.
-- **A value the app must recognise, and not merely parse, gets one decorator that does both.**
-  A currency is [`@ApiCurrencyProperty()`](../../apps/api/src/validation/currency.decorator.ts),
-  a zone is [`@ApiTimeZoneProperty()`](../../apps/api/src/validation/timezone.decorator.ts) and
-  a month is [`@ApiCalendarMonthProperty()`](../../apps/api/src/validation/month.decorator.ts),
-  each publishing the field and refusing an unusable value together, for the reason money's
-  does. A query parameter is a DTO class like any other, so it gets the same treatment. What a currency publishes is the shape of a code and never the list of them: the codes
-  come from the runtime's own data, so an enum in the schema would let a runtime upgrade
-  rewrite the committed contract and fail the gate on a change that touches no currency.
-  [`create-budget.dto.ts`](../../apps/api/src/budgets/create-budget.dto.ts) is a request DTO
-  using both.
-- **A change that takes the whole record clears an optional field by leaving it out.** The
-  body of such a `PATCH` is the record, so a field it does not carry is stored as absent. An
-  explicit `null` is not part of the contract: the decorators publish `required` and no
-  `nullable`, for the reason the money one gives, so a null is a 400.
-  [`write-net-worth-item.dto.ts`](../../apps/api/src/net-worth/write-net-worth-item.dto.ts) is
-  one DTO serving both the write and the change this way.
-- Every request body **declared as a DTO class** is validated by the global pipe
-  ([`validation.options.ts`](../../apps/api/src/validation/validation.options.ts)):
-  `class-validator` + `class-transformer`, whitelisted, and a field the DTO never declared is
-  a 400 rather than a silent drop. Implicit conversion is off on purpose. It would coerce a
-  JSON number into the string a money field expects, and by then the precision is already
-  gone. The pipe skips a `@Body()` typed as an interface, in silence, exactly as an
-  interface response publishes no schema. See [security](security.md). It also skips **inside**
-  a nested object it was not told to validate, so a field declared as a class of its own carries
-  `@ValidateNested()` and `@Type(() => That)`. Without the pair, an undeclared field one level
-  down reaches the handler while the top level refuses its own, and the published schema says
-  the nested object takes anything. `test/openapi.spec.ts` walks the request schemas down and
-  fails the gate on one left open. Anything walking those schemas reads through `allOf`: the
-  generator wraps a `$ref` in one as soon as the property carries a description of its own, so a
-  reader looking for a bare `$ref` sees a described nested object as carrying no schema at all.
-- `pnpm openapi` rewrites [`apps/api/openapi.json`](../../apps/api/openapi.json) and
-  `pnpm --filter @rondo/api-client codegen` the client. Both artefacts are committed, so a
-  contract change is a reviewable diff; turbo runs them in order, so neither is a step anyone
-  has to remember. Since F1.5 neither is a step anyone _can_ forget either. The pre-commit hook
-  regenerates both and adds them to the commit, and the CI gate re-runs them and fails on any
-  difference, both through [`codegen.sh`](../../codegen.sh). So do not hand-edit a generated
-  file to "fix" something; change the NestJS code that produces it. The hook **refuses** the
-  commit in one case: the contract changed, but the sources it was generated from are not all
-  staged. That is a partial commit, not a broken hook. The generator reads the working tree
-  while the commit is built from the index, so staging the result would ship a contract this
-  commit's own sources do not produce. Stage those files, or set them aside with `git stash -u`.
-  A plain `git stash` leaves an untracked file where it is, so the next attempt is refused
-  the same way.
-- The spec gives the client more than types: request functions, TanStack Query options and zod
-  schemas all come out of it. So an endpoint documented sloppily produces a sloppy client. The
-  spec is the product, not paperwork about it.
+  queries to a caller lives only in `apps/api`.
+- The OpenAPI document and the client are generated from the code and committed. Never
+  hand-edit either; change the NestJS code that produces them.
 
 ## Never store derived state
 
-Balance, RTA, Assigned, Activity and Available are computed from transactions and assignments
-on demand, and net worth from the account balances and the assets and liabilities the user
-wrote down. A column caching one of them is not an optimisation. It is a second source of truth
-that will disagree with the first. An asset's amount is not derived state: the user entered it,
-and nothing else could produce it.
+Balance, ready to assign, Assigned, Activity, Available and net worth are computed on demand.
+A column caching one is a second source of truth. An asset's amount is not derived: the user
+entered it.
 
 ## One write point
 
 Every domain mutation goes through
-[`MutationService`](../../apps/api/src/mutations/mutation.service.ts), and what it buys is
-atomicity, not a journal (ADR-006). One user operation is one database transaction, or
-nothing at all. The invariant it protects is 5.5. A composite write torn in half (a
-transfer leg without its pair) is the main way to break it, and PRD 6.3 requires a
-transfer to be atomic regardless. So a transfer's two legs share a `transferId` and are
-created, edited and deleted together.
+[`MutationService`](../../apps/api/src/mutations/mutation.service.ts), for atomicity rather than
+a journal (ADR-006). One user operation is one transaction or nothing: a transfer's two legs
+share a `transferId` and are created, edited and deleted together. The same transaction carries
+the idempotency key. `Assignment` has exactly one writer, [`src/moves`](../../apps/api/src/moves),
+because assigning money is a move out of the pool and the undo stack needs one inverse.
 
-Which models it owns is a registry, `MUTATION_GUARDED_MODELS` in
-[`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts), and every model in the schema
-is either in it or in the exemption list beside it. Being under the mutator is not a claim that
-an operation is undoable. The undo scope is ADR-006's and lives in the browser; a rename and an
-archive go through the same point for atomicity and nothing else.
+There is no server-side change log and no soft-delete. Deletion is physical, and undo is a
+stack in the browser inverting transactions and moves through the same API. A rename, an
+archive and a hide are not undoable. Hiding a category (`hiddenAt`) is a visibility marker, not
+a soft-delete: the row stays in every aggregate.
 
-**`Assignment` has exactly one writer**, [`apps/api/src/moves`](../../apps/api/src/moves), and
-that is a narrower claim than the mutator's. Assigning money and moving it are one operation,
-because ready to assign is an envelope that is derived rather than stored: writing an amount
-into a category **is** a move out of the pool. So the inverse of a move is the same move with
-its sides swapped, which is what the undo stack in the browser stands on, and a second writer
-would be a second inverse for it to disagree with. Not left to memory: the restriction
-`assignment-writes`, composed into `@rondo/config/eslint/tenant-isolation`, fails the gate on a
-write to that model anywhere but there and the tests.
+## Money and dates
 
-**Erasing everything one caller owns is the exception to every sentence above, and it is one
-statement per table rather than a domain write.** It runs inside the mutation like anything
-else, but it names no model through Prisma, so neither the assignment restriction nor the
-budget filter reaches it. Two consequences to hold. It deletes the rows of **every** budget the
-caller has, active or not, which is what the scoped client could not express. And it spares one
-row: the idempotency key that the running request claimed, because the mutation writes its
-result onto that row after the work returns, and deleting it after the commit would race a
-concurrent duplicate reading it.
-
-A mutation opened inside another one is refused. Postgres has no nested interactive
-transaction, so the inner one would commit on its own and claim a second key. Compose the whole
-operation in a single `run` instead.
-
-A raw statement issued on the pooled client would land **outside** the mutator's transaction:
-a write would survive its rollback, and a read would not see what it has written. So inside a
-mutation the raw repository takes that transaction, and what each half refuses is in
-[security](security.md).
-
-The same transaction carries the idempotency key. `IdempotencyKey` is unique per (user, key).
-The row is claimed first, so a concurrent duplicate waits on that index instead of doing the
-work twice, and the mutation's result is written onto it before the transaction commits. A
-repeat therefore hits the index and is answered with the stored result, as if it had just run.
-Two consequences of the index doing the work. The conflict takes the **whole** transaction
-down, so the stored result is read afterwards, on a separate query, never inside. And the row
-carries a fingerprint of the request it was claimed for: a second, different intent wearing the
-first one's key is refused rather than answered with a result that describes a write it never
-made.
-
-There is no server-side change log and no soft-delete. Deletion is physical, and undo
-lives in the browser as a stack of money operations, each inverted through the same API
-(ADR-006). Its scope is the part that cannot be re-derived: transactions and moves between
-envelopes. RTA is an envelope too, so setting an Assigned amount **is** a move and
-undoes like one; a rename, an archive and a hide are not undoable at all. Nothing on the
-server replays history.
-
-## Money, dates, schema
-
-- Money is an integer number of minor units in `bigint`, a string over the wire, and its
-  digit count comes from the currency and never from a hardcoded `2`. The convention and its
-  helpers belong to [`packages/types`](../../packages/types/README.md); never re-derive them.
-  Two consequences the rest of the codebase has to honour: the digit count is **frozen on the
-  budget row** rather than recomputed per read, and a runtime upgrade that
-  moves the currency data is a migration rather than a bump. An amount written at one scale
-  and read at another is money multiplied by a hundred.
-- Dates are calendar dates without time. "Today" and `YYYY-MM` bucketing are computed in
-  one reference timezone, the budget's `timezone` column, through
-  [`calendar.ts`](../../packages/types/src/calendar.ts) and never a `new Date()` scattered
-  across call sites.
-- The schema grows one migration per phase. A category is never deleted by anything a budget
-  does, only hidden (`hiddenAt`). That is a visibility marker, not a soft-delete. The
-  row stays in every aggregate, so its past Activity keeps counting and an expense is
-  never orphaned. The one thing that does delete it is the caller erasing everything they own,
-  which takes the whole budget with it and leaves no aggregate to keep counting for.
-- Naming, set by the first table in F1.3: PascalCase models and camelCase fields in Prisma,
-  snake_case tables and columns in Postgres via `@@map` / `@map`; ids are
-  `String @id @default(uuid(7)) @db.Uuid`. The mapping exists for the hand-written aggregates
-  of Phases 4–5: `where user_id = $1` needs no quoting, `where "userId" = $1` does.
-- After a migration, run `pnpm --filter @rondo/db build`. It is the only command that does
-  both `prisma generate` (the types) and `tsc` (`dist`, the runtime entry consumers load).
-  Skip it and you get one of two unrelated-looking failures: models typed as `never`, or a
-  missing delegate at runtime. In a `pnpm dev` session the `tsc` half is automatic and the
-  generate is not. Details in [`packages/db/README.md`](../../packages/db/README.md).
+Money is an integer number of minor units in `bigint`, a string over the wire, with the digit
+count taken from the currency and never a hardcoded `2`
+([`packages/types`](../../packages/types/README.md)). Dates are calendar dates without time,
+bucketed in the budget's timezone through
+[`calendar.ts`](../../packages/types/src/calendar.ts).
 
 ## Invariant 5.5
 
-`RTA + Σ Available = Σ Balance`, checked over **all-time** aggregates. A future-month
-assignment lowers RTA immediately but shows up in no month's Available, so a per-month
-reconciliation will not balance. That is expected. A test asserting per-month equality is
-a wrong test, not a found bug.
-
-## Frontend
-
-### Where a screen's look comes from
-
-A screen is not designed twice. When the ticket carries a design, that design is the
-specification, and prose describing it is a summary rather than a replacement.
-
-1. **A design link in the ticket is read before the screen is written**, not after it is
-   reviewed. Open every artboard, take the copy, the order of the fields, the states and the
-   responsive behaviour from it. A plan that paraphrases the design is still second-hand; the
-   artboards win wherever the two differ. When the design and a recorded decision genuinely
-   conflict, the user decides, the same way an open question does.
-2. **Icons come from `@tabler/icons-react`.** Never paste a raw `<svg>` out of a mock. Match
-   the path data to the icon it is and import that one by name, so the set stays consistent and
-   a mock's snapshot never becomes a second icon library.
-3. **Before writing a screen, write the plan of its controls, and write it out loud.** One
-   line per control: what it is, which artboard and which width it comes from, and the
-   primitive from `packages/ui` it is built out of. A control with no primitive beside it is
-   the one about to be hand-rolled, and that is visible in a list of eight lines while it is
-   invisible in a finished file. The list is the deliverable of reading the design, because
-   reading it silently is indistinguishable from not reading it, and this list is what makes
-   the ladder below fire before the code rather than at review. Ask the user only where the
-   design and a recorded decision disagree; everything else the list settles on its own.
-   A picker of a value is `Select` or `Combobox`, never `DropdownMenu`, which is a menu of
-   actions and carries the wrong trigger icon; the double chevron of `IconSelector` means
-   "choose", the single chevron means "expand", and the icon a reader sees first is the one
-   that tells them which of the two this is.
-4. **Look for the component before inventing one**, in this order: `packages/ui`, then the
-   shadcn registry (the paragraph below has the command), then a composition of primitives
-   rather than bare markup. Not left to memory: `@rondo/config/eslint/ui-primitives` fails the
-   gate on a bare form control in `apps/web` and names the primitive to use instead, including
-   the one to reach for inside a composed field. Which elements it covers is
-   [`packages/config`](../../packages/config/README.md); do not restate the list here. What
-   the ladder buys is that radii, icons and spacing arrive right instead of being tuned by
-   hand, and a hand-written trigger beside a generated one is how a design system stops being
-   one. Reuse the tokens the neighbouring primitive carries rather than values that look
-   close.
-5. **On the screens below, an amount below zero is red and no other amount carries a colour.**
-   `text-destructive`, on a category tile's Available and Assigned, on ready to assign in the
-   month header and in its island, on a goal's progress, and on both rows of the move surface
-   and the list it picks from. What belongs to a red amount reddens with it, the explanation
-   under ready to assign and the spend ring of an overspent tile, and a group's total is the one
-   amount that stays plain. A reader who learns the colour on one of them reads it on the next.
-   Red is the one thing the eye is meant to find, so amounts do not compete with it: a tile greys
-   an amount at zero and leaves one above zero plain, and the move rows rest muted rather than
-   plain. A pair of amounts is the exception to the greying, because the zero in it is half a
-   sentence rather than an amount on its own: a month with nothing in it yet reads plainly as
-   nought of what the goal asks. Ready to assign is the exception among amounts, `text-primary` above zero with
-   `dark:text-chart-2` behind it, and it can afford the colour because the screen carries one
-   pool rather than one per row. A category's ring keeps that category's own colour whatever its
-   goal is doing, and turns red only on an overspent envelope: the colour there names the
-   envelope, not its state.
-   **A glyph may carry a colour an amount may not.** The badge in the assigned row is one:
-   `warning` while the month is short of what a goal asks, `success` once it is covered. It says
-   in one mark what the two amounts beside it already say in text, so nothing rests on the colour
-   alone, and it never spreads to a number. Every colour here is a theme token, because a literal
-   is right in one theme and wrong in the other.
-   **A frame or a dimming says something about a card, never about an amount.** A tile takes
-   `ring-warning/45` only while the screen is filtered to the categories below zero, which the
-   notice beside ready to assign switches on and the address remembers, so the warning token
-   names a state to act on and the amount inside keeps its red. A category closed for the month
-   rests at reduced opacity and returns to full on hover, on focus and while its surface is open,
-   with a `success` check beside the name and text for a screen reader, so the state is read
-   without the dimming. It is drawn behind the open ones of its group without moving in the
-   stored order, which is why the drop of a card is written back through `storedOrder` rather
-   than as the order shown. `ring-destructive/45` keeps its one meaning, a save that failed.
-   **Money flow is the screen where both halves of that rule stop.** An expense there is the ordinary
-   case rather than a warning, so an amount below zero keeps the plain colour there, and money
-   arriving on an account takes `text-success`, the token the goal badge already carries, income
-   and the receiving leg of a transfer alike. Red stays with an account
-   balance below zero wherever that screen shows one, the panel, its narrow switcher, the
-   picker in the form and the balance the reconcile surface opens with, and nowhere else on
-   that screen. The correction that surface is about to write is not an account balance, so it
-   stays plain whichever way it points. Painting every expense red would turn the one screen that is nothing
-   but expenses into a sheet of warnings, and the colour would stop naming anything. What the
-   record form's kind buttons carry is not an amount but a control, and each of the three takes a
-   tone of its own so the chosen one is read without its label: the primary for an expense,
-   `success` for income and `warning` for a transfer. Two of them sharing a tone would leave the
-   pressed state saying nothing.
-   **Net worth is the other screen where red stops.** Its total takes the colour of the pool,
-   `text-primary` with `dark:text-chart-2` behind it, whatever its sign, and every amount under
-   it stays plain, an account balance below zero included. A total below zero there is a fact
-   about what the user owes rather than an envelope to act on, so the minus says it and no
-   colour does.
-
-Screens are composed from Tailwind utilities and shadcn/ui components in `packages/ui`
-(the theme and the generator settings are described in
-[`packages/ui`](../../packages/ui/README.md)). No hand-written CSS files, no inline `style`
-props outside the one case the next paragraph bounds, no bespoke
-re-implementation of a primitive shadcn/ui ships. Missing one? Add it with
-`pnpm dlx shadcn@latest add <component>` into `packages/ui`. That one stops for the user's
-confirmation (`ask` in [`settings.json`](../settings.json)), because `pnpm dlx` fetches and
-executes a package and nothing does that unattended here.
-
-**An inline `style` is allowed for one thing: a value computed per element at runtime.** An
-animation delay taken from a cell's position is the case; a colour, a size or a spacing never
-is. What draws the bound is Tailwind rather than taste. Its scanner reads the source, so a
-class name assembled from a variable names a class that was never generated, and an arbitrary
-value only works when it is written out in full. Anything a static utility can say therefore
-stays a utility, and reaching for `style` because a class is awkward is the thing this rule
-refuses. A custom animation is **not** this case: its keyframes and the `--animate-*` variable
-that names it go in `@theme` in
-[`globals.css`](../../apps/web/src/app/globals.css), the theme's entry point, and the screen
-then uses the utility that variable creates.
-
-### A route that needs a state of the data is closed by a gate
-
-Setup has a state, and a route behind it is unreachable until that state is right. The gate is
-one client component in the layout of the route group
-([`apps/web/src/components/onboarding-gate.tsx`](../../apps/web/src/components/onboarding-gate.tsx)),
-and the reading of the state lives beside it as a plain function
-([`lib/onboarding.ts`](../../apps/web/src/lib/onboarding.ts)), so what each answer means is
-written once and testable without a browser. Which answers a step lets in is written there
-too, and a step may let in more than one: the budget step opens to a user with no budget and
-to one who finished setup, which is where another budget is made. The gate hands the answer
-that let a visitor in to what it protects, so a screen that differs by it reads the gate's
-verdict and never the query behind it, which changes the moment the screen does its work.
-Three rules make one work:
-
-- **it decides on this mount's own answer.** A cached one can be older than the row it is being
-  asked about, and a failed read knows nothing at all. Neither is a reason to move a user, so
-  the gate waits, and says the check failed rather than guessing;
-- **it decides once per route and per user, then holds.** The screens behind a gate create the
-  very rows it reads and invalidate those queries on success, so an answer arriving a moment
-  later would tear the confirmation off the screen. What resets the verdict is the step it
-  guards changing, or the signed-in user changing, and nothing else. Navigating between two
-  routes a single gate covers holds the verdict, which is what keeps the shell from deciding
-  again on every section. One layout wraps every step, so neither unmounts it;
-- **it renders nothing it is about to move the user away from.** Not the shell, not the form.
-  A screen shown for one frame before a redirect is a screen the user can act on.
-
-A gate is a decision about where a user belongs, not a security boundary. What stops a request
-is the API.
-
-### What the reader is looking at lives in the address
-
-A selection a link should reproduce is a route segment or a query parameter, never `useState`.
-The month a budget screen shows, the account a feed covers and the budget a new one is started
-from are all of them, so a link opens
-what the sender saw and the back button walks the choices rather than the screens. A screen
-holding that in state gives every reader the same first frame and loses the choice on reload.
-
-Two things have to hold alongside it. **A gate's verdict is keyed on the step it guards and the
-signed-in user, never on the path**, or moving between two routes one gate covers makes it
-decide again. And **an operation that destroys what the address names moves the reader off it**
-before the row disappears, with a replacement rather than a push: archiving the account being
-viewed leaves that URL answering for a row nothing on the screen names any more, and pushing
-leaves it one press of back away.
-
-The client is configured once, in `ApiProvider`
-([`apps/web/src/lib/api/client.tsx`](../../apps/web/src/lib/api/client.tsx)). A page or a
-component therefore never touches a token, a header or a base URL, and never writes `fetch`.
-
-- **Client components** read through the generated query options, imported from
-  `@rondo/api-client/react-query`: `useQuery(meControllerIdentifyOptions())`. **The token
-  attaches itself.** Each generated request carries the `security` its operation declares in
-  the spec, so what decides is `@Public()` in `apps/api`, not the call site. Setting an
-  `Authorization` header by hand in a component means either the endpoint is mis-declared in
-  the spec or someone is working around it; fix the declaration.
-- **Server components and route handlers must never use the module-level client.**
-  `@rondo/api-client` holds one client per _process_, so configuring it on the server would put
-  one visitor's token into an object every concurrent request shares. That is a cross-tenant
-  leak of exactly the kind ADR-005 has no database-side net for. `ApiProvider` therefore
-  configures it only in the browser (`typeof window !== 'undefined'`), which leaves it
-  deliberately unconfigured on the server. Nothing needs it there yet; when something does, it
-  builds its own client **per request** from `await auth()` and passes it explicitly
-  (`{ client }` on the generated call), in that same `src/lib/api` module. And not a bare
-  `fetch` "just this once". That is how the second API path starts, which is the thing ADR-002
-  exists to prevent.
-- **A missing endpoint is added to `apps/api` and regenerated**, never assembled in web out of
-  a URL string.
-- **Mutations** invalidate through the generated query keys, and through the **generated** ones
-  rather than a string that looks like the operation: the key is an object carrying an id, a
-  base URL and the request, so a hand-written literal matches nothing and the screen goes on
-  showing money the server has already moved past. Expect the invalidation to be wide. No
-  derived value is stored, so one assignment moves RTA and every later month's Available at
-  once. **A change of the active budget re-reads everything**, because every read a budget
-  owns is scoped to it on the server and the cache holds nothing that says which budget an
-  entry was read for. Switching in settings and making another budget both call
-  `readAnotherBudget` beside the gate, and neither loads the page again: it resets every query
-  except the two the gate itself reads, which it invalidates, and the user's own settings, which
-  no budget owns and which it leaves alone. Resetting the gate's own reads would strand it, because an observer counts an answer
-  as its own only when the query has been updated more times than when it mounted, and a
-  reset starts that count again. Their idempotency key belongs to the user's intent, so it is minted once when the form
-  opens, not per HTTP request. Otherwise a double click writes twice. A field that edits an
-  amount has more rules than that, and
-  [`edit-money-on-a-screen`](../skills/edit-money-on-a-screen/SKILL.md) holds them.
+`RTA + Σ Available = Σ Balance`, checked over all-time aggregates. A future-month assignment
+lowers RTA now and shows in no month's Available, so a per-month reconciliation will not
+balance, and a test asserting it is a wrong test.
