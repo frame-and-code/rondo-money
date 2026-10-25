@@ -1,4 +1,4 @@
-import { budgetsLockStatement } from '@/budgets/budget-lock.query';
+import { budgetsGateStatement, budgetsLockStatement } from '@/budgets/budget-lock.query';
 
 const USER = 'user_2rondoBudgetLockAaaaaaaa';
 const OTHER_USER = 'user_2rondoBudgetLockBbbbbbbb';
@@ -35,5 +35,17 @@ describe('the statement that holds a caller’s budgets still', () => {
     const { text } = budgetsLockStatement({ userId: USER });
 
     expect(text.toLowerCase()).toContain('for update');
+  });
+});
+
+describe('the statement that holds a caller still before they have any budget row', () => {
+  it('takes a lock for the caller that ends with the transaction, keyed on the caller alone', () => {
+    const first = budgetsGateStatement({ userId: USER });
+    const second = budgetsGateStatement({ userId: OTHER_USER });
+
+    expect(first.text.toLowerCase()).toContain('pg_advisory_xact_lock');
+    expect(first.values).toEqual([USER]);
+    expect(first.text).not.toContain(USER);
+    expect(second.text).toBe(first.text);
   });
 });

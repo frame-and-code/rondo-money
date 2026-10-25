@@ -380,7 +380,8 @@ is the API.
 ### What the reader is looking at lives in the address
 
 A selection a link should reproduce is a route segment or a query parameter, never `useState`.
-The month a budget screen shows and the account a feed covers are both of them, so a link opens
+The month a budget screen shows, the account a feed covers and the budget a new one is started
+from are all of them, so a link opens
 what the sender saw and the back button walks the choices rather than the screens. A screen
 holding that in state gives every reader the same first frame and loses the choice on reload.
 

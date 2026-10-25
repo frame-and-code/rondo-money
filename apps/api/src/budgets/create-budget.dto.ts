@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { type LanguageTag } from '@rondo/types';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsString, Length } from 'class-validator';
+import { IsBoolean, IsIn, IsString, IsUUID, Length, ValidateIf } from 'class-validator';
 
 import { LANGUAGE_TAGS } from '@/user-settings/language';
 import { ApiCurrencyProperty } from '@/validation/currency.decorator';
@@ -48,6 +48,19 @@ export class CreateBudgetDto {
   })
   @IsBoolean()
   withDefaultCategories!: boolean;
+
+  @ApiProperty({
+    description:
+      'A budget of the caller to start this one from. Its groups, categories, open accounts, ' +
+      'assets and liabilities are written into the new budget, with no records and every ' +
+      'amount at zero. Goals come along only when the currency is the same. Left out, the ' +
+      'budget starts empty or with the starter set.',
+    format: 'uuid',
+    required: false,
+  })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsUUID()
+  templateId?: string;
 
   @ApiProperty({
     description:

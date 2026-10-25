@@ -46,7 +46,3 @@ export function currencyName(locale: Locale, code: string): string {
 
   return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1);
 }
-
-export function sampleAmount(locale: Locale, code: CurrencyCode): string {
-  return new Intl.NumberFormat(locale, { style: 'currency', currency: code }).format(1234.5);
-}

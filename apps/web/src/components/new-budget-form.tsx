@@ -2,17 +2,12 @@
 
 import {
   budgetsControllerCreateMutation,
+  budgetsControllerListOptions,
   budgetsControllerListQueryKey,
 } from '@rondo/api-client/react-query';
 import { ThemeToggle } from '@rondo/ui/components/theme-toggle';
 import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@rondo/ui/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@rondo/ui/components/ui/card';
 import { Checkbox } from '@rondo/ui/components/ui/checkbox';
 import {
   Combobox,
@@ -50,22 +45,24 @@ import {
 import { useIsMobile } from '@rondo/ui/hooks/use-mobile';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconCheck, IconChevronDown, IconLoader, IconLock } from '@tabler/icons-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 import { readAnotherBudget, useAdmittedState } from '@/components/onboarding-gate';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
 import { localeLabels, locales, type Locale } from '@/i18n/locales';
 import { namePlaceholderKey } from '@/i18n/name-placeholders';
+import { isNameTaken, isUnknownBudget } from '@/lib/budget-failure';
 import {
   currencyName,
   currencyOptions,
-  sampleAmount,
   searchCurrencies,
   type CurrencyOption,
 } from '@/lib/currencies';
+import { BALANCES_ROUTE, onboardingRoute } from '@/lib/onboarding';
 
 const FADE_MS = 150;
 
@@ -86,6 +83,10 @@ function mintKey(): string {
   return crypto.randomUUID();
 }
 
+function templateAddress(id: string): string {
+  return `${onboardingRoute('budget')}?from=${id}`;
+}
+
 function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
@@ -95,6 +96,7 @@ function FieldDrawer({
   label,
   face,
   open,
+  disabled = false,
   onOpenChange,
   children,
 }: {
@@ -102,6 +104,7 @@ function FieldDrawer({
   label: string;
   face: ReactNode;
   open: boolean;
+  disabled?: boolean;
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
 }) {
@@ -112,6 +115,7 @@ function FieldDrawer({
         role="combobox"
         aria-label={label}
         aria-expanded={open}
+        disabled={disabled}
         className={FIELD}
       >
         {face}
@@ -133,31 +137,63 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
   const isMobile = useIsMobile();
   const another = useAdmittedState() === 'app';
 
+  const from = useSearchParams().get('from');
+  const basedOn = another && from !== null;
+  const { data: budgets } = useQuery({ ...budgetsControllerListOptions(), enabled: basedOn });
+  const template = basedOn
+    ? (budgets?.find((budget) => budget.id === from) ??
+      budgets?.find((budget) => budget.active) ??
+      null)
+    : null;
+  const templateId = template?.id ?? null;
+
   const [name, setName] = useState('');
-  const [currency, setCurrency] = useState('');
+  const [pickedCurrency, setPickedCurrency] = useState('');
+  const currency = pickedCurrency === '' ? (template?.currency ?? '') : pickedCurrency;
+  const [templateOpen, setTemplateOpen] = useState(false);
   const [withDefaultCategories, setWithDefaultCategories] = useState(!another);
-  const [agreed, setAgreed] = useState(false);
+  const [agreed, setAgreed] = useState(true);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [fading, setFading] = useState(false);
-  const [created, setCreated] = useState<{ name: string; currency: string } | null>(null);
+  const [created, setCreated] = useState<{
+    name: string;
+    currency: string;
+    copied: boolean;
+  } | null>(null);
 
   const [idempotencyKey, setIdempotencyKey] = useState(mintKey);
   const [failed, setFailed] = useState(false);
+  const [nameTaken, setNameTaken] = useState(false);
 
   const create = useMutation({
     ...budgetsControllerCreateMutation(),
-    onSuccess: async () => {
-      setCreated({ name: name.trim(), currency });
+    onSuccess: async (_answer, variables) => {
+      setCreated({
+        name: variables.body.name,
+        currency: variables.body.currency,
+        copied: variables.body.templateId !== undefined,
+      });
       await (another
         ? readAnotherBudget(queryClient)
         : queryClient.invalidateQueries({ queryKey: budgetsControllerListQueryKey() }));
     },
-    onError: () => {
+    onError: (error) => {
       setFailed(true);
+      setNameTaken(isNameTaken(error));
+      if (isUnknownBudget(error)) {
+        setAgreed(false);
+        void queryClient.invalidateQueries({ queryKey: budgetsControllerListQueryKey() });
+      }
     },
   });
+
+  useEffect(() => {
+    if (templateId !== null && templateId !== from) {
+      window.history.replaceState(null, '', templateAddress(templateId));
+    }
+  }, [templateId, from]);
 
   const options = useMemo(() => currencyOptions(locale), [locale]);
   const matched = useMemo(() => searchCurrencies(options, query), [options, query]);
@@ -189,8 +225,16 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
     }, FADE_MS);
   };
 
+  const chooseTemplate = (id: string): void => {
+    setTemplateOpen(false);
+    if (id === templateId) return;
+
+    window.history.replaceState(null, '', templateAddress(id));
+    edited();
+  };
+
   const chooseCurrency = (code: string): void => {
-    setCurrency(code);
+    setPickedCurrency(code);
     setCurrencyOpen(false);
     setQuery('');
     edited();
@@ -205,7 +249,8 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
         name: name.trim(),
         currency,
         timezone: browserTimeZone(),
-        withDefaultCategories,
+        withDefaultCategories: basedOn ? false : withDefaultCategories,
+        ...(templateId === null ? {} : { templateId }),
         idempotencyKey,
       },
     });
@@ -270,6 +315,65 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
       </SelectContent>
     </Select>
   );
+
+  const templateField =
+    template === null || budgets === undefined ? null : isMobile ? (
+      <FieldDrawer
+        id="budget-template"
+        label={t('newBudget.templateLabel')}
+        face={<span className="truncate">{template.name}</span>}
+        open={templateOpen}
+        disabled={create.isPending}
+        onOpenChange={setTemplateOpen}
+      >
+        <Command value={template.id} label={t('newBudget.templateLabel')}>
+          <CommandList className="py-2">
+            {budgets.map((budget) => (
+              <CommandItem
+                key={budget.id}
+                value={budget.id}
+                keywords={[budget.name]}
+                onSelect={() => {
+                  chooseTemplate(budget.id);
+                }}
+              >
+                <IconCheck
+                  className={cn('size-4', budget.id === template.id ? 'opacity-100' : 'opacity-0')}
+                />
+                <span className="truncate">{budget.name}</span>
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </FieldDrawer>
+    ) : (
+      <Select
+        value={template.id}
+        disabled={create.isPending}
+        onValueChange={(next: string | null) => {
+          if (next !== null) chooseTemplate(next);
+        }}
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+      >
+        <SelectTrigger
+          id="budget-template"
+          aria-label={t('newBudget.templateLabel')}
+          className={cn('w-full', CONTROL)}
+        >
+          <SelectValue>
+            {(id: string) => budgets.find((budget) => budget.id === id)?.name ?? ''}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {budgets.map((budget) => (
+            <SelectItem key={budget.id} value={budget.id}>
+              {budget.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
 
   const currencyField = isMobile ? (
     <FieldDrawer
@@ -373,21 +477,29 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
 
           <div className="flex flex-col gap-3">
             <h1 className="text-[26px] font-semibold tracking-tight md:text-[34px]">
-              {t(another ? 'newBudget.secondHeading' : 'newBudget.heading')}
+              {t('newBudget.heading')}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {t(another ? 'newBudget.secondLead' : 'newBudget.lead')}
+              {t(
+                basedOn
+                  ? 'newBudget.templateLead'
+                  : another
+                    ? 'newBudget.secondLead'
+                    : 'newBudget.lead',
+              )}
             </p>
           </div>
 
-          <OnboardingSteps done={created === null ? 0 : 1} />
+          <OnboardingSteps
+            done={created === null ? 0 : 1}
+            variant={basedOn ? 'copy' : another ? 'another' : 'first'}
+          />
         </div>
 
         <Card className="max-md:rounded-none max-md:bg-transparent max-md:py-0 max-md:shadow-none max-md:ring-0">
           {created === null ? (
             <CardHeader className="max-md:hidden">
               <CardTitle>{t('newBudget.cardTitle')}</CardTitle>
-              <CardDescription>{t('newBudget.cardDescription')}</CardDescription>
             </CardHeader>
           ) : null}
 
@@ -406,9 +518,13 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                       {t('newBudget.doneTitle', { name: created.name })}
                     </p>
                     <p className="text-muted-foreground text-sm">
-                      {withDefaultCategories
-                        ? t('newBudget.doneWithDefaults')
-                        : t('newBudget.doneWithoutDefaults')}
+                      {t(
+                        created.copied
+                          ? 'newBudget.doneFromTemplate'
+                          : withDefaultCategories
+                            ? 'newBudget.doneWithDefaults'
+                            : 'newBudget.doneWithoutDefaults',
+                      )}
                     </p>
                   </div>
                 </div>
@@ -421,10 +537,10 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                 </div>
 
                 <Link
-                  href="/new/account"
+                  href={created.copied ? BALANCES_ROUTE : onboardingRoute('account')}
                   className={cn(buttonVariants(), CONTROL, 'max-md:w-full')}
                 >
-                  {t('newBudget.continue')}
+                  {t(created.copied ? 'newBudget.balances' : 'newBudget.continue')}
                 </Link>
               </div>
             ) : (
@@ -437,6 +553,13 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                   </div>
                 )}
 
+                {templateField === null ? null : (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="budget-template">{t('newBudget.templateLabel')}</Label>
+                    {templateField}
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="budget-name">{t('newBudget.nameLabel')}</Label>
                   <Input
@@ -446,10 +569,16 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                     maxLength={60}
                     onChange={(event) => {
                       setName(event.target.value);
+                      setNameTaken(false);
                       edited();
                     }}
                     className={CONTROL}
                   />
+                  {nameTaken ? (
+                    <p role="alert" className="text-destructive text-xs">
+                      {t('newBudget.nameTaken')}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -459,30 +588,34 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                     <IconLock className="size-3.5 shrink-0" />
                     {t('newBudget.currencyLocked')}
                   </p>
-                  {chosen === null ? null : (
-                    <p className="text-sm font-medium">{sampleAmount(locale, chosen.code)}</p>
-                  )}
+                  {template !== null && currency !== template.currency ? (
+                    <p className="text-muted-foreground text-xs">
+                      {t('newBudget.templateGoalsStay')}
+                    </p>
+                  ) : null}
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="budget-defaults"
-                    checked={withDefaultCategories}
-                    onCheckedChange={(next) => {
-                      setWithDefaultCategories(next);
-                      edited();
-                    }}
-                    className="mt-1"
-                  />
-                  <Label htmlFor="budget-defaults" className="flex flex-col items-start gap-1">
-                    <span>{t('newBudget.defaultsLabel')}</span>
-                    <span className="text-muted-foreground text-xs font-normal">
-                      {withDefaultCategories
-                        ? t('newBudget.defaultsOn')
-                        : t('newBudget.defaultsOff')}
-                    </span>
-                  </Label>
-                </div>
+                {basedOn ? null : (
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="budget-defaults"
+                      checked={withDefaultCategories}
+                      onCheckedChange={(next) => {
+                        setWithDefaultCategories(next);
+                        edited();
+                      }}
+                      className="mt-1"
+                    />
+                    <Label htmlFor="budget-defaults" className="flex flex-col items-start gap-1">
+                      <span>{t('newBudget.defaultsLabel')}</span>
+                      <span className="text-muted-foreground text-xs font-normal">
+                        {withDefaultCategories
+                          ? t('newBudget.defaultsOn')
+                          : t('newBudget.defaultsOff')}
+                      </span>
+                    </Label>
+                  </div>
+                )}
 
                 {another ? (
                   <div className="flex items-start gap-3">
@@ -495,14 +628,17 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                       }}
                       className="mt-1"
                     />
-                    <div className="flex flex-col items-start gap-1">
+                    <div className="flex flex-col items-start gap-1.5">
                       <Label htmlFor="budget-consent">{t('newBudget.consentLabel')}</Label>
-                      <p className="text-muted-foreground text-xs">{t('newBudget.consentHint')}</p>
+                      <div className="text-muted-foreground flex flex-col text-xs">
+                        <p>{t('newBudget.consentHint')}</p>
+                        {basedOn ? <p>{t('newBudget.templateConsentHint')}</p> : null}
+                      </div>
                     </div>
                   </div>
                 ) : null}
 
-                {failed ? (
+                {failed && !nameTaken ? (
                   <p role="alert" className="text-destructive text-sm">
                     {t('newBudget.submitFailed')}
                   </p>
@@ -514,6 +650,7 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
                     name.trim() === '' ||
                     currency === '' ||
                     (another && !agreed) ||
+                    (basedOn && templateId === null) ||
                     create.isPending
                   }
                   className={CONTROL}

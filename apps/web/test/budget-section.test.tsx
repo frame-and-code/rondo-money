@@ -235,6 +235,25 @@ describe('the budget section of settings', () => {
       expect(within(list()).queryByText('Family')).not.toBeInTheDocument();
     });
 
+    it('says the name is taken under the field rather than as a failure, until the name changes', async () => {
+      const user = userEvent.setup();
+      renames.mockRejectedValue(
+        Object.assign(new Error('refused'), { statusCode: 400, reason: 'NAME_TAKEN' }),
+      );
+      draw();
+
+      await retype(user, 'Trip');
+      await user.click(save());
+
+      expect(await screen.findByText(en['settings.budgetNameTaken'])).toBeInTheDocument();
+      expect(screen.queryByText(en['settings.budgetFailed'])).not.toBeInTheDocument();
+      expect(await nameField()).toHaveValue('Trip');
+
+      await user.type(await nameField(), ' 2');
+
+      expect(screen.queryByText(en['settings.budgetNameTaken'])).not.toBeInTheDocument();
+    });
+
     it('keeps what is typed after a save while the list is still being re-read', async () => {
       const user = userEvent.setup();
       draw();
@@ -649,10 +668,97 @@ describe('the budget section of settings', () => {
 
       expect(within(list()).getAllByRole('radio')).toHaveLength(1);
       expect(activeMark('Household')).toBeChecked();
-      expect(screen.getByRole('link', { name: en['settings.budgetNew'] })).toHaveAttribute(
-        'href',
-        '/new',
-      );
+      expect(screen.getByRole('button', { name: en['settings.budgetNew'] })).toBeEnabled();
+    });
+  });
+
+  describe('the question a new budget starts with', () => {
+    const width = window.innerWidth;
+
+    afterEach(() => {
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+    });
+
+    const newBudget = () => screen.getByRole('button', { name: en['settings.budgetNew'] });
+    const cleanStart = () => screen.findByRole('link', { name: en['settings.budgetNewClean'] });
+    const fromBudget = () => screen.findByRole('link', { name: en['settings.budgetNewFrom'] });
+
+    it('asks how to start before any form opens, in a dialog, and sends nothing', async () => {
+      const user = userEvent.setup();
+      draw();
+      await nameField();
+
+      expect(
+        screen.queryByRole('link', { name: en['settings.budgetNew'] }),
+      ).not.toBeInTheDocument();
+      await user.click(newBudget());
+
+      const dialog = await screen.findByRole('dialog');
+      expect(
+        within(dialog).getByRole('heading', { name: en['settings.budgetNewTitle'] }),
+      ).toBeInTheDocument();
+      expect(within(dialog).getByText(en['settings.budgetNewBody'])).toBeInTheDocument();
+      expect(document.querySelector('[data-slot=dialog-content]')).not.toBeNull();
+      expect(document.querySelector('[data-slot=drawer-popup]')).toBeNull();
+      expect(renames).not.toHaveBeenCalled();
+      expect(activates).not.toHaveBeenCalled();
+    });
+
+    it('goes away when it is dismissed, having changed nothing', async () => {
+      const user = userEvent.setup();
+      draw();
+      await nameField();
+
+      await user.click(newBudget());
+      await screen.findByRole('dialog');
+      await user.keyboard('{Escape}');
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      expect(renames).not.toHaveBeenCalled();
+      expect(activates).not.toHaveBeenCalled();
+      expect(activeMark('Household')).toBeChecked();
+    });
+
+    it('offers a clean start, and a start from the budget that is active now, as links', async () => {
+      const user = userEvent.setup();
+      budgets = [
+        budget({ id: 'budget-1', name: 'Household', active: false }),
+        budget({ id: 'budget-2', name: 'Trip', currency: 'EUR', active: true }),
+      ];
+      draw();
+      await nameField();
+
+      await user.click(newBudget());
+
+      expect(await cleanStart()).toHaveAttribute('href', '/new');
+      expect(await fromBudget()).toHaveAttribute('href', '/new?from=budget-2');
+    });
+
+    it('opens the question in a drawer on a phone', async () => {
+      Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true });
+      const user = userEvent.setup();
+      draw();
+      await nameField();
+
+      await user.click(newBudget());
+
+      expect(await cleanStart()).toHaveAttribute('href', '/new');
+      expect(document.querySelector('[data-slot=drawer-popup]')).not.toBeNull();
+      expect(document.querySelector('[data-slot=dialog-content]')).toBeNull();
+    });
+
+    it('stays closed while a switch of the active budget is in flight', async () => {
+      const user = userEvent.setup();
+      activates.mockReturnValue(new Promise(() => {}));
+      draw();
+      await nameField();
+
+      await choose(user, 'Trip');
+
+      await waitFor(() => expect(activates).toHaveBeenCalledTimes(1));
+      expect(
+        screen.getByRole('button', { name: en['settings.budgetNew'], hidden: true }),
+      ).toBeDisabled();
     });
   });
 });

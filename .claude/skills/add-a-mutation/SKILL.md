@@ -118,11 +118,25 @@ steps.
 **A mutation that changes which budget is active holds the caller's budget rows first.** The
 index that keeps one budget active is checked on every statement, so two such mutations that
 both read the same active row and then write end with one of them failing on it, and the
-caller gets a 500 for an operation nothing was wrong with. `budgetsLockStatement` in
-[`budget-lock.query.ts`](../../../apps/api/src/budgets/budget-lock.query.ts) takes the rows
-for update in id order, on the mutation's client. Read the active budget **after** it, in a
-statement of its own: the lock cannot cover a row a concurrent creation inserts, and only a
-fresh statement sees it. Deactivate before activating, for the same per-statement reason.
+caller gets a 500 for an operation nothing was wrong with.
+[`budget-lock.query.ts`](../../../apps/api/src/budgets/budget-lock.query.ts) holds two
+statements, run in this order on the mutation's client. `budgetsGateStatement` takes a lock
+keyed on the caller that ends with the transaction, which is the one that holds a caller who
+has no budget row yet. `budgetsLockStatement` then takes the rows for update in id order. Read
+the active budget **after** both, in a statement of its own, and deactivate before
+activating, for the same per-statement reason. A rule over the caller's budgets that a check
+has to answer before the write, such as a name nobody else of theirs carries, is checked
+after them too, so two requests cannot both pass it.
+
+**A mutation that reads a budget other than the active one reads it with raw SQL, and writes
+the new rows with creates only.** The budget filter answers for the active budget whatever
+the `where` says, so the rows of an inactive one are out of the scoped client's reach;
+[`budget-structure.query.ts`](../../../apps/api/src/budgets/budget-structure.query.ts) holds
+the statements a copy reads with, each naming the caller and the budget. And the filter
+remembers the active budget for the rest of the request the first time a read, a count, an
+update or a delete of a model a budget owns asks for it. A mutation that makes another budget
+active would have that answer go stale under it, so inside one the models a budget owns take
+`create`, `createMany` and `createManyAndReturn`, which never ask, and nothing else.
 
 ## Scoping still applies, unchanged
 

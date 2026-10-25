@@ -63,11 +63,11 @@ describe('the single write point (integration)', () => {
     await prisma.budget.deleteMany({ where: OWNERS });
   };
 
-  const budgetFor = (userId: string, active: boolean) =>
+  const budgetFor = (userId: string, active: boolean, name = active ? 'Held' : 'Held before') =>
     prisma.budget.create({
       data: {
         userId,
-        name: 'Held',
+        name,
         currency: 'USD',
         minorDigits: 2,
         timezone: 'Europe/Warsaw',
@@ -494,7 +494,7 @@ describe('the single write point (integration)', () => {
     });
 
     it('confines an upsert to the active budget, as it does an update', async () => {
-      const archived = await budgetFor(USER_A, false);
+      const archived = await budgetFor(USER_A, false, 'Archived');
       const active = await prisma.budget.create({
         data: {
           userId: USER_A,

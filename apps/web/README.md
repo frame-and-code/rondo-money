@@ -23,7 +23,8 @@ offering itself. An archived account then leaves the screen for good, so the pan
 and the account picker's list carry only what is in use, and a record whose other side sits on
 one names it as an archived account rather than by a name nothing can resolve. Settings is a
 screen too: the budget the screens follow, whose name can be changed there and whose currency
-is only shown, beside the list of the user's budgets and the switch between them, then the
+is only shown, beside the list of the user's budgets and the switch between them, and the
+button for a new budget, which asks first whether to start clean or from the active one, then the
 interface language, which follows the account rather than the device, the
 theme, which does not, and a danger zone holding the two actions that erase everything the user
 owns, one keeping the sign-in and one taking the account with it. Net worth is a screen as well:
@@ -33,9 +34,15 @@ and deletes in place, under a total the server computes.
 Setup is a gate rather than a suggestion. A user with no budget, or with a budget and no
 account, is on a step of it, and every address behind the sign-in leads to that step until
 both exist. Once they do, the account step is closed, and the budget step opens as the form
-for another budget: it asks for no language, leaves the starter categories off and waits for
-the user to agree that the current budget stops being active. Making one resumes setup at the
-account step, and the previous budget comes back from settings.
+for another budget: it asks for no language, leaves the starter categories off and carries a
+box, ticked from the start, saying the new budget becomes the active one. Unticking it closes
+the submit. Making one resumes setup at the
+account step, and the previous budget comes back from settings. Opened with a budget named in
+the address, the same form starts the new budget from that one: it offers the budget to build
+on, takes its currency until the user picks another, drops the starter categories and says
+what comes along. That one ends on the opening balances step, where each copied account gets
+the amount it holds today and an account left empty stays at zero. The gate sends a user whose
+new budget has no account to the account step instead.
 
 ## Structure
 
@@ -69,6 +76,8 @@ src/
                               # the same one
     new/account/page.tsx      # onboarding step 2, the first account and its opening balance.
                               # Ends the flow by opening the app on Categories
+    new/balances/page.tsx     # onboarding step 2 of a copied budget, the opening balance of
+                              # each copied account. Ends by opening the app on Categories
     (app)/                    # the app shell: a sidebar on desktop, a bottom tab bar on a
                               # phone, and the sections it navigates
       layout.tsx              # the gate over the app, and AppShell around every section
@@ -87,9 +96,10 @@ src/
                               # loading region, the Clerk provider wrapper,
                               # the locale switcher the sign-in screen carries, the settings
                               # screen with its budget card, the confirmation a switch of
-                              # budget goes behind, its language, its theme and the two
+                              # budget goes behind, the question a new budget starts with,
+                              # its language, its theme and the two
                               # actions that erase everything, with the confirmation both of
-                              # them go behind, the two onboarding forms,
+                              # them go behind, the onboarding forms,
                               # the field an
                               # amount is typed into, which the forms outside the categories
                               # screen share, the money flow screen and everything on
@@ -164,6 +174,8 @@ src/
   lib/erase-failure.ts        # the same for a refused erase, and it also says whether the
                               # idempotency key survives the failure, since a lost request keeps
                               # its key and a recorded refusal does not
+  lib/budget-failure.ts       # whether a refused new budget names a budget the user no longer
+                              # has, which is what makes the form read the list again
   lib/transaction-feed.ts     # the records of one page cut into days, each with the total the
                               # server counted for the whole day rather than for the page
   lib/sections.ts             # the sections in one place: route, message key, icon.

@@ -27,7 +27,7 @@ is a stack in the browser, and the single write point stays for atomicity).
 ## Structure
 
 - `apps/web` is Next.js (App Router): the app shell and its navigation, the sign-in screen and
-  the two onboarding screens, which sit outside the shell and end by opening it on Categories.
+  the onboarding screens, which sit outside the shell and end by opening it on Categories.
   A gate in each group's layout decides which of the three a visitor gets, so setup cannot be
   skipped, and the first screen opens again only to make another budget. Behind the shell sit
   its sections, which

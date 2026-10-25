@@ -218,11 +218,13 @@ describe('the domain core tables (integration)', () => {
       await expect(
         prisma.budget.update({
           where: { userId_active: { userId: USER, active: false } },
-          data: { name: 'via the key' },
+          data: { timezone: 'Asia/Tokyo' },
         }),
       ).rejects.toThrow(/zero or one/);
 
-      const written = await prisma.budget.count({ where: { userId: USER, name: 'via the key' } });
+      const written = await prisma.budget.count({
+        where: { userId: USER, timezone: 'Asia/Tokyo' },
+      });
       expect(written).toBe(2);
     });
 

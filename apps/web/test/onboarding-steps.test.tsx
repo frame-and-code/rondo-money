@@ -4,7 +4,7 @@ import { OnboardingSteps } from '@/components/onboarding-steps';
 import { interpolate, LocaleProvider } from '@/i18n/locale-context';
 import { ru } from '@/i18n/messages/ru';
 
-const draw = (done: number) => {
+const draw = (done: number, variant?: 'first' | 'another' | 'copy') => {
   Object.defineProperty(window.navigator, 'languages', {
     value: ['ru-RU'],
     configurable: true,
@@ -12,7 +12,7 @@ const draw = (done: number) => {
 
   return render(
     <LocaleProvider>
-      <OnboardingSteps done={done} />
+      <OnboardingSteps done={done} variant={variant} />
     </LocaleProvider>,
   );
 };
@@ -50,5 +50,23 @@ describe('the onboarding progress', () => {
     draw(3);
 
     expect(screen.getByText(interpolate(ru['onboarding.progress'], { step: 3 }))).toBeVisible();
+  });
+
+  it.each([
+    ['first', 'onboarding.step1Body', 'onboarding.step2Body'],
+    ['another', 'onboarding.step1BodyAnother', 'onboarding.step2Body'],
+    ['copy', 'onboarding.step1BodyCopy', 'onboarding.step2BodyCopy'],
+  ] as const)('describes the steps of a %s budget in its own words', (variant, first, second) => {
+    draw(0, variant);
+
+    expect(screen.getByText(ru[first])).toBeInTheDocument();
+    expect(screen.getByText(ru[second])).toBeInTheDocument();
+    expect(screen.getByText(ru['onboarding.step3Body'])).toBeInTheDocument();
+  });
+
+  it('describes a first budget when told nothing else', () => {
+    draw(0);
+
+    expect(screen.getByText(ru['onboarding.step1Body'])).toBeInTheDocument();
   });
 });

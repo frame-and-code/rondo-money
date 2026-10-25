@@ -160,7 +160,7 @@ export const budgetsControllerListOptions = (options?: Options<BudgetsController
 /**
  * Create a budget
  *
- * Creates the budget and, when asked for, the starter groups and categories, in one database transaction. The chosen language is stored in the caller's settings by the same transaction, because the category names are written in it. A user holds at most one active budget, so a previous one stops being active here.
+ * Creates the budget and, when asked for, the starter groups and categories, in one database transaction. The chosen language is stored in the caller's settings by the same transaction, because the category names are written in it. A user holds at most one active budget, so a previous one stops being active here. Given a budget to start from, the same transaction copies its groups, categories, open accounts, assets and liabilities, each account opening at zero, and leaves every record behind.
  */
 export const budgetsControllerCreateMutation = (options?: Partial<Options<BudgetsControllerCreateData>>): UseMutationOptions<BudgetsControllerCreateResponse, BudgetsControllerCreateError, Options<BudgetsControllerCreateData>> => {
     const mutationOptions: UseMutationOptions<BudgetsControllerCreateResponse, BudgetsControllerCreateError, Options<BudgetsControllerCreateData>> = {

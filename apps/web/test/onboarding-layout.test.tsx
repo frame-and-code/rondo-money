@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 import OnboardingLayout from '@/app/new/layout';
 import { LocaleProvider } from '@/i18n/locale-context';
@@ -7,6 +7,7 @@ import { ru } from '@/i18n/messages/ru';
 
 let pathname = '/new';
 let budgets: { id: string; active: boolean }[] | 'never answers' = 'never answers';
+let accounts: { id: string }[] = [];
 const replace = jest.fn();
 
 jest.mock('next/navigation', () => ({
@@ -25,7 +26,7 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
   accountsControllerListOptions: () => ({
     queryKey: ['accountsControllerList'],
-    queryFn: () => Promise.resolve({ accounts: [], total: '0' }),
+    queryFn: () => Promise.resolve({ accounts, total: '0' }),
   }),
 }));
 
@@ -46,6 +47,7 @@ describe('the layout over the onboarding steps', () => {
   beforeEach(() => {
     pathname = '/new';
     budgets = 'never answers';
+    accounts = [];
     replace.mockClear();
     Object.defineProperty(window.navigator, 'languages', {
       value: ['ru-RU'],
@@ -68,5 +70,36 @@ describe('the layout over the onboarding steps', () => {
 
     expect(await screen.findByText('the step itself')).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('opens the opening balances to a user whose budget has accounts', async () => {
+    pathname = '/new/balances';
+    budgets = [{ id: 'budget-1', active: true }];
+    accounts = [{ id: 'account-1' }];
+
+    draw();
+
+    expect(await screen.findByText('the step itself')).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('sends a user with no account from the opening balances to the account step', async () => {
+    pathname = '/new/balances';
+    budgets = [{ id: 'budget-1', active: true }];
+
+    draw();
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/new/account'));
+    expect(screen.queryByText('the step itself')).not.toBeInTheDocument();
+  });
+
+  it('sends a user with no budget from the opening balances to the budget step', async () => {
+    pathname = '/new/balances';
+    budgets = [];
+
+    draw();
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/new'));
+    expect(screen.queryByText('the step itself')).not.toBeInTheDocument();
   });
 });

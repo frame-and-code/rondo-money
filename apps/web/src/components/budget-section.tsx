@@ -8,7 +8,7 @@ import {
 } from '@rondo/api-client/react-query';
 import { Alert, AlertDescription, AlertTitle } from '@rondo/ui/components/ui/alert';
 import { Badge } from '@rondo/ui/components/ui/badge';
-import { Button, buttonVariants } from '@rondo/ui/components/ui/button';
+import { Button } from '@rondo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -41,16 +41,16 @@ import { cn } from '@rondo/ui/lib/utils';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
+import { NewBudgetDialog } from '@/components/new-budget-dialog';
 import { readAnotherBudget } from '@/components/onboarding-gate';
 import { SettingsSection } from '@/components/settings-section';
 import { SwitchBudgetDialog } from '@/components/switch-budget-dialog';
 import { useTranslations } from '@/i18n/locale-context';
+import { isNameTaken } from '@/lib/budget-failure';
 import { dayOf } from '@/lib/calendar-day';
 import { currencyName } from '@/lib/currencies';
-import { onboardingRoute } from '@/lib/onboarding';
 import { keepsTheKey, saveFailureKind } from '@/lib/save-failure';
 
 interface Asking {
@@ -78,9 +78,11 @@ export function BudgetSection() {
   const [draft, setDraft] = useState<string | null>(null);
   const [renameKey, setRenameKey] = useState(mintKey);
   const [renameFailed, setRenameFailed] = useState(false);
+  const [renameTaken, setRenameTaken] = useState(false);
   const [asking, setAsking] = useState<Asking | null>(null);
   const [askingOpen, setAskingOpen] = useState(false);
   const [switchFailed, setSwitchFailed] = useState(false);
+  const [startingOpen, setStartingOpen] = useState(false);
 
   const active = budgets?.find((budget) => budget.active);
   if (budgets === undefined || active === undefined) {
@@ -93,6 +95,7 @@ export function BudgetSection() {
 
   const typed = (next: string): void => {
     setDraft(next);
+    setRenameTaken(false);
     if (!renameFailed) return;
 
     setRenameFailed(false);
@@ -116,6 +119,7 @@ export function BudgetSection() {
         },
         onError: (error: unknown) => {
           setRenameFailed(true);
+          setRenameTaken(isNameTaken(error));
           if (!keepsTheKey(saveFailureKind(error))) {
             setRenameKey(mintKey());
           }
@@ -173,7 +177,7 @@ export function BudgetSection() {
 
   return (
     <SettingsSection title={t('settings.budget')} note={t('settings.budgetNote')}>
-      {renameFailed ? (
+      {renameFailed && !renameTaken ? (
         <Alert variant="destructive">
           <IconAlertCircle />
           <AlertTitle>{t('settings.budgetFailedTitle')}</AlertTitle>
@@ -201,6 +205,11 @@ export function BudgetSection() {
             {t('settings.budgetSave')}
           </Button>
         </div>
+        {renameTaken ? (
+          <p role="alert" className="text-destructive text-xs">
+            {t('settings.budgetNameTaken')}
+          </p>
+        ) : null}
       </form>
 
       <div className="flex flex-col gap-2">
@@ -289,12 +298,37 @@ export function BudgetSection() {
         </RadioGroup>
       </div>
 
-      <Link
-        href={onboardingRoute('budget')}
-        className={cn(buttonVariants(), 'self-end rounded-2xl')}
+      <Button
+        type="button"
+        className="self-end rounded-2xl"
+        disabled={busy}
+        onClick={() => {
+          setStartingOpen(true);
+        }}
       >
         {t('settings.budgetNew')}
-      </Link>
+      </Button>
+
+      {isMobile ? (
+        <Drawer showSwipeHandle open={startingOpen} onOpenChange={setStartingOpen}>
+          <DrawerContent className="max-h-[92dvh]">
+            <DrawerHeader className="pb-0">
+              <DrawerTitle className="sr-only">{t('settings.budget')}</DrawerTitle>
+            </DrawerHeader>
+            <div className="overflow-y-auto px-4 pb-6">
+              <NewBudgetDialog activeId={active.id} />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={startingOpen} onOpenChange={setStartingOpen}>
+          <DialogContent className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]">
+            <DialogTitle className="sr-only">{t('settings.budget')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('settings.budgetNote')}</DialogDescription>
+            <NewBudgetDialog activeId={active.id} />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {isMobile ? (
         <Drawer

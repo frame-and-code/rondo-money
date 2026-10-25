@@ -100,6 +100,10 @@ export type CreateBudgetDto = {
      */
     withDefaultCategories: boolean;
     /**
+     * A budget of the caller to start this one from. Its groups, categories, open accounts, assets and liabilities are written into the new budget, with no records and every amount at zero. Goals come along only when the currency is the same. Left out, the budget starts empty or with the starter set.
+     */
+    templateId?: string;
+    /**
      * Minted once when the form opens, never per request. A key per request makes a double click two budgets again.
      */
     idempotencyKey: string;
@@ -137,21 +141,10 @@ export type BudgetResponse = {
     active: boolean;
 };
 
-export type RenameBudgetDto = {
-    /**
-     * What to call this budget now.
-     */
-    name: string;
-    /**
-     * Minted once when the edit opens, never per request. A key per request makes a double click two writes again.
-     */
-    idempotencyKey: string;
-};
-
 /**
  * Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
-export type BudgetRefusal = 'UNKNOWN_BUDGET';
+export type BudgetRefusal = 'UNKNOWN_BUDGET' | 'TEMPLATE_WITH_DEFAULTS' | 'NAME_TAKEN';
 
 export type BudgetRefusedResponse = {
     statusCode: number;
@@ -161,6 +154,17 @@ export type BudgetRefusedResponse = {
      * Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
      */
     reason?: BudgetRefusal;
+};
+
+export type RenameBudgetDto = {
+    /**
+     * What to call this budget now.
+     */
+    name: string;
+    /**
+     * Minted once when the edit opens, never per request. A key per request makes a double click two writes again.
+     */
+    idempotencyKey: string;
 };
 
 export type ActivateBudgetDto = {
@@ -1265,9 +1269,9 @@ export type BudgetsControllerCreateData = {
 
 export type BudgetsControllerCreateErrors = {
     /**
-     * The body was refused: a field is missing, malformed or not declared at all.
+     * The body was refused, the caller holds no budget to start from under that id, the starter set was asked for together with one, or the caller already has a budget under that name, whatever its case.
      */
-    400: BadRequestResponse;
+    400: BudgetRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
@@ -1300,7 +1304,7 @@ export type BudgetsControllerRenameData = {
 
 export type BudgetsControllerRenameErrors = {
     /**
-     * The body was refused, or the caller holds no such budget.
+     * The body was refused, the caller holds no such budget, or the caller already has another budget under that name, whatever its case.
      */
     400: BudgetRefusedResponse;
     /**

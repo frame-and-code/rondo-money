@@ -1,4 +1,4 @@
-import { admits, onboardingRoute, onboardingState } from '@/lib/onboarding';
+import { admits, BALANCES_ROUTE, onboardingRoute, onboardingState, stepAt } from '@/lib/onboarding';
 
 const active = { active: true };
 const inactive = { active: false };
@@ -50,5 +50,12 @@ describe('where a user stands in setup', () => {
     expect(admits('app', 'app')).toBe(true);
     expect(admits('app', 'budget')).toBe(false);
     expect(admits('app', 'account')).toBe(false);
+  });
+
+  it('reads which step a setup address guards from the address', () => {
+    expect(stepAt('/new')).toBe('budget');
+    expect(stepAt('/new/account')).toBe('account');
+    expect(stepAt(BALANCES_ROUTE)).toBe('app');
+    expect(BALANCES_ROUTE).toBe('/new/balances');
   });
 });

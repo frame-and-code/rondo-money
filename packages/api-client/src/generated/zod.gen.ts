@@ -68,6 +68,7 @@ export const zCreateBudgetDto = z.object({
     currency: z.string().regex(/^[A-Z]{3}$/),
     timezone: z.string(),
     withDefaultCategories: z.boolean(),
+    templateId: z.uuid().optional(),
     idempotencyKey: z.string().min(1).max(64)
 });
 
@@ -82,15 +83,14 @@ export const zBudgetResponse = z.object({
     active: z.boolean()
 });
 
-export const zRenameBudgetDto = z.object({
-    name: z.string().min(1).max(60),
-    idempotencyKey: z.string().min(1).max(64)
-});
-
 /**
  * Why the budget operation was refused, for a screen that answers a refusal without reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
-export const zBudgetRefusal = z.enum(['UNKNOWN_BUDGET']);
+export const zBudgetRefusal = z.enum([
+    'UNKNOWN_BUDGET',
+    'TEMPLATE_WITH_DEFAULTS',
+    'NAME_TAKEN'
+]);
 
 export const zBudgetRefusedResponse = z.object({
     statusCode: z.number(),
@@ -100,6 +100,11 @@ export const zBudgetRefusedResponse = z.object({
         z.array(z.string())
     ]),
     reason: zBudgetRefusal.optional()
+});
+
+export const zRenameBudgetDto = z.object({
+    name: z.string().min(1).max(60),
+    idempotencyKey: z.string().min(1).max(64)
 });
 
 export const zActivateBudgetDto = z.object({

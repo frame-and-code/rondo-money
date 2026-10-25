@@ -12,7 +12,7 @@ user operation and its idempotency key are written in one transaction. Both stan
 request context, the auto-scoped Prisma client and the raw-SQL repository below.
 [`src/budgets`](src/budgets) uses both: `GET /budgets` reads through the scoped client, and
 `POST /budgets` writes the budget, the caller's language and the starter categories in one
-transaction. [`src/accounts`](src/accounts) is the same pair over a model a budget owns, so it
+transaction, or copies the structure of another budget of the caller's into the new one. [`src/accounts`](src/accounts) is the same pair over a model a budget owns, so it
 is also where a handler asks for the active budget itself rather than letting the scoping
 extension refuse the read: without one the extension raises an internal error, and a user part
 way through onboarding would meet a 500 for an ordinary state. Its read is a hand-written
@@ -104,16 +104,25 @@ no such order, because both rows are new and neither is a row anyone else can be
   window where the two disagree. The language stays a property of the user rather than of the budget. The
   currency is chosen here and nowhere else, so no operation in the contract accepts one
   afterwards, and its minor digit count is frozen on the row. A user holds at most one active
-  budget, so creating one deactivates the previous.
-- `PATCH /budgets/{id}` renames a budget, the active one or not, and changes nothing else.
+  budget, so creating one deactivates the previous. Given `templateId`, the same transaction
+  starts the budget from another one of the caller's: its visible groups and categories, its
+  open accounts, its assets and its liabilities are written into the new budget, each account
+  opening at zero and each asset and liability at zero with no day. No record, assignment or
+  paid mark comes along, and a goal does only when the currency and its digit count are the
+  same. A budget to start from and the starter set together are refused. Refusals name a
+  reason: `TEMPLATE_WITH_DEFAULTS`, `UNKNOWN_BUDGET` for a budget to start from that the
+  caller does not hold, and `NAME_TAKEN` for a name another budget of the caller already
+  carries, whatever its case.
+- `PATCH /budgets/{id}` renames a budget, the active one or not, and changes nothing else. A
+  name another budget of the caller carries, whatever its case, is refused with `NAME_TAKEN`;
+  the budget's own name in another case is not.
 - `POST /budgets/{id}/activate` makes a budget the active one. The mark comes off the budget
   that carried it and goes onto this one in one transaction, and every read a budget owns
   answers for the new one from the next request on. Both operations answer a budget the caller
-  does not hold with a 400 naming `UNKNOWN_BUDGET`. Creating a budget and activating one hold
-  the caller's budget rows first, so for a caller who already has a budget two of them arriving
-  together wait for each other rather than one failing on the index that keeps a single budget
-  active. A caller with no budget has no row to hold, so two first creations arriving together
-  are not put in a queue.
+  does not hold with a 400 naming `UNKNOWN_BUDGET`. Creating, renaming and activating a budget
+  first take a lock keyed on the caller and then hold the caller's budget rows, so two of them
+  arriving together wait for each other, a caller's first creation included, rather than one
+  failing on the index that keeps a single budget active or on the name index.
 - `GET /accounts` returns the active budget's accounts, oldest first, each with its balance,
   and what they hold together. Nothing here is stored: a balance is the sum of the account's
   transactions, over every date rather than up to today, and the total covers exactly the
