@@ -30,6 +30,7 @@ import { type MessageKey } from '@/i18n/messages';
 import { accountNamePlaceholderKey } from '@/i18n/name-placeholders';
 import { moneyOf } from '@/lib/money';
 import { onboardingRoute } from '@/lib/onboarding';
+import { APP_MARK, APP_NAME } from '@/lib/sections';
 
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
@@ -131,9 +132,9 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
         <div className="flex flex-col gap-8">
           <div className="hidden items-center gap-2 md:flex">
             <span className="bg-primary text-primary-foreground grid size-8 place-items-center rounded-lg text-sm font-semibold">
-              R
+              {APP_MARK}
             </span>
-            <span className="font-semibold">Rondo Money</span>
+            <span className="font-semibold">{APP_NAME}</span>
           </div>
 
           <div className="flex flex-col gap-3">

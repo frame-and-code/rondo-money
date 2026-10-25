@@ -20,14 +20,10 @@ const goal = (
   ...(parts.needed === undefined ? {} : { needed: String(parts.needed) }),
 });
 
-const draw = (target: BudgetViewTargetDto) =>
+const draw = (target: BudgetViewTargetDto, money = moneyOf('ru-RU', 'PLN', 2, { signed: true })) =>
   render(
     <LocaleProvider>
-      <TargetPanel
-        target={target}
-        money={moneyOf('ru-RU', 'PLN', 2, { signed: true })}
-        color="cyan"
-      />
+      <TargetPanel target={target} money={money} color="cyan" />
     </LocaleProvider>,
   );
 
@@ -47,6 +43,15 @@ describe('the panel that explains a goal', () => {
     expect(panel).toHaveTextContent('1 000');
     expect(panel).toHaveTextContent(en['categories.goalLeft'].replace('{{amount}}', '600 zł'));
     expect(panel).toHaveTextContent('66,66');
+  });
+
+  it('names the currency on both amounts of the month where the locale writes it first', () => {
+    draw(
+      goal('BY_DATE', { amount: 100000, progress: 40000, monthTarget: 26666, needed: 6666 }),
+      moneyOf('en-US', 'USD', 2, { signed: true }),
+    );
+
+    expect(screen.getByTestId('target-panel')).toHaveTextContent('$200 / $266.66');
   });
 
   it('reads the whole goal for the two kinds that only ever ask for a month', () => {

@@ -11,6 +11,7 @@ import { localeLabels } from '@/i18n/locales';
 import { en } from '@/i18n/messages/en';
 import { pl } from '@/i18n/messages/pl';
 import { ru } from '@/i18n/messages/ru';
+import { translatePlural } from '@/i18n/plural';
 
 const submit = jest.fn();
 const replace = jest.fn();
@@ -267,7 +268,9 @@ describe('the new budget form', () => {
     await user.type(await searchBox(), 'PLN');
 
     expect(
-      await screen.findByText(interpolate(ru['newBudget.currencyCount'], { shown: 1, total })),
+      await screen.findByText(
+        translatePlural('ru', 'newBudget.currencyCount', total, { shown: 1, total }),
+      ),
     ).toBeInTheDocument();
   });
 

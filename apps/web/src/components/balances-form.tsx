@@ -27,6 +27,7 @@ import { useTranslations } from '@/i18n/locale-context';
 import { moneyOf } from '@/lib/money';
 import { onboardingRoute } from '@/lib/onboarding';
 import { keepsTheKey, saveFailureKind } from '@/lib/save-failure';
+import { APP_MARK, APP_NAME } from '@/lib/sections';
 
 const CONTROL = 'h-11 rounded-full px-3.5 text-sm md:h-8 md:rounded-2xl md:px-3';
 
@@ -175,9 +176,9 @@ export function BalancesForm() {
         <div className="flex flex-col gap-8">
           <div className="hidden items-center gap-2 md:flex">
             <span className="bg-primary text-primary-foreground grid size-8 place-items-center rounded-lg text-sm font-semibold">
-              R
+              {APP_MARK}
             </span>
-            <span className="font-semibold">Rondo Money</span>
+            <span className="font-semibold">{APP_NAME}</span>
           </div>
 
           <div className="flex flex-col gap-3">

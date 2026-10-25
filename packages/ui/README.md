@@ -80,7 +80,12 @@ value copied into both is a value that will differ by the next change. `select.t
 popup under the trigger rather than over the selected item, so the list lines up with the box it
 came from. And `select.tsx`, `dropdown-menu.tsx` and `combobox.tsx` keep their open and close
 animations, which the generator suppresses outright; here they are suppressed only for a reader
-who asked for reduced motion. So after regenerating any of these, put them back and look at both
+who asked for reduced motion. `dialog.tsx` draws its close button only when the caller passes
+`closeLabel`, which is also the button's screen-reader text, and its footer carries no close
+button of its own; `command.tsx` takes `title`, `description` and `closeLabel` from the caller.
+Neither carries English of its own
+([`no-ui-literals`](../config/README.md)). So after regenerating any
+of these, put them back and look at both
 the onboarding currency sheet and the move dialog, which is where the difference shows.
 
 `button.tsx` carries the shape a control takes rather than leaving it to the call site.

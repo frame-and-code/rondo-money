@@ -43,13 +43,25 @@ interface Rolling {
   turn: number;
 }
 
-function cellsOf(shown: string, leaving: string | null): Array<[string, string | null]> {
-  const width = Math.max(shown.length, leaving?.length ?? 0);
-  const pad = (value: string): string => value.padStart(width, ' ');
-  const now = pad(shown);
-  const before = leaving === null ? null : pad(leaving);
+const LEADING = /^\D*/;
 
-  return Array.from({ length: width }, (_, at) => [now[at] ?? ' ', before?.[at] ?? null]);
+function split(amount: string): [string, string] {
+  const lead = LEADING.exec(amount)?.[0] ?? '';
+
+  return [lead, amount.slice(lead.length)];
+}
+
+function cellsOf(shown: string, leaving: string | null): Array<[string, string | null]> {
+  const [shownLead, shownRest] = split(shown);
+  const [leavingLead, leavingRest] = leaving === null ? ['', ''] : split(leaving);
+  const leadWidth = Math.max(shownLead.length, leavingLead.length);
+  const restWidth = Math.max(shownRest.length, leavingRest.length);
+  const pad = (lead: string, rest: string): string =>
+    lead.padEnd(leadWidth, ' ') + rest.padStart(restWidth, ' ');
+  const now = pad(shownLead, shownRest);
+  const before = leaving === null ? null : pad(leavingLead, leavingRest);
+
+  return Array.from({ length: now.length }, (_, at) => [now[at] ?? ' ', before?.[at] ?? null]);
 }
 
 export function RollingAmount({

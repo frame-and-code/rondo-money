@@ -122,10 +122,13 @@ src/
                               # the badge with its tooltip and the panel that explain a goal,
                               # the form it is set in, the amount whose digits roll when it
                               # changes, and the banner that says a save did not go through
-  i18n/                       # ru / en / pl — dictionaries, detection, context. English is
+  i18n/                       # ru / en / pl: dictionaries, detection, context. English is
                               # the fallback; settings-locale.tsx feeds the language from
                               # GET /user-settings into the locale context and owns the write
-                              # back through PATCH
+                              # back through PATCH. A phrase whose word bends with a number
+                              # lives in the plural dictionary beside the plain one, one form
+                              # per category Intl.PluralRules gives the language, and is read
+                              # with tn() rather than t()
   lib/api/                    # the only way to reach @rondo/api: ApiProvider wires the
                               # generated client (@rondo/api-client) to the address, the
                               # Clerk token and the TanStack Query cache
@@ -134,12 +137,15 @@ src/
   lib/money.ts                # reading an amount a person typed through their locale's own
                               # marks, and showing one at the budget's digit count. Every
                               # screen that touches money uses it, so a sign is refused or
-                              # allowed in one place. Three ways out, and the difference
+                              # allowed in one place. Four ways out, and the difference
                               # matters: `format` for a shown amount, which drops a fraction
-                              # that is all zeros and puts the symbol after the number in
-                              # every locale, `plain` for one whose currency is carried by a
-                              # neighbour, and `typed` for a field, which keeps every decimal
-                              # because a trimmed one fights the caret
+                              # that is all zeros and writes symbol, marks and minus the way
+                              # Intl writes the locale's money, `plain` for one whose currency
+                              # is carried by a neighbour, `pairStart` for the first amount of
+                              # a pair, which carries the symbol only where the locale puts it
+                              # first, and `typed` for a field, which keeps every decimal
+                              # because a trimmed one fights the caret. `symbolFirst` tells a
+                              # field which side of the input its symbol goes
   lib/calendar-locale.ts      # the app's language to the date-fns locale the calendar and the
                               # month label are formatted with
   lib/calendar-day.ts         # a calendar date to the Date a picker works in and back, built

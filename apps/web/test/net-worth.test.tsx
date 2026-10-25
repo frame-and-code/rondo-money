@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { NetWorth } from '@/components/net-worth';
 import { LocaleProvider } from '@/i18n/locale-context';
 import { en } from '@/i18n/messages/en';
+import { ru } from '@/i18n/messages/ru';
 import { moneyOf } from '@/lib/money';
 
 const WORTH_KEY = [{ _id: 'what-the-generator-minted', baseUrl: 'http://api.test' }];
@@ -113,12 +114,12 @@ jest.mock('@rondo/api-client/react-query', () => ({
   liabilitiesControllerRemoveMutation: () => write('liabilities.remove'),
 }));
 
-const draw = () => {
+const draw = (locale: 'en' | 'ru' = 'en') => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   return render(
     <QueryClientProvider client={client}>
-      <LocaleProvider initialLocale="en">
+      <LocaleProvider initialLocale={locale}>
         <NetWorth />
       </LocaleProvider>
     </QueryClientProvider>,
@@ -320,6 +321,24 @@ describe('what the screen does when it could not be read', () => {
 
     expect(screen.getByTestId('net-worth-total')).toHaveTextContent(shown(pln.format(999n)));
     expect(screen.queryByText(en['netWorth.unavailable'])).not.toBeInTheDocument();
+  });
+});
+
+const speak = (language: string): void => {
+  Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
+  Object.defineProperty(window.navigator, 'languages', { value: [language], configurable: true });
+};
+
+describe('a form in another language', () => {
+  afterEach(() => speak('en-US'));
+
+  it('names the button that closes it in the language of the screen', async () => {
+    speak('ru-RU');
+    draw('ru');
+
+    await userEvent.click(await screen.findByRole('button', { name: ru['netWorth.addAsset'] }));
+
+    expect(await screen.findByRole('button', { name: ru['common.close'] })).toBeInTheDocument();
   });
 });
 

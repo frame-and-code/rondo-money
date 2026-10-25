@@ -63,6 +63,7 @@ import {
   type CurrencyOption,
 } from '@/lib/currencies';
 import { BALANCES_ROUTE, onboardingRoute } from '@/lib/onboarding';
+import { APP_MARK, APP_NAME } from '@/lib/sections';
 
 const FADE_MS = 150;
 
@@ -132,7 +133,7 @@ function FieldDrawer({
 }
 
 export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
-  const { t, locale, setLocale } = useTranslations();
+  const { t, tn, locale, setLocale } = useTranslations();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const another = useAdmittedState() === 'app';
@@ -203,7 +204,10 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
   const countLabel =
     matched.length > RESULT_LIMIT
       ? t('newBudget.currencyCountLimited', { limit: RESULT_LIMIT, total: matched.length })
-      : t('newBudget.currencyCount', { shown: matched.length, total: options.length });
+      : tn('newBudget.currencyCount', options.length, {
+          shown: matched.length,
+          total: options.length,
+        });
 
   const edited = (): void => {
     if (!failed) return;
@@ -470,9 +474,9 @@ export function NewBudgetForm({ nameIndex }: { nameIndex: number }) {
         <div className="flex flex-col gap-8">
           <div className="hidden items-center gap-2 md:flex">
             <span className="bg-primary text-primary-foreground grid size-8 place-items-center rounded-lg text-sm font-semibold">
-              R
+              {APP_MARK}
             </span>
-            <span className="font-semibold">Rondo Money</span>
+            <span className="font-semibold">{APP_NAME}</span>
           </div>
 
           <div className="flex flex-col gap-3">

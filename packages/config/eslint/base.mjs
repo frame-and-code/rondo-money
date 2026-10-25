@@ -5,6 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 import noComments from './no-comments.mjs';
+import noUiLiterals from './no-ui-literals.mjs';
 
 export default tseslint.config(
   {
@@ -25,7 +26,7 @@ export default tseslint.config(
     },
   },
   {
-    plugins: { rondo: { rules: { 'no-comments': noComments } } },
+    plugins: { rondo: { rules: { 'no-comments': noComments, 'no-ui-literals': noUiLiterals } } },
     rules: { 'rondo/no-comments': 'error' },
   },
   {

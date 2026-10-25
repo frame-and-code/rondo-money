@@ -1,7 +1,10 @@
+import type { PluralForms } from '../plural';
+
 export const ru = {
   'common.themeToggle.trigger': 'Переключить тему',
   'common.localeSwitcher.ariaLabel': 'Сменить язык',
   'common.loading': 'Загрузка…',
+  'common.close': 'Закрыть',
   'common.calendarPrevious': 'На месяц назад',
   'common.calendarNext': 'На месяц вперёд',
   'common.calendarMonth': 'Выбрать месяц',
@@ -42,23 +45,21 @@ export const ru = {
   'categories.moveSubmit': 'Переложить',
   'categories.moveAssign': 'Назначить',
   'categories.moveSubmitting': 'Сохраняем',
-  'categories.moveCancel': 'Отменить',
+  'categories.moveCancel': 'Отмена',
   'categories.moveClose': 'Закрыть перенос',
   'categories.failTitle': 'Не сохранилось',
-  'categories.failConflict':
-    'Операция под этим ключом уже записана, и записана с другой суммой. Экран показывает то, что лежит на сервере.',
+  'categories.failConflict': 'Это уже сохранено с другой суммой. Обновите экран.',
   'categories.failBudget':
     'Активный бюджет сменился в другом окне. Этот экран показывает бюджет, который больше не в работе, поэтому назначать в нём нечего.',
-  'categories.failNetwork':
-    'Нет связи с сервером. Введённое не потеряно: ключ операции тот же, поэтому повтор запишет сумму ровно один раз, даже если первый запрос всё-таки дошёл.',
-  'categories.failOther': 'Сервер отказал в этой операции. Сумма осталась прежней.',
+  'categories.failNetwork': 'Нет связи. Введённое сохранилось, попробуйте ещё раз.',
+  'categories.failOther': 'Не сохранилось. Сумма осталась прежней.',
   'categories.failGroupHidden':
     'Эта группа скрыта. Верните её, и категорию можно будет в неё перенести.',
-  'categories.failAlreadyHidden': 'Это уже скрыто. Обновите экран, чтобы увидеть, как есть.',
+  'categories.failAlreadyHidden': 'Это уже скрыто. Обновите экран.',
   'categories.failDismiss': 'Понятно',
   'categories.failRefresh': 'Обновить экран',
   'categories.failRetry': 'Повторить',
-  'categories.failCancel': 'Отменить',
+  'categories.failCancel': 'Отмена',
   'categories.manage': 'Действия',
   'categories.edit': 'Редактировать',
   'categories.hide': 'Скрыть',
@@ -66,7 +67,7 @@ export const ru = {
   'categories.goal': 'Цель',
   'categories.goalOnlyThisMonth': 'Чтобы поставить цель, перейдите в текущий месяц.',
   'categories.goalHiddenCategory': 'У скрытой категории цель не меняется',
-  'categories.goalExplain': 'Чем занята категория «{{category}}»',
+  'categories.goalExplain': 'Подробнее о цели «{{category}}»',
   'categories.goalTitle': 'Цель для «{{category}}»',
   'categories.goalNone': 'Без цели',
   'categories.goalNoneNote':
@@ -88,7 +89,7 @@ export const ru = {
   'categories.goalDueMonthPicked': '{{label}}: {{month}}',
   'categories.goalPickMonth': 'Выберите месяц',
   'categories.goalClosing':
-    'Цель закроется этим месяцем. Карточка покажет её до конца месяца и перестанет со следующего.',
+    'Цель закроется этим месяцем. Карточка будет показывать её до конца месяца.',
   'categories.goalTargetLine': 'цель',
   'categories.goalDeadline': 'срок',
   'categories.goalAssignThisMonth': 'в этом месяце',
@@ -110,14 +111,14 @@ export const ru = {
   'categories.iconLabel': 'Иконка',
   'categories.colorLabel': 'Цвет',
   'categories.save': 'Сохранить',
-  'categories.cancel': 'Отменить',
+  'categories.cancel': 'Отмена',
   'categories.hideTitle': 'Скрыть категорию «{{category}}»',
   'categories.hideThisMonth': 'В этом месяце',
   'categories.hideFutureMonths': 'В будущих месяцах',
   'categories.hideTotal': 'Всего',
   'categories.release': 'Освободить',
   'categories.hideTransactionWarning':
-    'На скрытую категорию нельзя будет завести транзакцию. Внесите то, что ещё не внесли.',
+    'В скрытую категорию нельзя будет записать расход. Внесите то, что ещё не внесли.',
   'categories.hideGroupTitle': 'Скрыть группу «{{group}}»',
   'categories.hideGroupBody':
     'Группа и её категории уйдут с экрана начиная с этого месяца. Числа за прошлые месяцы останутся на месте.',
@@ -131,7 +132,7 @@ export const ru = {
   'categories.paidReopen': 'Открыть снова',
   'categories.paidTitle': 'Закрыть категорию «{{category}}» в этом месяце?',
   'categories.paidBody':
-    'Карточка станет полупрозрачной и уйдёт в конец группы. Деньги в ней останутся, суммы не изменятся. В следующем месяце категория снова открыта.',
+    'Карточка станет полупрозрачной и уйдёт в конец группы. Деньги в ней останутся, суммы не изменятся. В следующем месяце категория снова откроется.',
   'categories.paidConfirm': 'Да, закрыть',
   'categories.paidMark': 'Закрыта в этом месяце',
   'categories.overspentCount': 'Категорий в минусе: {{count}}',
@@ -223,8 +224,7 @@ export const ru = {
   'accounts.save': 'Сохранить',
   'accounts.cancel': 'Отмена',
   'accounts.saveFailed': 'Счёт не сохранился. Попробуйте ещё раз.',
-  'accounts.saveLost':
-    'Ответ не дошёл, и мы не знаем, записалось ли. Нажмите «Сохранить» ещё раз тем же запросом или отмените.',
+  'accounts.saveLost': 'Не знаем, сохранилось ли. Нажмите «Сохранить» ещё раз или отмените.',
   'accounts.archive': 'Убрать в архив',
   'accounts.archiveNeedsZero': 'Заблокировано, пока лежат деньги',
   'accounts.archiveTitle': 'Убрать «{{name}}» в архив?',
@@ -232,7 +232,7 @@ export const ru = {
     'Записи останутся на месте и продолжат считаться. Сам счёт больше не примет никаких изменений, и вернуть его нельзя.',
   'accounts.archiveConfirm': 'В архив',
   'accounts.failBalanceNotZero':
-    'На счёте ещё есть деньги. Переведите остаток на другой счёт и уберите его в архив после этого.',
+    'На счёте ещё есть деньги. Переведите остаток на другой счёт, потом уберите этот в архив.',
   'accounts.failArchived': 'Счёт в архиве, а архивный счёт изменений не принимает.',
   'accounts.reconcile': 'Сверить остаток',
   'accounts.reconcileTitle': 'Сверить «{{name}}»',
@@ -287,8 +287,7 @@ export const ru = {
   'settings.themeNote':
     'Сохраняется только на этом устройстве. На каждом устройстве можно выбрать свою тему.',
   'settings.saveFailedTitle': 'Язык не сохранился',
-  'settings.saveFailed':
-    'Сервер не принял выбор, интерфейс остался на прежнем языке. Попробуйте ещё раз.',
+  'settings.saveFailed': 'Интерфейс остался на прежнем языке. Попробуйте ещё раз.',
   'settings.saveFailedDismiss': 'Понятно',
 
   'settings.danger': 'Опасная зона',
@@ -313,8 +312,7 @@ export const ru = {
   'settings.eraseCancel': 'Отмена',
   'settings.eraseFailed': 'Не получилось. Попробуйте ещё раз.',
   'settings.eraseFailedNetwork': 'Сервер не ответил. Данные могли уже стереться, повторите.',
-  'settings.eraseFailedConflict':
-    'Этим ключом уже воспользовались. Закройте окно и начните заново.',
+  'settings.eraseFailedConflict': 'Закройте окно и начните заново.',
   'settings.eraseFailedAccount': 'Данные стёрты, но аккаунт удалить не удалось. Повторите.',
   'settings.budget': 'Бюджет',
   'settings.budgetNote':
@@ -327,7 +325,7 @@ export const ru = {
   'settings.budgetActive': 'Активный',
   'settings.budgetActivate': 'Сделать активным',
   'settings.budgetActivateNamed': 'Сделать «{{name}}» активным',
-  'settings.budgetActiveNamed': '«{{name}}» активный бюджет',
+  'settings.budgetActiveNamed': 'Активный бюджет: «{{name}}»',
   'settings.budgetSwitchTitle': 'Сделать «{{name}}» активным?',
   'settings.budgetSwitchBody': 'К прежнему бюджету можно будет вернуться в любой момент.',
   'settings.budgetSwitchConfirm': 'Сделать активным',
@@ -343,10 +341,10 @@ export const ru = {
 
   'onboarding.progress': 'Настройка, шаг {{step}} из 3',
   'onboarding.step1Title': 'Бюджет',
-  'onboarding.step1Body': 'Выберите язык, введите имя бюджета и укажите его валюту.',
-  'onboarding.step1BodyAnother': 'Введите имя бюджета и укажите его валюту.',
+  'onboarding.step1Body': 'Выберите язык, введите название бюджета и укажите его валюту.',
+  'onboarding.step1BodyAnother': 'Введите название бюджета и укажите его валюту.',
   'onboarding.step1BodyCopy':
-    'Выберите бюджет, с которого копировать, введите имя для нового бюджета и укажите его валюту.',
+    'Выберите бюджет, с которого копировать, введите название нового бюджета и укажите его валюту.',
   'onboarding.step2Title': 'Счета',
   'onboarding.step2Body': 'Добавьте счёт и укажите, сколько на нём денег сегодня.',
   'onboarding.step2BodyCopy': 'Укажите начальный остаток каждого счёта.',
@@ -374,7 +372,6 @@ export const ru = {
   'newBudget.searchPlaceholder': 'Код или название',
   'newBudget.nothingFound': 'Ничего не нашлось',
   'newBudget.currencyLocked': 'После создания валюту изменить нельзя',
-  'newBudget.currencyCount': '{{shown}} из {{total}} валют',
   'newBudget.currencyCountLimited': 'Показаны первые {{limit}} из {{total}}',
   'newBudget.defaultsLabel': 'Создать стартовый набор категорий',
   'newBudget.defaultsOn':
@@ -508,7 +505,7 @@ export const ru = {
   'transactions.willArrive': 'На счёт поступит {{amount}}',
   'transactions.amountZero': 'Сумма не может быть нулевой.',
   'transactions.save': 'Сохранить',
-  'transactions.saving': 'Сохраняю…',
+  'transactions.saving': 'Сохраняем…',
   'transactions.saveAndMore': 'Сохранить и добавить ещё',
   'transactions.saved': 'Записано: {{payee}}, {{amount}}',
   'transactions.cancel': 'Отмена',
@@ -533,7 +530,7 @@ export const ru = {
   'transactions.failAccountGone': 'В бюджете больше нет такого счёта.',
   'transactions.failTransferGone': 'Этого перевода уже нет. Обновите экран.',
   'transactions.failBeforeAccountTransfer':
-    'Дата раньше дня, когда завели поздний из двух счетов. Выберите другую дату или счёт.',
+    'Дата раньше, чем открыт один из счетов. Выберите другую дату или счёт.',
   'transactions.delete': 'Удалить',
   'transactions.unavailable': 'Не удалось прочитать движения. Обновите страницу.',
   'transactions.failFuture':
@@ -544,7 +541,7 @@ export const ru = {
   'transactions.failCategoryHidden': 'Эта категория скрыта, в неё нельзя записывать.',
   'transactions.failAccountArchived': 'Архивного счёта в списках нет вовсе.',
   'transactions.failTransferArchived':
-    'Переводу нужны оба счёта открытыми, а один из этих двух в архиве.',
+    'Оба счёта перевода должны быть открыты, а один из них в архиве.',
   'transactions.failNotEditable': 'Эту запись менять нельзя: её сделало приложение.',
   'transactions.failOpeningFrozen':
     'На счёте уже есть движения, поэтому начальный остаток больше не правится. Запишите ' +
@@ -556,8 +553,19 @@ export const ru = {
   'transactions.failGone': 'Записи больше нет. Обновите страницу.',
   'transactions.failBudget': 'Не удалось прочитать бюджет. Обновите страницу.',
   'transactions.failConflict': 'Запись, возможно, уже сохранена. Обновите страницу.',
-  'transactions.failNetwork': 'Запрос не дошёл. Попробуйте ещё раз.',
+  'transactions.failNetwork': 'Нет связи. Попробуйте ещё раз.',
   'transactions.failOther': 'Не получилось сохранить. Попробуйте ещё раз.',
 } as const;
 
 export type MessageKey = keyof typeof ru;
+
+export const ruPlurals = {
+  'newBudget.currencyCount': {
+    one: '{{shown}} из {{total}} валюты',
+    few: '{{shown}} из {{total}} валют',
+    many: '{{shown}} из {{total}} валют',
+    other: '{{shown}} из {{total}} валюты',
+  },
+} as const satisfies Record<string, PluralForms<'ru'>>;
+
+export type PluralKey = keyof typeof ruPlurals;

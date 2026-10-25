@@ -126,6 +126,12 @@ export function TargetDialog({
     });
   };
 
+  const symbol = (
+    <InputGroupAddon align={money.symbolFirst ? 'inline-start' : 'inline-end'}>
+      <InputGroupText>{money.symbol}</InputGroupText>
+    </InputGroupAddon>
+  );
+
   return (
     <form
       noValidate
@@ -167,6 +173,7 @@ export function TargetDialog({
           <div className="flex flex-col gap-2">
             <Label htmlFor={amountField}>{t('categories.goalAmount')}</Label>
             <InputGroup>
+              {money.symbolFirst ? symbol : null}
               <InputGroupInput
                 id={amountField}
                 inputMode="decimal"
@@ -174,9 +181,7 @@ export function TargetDialog({
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
               />
-              <InputGroupAddon align="inline-end">
-                <InputGroupText>{money.symbol}</InputGroupText>
-              </InputGroupAddon>
+              {money.symbolFirst ? null : symbol}
             </InputGroup>
           </div>
 

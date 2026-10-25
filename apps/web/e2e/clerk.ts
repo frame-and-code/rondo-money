@@ -44,6 +44,12 @@ export const NET_WORTH_TEST_EMAIL = 'e2e-net-worth+clerk_test@example.com';
 
 export const SWITCH_TEST_EMAIL = 'e2e-switch+clerk_test@example.com';
 
+export const I18N_RU_TEST_EMAIL = 'e2e-i18n-ru+clerk_test@example.com';
+
+export const I18N_EN_TEST_EMAIL = 'e2e-i18n-en+clerk_test@example.com';
+
+export const I18N_PL_TEST_EMAIL = 'e2e-i18n-pl+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }

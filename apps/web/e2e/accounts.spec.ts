@@ -131,7 +131,7 @@ test('a declared balance settles the difference, and the pool follows it', async
   });
 
   await onboard(page);
-  await expect(readyToAssign(page)).toHaveText('1,000 $');
+  await expect(readyToAssign(page)).toHaveText('$1,000');
 
   await page.goto('/accounts');
 
@@ -146,7 +146,7 @@ test('a declared balance settles the difference, and the pool follows it', async
 
   await form.getByLabel(en['accounts.reconcileLabel'], { exact: true }).fill('880');
   await expect(
-    form.getByText(en['accounts.reconcileWillWrite'].replace('{{amount}}', '-120 $')),
+    form.getByText(en['accounts.reconcileWillWrite'].replace('{{amount}}', '-$120')),
   ).toBeVisible();
 
   await page.getByRole('button', { name: en['accounts.reconcileConfirm'] }).click();
@@ -156,5 +156,5 @@ test('a declared balance settles the difference, and the pool follows it', async
   await expect(page.getByText(en['transactions.adjustment'])).toBeVisible();
 
   await page.getByRole('link', { name: en['nav.categories'] }).click();
-  await expect(readyToAssign(page)).toHaveText('880 $');
+  await expect(readyToAssign(page)).toHaveText('$880');
 });

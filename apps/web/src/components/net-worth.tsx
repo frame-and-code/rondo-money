@@ -573,7 +573,10 @@ export function NetWorth(): ReactNode {
         </Drawer>
       ) : (
         <Dialog open={editing !== null} onOpenChange={(next) => (next ? null : close())}>
-          <DialogContent className="max-h-[85dvh] gap-0 overflow-x-hidden overflow-y-auto rounded-[24px] p-6 sm:max-w-[448px]">
+          <DialogContent
+            closeLabel={t('common.close')}
+            className="max-h-[85dvh] gap-0 overflow-x-hidden overflow-y-auto rounded-[24px] p-6 sm:max-w-[448px]"
+          >
             <DialogTitle className="sr-only" render={<p />}>
               {title}
             </DialogTitle>

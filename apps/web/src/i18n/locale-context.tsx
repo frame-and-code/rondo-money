@@ -12,16 +12,21 @@ import {
 } from 'react';
 
 import { detectBrowserLocale } from './detect-locale';
+import { interpolate } from './interpolate';
 import { defaultLocale, isLocale, type Locale } from './locales';
-import { messages, type MessageKey } from './messages';
+import { messages, type MessageKey, type PluralKey } from './messages';
+import { translatePlural } from './plural';
 
 import type { ReactNode } from 'react';
+
+export { interpolate };
 
 interface LocaleContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   applySettingsLocale: (userId: string | null | undefined, language: Locale | null) => void;
   t: (key: MessageKey, vars?: Record<string, string | number>) => string;
+  tn: (key: PluralKey, count: number, vars?: Record<string, string | number>) => string;
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
@@ -52,13 +57,6 @@ function storeLocaleIfPossible(userId: string | null, locale: Locale): void {
 interface SettingsBinding {
   identity: string | null | undefined;
   language: Locale | null;
-}
-
-export function interpolate(template: string, vars?: Record<string, string | number>): string {
-  if (!vars) return template;
-  return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) =>
-    Object.hasOwn(vars, key) ? String(vars[key]) : match,
-  );
 }
 
 export function LocaleProvider({
@@ -148,6 +146,7 @@ export function LocaleProvider({
       setLocale,
       applySettingsLocale,
       t: (key, vars) => interpolate(messages[locale][key], vars),
+      tn: (key, count, vars) => translatePlural(locale, key, count, vars),
     }),
     [locale, setLocale, applySettingsLocale],
   );

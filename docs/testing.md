@@ -5,11 +5,11 @@ the feature**. A feature without tests doesn't count as done (no test debt accru
 
 ## Levels
 
-| Level       | What it checks                             | Runner                                                                  | Where it lives                                                                 | Naming                  |
-| ----------- | ------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------- |
-| Unit        | Domain logic, components, no DB or network | Jest (+ fast-check)                                                     | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api` | see Naming, below       |
-| Integration | API ↔ Postgres (from F0.3)                 | Jest + supertest, fast-check where a claim holds over a space of inputs | `apps/api/test`                                                                | `*.integration.spec.ts` |
-| E2E         | Browser → web → api → Postgres             | Playwright                                                              | `apps/web/e2e`                                                                 | `*.spec.ts`             |
+| Level       | What it checks                                             | Runner                                                                  | Where it lives                                                                                                      | Naming                  |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Unit        | Domain logic, components, the lint rules, no DB or network | Jest (+ fast-check); `node --test` for the lint rules                   | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api`, `packages/config/eslint/*.test.mjs` | see Naming, below       |
+| Integration | API ↔ Postgres (from F0.3)                                 | Jest + supertest, fast-check where a claim holds over a space of inputs | `apps/api/test`                                                                                                     | `*.integration.spec.ts` |
+| E2E         | Browser → web → api → Postgres                             | Playwright                                                              | `apps/web/e2e`                                                                                                      | `*.spec.ts`             |
 
 Plus one that is not a level of the app at all: **the agent guard hooks and `check-docs.mjs`**
 ([`.claude/hooks/hooks.test.sh`](../.claude/hooks/hooks.test.sh), `pnpm test:hooks`, a step
@@ -108,8 +108,10 @@ All app routes are behind Clerk, so any scenario touching a screen needs a sessi
   request a user makes creates their settings row and fixes their interface language from
   `Accept-Language`, so whichever scenario signs in first decides it for every later one.
   A spec about the language therefore owns its own address and no other spec touches it:
-  `locale.spec.ts` owns `LOCALE_TEST_EMAIL`, `settings.spec.ts` owns `SETTINGS_TEST_EMAIL`, and
-  a scenario that needs a language of its own adds an account rather than sharing one. The
+  `locale.spec.ts` owns `LOCALE_TEST_EMAIL`, `settings.spec.ts` owns `SETTINGS_TEST_EMAIL`,
+  `languages.spec.ts` owns one `I18N_*_TEST_EMAIL` per language and recreates each at the start
+  of its test, because it walks setup in that language, and a scenario that needs a language of
+  its own adds an account rather than sharing one. The
   settings screen writes the language to the account, so that spec recreates its user at the
   start of each test rather than keeping one. The two erase scenarios own an address each and
   recreate it the same way, because one of them deletes the account and the other empties

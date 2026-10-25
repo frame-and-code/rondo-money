@@ -207,13 +207,13 @@ describe('the first account form', () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-  it('puts the symbol after the amount, whatever the locale reads', async () => {
+  it('puts the symbol on the side of the amount its locale writes it', async () => {
     budget = { id: 'b-1', currency: 'USD', minorDigits: 2, active: true };
 
     const inEnglish = draw('en');
     const english = await screen.findByLabelText(en['newAccount.balanceLabel']);
-    const beside = await screen.findByText('$');
-    expect(english.compareDocumentPosition(beside) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const before = await screen.findByText('$');
+    expect(english.compareDocumentPosition(before) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     inEnglish.unmount();
 
     draw('ru');

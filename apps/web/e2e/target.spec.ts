@@ -80,7 +80,7 @@ test('a goal asks for the month, says so in colour and in words, and closes when
 
   await badgeOf(page).hover();
   await expect(
-    page.getByText(en['categories.goalShortfallTip'].replace('{{amount}}', '300 $')),
+    page.getByText(en['categories.goalShortfallTip'].replace('{{amount}}', '$300')),
   ).toBeVisible();
 
   const free = await freeMoney(page);

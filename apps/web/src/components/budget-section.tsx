@@ -322,7 +322,10 @@ export function BudgetSection() {
         </Drawer>
       ) : (
         <Dialog open={startingOpen} onOpenChange={setStartingOpen}>
-          <DialogContent className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]">
+          <DialogContent
+            closeLabel={t('common.close')}
+            className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]"
+          >
             <DialogTitle className="sr-only">{t('settings.budget')}</DialogTitle>
             <DialogDescription className="sr-only">{t('settings.budgetNote')}</DialogDescription>
             <NewBudgetDialog activeId={active.id} />
@@ -346,7 +349,7 @@ export function BudgetSection() {
       ) : (
         <Dialog open={askingOpen} onOpenChange={(next: boolean) => (next ? null : closeAsking())}>
           <DialogContent
-            showCloseButton={!activate.isPending}
+            closeLabel={activate.isPending ? undefined : t('common.close')}
             className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]"
           >
             <DialogTitle className="sr-only">{t('settings.budgets')}</DialogTitle>

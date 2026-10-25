@@ -258,7 +258,7 @@ export function SettingsPanel() {
           onOpenChange={(next: boolean) => (next ? null : closeErasing())}
         >
           <DialogContent
-            showCloseButton={!erase.isPending && !leaving}
+            closeLabel={erase.isPending || leaving ? undefined : t('common.close')}
             className="gap-0 rounded-[24px] p-6 sm:max-w-[480px]"
           >
             <DialogTitle className="sr-only">{t('settings.danger')}</DialogTitle>

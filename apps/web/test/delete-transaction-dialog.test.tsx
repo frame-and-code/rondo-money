@@ -207,7 +207,7 @@ describe('confirming that a record goes', () => {
     );
 
     expect(screen.getByTestId('delete-counter-line')).toHaveTextContent(
-      en['transactions.deleteArchivedCounterLine'].replace('{{amount}}', '500 zł'),
+      en['transactions.deleteArchivedCounterLine'].replace('{{amount}}', 'zł 500'),
     );
   });
 });

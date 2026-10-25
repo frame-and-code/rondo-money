@@ -39,10 +39,10 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
 function DialogContent({
   className,
   children,
-  showCloseButton = true,
+  closeLabel,
   ...props
 }: DialogPrimitive.Popup.Props & {
-  showCloseButton?: boolean;
+  closeLabel?: string;
 }) {
   return (
     <DialogPortal>
@@ -56,7 +56,7 @@ function DialogContent({
         {...props}
       >
         {children}
-        {showCloseButton && (
+        {closeLabel !== undefined && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
             render={
@@ -68,7 +68,7 @@ function DialogContent({
             }
           >
             <IconX />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{closeLabel}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -82,14 +82,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function DialogFooter({
-  className,
-  showCloseButton = false,
-  children,
-  ...props
-}: React.ComponentProps<'div'> & {
-  showCloseButton?: boolean;
-}) {
+function DialogFooter({ className, children, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
@@ -97,9 +90,6 @@ function DialogFooter({
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>Close</DialogPrimitive.Close>
-      )}
     </div>
   );
 }

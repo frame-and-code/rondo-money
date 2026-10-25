@@ -46,6 +46,8 @@ export function MoneyField({
       : t('newAccount.balanceDecimals', { currency: money.currency, digits: money.digits });
   };
 
+  const symbol = <span className="text-muted-foreground shrink-0 text-sm">{money.symbol}</span>;
+
   return (
     <>
       <div
@@ -54,6 +56,7 @@ export function MoneyField({
           read.fault !== null && 'border-destructive ring-destructive/20 ring-3',
         )}
       >
+        {money.symbolFirst ? symbol : null}
         <InputGroupInput
           id={id}
           inputMode="decimal"
@@ -63,7 +66,7 @@ export function MoneyField({
           disabled={disabled}
           className="h-auto min-w-0 flex-1 p-0 text-sm"
         />
-        <span className="text-muted-foreground shrink-0 text-sm">{money.symbol}</span>
+        {money.symbolFirst ? null : symbol}
       </div>
 
       {read.fault === null ? null : (

@@ -48,7 +48,7 @@ describe('the heading over one day of the feed', () => {
     );
 
     expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('31 August');
-    expect(screen.getByTestId('day-total-2026-08-31')).toHaveTextContent('-40');
+    expect(screen.getByTestId('day-total-2026-08-31')).toHaveTextContent('-zł 40');
   });
 
   it('ends the day total in the same column the row amounts end in', () => {

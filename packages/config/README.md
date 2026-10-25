@@ -22,6 +22,14 @@ truth. Every app and package inherits from here, no local copies of rules.
   exception: `InputGroupInput` and `InputGroupTextarea` are the ones that strip the primitive's
   own frame, which is what a hand-written element was reaching for.
 
+- `@rondo/config/eslint/ui-literals` turns on `rondo/no-ui-literals`, which refuses text with
+  letters in JSX and a literal in an attribute someone reads (`aria-label`, `placeholder`,
+  `title`, `alt` and the other `aria-*` text), so every string a reader meets comes from the
+  dictionaries in `apps/web/src/i18n`. A name that is not translated, such as the product's,
+  is a named constant. It is composed in `apps/web` and in `packages/ui`, whose components take
+  such text as a prop (`closeLabel`) rather than carrying English of their own. Its cases are
+  in `eslint/no-ui-literals.test.mjs`, run by `test:unit` under `node --test`.
+
 - `@rondo/config/tsconfig/base.json` is the strict (`strict: true`) TypeScript base. Consume
   it from a workspace `tsconfig.json`, declaring the `@/*` → `src/*` alias locally
   (TS resolves `paths` relative to the file that declares them, so it can't live in the
@@ -45,5 +53,6 @@ truth. Every app and package inherits from here, no local copies of rules.
 ## Scripts wired in consumers
 
 Each workspace that ships code exposes `lint` (`eslint .`) and `typecheck` (`tsc --noEmit`);
-this package exposes `lint` but no `typecheck`, because it is static configuration. The
+this package exposes `lint` and `test:unit` but no `typecheck`, because it is static
+configuration plus the rules it defines. The
 Turborepo gate runs them repo-wide as `turbo lint` and `turbo typecheck`.

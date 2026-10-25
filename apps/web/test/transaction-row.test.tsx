@@ -77,7 +77,7 @@ describe('one row of the feed', () => {
       payee: null,
     });
 
-    expect(screen.getByText('Transfer to Card')).toBeInTheDocument();
+    expect(screen.getByText('Transfer to "Card"')).toBeInTheDocument();
     expect(screen.getByText(en['transactions.transferBadge'])).toBeInTheDocument();
   });
 
@@ -171,7 +171,7 @@ describe('one row of the feed', () => {
       </LocaleProvider>,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'Transfer to Card' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Transfer to "Card"' }));
 
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'r7' }));
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
@@ -193,6 +193,6 @@ describe('one row of the feed', () => {
     });
 
     expect(screen.getByText(en['transactions.transferPlain'])).toBeInTheDocument();
-    expect(screen.queryByText(/Transfer to\s*$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Transfer to/)).not.toBeInTheDocument();
   });
 });
