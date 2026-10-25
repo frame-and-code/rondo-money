@@ -12,7 +12,9 @@ Never answer from memory when the answer depends on a version. Look, in this ord
 1. [`.claude/config/external-docs.json`](../config/external-docs.json), which lists the
    external documentation this project actually depends on and says why we go to each;
 2. the installed source under `node_modules/` and `pnpm-lock.yaml`, the truth about what
-   is installed _here_, not what the latest release does;
+   is installed _here_, not what the latest release does. For Turborepo,
+   [`AGENTS.md`](../../AGENTS.md) says where the docs bundled with the installed `turbo`
+   live. `turbo` writes that block itself, so it is not edited by hand;
 3. this repository's own code.
 
 If none of them answers it, fetch the documentation or say you don't know. "I think the
