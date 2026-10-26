@@ -104,8 +104,10 @@ Check the plan against volume, not against a fixture:
    `auto_explain.log_buffers = on` the same way, after a `LOAD 'auto_explain'` in that session
    so a misspelt setting is refused. Restart the api so its pool reconnects, open the screen,
    and read the plans in `docker compose logs postgres`.
-3. `RESET` every one of those settings and restart the api again. The same database serves the
-   integration tests, and the instrumentation slows every statement they run.
+3. Take every one of those settings off the database with `ALTER DATABASE rondo_dev RESET …`,
+   because a session's own `RESET` leaves them in place, and restart the api again. The same
+   database serves the integration tests, and the instrumentation slows every statement they
+   run.
 4. Run `VACUUM ANALYZE` before reading a plan, because an index-only scan needs the visibility
    map. Take timings in a pass of their own, without `auto_explain`.
 5. Judge an index by the statement's `Execution Time` and `Buffers` in

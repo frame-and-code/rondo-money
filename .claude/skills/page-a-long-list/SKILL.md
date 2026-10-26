@@ -37,8 +37,9 @@ OR: [
 ```
 
 The `date` bound beside the `OR` says nothing the branches do not, and it is there for the
-index. Postgres cannot bound a scan with an `OR`, so without it a page deep in the history walks
-past every newer row and throws it away, and a page costs more the further back it is. With it
+index. The scan that returns rows in the feed's order takes no bound from the `OR`, so without
+it a page deep in the history walks past every newer row and throws it away, and a page costs
+more the further back it is. With it
 the plan says `Index Cond: … date <= …`. It is `lte`, never `lt`: the cursor's own day still
 holds rows the next page needs. And it sits in `olderThan` rather than in the filter, whose
 `date` carries a period of its own.

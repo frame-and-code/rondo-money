@@ -5,6 +5,11 @@
   \set owner user_synth_owner
 \endif
 
+\if :{?clean}
+\else
+  \set clean off
+\endif
+
 \set volume_name 'Synthetic volume'
 
 BEGIN;
@@ -26,7 +31,7 @@ DELETE FROM asset WHERE budget_id IN (SELECT id FROM volume_doomed);
 DELETE FROM liability WHERE budget_id IN (SELECT id FROM volume_doomed);
 DELETE FROM budget WHERE id IN (SELECT id FROM volume_doomed);
 
-\if :{?clean}
+\if :clean
 COMMIT;
 \echo 'The synthetic volume is gone.'
 \quit
