@@ -60,7 +60,9 @@ so no part of the scope is baked in.
   Bounding a date column with that instant pulls the last day of the previous month into this
   one, and no test that only spends money mid-month will notice.
 - **One statement per screen.** A screen that costs a query per category is an N+1 that grows
-  with the user's budget. The test that holds this counts the calls on the real repository.
+  with the user's budget. The tests that hold this count the calls on the real repository, and
+  every statement the screen sends at the driver
+  ([`testing-patterns`](../testing-patterns/SKILL.md)).
 - **A total over the rows rides on every row.** A statement answering a list and a sum over the
   same rows starts from the total and joins the rows onto it
   ([`account-balances.query.ts`](../../../apps/api/src/accounts/account-balances.query.ts)), so a
@@ -74,6 +76,44 @@ so no part of the scope is baked in.
   balance from `openAccountBalances`). Two copies of one sum are two screens that disagree the
   day one of them changes. The unit test holds it: the composed statement's `sql` contains the
   fragment's.
+
+## The statement reads through an index
+
+A sum over a budget reads every row the budget holds, and the index decides whether it reads the
+table as well. One that starts with the caller and the budget, goes on with the column the
+statement groups or ranges by and ends with the columns it sums lets Postgres answer from the
+index alone, in the order the grouping wants: the plan says `Index Only Scan`, `Heap Fetches: 0`
+and `GroupAggregate`. The indexes on `Transaction` in
+[`schema.prisma`](../../../packages/db/prisma/schema.prisma) are the worked example, and why the
+summed columns are key columns is in [`packages/db`](../../../packages/db/README.md). A new
+aggregate either fits one of them or brings its own index in the same change.
+
+An estimate is part of the plan. A filter on the caller and the budget is estimated through the
+dependency statistic each budget table carries
+([`packages/db`](../../../packages/db/README.md)); without it Postgres expects a fraction of the
+rows, puts the sum inside a nested loop and runs it once per outer row.
+
+Check the plan against volume, not against a fixture:
+
+1. `pnpm --filter @rondo/db db:volume` writes a heavy budget among many lighter ones into the
+   local database. How to open it in the app and remove it again is in
+   [`packages/db`](../../../packages/db/README.md).
+2. To see what a screen really sends, load `auto_explain` for the local database:
+   `ALTER DATABASE rondo_dev SET session_preload_libraries = 'auto_explain'`, then
+   `auto_explain.log_min_duration = 0`, `auto_explain.log_analyze = on` and
+   `auto_explain.log_buffers = on` the same way, after a `LOAD 'auto_explain'` in that session
+   so a misspelt setting is refused. Restart the api so its pool reconnects, open the screen,
+   and read the plans in `docker compose logs postgres`.
+3. Take every one of those settings off the database with `ALTER DATABASE rondo_dev RESET …`,
+   because a session's own `RESET` leaves them in place, and restart the api again. The same
+   database serves the integration tests, and the instrumentation slows every statement they
+   run.
+4. Run `VACUUM ANALYZE` before reading a plan, because an index-only scan needs the visibility
+   map. Take timings in a pass of their own, without `auto_explain`.
+5. Judge an index by the statement's `Execution Time` and `Buffers` in
+   `EXPLAIN (ANALYZE, BUFFERS)`, not by the endpoint's response time, which the framework and
+   the JSON body blur. An index the plan does not pick, or picks without the time falling, is
+   a write cost with nothing bought.
 
 ## The tests that are not optional
 

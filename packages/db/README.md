@@ -21,8 +21,9 @@ unique index on `(user_id, active) where active` holds that, so a second activat
 the index. It cannot require a first one, and it is not meant to: a user part-way through
 onboarding has no active budget, and every reader handles that.
 
-That index is why the schema turns on the `partialIndexes` preview feature, and three things
-follow.
+That index and the index of typed payees on `Transaction`, described below, are why the
+schema turns on the `partialIndexes` preview feature, and the flag carries consequences of its
+own.
 
 A Prisma release that **removes** the name is a hard stop: the schema fails to parse, and
 `migrate deploy` goes down with it, because the whole schema is validated before any
@@ -140,6 +141,33 @@ stored `result`; a repeat whose fingerprint differs is a second intent wearing t
 key, and the api refuses it. Why it refuses rather than replaying is in
 [api](../../.claude/rules/api.md).
 
+## How a read finds its rows
+
+Every read of a budget's rows filters on the caller and the budget, so the indexes on
+`Transaction`, where a budget's history piles up, start with `(user_id, budget_id)` and go on
+with what the read fixes or groups by. The indexes that lead with a foreign key,
+`(account_id, …)` and `(category_id)`, are the exception, because they also serve the checks
+those keys make, and so is `(transfer_id)`, which finds a transfer's other leg. Prisma cannot declare `INCLUDE`, so an index that lets an aggregate answer
+from the index alone carries the summed columns as trailing key columns. The shape an aggregate
+needs is in [`aggregate-query`](../../.claude/skills/aggregate-query/SKILL.md), and the shape a
+page of the feed needs is in [`page-a-long-list`](../../.claude/skills/page-a-long-list/SKILL.md).
+
+The index of typed payees is partial: it holds the rows a person typed a payee on, which is what
+the payee picker offers. Postgres uses a partial index only for a query whose `where` implies
+its predicate, so the predicate repeats that read's own filter, and a change to one is a change
+to the other. The read compares `is_system` to a parameter, and the proof holds only because
+each statement the driver adapter sends is planned with its values. A named statement or a
+generic plan loses the index without changing an answer, and the read falls back to the payee
+index beside it.
+
+A budget belongs to one owner, so a filter on both `user_id` and `budget_id` selects as many
+rows as the filter on `budget_id` alone. Postgres treats two columns as independent unless a
+statistic says otherwise, expects a fraction of the rows a budget holds, and plans its joins for
+that. So every table that belongs to a budget carries a dependency statistic on the pair.
+Prisma cannot declare one, so they live in migrations alone, and `prisma migrate dev` neither
+models them nor drops them. `budget-statistics.integration.spec.ts` fails the gate on a table
+carrying both columns without one.
+
 ## Conventions
 
 Set by the first table and followed by every later one:
@@ -152,7 +180,8 @@ Set by the first table and followed by every later one:
   rather than `text`, which is what `@db.Uuid` buys;
 - every table carrying user data has `userId`, and joins the scoped-model registry in
   `apps/api/src/prisma/scoped-models.ts` **in the same change** (ADR-005). A table that
-  belongs to one budget carries `budgetId` too, and joins the budget registry beside it;
+  belongs to one budget carries `budgetId` too, joins the budget registry beside it, and gets
+  the dependency statistic on `(user_id, budget_id)` in the migration that creates it;
 - a field is **named** so that the column the rule above produces is not a reserved word in
   Postgres. The order of a category is `sortOrder`, not `order`, because `order` would have
   to be quoted in exactly the hand-written SQL the snake_case convention exists to keep
@@ -205,7 +234,19 @@ pnpm --filter @rondo/db db:migrate    # prisma migrate dev (requires a running P
 pnpm --filter @rondo/db db:deploy     # prisma migrate deploy (prod)
 pnpm --filter @rondo/db db:reset      # prisma migrate reset, drops the local database
 pnpm --filter @rondo/db db:studio     # prisma studio
+pnpm --filter @rondo/db db:volume     # a synthetic heavy budget in the local database
 ```
+
+`db:volume` runs [`scripts/volume.sql`](scripts/volume.sql) through `psql` inside the
+`docker-compose.yml` container, so it reaches the local database and nothing else. It writes one
+heavy budget and many lighter ones beside it. The heavy budget belongs to `VOLUME_OWNER` when
+that is set, so a Clerk user id makes it yours to open in the app; it starts inactive when that
+user already has an active budget. A second run replaces what the first one wrote rather than
+adding more, and `VOLUME_CLEAN=1` removes it, as long as both carry the same `VOLUME_OWNER`,
+because the heavy budget is found by its owner and its name. When the heavy budget is the active
+one, switch the app to another budget before cleaning, or its owner is left with no active
+budget and the app opens onboarding. What the volume is for is in
+[`aggregate-query`](../../.claude/skills/aggregate-query/SKILL.md).
 
 `DATABASE_URL` is loaded from the root `.env` directly in `prisma.config.ts` (see
 `.env.example` and `docker-compose.yml`); on Railway it comes from real environment variables.

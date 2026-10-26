@@ -47,6 +47,13 @@ genuinely api-only still belongs in `apps/api`, the way
   [`scoped-models.ts`](../../../apps/api/src/prisma/scoped-models.ts) in the same change**
   (ADR-005). A model one budget owns carries `budgetId` and joins `BUDGET_SCOPED_MODELS` in
   the same file. `apps/api/test/scoped-models.spec.ts` fails the gate on either omission.
+- **A model one budget owns also gets a dependency statistic** on `(user_id, budget_id)` in the
+  migration that creates it, and Prisma cannot generate one. Create the migration with
+  `--create-only`, append
+  `CREATE STATISTICS "<table>_user_id_budget_id_stat" (dependencies) ON "user_id", "budget_id" FROM "<table>"`,
+  then run `migrate dev` to apply it. Why the planner needs it is in
+  [`packages/db/README.md`](../../../packages/db/README.md), and
+  `apps/api/test/budget-statistics.integration.spec.ts` fails the gate on a table without one.
 - **That same model joins the erase**,
   [`erase-user-data.query.ts`](../../../apps/api/src/me/erase-user-data.query.ts), which deletes
   everything one caller owns with a statement per table. `apps/api/test/erase-user-data-query.spec.ts`

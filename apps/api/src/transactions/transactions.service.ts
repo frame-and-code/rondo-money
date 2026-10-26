@@ -398,6 +398,7 @@ export class TransactionsService {
 
 function olderThan(cursor: Cursor): Prisma.TransactionWhereInput {
   return {
+    date: { lte: cursor.date },
     OR: [
       { date: { lt: cursor.date } },
       { date: cursor.date, createdAt: { lt: cursor.createdAt } },

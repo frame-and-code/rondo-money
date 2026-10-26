@@ -212,6 +212,67 @@ describe('the feed of what a budget recorded (integration)', () => {
       expect(first.days).toEqual([{ date: '2026-06-02', total: '-3000' }]);
       expect(second.days).toEqual([{ date: '2026-06-02', total: '-3000' }]);
     });
+
+    const seedTwoDays = async (outside: boolean): Promise<void> => {
+      const { budget, account, category } = await budgetOf(USER_PAGES);
+      const inside: [string, number][] = [
+        ['2026-06-02', 3],
+        ['2026-06-01', 2],
+      ];
+      const beyond: [string, number][] = [
+        ['2026-06-03', 1],
+        ['2026-05-31', 1],
+      ];
+
+      for (const [day, count] of outside ? [...inside, ...beyond] : inside) {
+        for (let index = 0; index < count; index += 1) {
+          await seedRow(USER_PAGES, budget.id, account.id, {
+            categoryId: category.id,
+            date: toDbDate(day),
+            payee: `${day} ${index}`,
+            createdAt: new Date(Date.parse(`${day}T08:00:00Z`) + index * 60_000),
+          });
+        }
+      }
+    };
+
+    const walk = async (query: string): Promise<(string | null)[]> => {
+      const seen: (string | null)[] = [];
+      let cursor: string | null = null;
+
+      do {
+        const after: string = cursor === null ? '' : `&cursor=${encodeURIComponent(cursor)}`;
+        const page = await feed(USER_PAGES, `?limit=2${query}${after}`);
+        seen.push(...page.transactions.map((row) => row.payee));
+        cursor = page.nextCursor;
+      } while (cursor !== null);
+
+      return seen;
+    };
+
+    it('loses no record and repeats none when a page runs from one day into the one before', async () => {
+      await seedTwoDays(false);
+
+      expect(await walk('')).toEqual([
+        '2026-06-02 2',
+        '2026-06-02 1',
+        '2026-06-02 0',
+        '2026-06-01 1',
+        '2026-06-01 0',
+      ]);
+    });
+
+    it('keeps to the period it was asked for on every page, across a change of day', async () => {
+      await seedTwoDays(true);
+
+      expect(await walk('&from=2026-06-01&to=2026-06-02')).toEqual([
+        '2026-06-02 2',
+        '2026-06-02 1',
+        '2026-06-02 0',
+        '2026-06-01 1',
+        '2026-06-01 0',
+      ]);
+    });
   });
 
   describe('what a filter narrows it to', () => {
