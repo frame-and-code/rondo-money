@@ -27,7 +27,7 @@
     "@swc/jest": "^0.2.39",
     "@tanstack/react-query": "^5.103.2",
     "@types/jest": "^30.0.0",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "jest": "^30.5.2",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3"
