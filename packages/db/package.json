@@ -19,6 +19,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
+    "db:volume": "docker compose -f ../../docker-compose.yml exec -T -e VOLUME_OWNER -e VOLUME_CLEAN postgres sh -c 'psql -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -v owner=\"${VOLUME_OWNER:-user_synth_owner}\" ${VOLUME_CLEAN:+-v clean=1} -f -' < scripts/volume.sql",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "echo \"@rondo/db: no tests yet — Prisma ↔ Postgres is covered by @rondo/api integration tests (see docs/testing.md)\""

@@ -63,6 +63,29 @@ To observe something the response cannot show, such as whether a query happened 
 override the provider with a counting wrapper around the real one rather than a stub, so what
 runs is still the real behaviour.
 
+## Counting what a screen costs the database
+
+A screen that sends a query per row answers correctly, so nothing that checks the answer notices
+it. Count the statements at the driver instead: spy on `Client.prototype.query` from `pg`, which
+the pooled reads and the statements of a transaction both pass through, once the fixtures are
+written and only while the request is awaited
+([`screen-statements.integration.spec.ts`](../../../apps/api/test/screen-statements.integration.spec.ts)).
+Compare two answers that differ only in how many rows they carry, assert that they did carry
+them, and assert the count is above zero, or a spy that sees nothing compares nought with nought.
+
+Counts also differ without any per-row query, and each cause has its remedy:
+
+- a first read that writes, as the settings row is created by its first read: call the endpoint
+  once before counting;
+- a statement that runs only when its rows exist, such as the other leg of a transfer or the
+  totals of a non-empty page: give the small fixture one row of every kind the large one has;
+- a page the size of its rows rather than of its limit: grow the page, not the history, and
+  assert both pages are full.
+
+A per-row query the view can never reach is invisible to it: an envelope's records hold no
+transfer leg. Prove each view can fail by adding a query per row to the service, watching it go
+red, and taking it out.
+
 ## Proving a composite write is atomic
 
 Nothing reachable over HTTP tears a transaction in half, so the failure has to be injected.

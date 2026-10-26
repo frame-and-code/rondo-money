@@ -72,7 +72,12 @@ diff and takes the site down during the rollout window, or on any rollback.
   one survives and drifts nothing. An index on an expression is the second, for the same
   reason: the schema cannot declare one, and the differ leaves it where it is. Confirm that against the installed Prisma after every upgrade, with `migrate diff` against a database holding one.
   It holds under the same conditions as a `CHECK` below, and the one it has is
-  `budget_name_per_user`. Nothing else qualifies, and each for its own reason. An index on
+  `budget_name_per_user`. An extended statistic is the third: the schema cannot declare one and
+  the differ never reads one, so a hand-written `CREATE STATISTICS` survives `migrate dev` and
+  drifts nothing. Confirm that after every upgrade as well. The ones it has are the dependency
+  statistics on `(user_id, budget_id)` every budget table carries, and
+  `budget-statistics.integration.spec.ts` pins them against the applied schema, so a new budget
+  table arrives with its own. Nothing else qualifies, and each for its own reason. An index on
   columns the differ does read, so the next `migrate dev` offers to drop it. A trigger it never reads,
   but a trigger is a domain write outside the single write point. An EXCLUDE constraint and a
   generated column go unread too, and unlike a `CHECK` nothing in the schema or the tests would

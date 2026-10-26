@@ -28,14 +28,22 @@ where: { AND: [filter, olderThan(cursor)] },
 `olderThan` is the tuple written out, and every branch of it is required:
 
 ```ts
+date: { lte: cursor.date },
 OR: [
   { date: { lt: cursor.date } },
   { date: cursor.date, createdAt: { lt: cursor.createdAt } },
   { date: cursor.date, createdAt: cursor.createdAt, id: { lt: cursor.id } },
-];
+],
 ```
 
-Three rules the shape rests on:
+The `date` bound beside the `OR` says nothing the branches do not, and it is there for the
+index. Postgres cannot bound a scan with an `OR`, so without it a page deep in the history walks
+past every newer row and throws it away, and a page costs more the further back it is. With it
+the plan says `Index Cond: … date <= …`. It is `lte`, never `lt`: the cursor's own day still
+holds rows the next page needs. And it sits in `olderThan` rather than in the filter, whose
+`date` carries a period of its own.
+
+The rules the shape rests on:
 
 - **`take: limit + 1` is how the answer knows there is more.** Slice the extra row off, and let
   `nextCursor` be null when it was not there. A separate count query answers a different
@@ -47,12 +55,17 @@ Three rules the shape rests on:
   parameter whose name is one of `after`, `before`, `cursor`, `offset`, `page` or `start`
   (`defaultPaginationKeywords` in `@hey-api/shared`). Call it anything else and the screen has
   to hand-write what the generator would have given it.
-- **Every way into the list gets its own index, and each carries its filter columns then the
-  leading keys of the sort.** The worked example has two: one for the feed of a single account
-  and one for the feed across all of them, where the first index's leading column is unbound and
-  therefore useless. The tie-breaking id stays out of both: it costs an entry per row and saves
-  an incremental sort over rows that already share a day and a moment. `EXPLAIN` says
-  `Presorted Key: date, created_at` on both paths, which is the shape to check for.
+- **Every way into the list reaches its rows through an index, and a filter that can match a
+  few rows of a long history carries the leading keys of the sort after its own columns.**
+  Walked in date order, a rare match costs a scan of the whole budget before a page fills. So
+  the feed across all accounts, the feed of one account, of one payee and of one kind each have
+  an index that starts with what the filter fixes and goes on with the day and the moment. An
+  envelope's records come from the index on the envelope alone and are sorted after, since one
+  envelope's history is short enough for the sort to cost nothing. The tie-breaking id stays out
+  of every index: it costs an entry per row and saves an incremental sort over rows that
+  already share a day and a moment. `EXPLAIN` says `Presorted Key: date, created_at` on the
+  sorted paths, which is the shape to check for, against the volume
+  [`aggregate-query`](../aggregate-query/SKILL.md) describes.
 
 ## A filter belongs to the query, never to the loaded rows
 

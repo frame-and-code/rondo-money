@@ -6,8 +6,8 @@ generator client {
   generatedFileExtension = "ts"
   importFileExtension    = "js"
 
-  // Preview feature, for Budget's one-active-row index. What it buys and what a Prisma
-  // upgrade has to check: packages/db/README.md.
+  // Preview feature, for Budget's one-active-row index and Transaction's index of typed
+  // payees. What it buys and what a Prisma upgrade has to check: packages/db/README.md.
   previewFeatures = ["partialIndexes"]
 }
 
@@ -88,6 +88,11 @@ enum TransactionType {
 /// holds it, `budget_name_per_user` on `lower(name)`, cannot be declared here, so it lives in
 /// migration `20261024180000_budget_name_per_user` alone, and
 /// `budget-names.integration.spec.ts` pins it against the applied schema.
+///
+/// Every table that belongs to a budget carries a dependency statistic on `(user_id,
+/// budget_id)`, which cannot be declared here either. They live in migrations alone, from
+/// `20261026064008_aggregate_indexes` on, and `budget-statistics.integration.spec.ts` fails the
+/// gate on a budget table without one.
 model Budget {
   id String @id @default(uuid(7)) @db.Uuid
 
@@ -252,6 +257,15 @@ model Transaction {
   @@index([accountId, date, createdAt])
   @@index([categoryId])
   @@index([transferId])
+  @@index([userId, budgetId, categoryId, date, amount])
+  @@index([userId, budgetId, accountId, isSystem, amount])
+  @@index([userId, budgetId, payee, date, createdAt])
+  @@index([userId, budgetId, type, date, createdAt])
+  /// The payees a person typed, which is what the payee picker offers. The predicate repeats
+  /// that read's own filter word for word: Postgres uses a partial index only for a query whose
+  /// `where` implies it, and that read compares `is_system` to a parameter, so the proof holds
+  /// only while each statement is planned with its values.
+  @@index([userId, budgetId, payee], map: "transaction_typed_payees_idx", where: { payee: { not: null }, transferId: null, isSystem: false })
   @@map("transaction")
 }
 

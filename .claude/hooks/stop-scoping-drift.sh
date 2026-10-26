@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop — if the Prisma schema changed but the scoped-model registry did not, say so before
+# Stop: if the Prisma schema changed but the scoped-model registry did not, say so before
 # the session ends.
 #
 # A new table carrying `userId` is invisible to the auto-scoping extension until it is listed
@@ -10,7 +10,7 @@
 # stdout goes back to the agent, exit is always 0. Silent when there is nothing to say.
 #
 # It deliberately does not parse the schema. Re-implementing the test's logic here would drift
-# from it silently — and a check that quietly stops matching is worse than no check, which is
+# from it silently, and a check that quietly stops matching is worse than no check, which is
 # exactly why ADR-005 rejected its option C.
 
 set -uo pipefail
@@ -35,14 +35,17 @@ carries `userId`, four things belong in the same PR (ADR-005):
 1. the model in `SCOPED_MODELS`, otherwise every query against it is unfiltered, and in
    `BUDGET_SCOPED_MODELS` too when one budget owns it;
 2. its migration, generated locally (`pnpm --filter @rondo/db exec prisma migrate dev`),
-   then `pnpm --filter @rondo/db build` so the client types include the model;
-3. a cross-tenant test ("user B sees nothing of user A's") — required by the DoD of every
+   then `pnpm --filter @rondo/db build` so the client types include the model; when one
+   budget owns it, create the migration with `--create-only`, append the dependency
+   statistic on `(user_id, budget_id)` that Prisma cannot generate, then apply it
+   (.claude/skills/add-a-domain-module/SKILL.md);
+3. a cross-tenant test ("user B sees nothing of user A's"), required by the DoD of every
    phase that adds domain tables;
 4. `@map` / `@@map` on the new names: PascalCase models and camelCase fields in Prisma,
    snake_case tables and columns in Postgres.
 
 If the edit added no user-owned table (a comment, an enum, a column on an already-registered
-model), there is nothing to do — say so and move on.
+model), there is nothing to do, so say so and move on.
 EOF
 
 exit 0
