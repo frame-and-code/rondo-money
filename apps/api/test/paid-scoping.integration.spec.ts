@@ -56,7 +56,7 @@ describe('a paid mark keeps to one caller and one budget', () => {
       .post(`/categories/${theirs.category.id}/paid`)
       .set('Authorization', `Bearer ${harness.tokenFor(USER_A)}`)
       .send({ month: thisMonth(), idempotencyKey: 'cross-tenant' })
-      .expect(400);
+      .expect(404);
 
     expect(
       await harness.prisma.categoryPaidMonth.count({ where: { categoryId: theirs.category.id } }),
@@ -71,7 +71,7 @@ describe('a paid mark keeps to one caller and one budget', () => {
       .post(`/categories/${theirs.category.id}/unpaid`)
       .set('Authorization', `Bearer ${harness.tokenFor(USER_A)}`)
       .send({ month: thisMonth(), idempotencyKey: 'cross-tenant-unmark' })
-      .expect(400);
+      .expect(404);
 
     expect(
       await harness.prisma.categoryPaidMonth.count({ where: { categoryId: theirs.category.id } }),

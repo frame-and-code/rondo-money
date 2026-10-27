@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BUDGET_REFUSALS, type BudgetRefusal } from '@rondo/types';
 
 import { BadRequestResponse } from '@/openapi/bad-request.response';
+import { NotFoundResponse } from '@/openapi/not-found.response';
 
 export class BudgetRefusedResponse extends BadRequestResponse {
   @ApiProperty({
@@ -14,4 +15,15 @@ export class BudgetRefusedResponse extends BadRequestResponse {
     required: false,
   })
   reason?: BudgetRefusal;
+}
+
+export class BudgetNotFoundResponse extends NotFoundResponse {
+  @ApiProperty({
+    description:
+      'Why nothing was found: the path names a budget the caller does not hold. Another ' +
+      'tenant holding it and nobody holding it answer the same.',
+    enum: BUDGET_REFUSALS,
+    enumName: 'BudgetRefusal',
+  })
+  reason!: BudgetRefusal;
 }

@@ -410,9 +410,9 @@ describe('/transfers (integration)', () => {
       const changed = await patch(USER_EDITS, absent, move(wallet.id, card.id));
       const removed = await remove(USER_EDITS, absent, { idempotencyKey: 'gone' });
 
-      expect(changed.status).toBe(400);
+      expect(changed.status).toBe(404);
       expect(reasonOf(changed.body)).toBe('UNKNOWN_TRANSFER');
-      expect(removed.status).toBe(400);
+      expect(removed.status).toBe(404);
       expect(reasonOf(removed.body)).toBe('UNKNOWN_TRANSFER');
     });
 

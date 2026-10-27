@@ -108,7 +108,7 @@ describe('what one tenant sees of another (integration)', () => {
       idempotencyKey: 'edit-someone-elses',
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     expect((response.body as { reason?: string }).reason).toBe('UNKNOWN_TRANSACTION');
 
     const stored = await harness.prisma.transaction.findUniqueOrThrow({
@@ -124,7 +124,7 @@ describe('what one tenant sees of another (integration)', () => {
 
     const response = await remove(USER_MINE, theirs.record.id);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     expect((response.body as { reason?: string }).reason).toBe('UNKNOWN_TRANSACTION');
     await expect(
       harness.prisma.transaction.count({ where: { id: theirs.record.id } }),

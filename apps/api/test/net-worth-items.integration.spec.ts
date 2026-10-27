@@ -587,7 +587,7 @@ describe('assets and liabilities (integration)', () => {
 
         const response = await change(USER_GONE, path, ABSENT, changing());
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(404);
         expect(asRecord(response.body)['reason']).toBe(unknown);
         await expect(keysOf(USER_GONE)).resolves.toBe(0);
       });
@@ -598,7 +598,7 @@ describe('assets and liabilities (integration)', () => {
 
         const response = await change(USER_GONE, path, neighbour.id, changing());
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(404);
         expect(asRecord(response.body)['reason']).toBe(unknown);
         await expect(storedOf(other, neighbour.id)).resolves.toMatchObject({
           name: 'Квартира',
@@ -648,7 +648,7 @@ describe('assets and liabilities (integration)', () => {
         expect(first.status).toBe(200);
         expect(repeated.status).toBe(200);
         expect(repeated.body).toEqual(first.body);
-        expect(afresh.status).toBe(400);
+        expect(afresh.status).toBe(404);
         expect(asRecord(afresh.body)['reason']).toBe(unknown);
         await expect(keysOf(USER_REPEAT)).resolves.toBe(1);
       });
@@ -670,7 +670,7 @@ describe('assets and liabilities (integration)', () => {
 
         const response = await remove(USER_GONE, path, ABSENT, deleting);
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(404);
         expect(asRecord(response.body)['reason']).toBe(unknown);
         await expect(keysOf(USER_GONE)).resolves.toBe(0);
       });
@@ -681,7 +681,7 @@ describe('assets and liabilities (integration)', () => {
 
         const response = await remove(USER_GONE, path, neighbour.id, deleting);
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(404);
         expect(asRecord(response.body)['reason']).toBe(unknown);
         await expect(storedOf(other, neighbour.id)).resolves.not.toBeNull();
       });
@@ -723,8 +723,8 @@ describe('assets and liabilities (integration)', () => {
           remove(USER_RACE, path, item.id, { idempotencyKey: 'another-tab' }),
         ]);
 
-        expect(answers.map((answer) => answer.status).sort()).toEqual([200, 400]);
-        expect(answers.find((answer) => answer.status === 400)?.body).toMatchObject({
+        expect(answers.map((answer) => answer.status).sort()).toEqual([200, 404]);
+        expect(answers.find((answer) => answer.status === 404)?.body).toMatchObject({
           reason: unknown,
         });
         await expect(storedOf(kind, item.id)).resolves.toBeNull();
@@ -748,8 +748,8 @@ describe('assets and liabilities (integration)', () => {
         ]);
 
         expect(removed.status).toBe(200);
-        expect([200, 400]).toContain(changed.status);
-        if (changed.status === 400) {
+        expect([200, 404]).toContain(changed.status);
+        if (changed.status === 404) {
           expect(asRecord(changed.body)['reason']).toBe(unknown);
         }
         await expect(storedOf(kind, item.id)).resolves.toBeNull();

@@ -40,7 +40,8 @@ carries `userId`, four things belong in the same PR (ADR-005):
    statistic on `(user_id, budget_id)` that Prisma cannot generate, then apply it
    (.claude/skills/add-a-domain-module/SKILL.md);
 3. a cross-tenant test ("user B sees nothing of user A's"), required by the DoD of every
-   phase that adds domain tables;
+   phase that adds domain tables, and a row of the model in the seeded world of
+   apps/api/test/cross-tenant.integration.spec.ts, which fails without one;
 4. `@map` / `@@map` on the new names: PascalCase models and camelCase fields in Prisma,
    snake_case tables and columns in Postgres.
 

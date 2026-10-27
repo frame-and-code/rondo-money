@@ -14,7 +14,7 @@ import {
 import { copiedTree, goalsComeAlong, type TemplateTreeRow } from '@/budgets/budget-copy';
 import { budgetsGateStatement, budgetsLockStatement } from '@/budgets/budget-lock.query';
 import { budgetNamedStatement } from '@/budgets/budget-name.query';
-import { refuseBudget } from '@/budgets/budget-refusal';
+import { refuseBudget, refuseMissingBudget } from '@/budgets/budget-refusal';
 import {
   assetsStatement,
   categoryTreeStatement,
@@ -277,17 +277,21 @@ export class BudgetsService {
     await this.raw.query<{ id: string }>((scope) => budgetsLockStatement(scope), tx);
   }
 
-  private async ownedBudget(tx: MutationClient, id: string): Promise<Budget> {
+  private async ownedBudget(
+    tx: MutationClient,
+    id: string,
+    refuse: () => Error = refuseMissingBudget,
+  ): Promise<Budget> {
     const budget = await tx.budget.findFirst({ where: { id } });
     if (!budget) {
-      throw refuseBudget('UNKNOWN_BUDGET');
+      throw refuse();
     }
 
     return budget;
   }
 
   private async template(tx: MutationClient, id: string): Promise<Template> {
-    const budget = await this.ownedBudget(tx, id);
+    const budget = await this.ownedBudget(tx, id, () => refuseBudget('UNKNOWN_BUDGET'));
     const tree = await this.raw.query<CategoryTreeRecord>(
       (scope) => categoryTreeStatement(scope, id),
       tx,

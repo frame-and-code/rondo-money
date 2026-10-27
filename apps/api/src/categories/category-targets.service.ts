@@ -13,7 +13,7 @@ import {
 } from '@rondo/types';
 
 import { lockCategories } from '@/categories/available';
-import { NO_ACTIVE_BUDGET, refuse } from '@/categories/category-refusal';
+import { NO_ACTIVE_BUDGET, missing, refuse } from '@/categories/category-refusal';
 import { SetCategoryTargetDto } from '@/categories/category-target.dto';
 import { CategoryTargetResponse } from '@/categories/category-target.response';
 import { activeInMonth, targetWrite, type TargetRow } from '@/categories/target-window';
@@ -192,7 +192,7 @@ export class CategoryTargetsService {
   ): Promise<void> {
     const [held] = await lockCategories(this.raw, tx, budgetId, [categoryId]);
     if (!held) {
-      throw refuse('UNKNOWN_CATEGORY', `This budget holds no category ${categoryId}.`);
+      throw missing('UNKNOWN_CATEGORY', `This budget holds no category ${categoryId}.`);
     }
 
     if (held.hiddenAt !== null) {

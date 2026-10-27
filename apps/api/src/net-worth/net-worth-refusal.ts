@@ -1,5 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, type NotFoundException } from '@nestjs/common';
 import { type NetWorthRefusal } from '@rondo/types';
+
+import { refuseMissing } from '@/openapi/not-found.response';
 
 const MESSAGES: Record<NetWorthRefusal, string> = {
   DATE_IN_FUTURE:
@@ -19,4 +21,8 @@ export function refuseNetWorth(reason: NetWorthRefusal): BadRequestException {
     message: MESSAGES[reason],
     reason,
   });
+}
+
+export function refuseMissingNetWorth(reason: NetWorthRefusal): NotFoundException {
+  return refuseMissing(reason, MESSAGES[reason]);
 }

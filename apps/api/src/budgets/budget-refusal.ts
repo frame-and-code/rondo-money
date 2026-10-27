@@ -1,5 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, type NotFoundException } from '@nestjs/common';
 import { type BudgetRefusal } from '@rondo/types';
+
+import { refuseMissing } from '@/openapi/not-found.response';
 
 const MESSAGES: Record<BudgetRefusal, string> = {
   UNKNOWN_BUDGET: 'The caller holds no such budget.',
@@ -16,4 +18,8 @@ export function refuseBudget(reason: BudgetRefusal): BadRequestException {
     message: MESSAGES[reason],
     reason,
   });
+}
+
+export function refuseMissingBudget(): NotFoundException {
+  return refuseMissing('UNKNOWN_BUDGET', MESSAGES.UNKNOWN_BUDGET);
 }

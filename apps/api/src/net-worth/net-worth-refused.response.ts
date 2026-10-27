@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { NET_WORTH_REFUSALS, type NetWorthRefusal } from '@rondo/types';
 
 import { BadRequestResponse } from '@/openapi/bad-request.response';
+import { NotFoundResponse } from '@/openapi/not-found.response';
 
 export class NetWorthRefusedResponse extends BadRequestResponse {
   @ApiProperty({
@@ -14,4 +15,15 @@ export class NetWorthRefusedResponse extends BadRequestResponse {
     required: false,
   })
   reason?: NetWorthRefusal;
+}
+
+export class NetWorthNotFoundResponse extends NotFoundResponse {
+  @ApiProperty({
+    description:
+      'Why nothing was found: the path names an asset or a liability the active budget does not hold. Another ' +
+      'tenant holding it and nobody holding it answer the same.',
+    enum: NET_WORTH_REFUSALS,
+    enumName: 'NetWorthRefusal',
+  })
+  reason!: NetWorthRefusal;
 }

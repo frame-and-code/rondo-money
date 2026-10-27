@@ -12,6 +12,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -24,7 +25,10 @@ import { ConflictResponse } from '@/mutations/conflict.response';
 import { CreateTransactionDto } from '@/transactions/create-transaction.dto';
 import { DeleteTransactionDto } from '@/transactions/delete-transaction.dto';
 import { ListTransactionsQueryDto } from '@/transactions/list-transactions.query.dto';
-import { TransactionRefusedResponse } from '@/transactions/transaction-refused.response';
+import {
+  TransactionNotFoundResponse,
+  TransactionRefusedResponse,
+} from '@/transactions/transaction-refused.response';
 import { TransactionResponse } from '@/transactions/transaction.response';
 import { PayeesResponse, TransactionPageResponse } from '@/transactions/transactions.response';
 import { TransactionsService } from '@/transactions/transactions.service';
@@ -109,6 +113,10 @@ export class TransactionsController {
   })
   @ApiOkResponse({ description: 'The record as it stands now.', type: TransactionResponse })
   @ApiBadRequestResponse({ description: REFUSED, type: TransactionRefusedResponse })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such record.',
+    type: TransactionNotFoundResponse,
+  })
   @ApiConflictResponse({ description: REPEATED, type: ConflictResponse })
   @ApiUnauthorizedResponse({ description: UNAUTHORIZED, type: UnauthorizedResponse })
   update(
@@ -128,6 +136,10 @@ export class TransactionsController {
   })
   @ApiOkResponse({ description: 'The record that was removed.', type: TransactionResponse })
   @ApiBadRequestResponse({ description: REFUSED, type: TransactionRefusedResponse })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such record.',
+    type: TransactionNotFoundResponse,
+  })
   @ApiConflictResponse({ description: REPEATED, type: ConflictResponse })
   @ApiUnauthorizedResponse({ description: UNAUTHORIZED, type: UnauthorizedResponse })
   remove(

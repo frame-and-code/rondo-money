@@ -5,7 +5,7 @@ import { parseCalendarMonth, toDbMonth, type CalendarMonth } from '@rondo/types'
 import { lockCategories } from '@/categories/available';
 import { CategoryPaidMonthDto } from '@/categories/category-paid.dto';
 import { CategoryPaidMonthResponse } from '@/categories/category-paid.response';
-import { NO_ACTIVE_BUDGET, refuse } from '@/categories/category-refusal';
+import { NO_ACTIVE_BUDGET, missing, refuse } from '@/categories/category-refusal';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
 import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
@@ -98,7 +98,7 @@ export class CategoryPaidService {
   ): Promise<void> {
     const [held] = await lockCategories(this.raw, tx, budgetId, [categoryId]);
     if (!held) {
-      throw refuse('UNKNOWN_CATEGORY', `This budget holds no category ${categoryId}.`);
+      throw missing('UNKNOWN_CATEGORY', `This budget holds no category ${categoryId}.`);
     }
 
     if (held.hiddenAt !== null) {

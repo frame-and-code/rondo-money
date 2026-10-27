@@ -71,15 +71,15 @@ describe('categories belong to one caller (integration)', () => {
     await patch(STRANGER, `/categories/${ownerCategory.id}`, {
       name: 'Перехвачено',
       idempotencyKey: 'steal-rename',
-    }).expect(400);
+    }).expect(404);
 
     await post(STRANGER, `/categories/${ownerCategory.id}/hide`, {
       idempotencyKey: 'steal-hide',
-    }).expect(400);
+    }).expect(404);
 
     await post(STRANGER, `/categories/${ownerCategory.id}/unhide`, {
       idempotencyKey: 'steal-unhide',
-    }).expect(400);
+    }).expect(404);
 
     await post(STRANGER, '/categories/reorder', {
       groupId: ownerGroup.id,
@@ -98,11 +98,11 @@ describe('categories belong to one caller (integration)', () => {
     await patch(STRANGER, `/category-groups/${ownerGroup.id}`, {
       name: 'Перехвачено',
       idempotencyKey: 'steal-group-rename',
-    }).expect(400);
+    }).expect(404);
 
     await post(STRANGER, `/category-groups/${ownerGroup.id}/hide`, {
       idempotencyKey: 'steal-group-hide',
-    }).expect(400);
+    }).expect(404);
 
     const row = await harness.prisma.categoryGroup.findUniqueOrThrow({
       where: { id: ownerGroup.id },

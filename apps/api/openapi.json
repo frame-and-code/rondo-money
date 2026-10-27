@@ -369,7 +369,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, the caller holds no such budget, or the caller already has another budget under that name, whatever its case.",
+            "description": "The body was refused, or the caller already has another budget under that name, whatever its case.",
             "content": {
               "application/json": {
                 "schema": {
@@ -384,6 +384,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The caller holds no such budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetNotFoundResponse"
                 }
               }
             }
@@ -441,7 +451,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or the caller holds no such budget.",
+            "description": "The body was refused.",
             "content": {
               "application/json": {
                 "schema": {
@@ -456,6 +466,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The caller holds no such budget.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetNotFoundResponse"
                 }
               }
             }
@@ -617,7 +637,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or this budget holds no such account, or the caller has no active budget.",
+            "description": "The body was refused, or the caller has no active budget.",
             "content": {
               "application/json": {
                 "schema": {
@@ -632,6 +652,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountNotFoundResponse"
                 }
               }
             }
@@ -689,7 +719,7 @@
             }
           },
           "400": {
-            "description": "The account still holds money, or it is archived already, or this budget holds no such account, or the caller has no active budget.",
+            "description": "The account still holds money, or it is archived already, or the caller has no active budget.",
             "content": {
               "application/json": {
                 "schema": {
@@ -704,6 +734,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountNotFoundResponse"
                 }
               }
             }
@@ -761,7 +801,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or the account already holds records of its own, or this budget holds no such account.",
+            "description": "The body was refused, or the account already holds records of its own.",
             "content": {
               "application/json": {
                 "schema": {
@@ -776,6 +816,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountNotFoundResponse"
                 }
               }
             }
@@ -833,7 +883,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or the account is archived, or this budget holds no such account, or the caller has no active budget.",
+            "description": "The body was refused, or the account is archived, or the caller has no active budget.",
             "content": {
               "application/json": {
                 "schema": {
@@ -848,6 +898,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountNotFoundResponse"
                 }
               }
             }
@@ -1117,6 +1177,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such category group.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -1189,6 +1259,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such category group.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -1257,6 +1337,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such category group.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
                 }
               }
             }
@@ -1462,6 +1552,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -1530,6 +1630,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
                 }
               }
             }
@@ -1606,6 +1716,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -1674,6 +1794,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
                 }
               }
             }
@@ -1750,6 +1880,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -1822,6 +1962,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -1890,6 +2040,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryNotFoundResponse"
                 }
               }
             }
@@ -2259,6 +2419,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -2327,6 +2497,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionNotFoundResponse"
                 }
               }
             }
@@ -2466,6 +2646,16 @@
               }
             }
           },
+          "404": {
+            "description": "The active budget holds no such transfer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferNotFoundResponse"
+                }
+              }
+            }
+          },
           "409": {
             "description": "The idempotency key was claimed by a different request.",
             "content": {
@@ -2534,6 +2724,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such transfer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferNotFoundResponse"
                 }
               }
             }
@@ -2695,7 +2895,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or the day is after today, or this budget holds no such asset, or the caller has no active budget.",
+            "description": "The body was refused, or the day is after today, or the caller has no active budget.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2710,6 +2910,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such asset.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthNotFoundResponse"
                 }
               }
             }
@@ -2767,7 +2977,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or this budget holds no such asset, or the caller has no active budget.",
+            "description": "The body was refused, or the caller has no active budget.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2782,6 +2992,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such asset.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthNotFoundResponse"
                 }
               }
             }
@@ -2943,7 +3163,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or the day is after today, or this budget holds no such liability, or the caller has no active budget.",
+            "description": "The body was refused, or the day is after today, or the caller has no active budget.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2958,6 +3178,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such liability.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthNotFoundResponse"
                 }
               }
             }
@@ -3015,7 +3245,7 @@
             }
           },
           "400": {
-            "description": "The body was refused, or this budget holds no such liability, or the caller has no active budget.",
+            "description": "The body was refused, or the caller has no active budget.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3030,6 +3260,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The active budget holds no such liability.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthNotFoundResponse"
                 }
               }
             }
@@ -3502,6 +3742,37 @@
         ],
         "additionalProperties": false
       },
+      "BudgetNotFoundResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 404
+          },
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          },
+          "message": {
+            "type": "string",
+            "example": "This budget holds no such account."
+          },
+          "reason": {
+            "description": "Why nothing was found: the path names a budget the caller does not hold. Another tenant holding it and nobody holding it answer the same.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BudgetRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
       "ActivateBudgetDto": {
         "type": "object",
         "properties": {
@@ -3737,6 +4008,37 @@
           "idempotencyKey"
         ],
         "additionalProperties": false
+      },
+      "AccountNotFoundResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 404
+          },
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          },
+          "message": {
+            "type": "string",
+            "example": "This budget holds no such account."
+          },
+          "reason": {
+            "description": "Why nothing was found: the path names an account the active budget does not hold. Another tenant holding it and nobody holding it answer the same.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccountRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
       },
       "ArchiveAccountDto": {
         "type": "object",
@@ -4386,6 +4688,37 @@
           "name"
         ],
         "additionalProperties": false
+      },
+      "CategoryNotFoundResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 404
+          },
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          },
+          "message": {
+            "type": "string",
+            "example": "This budget holds no such account."
+          },
+          "reason": {
+            "description": "Why nothing was found: the path names a category or a group the active budget does not hold. Another tenant holding it and nobody holding it answer the same.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
       },
       "IdempotentDto": {
         "type": "object",
@@ -5132,6 +5465,37 @@
         ],
         "additionalProperties": false
       },
+      "TransactionNotFoundResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 404
+          },
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          },
+          "message": {
+            "type": "string",
+            "example": "This budget holds no such account."
+          },
+          "reason": {
+            "description": "Why nothing was found: the path names a record the active budget does not hold. Another tenant holding it and nobody holding it answer the same.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransactionRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
       "DeleteTransactionDto": {
         "type": "object",
         "properties": {
@@ -5317,6 +5681,37 @@
         ],
         "additionalProperties": false
       },
+      "TransferNotFoundResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 404
+          },
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          },
+          "message": {
+            "type": "string",
+            "example": "This budget holds no such account."
+          },
+          "reason": {
+            "description": "Why nothing was found: the path names a transfer the active budget does not hold. Another tenant holding it and nobody holding it answer the same.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TransferRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
+        ]
+      },
       "DeleteTransferDto": {
         "type": "object",
         "properties": {
@@ -5467,6 +5862,37 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "NetWorthNotFoundResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 404
+          },
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          },
+          "message": {
+            "type": "string",
+            "example": "This budget holds no such account."
+          },
+          "reason": {
+            "description": "Why nothing was found: the path names an asset or a liability the active budget does not hold. Another tenant holding it and nobody holding it answer the same.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NetWorthRefusal"
+              }
+            ]
+          }
+        },
+        "required": [
+          "statusCode",
+          "error",
+          "message",
+          "reason"
         ]
       },
       "DeleteNetWorthItemDto": {

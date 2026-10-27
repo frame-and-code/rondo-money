@@ -7,7 +7,7 @@ import {
   ReorderCategoryGroupsDto,
   UpdateCategoryGroupDto,
 } from '@/categories/categories.dto';
-import { NO_ACTIVE_BUDGET, refuse } from '@/categories/category-refusal';
+import { NO_ACTIVE_BUDGET, missing, refuse } from '@/categories/category-refusal';
 import { CategoryGroupResponse } from '@/categories/category.response';
 import { byId, inWriteOrder, wholeOrder } from '@/categories/write-order';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
@@ -218,7 +218,7 @@ export class CategoryGroupsService {
   private async knownGroup(tx: MutationClient, id: string): Promise<CategoryGroup> {
     const found = await tx.categoryGroup.findFirst({ where: { id } });
     if (!found) {
-      throw refuse('UNKNOWN_GROUP', `This budget holds no category group ${id}.`);
+      throw missing('UNKNOWN_GROUP', `This budget holds no category group ${id}.`);
     }
 
     return found;

@@ -8,7 +8,7 @@ import {
   ReorderCategoriesDto,
   UpdateCategoryDto,
 } from '@/categories/categories.dto';
-import { NO_ACTIVE_BUDGET, refuse } from '@/categories/category-refusal';
+import { NO_ACTIVE_BUDGET, missing, refuse } from '@/categories/category-refusal';
 import { CategoryResponse } from '@/categories/category.response';
 import { inWriteOrder, wholeOrder } from '@/categories/write-order';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
@@ -153,7 +153,7 @@ export class CategoriesService {
         const locked = await lockCategories(this.raw, tx, budget.id, [id]);
         const [held] = locked;
         if (!held) {
-          throw refuse('UNKNOWN_CATEGORY', `This budget holds no category ${id}.`);
+          throw missing('UNKNOWN_CATEGORY', `This budget holds no category ${id}.`);
         }
 
         if (held.hiddenAt !== null) {
@@ -260,7 +260,7 @@ export class CategoriesService {
   private async knownCategory(tx: MutationClient, id: string): Promise<Category> {
     const found = await tx.category.findFirst({ where: { id } });
     if (!found) {
-      throw refuse('UNKNOWN_CATEGORY', `This budget holds no category ${id}.`);
+      throw missing('UNKNOWN_CATEGORY', `This budget holds no category ${id}.`);
     }
 
     return found;

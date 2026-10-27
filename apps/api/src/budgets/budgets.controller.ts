@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } fr
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -11,7 +12,7 @@ import {
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { UnauthorizedResponse } from '@/auth/unauthorized.response';
 import { ActivateBudgetDto } from '@/budgets/activate-budget.dto';
-import { BudgetRefusedResponse } from '@/budgets/budget-refused.response';
+import { BudgetNotFoundResponse, BudgetRefusedResponse } from '@/budgets/budget-refused.response';
 import { BudgetResponse } from '@/budgets/budget.response';
 import { BudgetsService } from '@/budgets/budgets.service';
 import { CreateBudgetDto } from '@/budgets/create-budget.dto';
@@ -80,9 +81,13 @@ export class BudgetsController {
   @ApiOkResponse({ description: 'The budget as it stands now.', type: BudgetResponse })
   @ApiBadRequestResponse({
     description:
-      'The body was refused, the caller holds no such budget, or the caller already has ' +
-      'another budget under that name, whatever its case.',
+      'The body was refused, or the caller already has another budget under that name, ' +
+      'whatever its case.',
     type: BudgetRefusedResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'The caller holds no such budget.',
+    type: BudgetNotFoundResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
@@ -111,8 +116,12 @@ export class BudgetsController {
   })
   @ApiOkResponse({ description: 'The budget that is active now.', type: BudgetResponse })
   @ApiBadRequestResponse({
-    description: 'The body was refused, or the caller holds no such budget.',
+    description: 'The body was refused.',
     type: BudgetRefusedResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'The caller holds no such budget.',
+    type: BudgetNotFoundResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',

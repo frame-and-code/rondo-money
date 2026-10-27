@@ -194,9 +194,25 @@ const asUser = <T>(userId: string, query: () => Promise<T>): Promise<T> =>
 - **Fixtures and cleanup go through the unscoped client** (`PrismaService`). Setting up user
   A's rows while acting as user B, or deleting both users' rows afterwards, is exactly what the
   scoped client is built to refuse.
-- **Cross-tenant tests** are mandatory for every phase that adds domain tables. Copy
+- **Every operation behind the guard has a probe in the shared cross-tenant suite**,
+  [`apps/api/test/cross-tenant.integration.spec.ts`](../apps/api/test/cross-tenant.integration.spec.ts).
+  It builds two tenants through the API and aims each operation at the other one's data. A
+  `path` probe names a foreign id in the path and expects the 404 a never-issued id gets; a
+  `body` probe does the same with an id in the body and a 400; a `query` probe filters by a
+  foreign id and expects an empty page; a `read` must answer exactly as it did before the other
+  tenant existed; a `write` covers an operation that names no id. Every refusal also runs with
+  the caller's own id, so a refusal for some other reason does not pass, and the victim's rows
+  are compared after each one. The suite fails when an operation in the contract has no probe,
+  when a probe calls an operation other than the one it is filed under, when a probe meant to
+  aim at the victim names none of the victim's ids, when an operation with an id in its path has
+  no `path` probe or one with an id in its body or query string has no `body` or `query` probe,
+  and when a model in `SCOPED_MODELS` has no row in the victim's world. A new endpoint adds its probe to `PROBES` and a new model its row to `buildWorld`.
+- **Cross-tenant tests at the model level** are mandatory for every phase that adds domain
+  tables. Copy
   [`apps/api/test/user-scoping.integration.spec.ts`](../apps/api/test/user-scoping.integration.spec.ts),
   which covers reads, bulk writes, ownership reassignment and behaviour inside `$transaction`.
+  A raw aggregate and a second budget of the same caller need their own test as well
+  ([`aggregate-query`](../.claude/skills/aggregate-query/SKILL.md)).
 - To exercise the **whole chain** (HTTP → guard → context → query) over a real endpoint, copy
   [`apps/api/test/user-settings.integration.spec.ts`](../apps/api/test/user-settings.integration.spec.ts)
   (F1.6). It signs a token, calls the route and checks what landed in Postgres through the

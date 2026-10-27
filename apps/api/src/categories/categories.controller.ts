@@ -2,6 +2,7 @@ import { Body, Controller, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/com
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -16,6 +17,7 @@ import {
   UpdateCategoryDto,
 } from '@/categories/categories.dto';
 import { CategoriesService } from '@/categories/categories.service';
+import { CategoryNotFoundResponse } from '@/categories/category-refused.response';
 import { ANONYMOUS, CLAIMED, REFUSED } from '@/categories/category-responses';
 import { CategoryResponse } from '@/categories/category.response';
 
@@ -68,6 +70,10 @@ export class CategoriesController {
   })
   @ApiOkResponse({ description: 'The category as it stands now.', type: CategoryResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   update(
@@ -87,6 +93,10 @@ export class CategoriesController {
   })
   @ApiCreatedResponse({ description: 'The category, now hidden.', type: CategoryResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   hide(
@@ -103,6 +113,10 @@ export class CategoriesController {
   })
   @ApiCreatedResponse({ description: 'The category, visible again.', type: CategoryResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   unhide(

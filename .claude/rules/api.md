@@ -59,7 +59,9 @@ is the write path. [`add-a-domain-module`](../skills/add-a-domain-module/SKILL.m
   `$queryRaw` is caught by nothing but review.
 - A new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts) in the
   same change, both registries where it belongs to a budget, and gets a cross-tenant test
-  (pattern: [`user-scoping.integration.spec.ts`](../../apps/api/test/user-scoping.integration.spec.ts)).
+  (pattern: [`user-scoping.integration.spec.ts`](../../apps/api/test/user-scoping.integration.spec.ts))
+  and a row in the shared suite's seeded world
+  ([`docs/testing.md`](../../docs/testing.md)). A new endpoint gets its probe in the same suite.
   `apps/api/test/scoped-models.spec.ts` fails the gate on a model carrying `userId` or
   `budgetId` that is missing from its registry.
 
@@ -68,7 +70,9 @@ Where each client and the raw API may be imported is lint, composed into
 `src/prisma`, `src/raw-sql` and tests), `mutator-prisma` (`MUTATOR_PRISMA` only in
 `src/prisma`, `src/mutations` and tests), `prisma-raw` (no `$queryRaw` / `$executeRaw` outside
 `src/raw-sql`) and `assignment-writes` (the `Assignment` model is written only in
-`src/moves`). There are no inline exemptions. Every restriction on one ESLint rule reaches a
+`src/moves`). There are no inline exemptions: the api's lint config sets `noInlineConfig`, so
+an `eslint-disable` directive switches nothing off and the warning it raises fails the run,
+which lints with `--max-warnings 0`. Every restriction on one ESLint rule reaches a
 file in a single object, because flat config replaces a rule's options rather than merging
 them.
 
@@ -114,6 +118,12 @@ published with no response shape, and the client types it `unknown` without fail
   names [`BadRequestResponse`](../../apps/api/src/openapi/bad-request.response.ts) on
   `@ApiBadRequestResponse`. An undocumented status collapses the operation's error type to
   `unknown`.
+- A handler with an id in its path answers an id the caller does not hold with a 404 built by
+  [`refuseMissing`](../../apps/api/src/openapi/not-found.response.ts), never a 400, and names
+  its module's subclass of `NotFoundResponse`, which declares the `reason` enum, on
+  `@ApiNotFoundResponse`. An id in the body stays a 400; why the two differ is in
+  [`apps/api/README.md`](../../apps/api/README.md). `test/openapi.spec.ts` fails the gate on a
+  path operation without the 404.
 - `@Public()` opens the handler to the guard and stamps `x-public`, which clears the bearer
   requirement in the spec. Never add a second decorator saying the same thing.
 - A money field, in a request DTO or a response class alike, is `@ApiMoneyProperty()`. More

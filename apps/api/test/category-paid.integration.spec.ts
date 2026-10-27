@@ -208,7 +208,7 @@ describe('the paid mark of a category', () => {
     const refused = await mark(OWNER, '0199c1a8-9ecf-71c7-a617-c575df073700', {
       month: thisMonth(),
       idempotencyKey: 'unknown',
-    }).expect(400);
+    }).expect(404);
 
     expect(refused.body).toMatchObject({ reason: 'UNKNOWN_CATEGORY' });
   });

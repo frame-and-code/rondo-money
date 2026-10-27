@@ -167,6 +167,16 @@ export type RenameBudgetDto = {
     idempotencyKey: string;
 };
 
+export type BudgetNotFoundResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+    /**
+     * Why nothing was found: the path names a budget the caller does not hold. Another tenant holding it and nobody holding it answer the same.
+     */
+    reason: BudgetRefusal;
+};
+
 export type ActivateBudgetDto = {
     /**
      * Minted once when the budget is chosen, never per request. A key per request makes a double click two switches again.
@@ -266,6 +276,16 @@ export type RenameAccountDto = {
      * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
      */
     idempotencyKey: string;
+};
+
+export type AccountNotFoundResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+    /**
+     * Why nothing was found: the path names an account the active budget does not hold. Another tenant holding it and nobody holding it answer the same.
+     */
+    reason: AccountRefusal;
 };
 
 export type ArchiveAccountDto = {
@@ -540,6 +560,16 @@ export type UpdateCategoryGroupDto = {
      * What the user calls this group.
      */
     name: string;
+};
+
+export type CategoryNotFoundResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+    /**
+     * Why nothing was found: the path names a category or a group the active budget does not hold. Another tenant holding it and nobody holding it answer the same.
+     */
+    reason: CategoryRefusal;
 };
 
 export type IdempotentDto = {
@@ -887,6 +917,16 @@ export type UpdateTransactionDto = {
     idempotencyKey: string;
 };
 
+export type TransactionNotFoundResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+    /**
+     * Why nothing was found: the path names a record the active budget does not hold. Another tenant holding it and nobody holding it answer the same.
+     */
+    reason: TransactionRefusal;
+};
+
 export type DeleteTransactionDto = {
     /**
      * Minted once when the confirmation opens. A repeat under the same key is answered with the record that was removed rather than with a refusal.
@@ -970,6 +1010,16 @@ export type UpdateTransferDto = {
     idempotencyKey: string;
 };
 
+export type TransferNotFoundResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+    /**
+     * Why nothing was found: the path names a transfer the active budget does not hold. Another tenant holding it and nobody holding it answer the same.
+     */
+    reason: TransferRefusal;
+};
+
 export type DeleteTransferDto = {
     /**
      * Minted once when the confirmation opens. A repeat under the same key is answered with the pair that was removed rather than with a refusal.
@@ -1032,6 +1082,16 @@ export type NetWorthItemsResponse = {
      * What the active budget holds of this kind, oldest first.
      */
     items: Array<NetWorthItemResponse>;
+};
+
+export type NetWorthNotFoundResponse = {
+    statusCode: number;
+    error: string;
+    message: string;
+    /**
+     * Why nothing was found: the path names an asset or a liability the active budget does not hold. Another tenant holding it and nobody holding it answer the same.
+     */
+    reason: NetWorthRefusal;
 };
 
 export type DeleteNetWorthItemDto = {
@@ -1304,13 +1364,17 @@ export type BudgetsControllerRenameData = {
 
 export type BudgetsControllerRenameErrors = {
     /**
-     * The body was refused, the caller holds no such budget, or the caller already has another budget under that name, whatever its case.
+     * The body was refused, or the caller already has another budget under that name, whatever its case.
      */
     400: BudgetRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The caller holds no such budget.
+     */
+    404: BudgetNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1339,13 +1403,17 @@ export type BudgetsControllerActivateData = {
 
 export type BudgetsControllerActivateErrors = {
     /**
-     * The body was refused, or the caller holds no such budget.
+     * The body was refused.
      */
     400: BudgetRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The caller holds no such budget.
+     */
+    404: BudgetNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1436,13 +1504,17 @@ export type AccountsControllerRenameData = {
 
 export type AccountsControllerRenameErrors = {
     /**
-     * The body was refused, or this budget holds no such account, or the caller has no active budget.
+     * The body was refused, or the caller has no active budget.
      */
     400: AccountRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such account.
+     */
+    404: AccountNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1471,13 +1543,17 @@ export type AccountsControllerArchiveData = {
 
 export type AccountsControllerArchiveErrors = {
     /**
-     * The account still holds money, or it is archived already, or this budget holds no such account, or the caller has no active budget.
+     * The account still holds money, or it is archived already, or the caller has no active budget.
      */
     400: AccountRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such account.
+     */
+    404: AccountNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1506,13 +1582,17 @@ export type AccountsControllerCorrectOpeningData = {
 
 export type AccountsControllerCorrectOpeningErrors = {
     /**
-     * The body was refused, or the account already holds records of its own, or this budget holds no such account.
+     * The body was refused, or the account already holds records of its own.
      */
     400: AccountRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such account.
+     */
+    404: AccountNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1541,13 +1621,17 @@ export type AccountsControllerReconcileData = {
 
 export type AccountsControllerReconcileErrors = {
     /**
-     * The body was refused, or the account is archived, or this budget holds no such account, or the caller has no active budget.
+     * The body was refused, or the account is archived, or the caller has no active budget.
      */
     400: AccountRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such account.
+     */
+    404: AccountNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1688,6 +1772,10 @@ export type CategoryGroupsControllerUpdateErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such category group.
+     */
+    404: CategoryNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -1723,6 +1811,10 @@ export type CategoryGroupsControllerHideErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such category group.
+     */
+    404: CategoryNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -1757,6 +1849,10 @@ export type CategoryGroupsControllerUnhideErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such category group.
+     */
+    404: CategoryNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1859,6 +1955,10 @@ export type CategoriesControllerUpdateErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such category.
+     */
+    404: CategoryNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -1893,6 +1993,10 @@ export type CategoriesControllerHideErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such category.
+     */
+    404: CategoryNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1929,6 +2033,10 @@ export type CategoriesControllerUnhideErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such category.
+     */
+    404: CategoryNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -1963,6 +2071,10 @@ export type CategoryTargetsControllerSetErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such category.
+     */
+    404: CategoryNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -1999,6 +2111,10 @@ export type CategoryTargetsControllerCloseErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such category.
+     */
+    404: CategoryNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -2034,6 +2150,10 @@ export type CategoryPaidControllerMarkErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such category.
+     */
+    404: CategoryNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -2068,6 +2188,10 @@ export type CategoryPaidControllerUnmarkErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such category.
+     */
+    404: CategoryNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -2261,6 +2385,10 @@ export type TransactionsControllerUpdateErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such record.
+     */
+    404: TransactionNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -2295,6 +2423,10 @@ export type TransactionsControllerRemoveErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such record.
+     */
+    404: TransactionNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -2364,6 +2496,10 @@ export type TransfersControllerUpdateErrors = {
      */
     401: UnauthorizedResponse;
     /**
+     * The active budget holds no such transfer.
+     */
+    404: TransferNotFoundResponse;
+    /**
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
@@ -2398,6 +2534,10 @@ export type TransfersControllerRemoveErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such transfer.
+     */
+    404: TransferNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -2488,13 +2628,17 @@ export type AssetsControllerChangeData = {
 
 export type AssetsControllerChangeErrors = {
     /**
-     * The body was refused, or the day is after today, or this budget holds no such asset, or the caller has no active budget.
+     * The body was refused, or the day is after today, or the caller has no active budget.
      */
     400: NetWorthRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such asset.
+     */
+    404: NetWorthNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -2523,13 +2667,17 @@ export type AssetsControllerRemoveData = {
 
 export type AssetsControllerRemoveErrors = {
     /**
-     * The body was refused, or this budget holds no such asset, or the caller has no active budget.
+     * The body was refused, or the caller has no active budget.
      */
     400: NetWorthRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such asset.
+     */
+    404: NetWorthNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -2620,13 +2768,17 @@ export type LiabilitiesControllerChangeData = {
 
 export type LiabilitiesControllerChangeErrors = {
     /**
-     * The body was refused, or the day is after today, or this budget holds no such liability, or the caller has no active budget.
+     * The body was refused, or the day is after today, or the caller has no active budget.
      */
     400: NetWorthRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such liability.
+     */
+    404: NetWorthNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */
@@ -2655,13 +2807,17 @@ export type LiabilitiesControllerRemoveData = {
 
 export type LiabilitiesControllerRemoveErrors = {
     /**
-     * The body was refused, or this budget holds no such liability, or the caller has no active budget.
+     * The body was refused, or the caller has no active budget.
      */
     400: NetWorthRefusedResponse;
     /**
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * The active budget holds no such liability.
+     */
+    404: NetWorthNotFoundResponse;
     /**
      * The idempotency key was claimed by a different request.
      */

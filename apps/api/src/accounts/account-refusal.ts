@@ -1,5 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, type HttpException } from '@nestjs/common';
 import { type AccountRefusal } from '@rondo/types';
+
+import { type AccountUnusable } from '@/accounts/open-accounts';
+import { refuseMissing } from '@/openapi/not-found.response';
 
 const MESSAGES: Record<AccountRefusal, string> = {
   ACCOUNT_ARCHIVED:
@@ -29,4 +32,10 @@ export function refuseAccount(
     reason,
     ...extra,
   });
+}
+
+export function refuseNamedAccount(reason: AccountUnusable): HttpException {
+  return reason === 'UNKNOWN_ACCOUNT'
+    ? refuseMissing(reason, MESSAGES[reason])
+    : refuseAccount(reason);
 }

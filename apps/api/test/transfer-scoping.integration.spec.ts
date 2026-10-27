@@ -76,7 +76,7 @@ describe('a transfer belongs to the person who made it (integration)', () => {
       idempotencyKey: 'not-mine',
     });
 
-    expect(answer.status).toBe(400);
+    expect(answer.status).toBe(404);
     await expect(
       harness.prisma.transaction.findMany({ where: { userId: USER_OWNER } }),
     ).resolves.toEqual(before);
@@ -95,7 +95,7 @@ describe('a transfer belongs to the person who made it (integration)', () => {
 
     const answer = await remove(USER_OTHER, pair.transferId, { idempotencyKey: 'not-mine-either' });
 
-    expect(answer.status).toBe(400);
+    expect(answer.status).toBe(404);
     await expect(harness.prisma.transaction.count({ where: { userId: USER_OWNER } })).resolves.toBe(
       2,
     );

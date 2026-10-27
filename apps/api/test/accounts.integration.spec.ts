@@ -800,7 +800,7 @@ describe('/accounts (integration)', () => {
 
       const response = await rename(USER_NAMED, '0199c1a8-9ecf-71c7-a617-c575df073999', renaming());
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
     });
 
     it('refuses to rename when the caller has no active budget', async () => {
@@ -1021,7 +1021,7 @@ describe('/accounts (integration)', () => {
 
       const response = await correct(USER_GONE, UNKNOWN_ACCOUNT_ID, correction());
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
     });
 
@@ -1186,7 +1186,7 @@ describe('/accounts (integration)', () => {
 
       const response = await archive(USER_CLOSING, NO_SUCH_ACCOUNT, closing());
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
     });
 
@@ -1411,7 +1411,7 @@ describe('/accounts (integration)', () => {
 
       const response = await reconcile(USER_OTHERWISE, NO_SUCH_ONE, settlement());
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
     });
 

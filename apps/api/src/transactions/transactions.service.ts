@@ -12,6 +12,7 @@ import {
 
 import { heldAccount, heldOpenAccounts } from '@/accounts/open-accounts';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
+import { refuseMissing } from '@/openapi/not-found.response';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
 import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 import { CreateTransactionDto } from '@/transactions/create-transaction.dto';
@@ -176,7 +177,7 @@ export class TransactionsService {
         const budget = await this.activeBudget(tx, intended.id);
         const current = await tx.transaction.findFirst({ where: { id } });
         if (!current) {
-          throw refuse('UNKNOWN_TRANSACTION');
+          throw refuseMissing('UNKNOWN_TRANSACTION', MESSAGES.UNKNOWN_TRANSACTION);
         }
 
         const blocked = refuseTarget(current);
@@ -217,7 +218,7 @@ export class TransactionsService {
 
         const current = await tx.transaction.findFirst({ where: { id } });
         if (!current) {
-          throw refuse('UNKNOWN_TRANSACTION');
+          throw refuseMissing('UNKNOWN_TRANSACTION', MESSAGES.UNKNOWN_TRANSACTION);
         }
 
         const blocked = refuseTarget(current);

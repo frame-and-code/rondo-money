@@ -13,6 +13,7 @@ import {
 
 import { heldAccount, heldOpenAccounts, type OpenAccountRow } from '@/accounts/open-accounts';
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
+import { refuseMissing } from '@/openapi/not-found.response';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
 import { ScopedRawRepository } from '@/raw-sql/scoped-raw.repository';
 import { decodeTransaction, serializeTransaction } from '@/transactions/transaction-record';
@@ -226,7 +227,7 @@ export class TransfersService {
   private async pairHeld(tx: MutationClient, transferId: string): Promise<Pair> {
     const legs = await tx.transaction.findMany({ where: { transferId } });
     if (legs.length === 0) {
-      throw refuse('UNKNOWN_TRANSFER');
+      throw refuseMissing('UNKNOWN_TRANSFER', MESSAGES.UNKNOWN_TRANSFER);
     }
 
     return pairOf(transferId, legs);

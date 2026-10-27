@@ -13,7 +13,7 @@ import {
 import { MutationService, type MutationClient } from '@/mutations/mutation.service';
 import { DeleteNetWorthItemDto } from '@/net-worth/delete-net-worth-item.dto';
 import { NetWorthItemResponse, NetWorthItemsResponse } from '@/net-worth/net-worth-item.response';
-import { refuseNetWorth } from '@/net-worth/net-worth-refusal';
+import { refuseMissingNetWorth, refuseNetWorth } from '@/net-worth/net-worth-refusal';
 import { refuseValuation } from '@/net-worth/valuation-date';
 import { WriteNetWorthItemDto } from '@/net-worth/write-net-worth-item.dto';
 import { SCOPED_PRISMA, type ScopedPrismaClient } from '@/prisma/scoped-prisma';
@@ -173,7 +173,7 @@ export class NetWorthItemsService {
 
         const [written] = await table.update(tx, id, valuesOf(body));
         if (!written) {
-          throw refuseNetWorth(table.unknown);
+          throw refuseMissingNetWorth(table.unknown);
         }
 
         return stored(written);
@@ -201,7 +201,7 @@ export class NetWorthItemsService {
         const held = await table.find(tx, id);
         const removed = held ? await table.remove(tx, id) : { count: 0 };
         if (!held || removed.count === 0) {
-          throw refuseNetWorth(table.unknown);
+          throw refuseMissingNetWorth(table.unknown);
         }
 
         return stored(held);

@@ -2,6 +2,7 @@ import { Body, Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
@@ -9,6 +10,7 @@ import {
 
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { IdempotentDto } from '@/categories/categories.dto';
+import { CategoryNotFoundResponse } from '@/categories/category-refused.response';
 import { ANONYMOUS, CLAIMED, REFUSED } from '@/categories/category-responses';
 import { SetCategoryTargetDto } from '@/categories/category-target.dto';
 import { CategoryTargetResponse } from '@/categories/category-target.response';
@@ -28,6 +30,10 @@ export class CategoryTargetsController {
   })
   @ApiCreatedResponse({ description: 'The goal as it stands now.', type: CategoryTargetResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   set(
@@ -47,6 +53,10 @@ export class CategoryTargetsController {
   })
   @ApiCreatedResponse({ description: 'The goal, now closed.', type: CategoryTargetResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   close(
