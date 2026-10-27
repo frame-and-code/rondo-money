@@ -111,6 +111,23 @@ describe('the app createHttpApp builds', () => {
     expectSecurityHeaders(over.headers);
   });
 
+  it('holds a form-encoded body to the same limit', async () => {
+    const app = await start(SMALL_LIMIT);
+    const field = 'pad=';
+
+    const at = await request(serverOf(app))
+      .post('/probe/echo')
+      .type('form')
+      .send(`${field}${'x'.repeat(SMALL_LIMIT_BYTES - field.length)}`);
+    const over = await request(serverOf(app))
+      .post('/probe/echo')
+      .type('form')
+      .send(`${field}${'x'.repeat(SMALL_LIMIT_BYTES + 1 - field.length)}`);
+
+    expect(at.status).toBe(200);
+    expect(over.status).toBe(413);
+  });
+
   it('holds a body to a hundred kilobytes when no limit is named', async () => {
     const app = await start();
 

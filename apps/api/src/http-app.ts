@@ -20,6 +20,7 @@ export async function createHttpApp(
   app.useSecurityHeaders();
   enableWebCors(app);
   app.useBodyParser('json', { limit: bodyLimit });
+  app.useBodyParser('urlencoded', { limit: bodyLimit, extended: true });
 
   return app;
 }

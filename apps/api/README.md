@@ -284,7 +284,7 @@ whole app under the same options.
 [`createHttpApp`](src/http-app.ts) is the one place the HTTP pipeline is assembled, and
 `main.ts` and the specs that need the production pipeline both build through it. Before a
 request reaches a handler it gets Nest's security headers (`useSecurityHeaders`, which also
-drops `X-Powered-By`), the CORS policy below, and a JSON body limit of `DEFAULT_BODY_LIMIT`;
+drops `X-Powered-By`), the CORS policy below, and a body limit of `DEFAULT_BODY_LIMIT` on JSON and form bodies alike;
 a larger body is a 413 before the pipe runs. A refusal at this layer carries the headers too.
 An unexpected failure answers `Internal server error` and nothing about what failed.
 [`test/http-app.spec.ts`](test/http-app.spec.ts) pins the headers, CORS and the limit on a bare
