@@ -287,8 +287,10 @@ request reaches a handler it gets Nest's security headers (`useSecurityHeaders`,
 drops `X-Powered-By`), the CORS policy below, and a JSON body limit of `DEFAULT_BODY_LIMIT`;
 a larger body is a 413 before the pipe runs. A refusal at this layer carries the headers too.
 An unexpected failure answers `Internal server error` and nothing about what failed.
-[`test/http-hardening.integration.spec.ts`](test/http-hardening.integration.spec.ts) pins all
-of it.
+[`test/http-app.spec.ts`](test/http-app.spec.ts) pins the headers, CORS and the limit on a bare
+module, and
+[`test/http-hardening.integration.spec.ts`](test/http-hardening.integration.spec.ts) pins the
+headers and the error bodies on the whole app.
 
 Every request body **declared as a DTO class** is validated before a handler sees it. The pipe
 is registered globally as `APP_PIPE`
