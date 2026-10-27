@@ -68,6 +68,21 @@
       "phrase": "changed inside a mutation like anything else",
       "owner": ".claude/rules/api.md",
       "note": "what an exempt model may still do; it moved once already"
+    },
+    {
+      "phrase": "part of the request rather than its target",
+      "owner": "apps/api/README.md",
+      "note": "a path id the caller does not hold is a 404, a body id a 400"
+    },
+    {
+      "phrase": "noInlineConfig",
+      "owner": ".claude/rules/api.md",
+      "note": "why an eslint-disable directive fails the api's lint"
+    },
+    {
+      "phrase": "a never-issued id gets",
+      "owner": "docs/testing.md",
+      "note": "how the shared cross-tenant suite probes each operation"
     }
   ],
   "banned": [

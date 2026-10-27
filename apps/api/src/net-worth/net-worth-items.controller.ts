@@ -2,6 +2,7 @@ import { Body, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post } from '
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -14,7 +15,10 @@ import { ConflictResponse } from '@/mutations/conflict.response';
 import { DeleteNetWorthItemDto } from '@/net-worth/delete-net-worth-item.dto';
 import { NetWorthItemResponse, NetWorthItemsResponse } from '@/net-worth/net-worth-item.response';
 import { NetWorthItemsService, type NetWorthKind } from '@/net-worth/net-worth-items.service';
-import { NetWorthRefusedResponse } from '@/net-worth/net-worth-refused.response';
+import {
+  NetWorthNotFoundResponse,
+  NetWorthRefusedResponse,
+} from '@/net-worth/net-worth-refused.response';
 import { WriteNetWorthItemDto } from '@/net-worth/write-net-worth-item.dto';
 
 const UNAUTHORIZED = 'The token was missing, malformed, expired or not minted for this app.';
@@ -81,9 +85,12 @@ export function netWorthItemsController(kind: NetWorthKind, wording: NetWorthWor
     @ApiOkResponse({ description: `The ${one} as it stands now.`, type: NetWorthItemResponse })
     @ApiBadRequestResponse({
       description:
-        `The body was refused, or the day is after today, or this budget holds no such ${one}, ` +
-        'or the caller has no active budget.',
+        'The body was refused, or the day is after today, or the caller has no active budget.',
       type: NetWorthRefusedResponse,
+    })
+    @ApiNotFoundResponse({
+      description: `The active budget holds no such ${one}.`,
+      type: NetWorthNotFoundResponse,
     })
     @ApiConflictResponse({ description: CONFLICT, type: ConflictResponse })
     @ApiUnauthorizedResponse({ description: UNAUTHORIZED, type: UnauthorizedResponse })
@@ -104,10 +111,12 @@ export function netWorthItemsController(kind: NetWorthKind, wording: NetWorthWor
     })
     @ApiOkResponse({ description: `The ${one} that was removed.`, type: NetWorthItemResponse })
     @ApiBadRequestResponse({
-      description:
-        `The body was refused, or this budget holds no such ${one}, or the caller has no ` +
-        'active budget.',
+      description: 'The body was refused, or the caller has no active budget.',
       type: NetWorthRefusedResponse,
+    })
+    @ApiNotFoundResponse({
+      description: `The active budget holds no such ${one}.`,
+      type: NetWorthNotFoundResponse,
     })
     @ApiConflictResponse({ description: CONFLICT, type: ConflictResponse })
     @ApiUnauthorizedResponse({ description: UNAUTHORIZED, type: UnauthorizedResponse })

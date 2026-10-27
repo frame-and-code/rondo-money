@@ -10,7 +10,7 @@ import {
   accountBalancesStatement,
   type AccountBalanceRow,
 } from '@/accounts/account-balances.query';
-import { refuseAccount } from '@/accounts/account-refusal';
+import { refuseAccount, refuseNamedAccount } from '@/accounts/account-refusal';
 import { AccountResponse } from '@/accounts/account.response';
 import { AccountBalanceResponse, AccountsResponse } from '@/accounts/accounts.response';
 import { CorrectOpeningDto } from '@/accounts/correct-opening.dto';
@@ -138,7 +138,7 @@ export class AccountsService {
       },
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
-        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseNamedAccount);
 
         return serialize(await tx.account.update({ where: { id }, data: { name: body.name } }));
       },
@@ -157,7 +157,7 @@ export class AccountsService {
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
 
-        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseNamedAccount);
 
         const [summed] = await this.raw.query<AccountBalanceOnlyRow>(
           (scope) => accountBalanceStatement(scope, budget.id, id),
@@ -194,7 +194,7 @@ export class AccountsService {
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
 
-        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseNamedAccount);
 
         const moved = await tx.transaction.count({ where: { accountId: id, isSystem: false } });
         if (moved > 0) {
@@ -237,7 +237,7 @@ export class AccountsService {
       async (tx) => {
         const budget = await this.activeBudget(tx, intended.id);
 
-        await heldOpenAccount(this.raw, tx, budget.id, id, refuseAccount);
+        await heldOpenAccount(this.raw, tx, budget.id, id, refuseNamedAccount);
 
         const [summed] = await this.raw.query<AccountBalanceOnlyRow>(
           (scope) => accountBalanceStatement(scope, budget.id, id),

@@ -192,7 +192,7 @@ describe('renaming a budget and switching the active one (integration)', () => {
 
       const response = await rename(USER, UNKNOWN_ID, { name: 'Дом', idempotencyKey: 'k1' });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe('UNKNOWN_BUDGET');
       await expect(keysOf(USER)).resolves.toBe(0);
     });
@@ -305,7 +305,7 @@ describe('renaming a budget and switching the active one (integration)', () => {
 
       const response = await activate(USER, UNKNOWN_ID, 'k1');
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe('UNKNOWN_BUDGET');
       await expect(activeNamesOf(USER)).resolves.toEqual(['Первый']);
       await expect(keysOf(USER)).resolves.toBe(0);
@@ -375,7 +375,7 @@ describe('renaming a budget and switching the active one (integration)', () => {
 
       const response = await rename(USER_B, first.id, { name: 'Захвачен', idempotencyKey: 'k1' });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe('UNKNOWN_BUDGET');
       await expect(budgetsOf(USER_A)).resolves.toEqual(before);
     });
@@ -387,7 +387,7 @@ describe('renaming a budget and switching the active one (integration)', () => {
 
       const response = await activate(USER_B, second.id, 'k1');
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe('UNKNOWN_BUDGET');
       await expect(budgetsOf(USER_A)).resolves.toEqual(before);
       await expect(activeNamesOf(USER_B)).resolves.toEqual(['Личный B']);

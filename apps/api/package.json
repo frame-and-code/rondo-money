@@ -10,7 +10,7 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "openapi": "node dist/openapi/generate.js",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm run test:unit && pnpm run test:integration",
     "test:unit": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --passWithNoTests",

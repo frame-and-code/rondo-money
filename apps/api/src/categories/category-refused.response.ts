@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CATEGORY_REFUSALS, type CategoryRefusal } from '@rondo/types';
 
 import { BadRequestResponse } from '@/openapi/bad-request.response';
+import { NotFoundResponse } from '@/openapi/not-found.response';
 import { ApiMoneyProperty } from '@/validation/money.decorator';
 
 export class CategoryRefusedResponse extends BadRequestResponse {
@@ -32,4 +33,15 @@ export class CategoryRefusedResponse extends BadRequestResponse {
       'the hide. The screen names this amount rather than the one the open month shows.',
   })
   available?: string;
+}
+
+export class CategoryNotFoundResponse extends NotFoundResponse {
+  @ApiProperty({
+    description:
+      'Why nothing was found: the path names a category or a group the active budget does not hold. Another ' +
+      'tenant holding it and nobody holding it answer the same.',
+    enum: CATEGORY_REFUSALS,
+    enumName: 'CategoryRefusal',
+  })
+  reason!: CategoryRefusal;
 }

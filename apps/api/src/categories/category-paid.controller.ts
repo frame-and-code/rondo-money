@@ -2,6 +2,7 @@ import { Body, Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
@@ -11,6 +12,7 @@ import { CurrentUserId } from '@/auth/current-user.decorator';
 import { CategoryPaidMonthDto } from '@/categories/category-paid.dto';
 import { CategoryPaidMonthResponse } from '@/categories/category-paid.response';
 import { CategoryPaidService } from '@/categories/category-paid.service';
+import { CategoryNotFoundResponse } from '@/categories/category-refused.response';
 import { ANONYMOUS, CLAIMED, REFUSED } from '@/categories/category-responses';
 
 @Controller('categories')
@@ -31,6 +33,10 @@ export class CategoryPaidController {
     type: CategoryPaidMonthResponse,
   })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   mark(
@@ -53,6 +59,10 @@ export class CategoryPaidController {
     type: CategoryPaidMonthResponse,
   })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   unmark(

@@ -167,7 +167,8 @@ integration, copied from
 - a repeat of the key does not apply it twice and answers with the first result;
 - two requests carrying one key, side by side, apply it once;
 - a second user holding the same key is unaffected (cross-tenant, mandatory);
-- the caller cannot reach another user's rows through the mutation.
+- the caller cannot reach another user's rows through the mutation, which is the mutation's
+  probe in the shared cross-tenant suite ([`docs/testing.md`](../../../docs/testing.md)).
 
 From the phase that adds aggregates, invariant 5.5 is asserted over all-time aggregates after
 every operation, property-based. A mutation that moves money without that test is not done.

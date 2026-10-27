@@ -107,6 +107,13 @@ export const zRenameBudgetDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
 
+export const zBudgetNotFoundResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string(),
+    reason: zBudgetRefusal
+});
+
 export const zActivateBudgetDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
@@ -167,6 +174,13 @@ export const zAccountsResponse = z.object({
 export const zRenameAccountDto = z.object({
     name: z.string().min(1).max(60),
     idempotencyKey: z.string().min(1).max(64)
+});
+
+export const zAccountNotFoundResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string(),
+    reason: zAccountRefusal
 });
 
 export const zArchiveAccountDto = z.object({
@@ -392,6 +406,13 @@ export const zUpdateCategoryGroupDto = z.object({
     name: z.string().max(60)
 });
 
+export const zCategoryNotFoundResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string(),
+    reason: zCategoryRefusal
+});
+
 export const zIdempotentDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
@@ -570,6 +591,13 @@ export const zUpdateTransactionDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
 
+export const zTransactionNotFoundResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string(),
+    reason: zTransactionRefusal
+});
+
 export const zDeleteTransactionDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
@@ -619,6 +647,13 @@ export const zUpdateTransferDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
 
+export const zTransferNotFoundResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string(),
+    reason: zTransferRefusal
+});
+
 export const zDeleteTransferDto = z.object({
     idempotencyKey: z.string().min(1).max(64)
 });
@@ -659,6 +694,13 @@ export const zNetWorthRefusedResponse = z.object({
 
 export const zNetWorthItemsResponse = z.object({
     items: z.array(zNetWorthItemResponse)
+});
+
+export const zNetWorthNotFoundResponse = z.object({
+    statusCode: z.number(),
+    error: z.string(),
+    message: z.string(),
+    reason: zNetWorthRefusal
 });
 
 export const zDeleteNetWorthItemDto = z.object({

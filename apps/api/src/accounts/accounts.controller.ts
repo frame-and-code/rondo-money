@@ -2,13 +2,17 @@ import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } fr
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { AccountRefusedResponse } from '@/accounts/account-refused.response';
+import {
+  AccountNotFoundResponse,
+  AccountRefusedResponse,
+} from '@/accounts/account-refused.response';
 import { AccountResponse } from '@/accounts/account.response';
 import { AccountsResponse } from '@/accounts/accounts.response';
 import { AccountsService } from '@/accounts/accounts.service';
@@ -86,10 +90,12 @@ export class AccountsController {
   })
   @ApiOkResponse({ description: 'The account as it stands now.', type: AccountResponse })
   @ApiBadRequestResponse({
-    description:
-      'The body was refused, or this budget holds no such account, or the caller has no ' +
-      'active budget.',
+    description: 'The body was refused, or the caller has no active budget.',
     type: AccountRefusedResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such account.',
+    type: AccountNotFoundResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
@@ -119,9 +125,13 @@ export class AccountsController {
   @ApiOkResponse({ description: 'The account that is now archived.', type: AccountResponse })
   @ApiBadRequestResponse({
     description:
-      'The account still holds money, or it is archived already, or this budget holds no such ' +
-      'account, or the caller has no active budget.',
+      'The account still holds money, or it is archived already, or the caller has no active ' +
+      'budget.',
     type: AccountRefusedResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such account.',
+    type: AccountNotFoundResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
@@ -153,10 +163,12 @@ export class AccountsController {
     type: TransactionResponse,
   })
   @ApiBadRequestResponse({
-    description:
-      'The body was refused, or the account already holds records of its own, or this budget ' +
-      'holds no such account.',
+    description: 'The body was refused, or the account already holds records of its own.',
     type: AccountRefusedResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such account.',
+    type: AccountNotFoundResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',
@@ -192,9 +204,12 @@ export class AccountsController {
   })
   @ApiBadRequestResponse({
     description:
-      'The body was refused, or the account is archived, or this budget holds no such account, ' +
-      'or the caller has no active budget.',
+      'The body was refused, or the account is archived, or the caller has no active budget.',
     type: AccountRefusedResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such account.',
+    type: AccountNotFoundResponse,
   })
   @ApiConflictResponse({
     description: 'The idempotency key was claimed by a different request.',

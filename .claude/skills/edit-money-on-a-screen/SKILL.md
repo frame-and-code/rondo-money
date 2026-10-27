@@ -74,8 +74,8 @@ one intent, and mint a new one when the intent changes.
 What counts as a new intent is exactly this:
 
 - a **success**: the next edit is a different operation;
-- a **refusal** the server has already recorded (409, or any 400): the write either landed or
-  was rejected outright, so the next attempt is new;
+- a **definitive refusal** (409, any 400, or a 404 carrying a reason): the server has answered
+  the attempt, so the next attempt is new;
 - a **lost request** is **not** a new intent. The same key is what makes a retry safe when the
   first request did arrive and only the answer was lost.
 

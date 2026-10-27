@@ -185,7 +185,7 @@ describe('assets and liabilities across tenants', () => {
 
       const response = await change(USER_B, path, itemA.id, changing);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe(unknown);
       await expect(storedOf(kind, itemA.id)).resolves.toMatchObject({
         userId: USER_A,
@@ -202,7 +202,7 @@ describe('assets and liabilities across tenants', () => {
 
       const response = await remove(USER_B, path, itemA.id, deleting);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
       expect(asRecord(response.body)['reason']).toBe(unknown);
       await expect(storedOf(kind, itemA.id)).resolves.toMatchObject({ userId: USER_A });
     });
@@ -218,9 +218,9 @@ describe('assets and liabilities across tenants', () => {
       const removed = await remove(USER_A, path, old.id, deleting);
 
       await expect(namesListed(USER_A, path)).resolves.toEqual(['Из текущего']);
-      expect(changed.status).toBe(400);
+      expect(changed.status).toBe(404);
       expect(asRecord(changed.body)['reason']).toBe(unknown);
-      expect(removed.status).toBe(400);
+      expect(removed.status).toBe(404);
       expect(asRecord(removed.body)['reason']).toBe(unknown);
       await expect(storedOf(kind, old.id)).resolves.toMatchObject({
         budgetId: retired.id,

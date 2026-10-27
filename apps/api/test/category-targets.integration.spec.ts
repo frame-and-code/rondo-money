@@ -404,7 +404,7 @@ describe('the goal of a category', () => {
       kind: 'CONTRIBUTE',
       amount: '40000',
       idempotencyKey: 'other-budget',
-    }).expect(400);
+    }).expect(404);
 
     expect(refusal.body).toMatchObject({ reason: 'UNKNOWN_CATEGORY' });
     expect(await targetsOf(category.id)).toHaveLength(0);

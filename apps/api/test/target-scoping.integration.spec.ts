@@ -59,7 +59,7 @@ describe('a goal keeps to one caller and one budget', () => {
       .post(`/categories/${theirs.category.id}/target`)
       .set('Authorization', `Bearer ${harness.tokenFor(USER_A)}`)
       .send({ kind: 'CONTRIBUTE', amount: '99000', idempotencyKey: 'cross-tenant' })
-      .expect(400);
+      .expect(404);
 
     const untouched = await harness.prisma.categoryTarget.findUnique({
       where: { id: theirs.target.id },

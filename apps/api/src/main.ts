@@ -1,22 +1,20 @@
 import 'reflect-metadata';
 
 import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from '@/app.module';
 import { assertClerkVerificationConfigured } from '@/auth/clerk-verification';
-import { assertWebOriginConfigured, enableWebCors } from '@/cors';
+import { assertWebOriginConfigured } from '@/cors';
+import { createHttpApp } from '@/http-app';
 import { API_DOCS_PATH, areApiDocsEnabled, buildOpenApiDocument } from '@/openapi/document';
-import { ROUTING_OPTIONS } from '@/routing';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, ROUTING_OPTIONS);
+  const app = await createHttpApp(AppModule);
   const config = app.get(ConfigService);
   app.enableShutdownHooks();
   assertClerkVerificationConfigured(app);
   assertWebOriginConfigured(config);
-  enableWebCors(app);
   if (areApiDocsEnabled(config)) {
     SwaggerModule.setup(API_DOCS_PATH, app, buildOpenApiDocument(app));
   }

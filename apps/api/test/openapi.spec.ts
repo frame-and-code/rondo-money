@@ -344,6 +344,41 @@ describe('OpenAPI document', () => {
     expect(undocumented).toEqual([]);
   });
 
+  it('publishes a not found with its reason wherever a path names a row the caller may not hold', () => {
+    const named = (method: (typeof HTTP_METHODS)[number], item: PathItemObject): boolean =>
+      (item[method]?.parameters ?? []).some(
+        (parameter) => 'in' in parameter && parameter.in === 'path',
+      );
+
+    const withReason = (response: unknown): boolean => {
+      const answered = schemaNamed(document, referencedName(responseSchemaOf(response)));
+      const reason =
+        answered !== undefined && 'properties' in answered
+          ? answered.properties?.['reason']
+          : undefined;
+      const required = answered !== undefined && 'required' in answered ? answered.required : [];
+
+      return referencedName(reason) !== undefined && (required ?? []).includes('reason');
+    };
+
+    const operations = Object.entries(document.paths).flatMap(([path, item]) =>
+      HTTP_METHODS.filter((method) => named(method, item)).map((method) => ({
+        operation: `${method.toUpperCase()} ${path}`,
+        response: item[method]?.responses['404'],
+      })),
+    );
+
+    const undocumented = operations
+      .filter(
+        ({ response }) =>
+          !carriesTheShapeOf(document, response, 'NotFoundResponse') || !withReason(response),
+      )
+      .map(({ operation }) => operation);
+
+    expect(operations.length).toBeGreaterThan(0);
+    expect(undocumented).toEqual([]);
+  });
+
   it('publishes the refusal of an undeclared field, which the pipe already performs', () => {
     const open = Object.entries(document.paths).flatMap(([path, item]) =>
       HTTP_METHODS.filter((method) => {

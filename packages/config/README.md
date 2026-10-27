@@ -52,7 +52,8 @@ truth. Every app and package inherits from here, no local copies of rules.
 
 ## Scripts wired in consumers
 
-Each workspace that ships code exposes `lint` (`eslint .`) and `typecheck` (`tsc --noEmit`);
+Each workspace that ships code exposes `lint` (`eslint .`, with `--max-warnings 0` in
+`apps/api`, for the reason in [api](../../.claude/rules/api.md)) and `typecheck` (`tsc --noEmit`);
 this package exposes `lint` and `test:unit` but no `typecheck`, because it is static
 configuration plus the rules it defines. The
 Turborepo gate runs them repo-wide as `turbo lint` and `turbo typecheck`.

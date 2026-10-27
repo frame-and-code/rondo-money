@@ -2,6 +2,7 @@ import { Body, Controller, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/com
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -16,6 +17,7 @@ import {
   UpdateCategoryGroupDto,
 } from '@/categories/categories.dto';
 import { CategoryGroupsService } from '@/categories/category-groups.service';
+import { CategoryNotFoundResponse } from '@/categories/category-refused.response';
 import { ANONYMOUS, CLAIMED, REFUSED } from '@/categories/category-responses';
 import { CategoryGroupResponse } from '@/categories/category.response';
 
@@ -62,6 +64,10 @@ export class CategoryGroupsController {
   @ApiOperation({ summary: 'Rename a group' })
   @ApiOkResponse({ description: 'The group as it stands now.', type: CategoryGroupResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category group.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   update(
@@ -82,6 +88,10 @@ export class CategoryGroupsController {
   })
   @ApiCreatedResponse({ description: 'The group, now hidden.', type: CategoryGroupResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category group.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   hide(
@@ -98,6 +108,10 @@ export class CategoryGroupsController {
   })
   @ApiCreatedResponse({ description: 'The group, visible again.', type: CategoryGroupResponse })
   @ApiBadRequestResponse(REFUSED)
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such category group.',
+    type: CategoryNotFoundResponse,
+  })
   @ApiConflictResponse(CLAIMED)
   @ApiUnauthorizedResponse(ANONYMOUS)
   unhide(

@@ -47,6 +47,11 @@ no such order, because both rows are new and neither is a row anyone else can be
 
 ## Endpoints
 
+An id in the path that the caller does not hold, whether it belongs to someone else, to
+another budget or to nobody, is a 404 carrying the `UNKNOWN_*` reason that names it. An id in
+the body is part of the request rather than its target, so the same id there is a 400 with the
+same reason. The 404 says nothing about whether the row exists elsewhere.
+
 - `GET /health` checks the DB connection (`SELECT 1` via Prisma). `200` if the DB
   is reachable, `503` if not. Public (see below).
 - `GET /me` echoes back the `userId` the guard verified. It is protected and touches no table.
@@ -119,7 +124,7 @@ no such order, because both rows are new and neither is a row anyone else can be
 - `POST /budgets/{id}/activate` makes a budget the active one. The mark comes off the budget
   that carried it and goes onto this one in one transaction, and every read a budget owns
   answers for the new one from the next request on. Both operations answer a budget the caller
-  does not hold with a 400 naming `UNKNOWN_BUDGET`. Creating, renaming and activating a budget
+  does not hold with a 404 naming `UNKNOWN_BUDGET`. Creating, renaming and activating a budget
   first take a lock keyed on the caller and then hold the caller's budget rows, so two of them
   arriving together wait for each other, a caller's first creation included, rather than one
   failing on the index that keeps a single budget active or on the name index.
@@ -138,7 +143,7 @@ no such order, because both rows are new and neither is a row anyone else can be
   pipe's list of field failures and a handler's single sentence alike.
 - `PATCH /accounts/:id` renames an account and changes nothing else. The type is chosen when
   the account is created and never afterwards, so no operation in the contract accepts one
-  again. An account the active budget does not hold is a 400 rather than a 500.
+  again. An account the active budget does not hold is a 404 rather than a 500.
 - `POST /accounts/:id/archive` puts an account away, and only while its balance is exactly
   zero. The sum runs inside the same transaction that writes `archivedAt`, under a lock on the
   account row that every write naming that account has to pass, so a record landing or leaving
@@ -256,7 +261,8 @@ no such order, because both rows are new and neither is a row anyone else can be
 **Declaration order does not decide which handler answers.** Express matches in registration
 order, so `@Get('payees')` written after `@Get(':id')` on the same controller would never run,
 and the request would land on the parametric handler with `payees` as the id. Nothing in the
-code says so, and the screen is where you would find out. `main.ts` passes `ROUTING_OPTIONS`
+code says so, and the screen is where you would find out. `createHttpApp`
+([`src/http-app.ts`](src/http-app.ts)) passes `ROUTING_OPTIONS`
 ([`src/routing.ts`](src/routing.ts)) to `NestFactory.create`, and
 `routeResolutionStrategy: 'specificity'` registers a literal segment ahead of a parametric one
 whatever order the two were written in, so the ambiguity is resolved rather than reported.
@@ -274,6 +280,17 @@ the start. [`test/routing.integration.spec.ts`](test/routing.integration.spec.ts
 whole app under the same options.
 
 ## The input boundary
+
+[`createHttpApp`](src/http-app.ts) is the one place the HTTP pipeline is assembled, and
+`main.ts` and the specs that need the production pipeline both build through it. Before a
+request reaches a handler it gets Nest's security headers (`useSecurityHeaders`, which also
+drops `X-Powered-By`), the CORS policy below, and a body limit of `DEFAULT_BODY_LIMIT` on JSON and form bodies alike;
+a larger body is a 413 before the pipe runs. A refusal at this layer carries the headers too.
+An unexpected failure answers `Internal server error` and nothing about what failed.
+[`test/http-app.spec.ts`](test/http-app.spec.ts) pins the headers, CORS and the limit on a bare
+module, and
+[`test/http-hardening.integration.spec.ts`](test/http-hardening.integration.spec.ts) pins the
+headers and the error bodies on the whole app.
 
 Every request body **declared as a DTO class** is validated before a handler sees it. The pipe
 is registered globally as `APP_PIPE`
@@ -493,8 +510,11 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    its tests pass. What the raw path may do inside a
    mutation, and what it refuses, is in [api](../../.claude/rules/api.md).
 
-What none of this can prove is that a raw statement actually _uses_ the scope it was given;
-that is what the cross-tenant tests are for, on every phase that adds an aggregate.
+What none of this can prove is that a raw statement actually _uses_ the scope it was given,
+or that a handler checks the id it was given. That is what the cross-tenant tests are for:
+[`test/cross-tenant.integration.spec.ts`](test/cross-tenant.integration.spec.ts) aims every
+operation behind the guard at another tenant's data, and how it is extended is in
+[`docs/testing.md`](../../docs/testing.md).
 
 ## Running
 
@@ -541,8 +561,8 @@ knowing before a deploy:
   real caller;
 - a _wrong_ value, such as a trailing slash or `http` for `https`, cannot be caught that way,
   and shows up as 401 everywhere with no CORS error to point at it;
-- the `http://localhost:3001` fallback exists for specs, which build the app through
-  `Test.createTestingModule` and never pass through `main.ts`.
+- the `http://localhost:3001` fallback exists for specs, which build the app without passing
+  through `main.ts`.
 
 ## Tooling
 

@@ -231,7 +231,7 @@ describe('accounts across tenants', () => {
       idempotencyKey: 'b-opened-the-form',
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
 
     const stored = await prisma.account.findFirstOrThrow({ where: { id: walletA.id } });
     expect(stored.name).toBe('Кошелёк A');
@@ -291,7 +291,7 @@ describe('accounts across tenants', () => {
       idempotencyKey: 'b-opened-the-opening-form',
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
 
     const stored = await prisma.transaction.findFirstOrThrow({ where: { userId: USER_A } });
@@ -322,7 +322,7 @@ describe('accounts across tenants', () => {
 
     const response = await archive(USER_B, walletA.id, { idempotencyKey: 'b-closes-a-account' });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
 
     const stored = await prisma.account.findUniqueOrThrow({ where: { id: walletA.id } });
@@ -348,7 +348,7 @@ describe('accounts across tenants', () => {
 
     const response = await archive(USER_A, parked.id, { idempotencyKey: 'a-closes-the-other' });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
 
     const stored = await prisma.account.findUniqueOrThrow({ where: { id: parked.id } });
@@ -366,7 +366,7 @@ describe('accounts across tenants', () => {
       idempotencyKey: 'b-opened-the-reconcile-form',
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
 
     const held = await prisma.transaction.findMany({ where: { userId: USER_A } });
@@ -396,7 +396,7 @@ describe('accounts across tenants', () => {
       idempotencyKey: 'a-reconciles-the-other',
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
     expect(asRecord(response.body)['reason']).toBe('UNKNOWN_ACCOUNT');
 
     const held = await prisma.transaction.findMany({ where: { accountId: parked.id } });

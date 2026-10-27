@@ -7,4 +7,9 @@ import typeChecked from '@rondo/config/eslint/type-checked';
 
 const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
-export default [...base, ...typeChecked(tsconfigRootDir), ...tenantIsolation()];
+export default [
+  ...base,
+  ...typeChecked(tsconfigRootDir),
+  ...tenantIsolation(),
+  { linterOptions: { noInlineConfig: true } },
+];

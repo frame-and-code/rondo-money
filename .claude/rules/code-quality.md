@@ -6,7 +6,8 @@
 - Never swallow an exception. An error message says what failed and with what input, without
   leaking internals. Fail loudly on malformed input at the edge instead of coercing it.
 - TypeScript and JavaScript carry no comments, not one. Only what a tool reads stays
-  (`eslint-disable`, `@ts-expect-error`, `/// <reference>`, `prettier-ignore`, a JSDoc type a
+  (`eslint-disable` outside `apps/api`, whose lint refuses every directive ([api](api.md)),
+  `@ts-expect-error`, `/// <reference>`, `prettier-ignore`, a JSDoc type a
   checker consumes, a `@jest-environment` docblock, a coverage pragma). `rondo/no-comments` in
   [`@rondo/config/eslint`](../../packages/config/eslint/no-comments.mjs) fails the gate and
   deletes the comment under `--fix`; an `eslint-disable` aimed at it is the thing it exists to

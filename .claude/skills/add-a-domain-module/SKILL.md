@@ -46,7 +46,9 @@ genuinely api-only still belongs in `apps/api`, the way
 - A user-owned model carries `userId` and **joins
   [`scoped-models.ts`](../../../apps/api/src/prisma/scoped-models.ts) in the same change**
   (ADR-005). A model one budget owns carries `budgetId` and joins `BUDGET_SCOPED_MODELS` in
-  the same file. `apps/api/test/scoped-models.spec.ts` fails the gate on either omission.
+  the same file. `apps/api/test/scoped-models.spec.ts` fails the gate on either omission, and
+  the shared cross-tenant suite fails on a registered model with no row in its seeded world
+  ([`docs/testing.md`](../../../docs/testing.md)).
 - **A model one budget owns also gets a dependency statistic** on `(user_id, budget_id)` in the
   migration that creates it, and Prisma cannot generate one. Create the migration with
   `--create-only`, append
@@ -127,7 +129,8 @@ nothing further down would catch it. Document the handler with `@ApiOperation`,
 A handler that can answer 400 adds `@ApiBadRequestResponse` with
 [`BadRequestResponse`](../../../apps/api/src/openapi/bad-request.response.ts), and one taking a
 DTO body always can, because the global pipe answers before it. An undocumented status leaves
-the client's whole error type `unknown`.
+the client's whole error type `unknown`. A handler with an id in its path also answers 404,
+and what it names is in [api](../../rules/api.md).
 `@Public()` opens an endpoint to both the guard and the spec at once; never add a second
 decorator saying the same thing.
 A literal path beside a parametric one, `@Get('payees')` next to `@Get(':id')`, needs no
@@ -162,7 +165,8 @@ with `git stash -u`.
   ([`user-settings.integration.spec.ts`](../../../apps/api/test/user-settings.integration.spec.ts));
 - **cross-tenant, mandatory** (ADR-005): user A's data exists, user B calls the endpoint, and B
   gets its own data while A's row is untouched. The model's isolation being proven elsewhere is
-  not the same claim. This one is about the endpoint.
+  not the same claim. This one is about the endpoint, and it is a probe in the shared suite
+  ([`docs/testing.md`](../../../docs/testing.md)), which fails until the endpoint has one.
 
 Cover the edges the feature actually has: the empty case, the second call, concurrent first
 calls, and an anonymous caller (401).

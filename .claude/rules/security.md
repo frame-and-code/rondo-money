@@ -38,4 +38,6 @@ Migrations on dev or prod run through the deployment pipeline.
   bounded by the decorator that publishes it. A `@Body()` typed as
   an interface is skipped in silence, so the class is a security condition, not style.
 - Error responses carry no internals: no stack traces, no SQL, no file paths.
+- The HTTP pipeline, security headers and body limit included, is assembled in one place, and
+  what it refuses is in [`apps/api/README.md`](../../apps/api/README.md).
 - Never swallow an exception on a money path.

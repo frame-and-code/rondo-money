@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -13,7 +14,10 @@ import { UnauthorizedResponse } from '@/auth/unauthorized.response';
 import { ConflictResponse } from '@/mutations/conflict.response';
 import { CreateTransferDto } from '@/transfers/create-transfer.dto';
 import { DeleteTransferDto } from '@/transfers/delete-transfer.dto';
-import { TransferRefusedResponse } from '@/transfers/transfer-refused.response';
+import {
+  TransferNotFoundResponse,
+  TransferRefusedResponse,
+} from '@/transfers/transfer-refused.response';
 import { TransferResponse } from '@/transfers/transfer.response';
 import { TransfersService } from '@/transfers/transfers.service';
 import { UpdateTransferDto } from '@/transfers/update-transfer.dto';
@@ -58,6 +62,10 @@ export class TransfersController {
   })
   @ApiOkResponse({ description: 'The pair as it stands now.', type: TransferResponse })
   @ApiBadRequestResponse({ description: REFUSED, type: TransferRefusedResponse })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such transfer.',
+    type: TransferNotFoundResponse,
+  })
   @ApiConflictResponse({ description: REPEATED, type: ConflictResponse })
   @ApiUnauthorizedResponse({ description: UNAUTHORIZED, type: UnauthorizedResponse })
   update(
@@ -77,6 +85,10 @@ export class TransfersController {
   })
   @ApiOkResponse({ description: 'The pair that was removed.', type: TransferResponse })
   @ApiBadRequestResponse({ description: REFUSED, type: TransferRefusedResponse })
+  @ApiNotFoundResponse({
+    description: 'The active budget holds no such transfer.',
+    type: TransferNotFoundResponse,
+  })
   @ApiConflictResponse({ description: REPEATED, type: ConflictResponse })
   @ApiUnauthorizedResponse({ description: UNAUTHORIZED, type: UnauthorizedResponse })
   remove(
