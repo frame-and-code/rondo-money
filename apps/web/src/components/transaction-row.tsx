@@ -105,6 +105,7 @@ export function TransactionRow({
       className={cn(
         'border-border/60 relative flex items-center gap-3 border-b px-4 py-3 transition-colors last:border-b-0',
         'has-[[data-slot=row-open]:active]:bg-muted',
+        'has-[[data-slot=row-open]:focus-visible]:inset-ring-ring/60 has-[[data-slot=row-open]:focus-visible]:inset-ring-2',
       )}
     >
       <button
@@ -112,7 +113,7 @@ export function TransactionRow({
         data-slot="row-open"
         aria-label={title()}
         onClick={() => onOpen(record)}
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 outline-none"
       />
 
       <span

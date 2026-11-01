@@ -147,7 +147,7 @@ const openTheActions = async (user: ReturnType<typeof userEvent.setup>, category
   await screen.findByText(category);
   await user.click(
     screen.getByRole('button', {
-      name: en['categories.moveOpen'].replace('{{category}}', category),
+      description: new RegExp(`^${en['categories.moveOpen'].replace('{{category}}', category)}`),
     }),
   );
   await user.click(await screen.findByRole('button', { name: en['categories.manage'] }));

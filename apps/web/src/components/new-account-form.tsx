@@ -17,13 +17,15 @@ import {
 } from '@rondo/ui/components/ui/card';
 import { Input } from '@rondo/ui/components/ui/input';
 import { Label } from '@rondo/ui/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@rondo/ui/components/ui/radio-group';
 import { cn } from '@rondo/ui/lib/utils';
 import { IconCash, IconCreditCard, IconLoader } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useId, useMemo, useState, type FormEvent } from 'react';
 
 import { FailureAlert } from '@/components/failure-alert';
+import { HIDDEN_RADIO } from '@/components/field-shape';
 import { MONEY_FIELD, MoneyField } from '@/components/money-field';
 import { OnboardingSteps } from '@/components/onboarding-steps';
 import { useTranslations } from '@/i18n/locale-context';
@@ -68,6 +70,7 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
 
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>(DEFAULT_TYPE);
+  const typeLabel = useId();
   const [amount, setAmount] = useState('');
 
   const [idempotencyKey, setIdempotencyKey] = useState(mintKey);
@@ -173,42 +176,48 @@ export function NewAccountForm({ nameIndex }: { nameIndex: number }) {
               </div>
 
               <div className="flex flex-col gap-2">
-                <span className="text-sm leading-none font-medium">
+                <span id={typeLabel} className="text-sm leading-none font-medium">
                   {t('newAccount.typeLabel')}
                 </span>
-                <div className="grid grid-cols-2 gap-3">
+                <RadioGroup
+                  aria-labelledby={typeLabel}
+                  value={type}
+                  disabled={busy}
+                  onValueChange={(value) => {
+                    const picked = TYPES.find((option) => option.id === value);
+                    if (!picked) return;
+                    setType(picked.id);
+                    edited();
+                  }}
+                  className="grid-cols-2"
+                >
                   {TYPES.map((option) => (
-                    <button
+                    <Label
                       key={option.id}
-                      type="button"
-                      aria-pressed={type === option.id}
-                      disabled={busy}
-                      onClick={() => {
-                        setType(option.id);
-                        edited();
-                      }}
                       className={cn(
-                        'flex flex-col items-start gap-2 rounded-2xl border p-3 text-start transition-colors disabled:opacity-50',
+                        'relative flex-col items-start gap-2 rounded-2xl border p-3 font-normal transition-colors',
+                        'has-data-disabled:opacity-50 has-focus-visible:ring-ring/50 has-focus-visible:border-ring',
                         type === option.id
                           ? 'border-primary ring-primary/20 ring-3'
-                          : 'border-border hover:bg-muted',
+                          : 'border-border hover:bg-muted has-focus-visible:ring-3',
                       )}
                     >
+                      <RadioGroupItem value={option.id} className={HIDDEN_RADIO} />
                       <span
                         className={cn(
                           'grid size-8 place-items-center rounded-lg',
                           type === option.id ? 'bg-primary/10 text-primary' : 'bg-secondary',
                         )}
                       >
-                        <option.icon className="size-4" />
+                        <option.icon aria-hidden className="size-4" />
                       </span>
                       <span className="flex flex-col gap-0.5">
                         <span className="text-sm font-medium">{t(option.title)}</span>
                         <span className="text-muted-foreground text-xs">{t(option.body)}</span>
                       </span>
-                    </button>
+                    </Label>
                   ))}
-                </div>
+                </RadioGroup>
               </div>
 
               <div className="flex flex-col gap-2">

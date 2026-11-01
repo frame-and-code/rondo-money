@@ -76,12 +76,13 @@ export function CategoryActions({
 
       <div aria-hidden className="bg-border/60 my-1 h-px w-full" />
 
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="lg"
         aria-expanded={open}
         aria-controls={body}
         onClick={() => setOpen((shown) => !shown)}
-        className="text-muted-foreground hover:bg-muted flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-sm transition-colors duration-[120ms]"
+        className="text-muted-foreground aria-expanded:text-muted-foreground w-full justify-start gap-1.5 rounded-xl px-2.5 font-normal duration-[120ms] aria-expanded:bg-transparent"
       >
         <IconChevronDown
           aria-hidden
@@ -91,7 +92,7 @@ export function CategoryActions({
           )}
         />
         {t('categories.manage')}
-      </button>
+      </Button>
 
       <div
         id={body}

@@ -81,7 +81,7 @@ const fillOut = async (
   { name = 'Кошелёк', amount = '' }: { name?: string; amount?: string } = {},
 ) => {
   await user.type(await screen.findByLabelText(ru['newAccount.nameLabel']), name);
-  await user.click(screen.getByRole('button', { name: new RegExp(ru['newAccount.typeCash']) }));
+  await user.click(screen.getByRole('radio', { name: new RegExp(ru['newAccount.typeCash']) }));
   if (amount !== '') {
     await user.type(await amountField(), amount);
   }
@@ -309,13 +309,13 @@ describe('the first account form', () => {
   it('offers the debit card first and starts on it, with cash one tap away', async () => {
     draw();
 
-    const debit = await screen.findByRole('button', {
+    const debit = await screen.findByRole('radio', {
       name: new RegExp(ru['newAccount.typeDebit']),
     });
-    const cash = screen.getByRole('button', { name: new RegExp(ru['newAccount.typeCash']) });
+    const cash = screen.getByRole('radio', { name: new RegExp(ru['newAccount.typeCash']) });
 
-    expect(debit).toHaveAttribute('aria-pressed', 'true');
-    expect(cash).toHaveAttribute('aria-pressed', 'false');
+    expect(debit).toBeChecked();
+    expect(cash).not.toBeChecked();
     expect(debit.compareDocumentPosition(cash) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -455,8 +455,8 @@ describe('the first account form', () => {
     });
     expect(screen.getByLabelText(ru['newAccount.balanceLabel'])).toBeDisabled();
     expect(
-      screen.getByRole('button', { name: new RegExp(ru['newAccount.typeDebit']) }),
-    ).toBeDisabled();
+      screen.getByRole('radio', { name: new RegExp(ru['newAccount.typeDebit']) }),
+    ).toHaveAttribute('aria-disabled', 'true');
 
     settle();
     await waitFor(() => expect(replaced).toHaveBeenCalledWith('/categories'));

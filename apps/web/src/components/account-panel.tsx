@@ -328,14 +328,16 @@ export function AccountPanel({
             <li
               className={cn(
                 'border-border/60 relative flex items-center gap-3 border-b px-4 py-3',
+                'has-[[data-slot=row-open]:focus-visible]:inset-ring-ring/60 has-[[data-slot=row-open]:focus-visible]:inset-ring-2',
                 selected === null && 'bg-secondary/60',
               )}
             >
               <button
                 type="button"
+                data-slot="row-open"
                 aria-label={t('transactions.allAccounts')}
                 onClick={() => onSelect(null)}
-                className="absolute inset-0 z-0"
+                className="absolute inset-0 z-0 outline-none"
               />
 
               <span className="bg-secondary text-muted-foreground pointer-events-none relative z-10 grid size-9 shrink-0 place-items-center rounded-full">
@@ -371,14 +373,16 @@ export function AccountPanel({
                   key={account.id}
                   className={cn(
                     'border-border/60 relative flex items-center gap-3 border-b px-4 py-3 last:border-b-0',
+                    'has-[[data-slot=row-open]:focus-visible]:inset-ring-ring/60 has-[[data-slot=row-open]:focus-visible]:inset-ring-2',
                     selected === account.id && 'bg-secondary/60',
                   )}
                 >
                   <button
                     type="button"
+                    data-slot="row-open"
                     aria-label={account.name}
                     onClick={() => onSelect(account.id)}
-                    className="absolute inset-0 z-0"
+                    className="absolute inset-0 z-0 outline-none"
                   />
 
                   <span className="bg-secondary text-muted-foreground pointer-events-none relative z-10 grid size-9 shrink-0 place-items-center rounded-full">

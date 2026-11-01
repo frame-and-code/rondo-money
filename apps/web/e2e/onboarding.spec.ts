@@ -56,7 +56,10 @@ test('a new user is taken through setup and lands in the app', async ({ page }) 
   await expect(page.getByRole('heading', { name: pl['newAccount.heading'] })).toBeVisible();
 
   await page.getByLabel(pl['newAccount.nameLabel']).fill('Portfel');
-  await page.getByRole('button', { name: new RegExp(pl['newAccount.typeCash']) }).click();
+  await page.getByText(pl['newAccount.typeCash'], { exact: true }).click();
+  await expect(
+    page.getByRole('radio', { name: new RegExp(pl['newAccount.typeCash']) }),
+  ).toBeChecked();
   await page.getByLabel(pl['newAccount.balanceLabel']).fill('1250,50');
 
   const finish = page.getByRole('button', { name: pl['newAccount.submit'] });

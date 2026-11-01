@@ -18,16 +18,16 @@ export function AddTodayRow({ heading, onAdd }: { heading: string; onAdd: () => 
         <span aria-hidden className="hidden size-8 shrink-0 sm:block" />
       </header>
 
-      <button
-        type="button"
+      <Button
+        variant="outline"
         onClick={onAdd}
-        className="border-border text-muted-foreground hover:bg-card flex items-center gap-3 rounded-2xl border border-dashed px-4 py-3 text-left text-sm"
+        className="text-muted-foreground hover:bg-card dark:hover:bg-card h-auto justify-start gap-3 border-dashed bg-transparent px-4 py-3 text-left font-normal whitespace-normal"
       >
         <span className="bg-secondary grid size-9 shrink-0 place-items-center rounded-full">
           <IconPlus aria-hidden className="size-4.5" />
         </span>
         {t('transactions.addToday')}
-      </button>
+      </Button>
     </section>
   );
 }

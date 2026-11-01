@@ -50,6 +50,14 @@ export const I18N_EN_TEST_EMAIL = 'e2e-i18n-en+clerk_test@example.com';
 
 export const I18N_PL_TEST_EMAIL = 'e2e-i18n-pl+clerk_test@example.com';
 
+export const KEYBOARD_TEST_EMAIL = 'e2e-keyboard+clerk_test@example.com';
+
+export const PHONE_TEST_EMAIL = 'e2e-phone+clerk_test@example.com';
+
+export const PHONE_NAV_TEST_EMAIL = 'e2e-phone-nav+clerk_test@example.com';
+
+export const A11Y_TEST_EMAIL = 'e2e-a11y+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }

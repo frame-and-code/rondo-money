@@ -58,7 +58,9 @@ describe('application shell', () => {
     await screen.findByRole('heading', { level: 1, name: ru['nav.categories'] });
 
     expect(
-      screen.queryByRole('button', { name: ru['common.localeSwitcher.ariaLabel'] }),
+      screen.queryByRole('button', {
+        name: new RegExp(ru['common.localeSwitcher.ariaLabel'].replace('{{code}}', '\\w+')),
+      }),
     ).not.toBeInTheDocument();
   });
 

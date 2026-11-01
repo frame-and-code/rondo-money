@@ -237,18 +237,12 @@ describe('what a goal puts on the card', () => {
     draw([SHORT]);
 
     const card = within(tileOf('Vacation')).getByRole('button', {
-      name: en['categories.moveOpen'].replace('{{category}}', 'Vacation'),
+      description: new RegExp(`^${en['categories.moveOpen'].replace('{{category}}', 'Vacation')}`),
     });
-    const description = card.getAttribute('aria-describedby');
 
-    expect(description).not.toBeNull();
-
-    const spoken = document.getElementById(description ?? '');
-
-    expect(spoken).not.toBeNull();
-    expect(spoken).toHaveTextContent('200');
-    expect(spoken).toHaveTextContent('266,66');
-    expect(spoken).toHaveTextContent('600');
+    expect(card).toHaveAccessibleDescription(/200/);
+    expect(card).toHaveAccessibleDescription(/266,66/);
+    expect(card).toHaveAccessibleDescription(/600/);
   });
 
   it('reds an assigned amount below zero, goal or no goal', () => {
@@ -346,7 +340,7 @@ describe('a category closed for the month', () => {
     drawOne({ ...PLAIN, paid: true });
 
     expect(screen.getByRole('button', { name: /Transport/ })).toHaveAccessibleDescription(
-      en['categories.paidMark'],
+      `${en['categories.moveOpen'].replace('{{category}}', 'Transport')} ${en['categories.paidMark']}`,
     );
   });
 
@@ -358,7 +352,10 @@ describe('a category closed for the month', () => {
     expect(frame).toHaveClass('opacity-55');
     expect(frame).toHaveClass('hover:opacity-100');
     expect(within(frame).getByTestId('available-Transport')).toHaveTextContent('8 zł');
-    expect(within(frame).getByTestId('paid-mark')).toHaveTextContent(en['categories.paidMark']);
+    expect(within(frame).getByTestId('paid-mark')).toBeInTheDocument();
+    expect(within(frame).getByRole('button', { name: /Transport/ })).toHaveAccessibleDescription(
+      new RegExp(en['categories.paidMark']),
+    );
   });
 
   it('cannot be dragged, so the order it keeps is the one it had before it was closed', () => {
