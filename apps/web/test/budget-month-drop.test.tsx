@@ -222,7 +222,7 @@ describe('reopening a closed card that the server refuses', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Аренда'),
+        description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', 'Аренда')}`),
       }),
     );
     await user.click(screen.getByRole('button', { name: ru['categories.paidReopen'] }));

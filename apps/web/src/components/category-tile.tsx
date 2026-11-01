@@ -3,6 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { parseMoney, type BudgetViewCategoryDto } from '@rondo/types';
+import { Button } from '@rondo/ui/components/ui/button';
 import {
   Popover,
   PopoverContent,
@@ -50,6 +51,7 @@ export function CategoryTile({
   const [explaining, setExplaining] = useState(false);
   const spoken = useId();
   const closed = useId();
+  const hint = useId();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
     disabled: !sortable ? true : category.paid ? { draggable: true } : false,
@@ -57,16 +59,17 @@ export function CategoryTile({
 
   const handle =
     !sortable || category.paid ? null : (
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         data-testid={`reorder-${category.name}`}
         aria-label={t('categories.reorder', { category: category.name })}
-        className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted/60 absolute inset-y-1 right-1 flex w-7 cursor-grab items-center justify-center rounded-2xl transition-colors duration-[120ms]"
+        className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted/60 absolute inset-y-1 right-1 h-auto cursor-grab duration-[120ms]"
         {...attributes}
         {...listeners}
       >
-        <IconGripVertical aria-hidden className="size-4" />
-      </button>
+        <IconGripVertical aria-hidden />
+      </Button>
     );
 
   const assigned = parseMoney(category.assigned);
@@ -91,9 +94,27 @@ export function CategoryTile({
     />
   );
 
-  const described =
-    [category.paid ? closed : null, target === null ? null : spoken].filter(Boolean).join(' ') ||
-    undefined;
+  const described = [hint, category.paid ? closed : null, target === null ? null : spoken]
+    .filter(Boolean)
+    .join(' ');
+
+  const moveHint = (
+    <>
+      <span id={hint} hidden>
+        {t('categories.moveOpen', { category: category.name })}
+      </span>
+      {category.paid ? (
+        <span id={closed} hidden>
+          {t('categories.paidMark')}
+        </span>
+      ) : null}
+      {target === null ? null : (
+        <span id={spoken} hidden>
+          <TargetPanel spoken target={target} money={money} color={category.color} />
+        </span>
+      )}
+    </>
+  );
 
   const card = (
     <>
@@ -108,7 +129,6 @@ export function CategoryTile({
               )}
             >
               <IconCheck aria-hidden className="size-2.5" stroke={3.5} />
-              <span className="sr-only">{t('categories.paidMark')}</span>
             </span>
           ) : null}
           <span
@@ -209,18 +229,6 @@ export function CategoryTile({
           </span>
         </span>
       </span>
-
-      {category.paid ? (
-        <span id={closed} className="sr-only">
-          {t('categories.paidMark')}
-        </span>
-      ) : null}
-
-      {target === null ? null : (
-        <span id={spoken}>
-          <TargetPanel spoken target={target} money={money} color={category.color} />
-        </span>
-      )}
     </>
   );
 
@@ -231,6 +239,7 @@ export function CategoryTile({
     'hover:ring-primary/35',
     'aria-expanded:ring-primary/60 aria-expanded:ring-2 aria-expanded:shadow-md',
     'aria-expanded:shadow-primary/15',
+    'focus-visible:ring-ring/60 outline-none focus-visible:ring-2',
     attention && 'ring-warning/45 ring-2',
     failed && 'ring-destructive/45',
   );
@@ -254,20 +263,25 @@ export function CategoryTile({
   if (!moveInPopover) {
     return (
       <div {...frame}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           data-slot="category-tile"
           data-failed={failed ? 'true' : undefined}
           aria-expanded={moveOpen}
-          aria-label={t('categories.moveOpen', { category: category.name })}
           aria-describedby={described}
           onClick={onMoveOpen}
-          className={look}
+          className={cn(
+            look,
+            'h-full items-stretch justify-start font-normal whitespace-normal',
+            'hover:bg-card dark:hover:bg-card aria-expanded:bg-card active:not-aria-[haspopup]:translate-y-0',
+            "[&_svg:not([class*='size-'])]:size-auto",
+          )}
           {...grab}
         >
           {card}
-        </button>
+        </Button>
         {handle}
+        {moveHint}
       </div>
     );
   }
@@ -278,7 +292,6 @@ export function CategoryTile({
         <PopoverTrigger
           data-slot="category-tile"
           data-failed={failed ? 'true' : undefined}
-          aria-label={t('categories.moveOpen', { category: category.name })}
           aria-describedby={described}
           className={look}
           {...grab}
@@ -286,6 +299,7 @@ export function CategoryTile({
           {card}
         </PopoverTrigger>
         {handle}
+        {moveHint}
       </div>
       <PopoverContent
         backdrop

@@ -61,7 +61,11 @@ describe('locale detection and switching', () => {
 
     expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }));
+    await user.click(
+      screen.getByRole('button', {
+        name: new RegExp(pl['common.localeSwitcher.ariaLabel'].replace('{{code}}', '\\w+')),
+      }),
+    );
     await user.click(await screen.findByText(localeLabels.ru));
 
     expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
@@ -76,7 +80,9 @@ describe('locale detection and switching', () => {
     );
 
     await user.click(
-      await screen.findByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }),
+      await screen.findByRole('button', {
+        name: new RegExp(pl['common.localeSwitcher.ariaLabel'].replace('{{code}}', '\\w+')),
+      }),
     );
     await user.click(await screen.findByText(localeLabels.ru));
 
@@ -94,7 +100,9 @@ describe('locale detection and switching', () => {
     );
 
     await user.click(
-      await screen.findByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }),
+      await screen.findByRole('button', {
+        name: new RegExp(pl['common.localeSwitcher.ariaLabel'].replace('{{code}}', '\\w+')),
+      }),
     );
     await user.click(await screen.findByText(localeLabels.ru));
     expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
@@ -140,7 +148,11 @@ describe('when the browser refuses access to storage', () => {
 
     expect(await screen.findByText(pl['nav.categories'])).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: pl['common.localeSwitcher.ariaLabel'] }));
+    await user.click(
+      screen.getByRole('button', {
+        name: new RegExp(pl['common.localeSwitcher.ariaLabel'].replace('{{code}}', '\\w+')),
+      }),
+    );
     await user.click(await screen.findByText(localeLabels.ru));
 
     expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();

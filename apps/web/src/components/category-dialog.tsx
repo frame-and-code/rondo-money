@@ -15,6 +15,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@rondo/ui/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@rondo/ui/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ import { cn } from '@rondo/ui/lib/utils';
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { FailureAlert } from '@/components/failure-alert';
+import { HIDDEN_RADIO } from '@/components/field-shape';
 import { useTranslations } from '@/i18n/locale-context';
 import type { MessageKey } from '@/i18n/messages';
 import { categoryLook } from '@/lib/category-look';
@@ -61,6 +63,8 @@ export function CategoryDialog({
 }) {
   const { t } = useTranslations();
   const groupField = useId();
+  const iconLabel = useId();
+  const colorLabel = useId();
 
   const [key] = useState(() => crypto.randomUUID());
   const [name, setName] = useState(category?.name ?? '');
@@ -108,44 +112,58 @@ export function CategoryDialog({
             <PopoverTitle className="sr-only">{t('categories.lookPick')}</PopoverTitle>
 
             <div className="flex flex-col gap-2">
-              <Label>{t('categories.iconLabel')}</Label>
-              <div className="bg-muted/40 grid max-h-56 grid-cols-[repeat(auto-fill,minmax(34px,1fr))] justify-items-center gap-1 overflow-y-auto rounded-[16px] p-2">
+              <Label id={iconLabel}>{t('categories.iconLabel')}</Label>
+              <RadioGroup
+                aria-labelledby={iconLabel}
+                value={icon}
+                onValueChange={(value) => {
+                  const picked = CATEGORY_ICONS.find((one) => one === value);
+                  if (picked) setIcon(picked);
+                }}
+                className="bg-muted/40 grid max-h-56 grid-cols-[repeat(auto-fill,minmax(34px,1fr))] justify-items-center gap-1 overflow-y-auto rounded-[16px] p-2"
+              >
                 {CATEGORY_ICONS.map((one) => {
                   const { Icon } = categoryLook(one, null);
 
                   return (
-                    <button
+                    <Label
                       key={one}
-                      type="button"
                       data-testid={`icon-${one}`}
-                      aria-label={t(`categoryIcon.${one}`)}
-                      aria-pressed={icon === one}
-                      onClick={() => setIcon(one)}
                       className={cn(
-                        'flex size-8 items-center justify-center rounded-full transition-colors duration-[120ms]',
+                        'relative flex size-8 cursor-pointer items-center justify-center rounded-full transition-colors duration-[120ms]',
+                        'has-focus-visible:ring-ring/60 has-focus-visible:ring-2',
                         icon === one ? 'bg-foreground/10' : 'text-muted-foreground hover:bg-muted',
                       )}
                       style={icon === one ? { color: look.color } : undefined}
                     >
+                      <RadioGroupItem
+                        value={one}
+                        aria-label={t(`categoryIcon.${one}`)}
+                        className={HIDDEN_RADIO}
+                      />
                       <Icon aria-hidden className="size-[18px]" />
-                    </button>
+                    </Label>
                   );
                 })}
-              </div>
+              </RadioGroup>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>{t('categories.colorLabel')}</Label>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(26px,1fr))] gap-2">
+              <Label id={colorLabel}>{t('categories.colorLabel')}</Label>
+              <RadioGroup
+                aria-labelledby={colorLabel}
+                value={color}
+                onValueChange={(value) => {
+                  const picked = CATEGORY_COLORS.find((one) => one === value);
+                  if (picked) setColor(picked);
+                }}
+                className="grid grid-cols-[repeat(auto-fill,minmax(26px,1fr))] gap-2"
+              >
                 {CATEGORY_COLORS.map((one) => (
-                  <button
+                  <Label
                     key={one}
-                    type="button"
                     data-testid={`color-${one}`}
-                    aria-label={t(`categoryColor.${one}`)}
-                    aria-pressed={color === one}
-                    onClick={() => setColor(one)}
-                    className="size-[26px] rounded-full"
+                    className="has-focus-visible:outline-ring relative size-[26px] cursor-pointer rounded-full has-focus-visible:outline-2 has-focus-visible:outline-offset-4"
                     style={{
                       background: `var(--cat-${one})`,
                       boxShadow:
@@ -153,9 +171,15 @@ export function CategoryDialog({
                           ? '0 0 0 2px var(--popover), 0 0 0 4px var(--foreground)'
                           : undefined,
                     }}
-                  />
+                  >
+                    <RadioGroupItem
+                      value={one}
+                      aria-label={t(`categoryColor.${one}`)}
+                      className={HIDDEN_RADIO}
+                    />
+                  </Label>
                 ))}
-              </div>
+              </RadioGroup>
             </div>
           </PopoverContent>
         </Popover>

@@ -2,7 +2,7 @@ import type { PluralForms } from '../plural';
 
 export const ru = {
   'common.themeToggle.trigger': 'Переключить тему',
-  'common.localeSwitcher.ariaLabel': 'Сменить язык',
+  'common.localeSwitcher.ariaLabel': '{{code}}, сменить язык',
   'common.loading': 'Загрузка…',
   'common.close': 'Закрыть',
   'common.failTitle': 'Произошла ошибка',

@@ -94,6 +94,10 @@ export function MoveFields({
     'items-center gap-1 rounded-full px-2 py-0.5',
     'transition-colors disabled:pointer-events-none disabled:opacity-50',
   );
+  const amountRow = cn(
+    'bg-muted/60 flex items-center gap-2.5 rounded-full px-4 py-2.5',
+    'has-[[data-slot=input-group-control]:focus-visible]:ring-ring/60 has-[[data-slot=input-group-control]:focus-visible]:ring-2',
+  );
   const amountField = (envelope: MoveTarget, ref?: typeof field) => (
     <InputGroupInput
       ref={ref}
@@ -139,7 +143,7 @@ export function MoveFields({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3">
-        <div className="bg-muted/60 flex items-center gap-2.5 rounded-full px-4 py-2.5">
+        <div className={amountRow}>
           <Envelope target={category} />
 
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -169,7 +173,7 @@ export function MoveFields({
         </span>
 
         <div className="flex flex-col gap-2">
-          <div className="bg-muted/60 flex items-center gap-2.5 rounded-full px-4 py-2.5">
+          <div className={amountRow}>
             <Envelope target={other} />
 
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">

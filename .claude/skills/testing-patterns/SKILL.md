@@ -54,6 +54,27 @@ against a mocked client proves the mock.
    against the same token resolved on a probe element in that page, once per theme
    ([`budget.ts`](../../../apps/web/e2e/budget.ts)).
 
+## What the eye gets: focus and the first frame
+
+- **A focus ring is proved by its change, not by its presence.** Chrome draws a faint outline
+  on anything without `outline-none`, and a selected card keeps its ring whether or not it has
+  focus, so a ring found on the focused element proves nothing. `expectVisibleFocus` in
+  [`keyboard.ts`](../../../apps/web/e2e/keyboard.ts) blurs the element and focuses it again,
+  and passes only when an opaque ring or an outline of two pixels or more appears with focus
+  on the element or one of its near ancestors that can be seen, so a hidden radio's own ring
+  does not stand in for the card's. Reach the element with `Tab`, never with `focus()`, so the
+  test also proves the keyboard can get there.
+- **A sideways scroll hides in every scroller, not only in the document.** The shell
+  scrolls `main`, so a screen too wide for a phone leaves the document exactly as wide as the
+  viewport. Check each element whose `overflow-x` scrolls
+  ([`navigation.mobile.spec.ts`](../../../apps/web/e2e/navigation.mobile.spec.ts)).
+- **A theme that does not flash is proved with the app switched off.** Block
+  `/_next/static/chunks/**/*.js`, not the whole chunks directory, which holds the stylesheet
+  too. Count the refused requests, so a test that blocked nothing fails, then read the class on
+  `<html>` and the computed background of the page. What sets them then is the inline script, which is
+  what runs before the first paint
+  ([`theme.spec.ts`](../../../apps/web/e2e/theme.spec.ts)).
+
 ## Where there is no endpoint yet
 
 Declare a probe controller on the testing module and drive the real chain through it

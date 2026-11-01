@@ -128,7 +128,7 @@ const setup = () => userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
 
 const triggerOf = (name = 'Продукты'): HTMLElement =>
   screen.getByRole('button', {
-    name: ru['categories.moveOpen'].replace('{{category}}', name),
+    description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', name)}`),
   });
 
 const surface = (): HTMLElement => screen.getByTestId('move-dialog');

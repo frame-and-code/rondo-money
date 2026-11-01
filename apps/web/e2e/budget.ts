@@ -29,9 +29,7 @@ export async function turnTheDarkThemeOn(page: Page): Promise<void> {
 }
 
 export const cardOf = (page: Page, category: string) =>
-  page.getByRole('button', {
-    name: en['categories.moveOpen'].replace('{{category}}', category),
-  });
+  page.getByTestId(`category-tile-${category}`).locator('[data-slot="category-tile"]');
 
 export const assignedOf = (page: Page, category: string) =>
   page.getByTestId(`assigned-${category}`);

@@ -1,5 +1,5 @@
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@rondo/types';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { CategoryDialog } from '@/components/category-dialog';
@@ -62,11 +62,19 @@ describe('the dialog a category is set up in', () => {
     await openTheLook(user);
 
     for (const one of CATEGORY_ICONS) {
-      expect(screen.getByTestId(`icon-${one}`)).toHaveAccessibleName(en[`categoryIcon.${one}`]);
+      expect(
+        within(screen.getByTestId(`icon-${one}`)).getByRole('radio', {
+          name: en[`categoryIcon.${one}`],
+        }),
+      ).toBeInTheDocument();
     }
 
     for (const one of CATEGORY_COLORS) {
-      expect(screen.getByTestId(`color-${one}`)).toHaveAccessibleName(en[`categoryColor.${one}`]);
+      expect(
+        within(screen.getByTestId(`color-${one}`)).getByRole('radio', {
+          name: en[`categoryColor.${one}`],
+        }),
+      ).toBeInTheDocument();
     }
   });
 

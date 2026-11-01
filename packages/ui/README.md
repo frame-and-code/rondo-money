@@ -53,7 +53,8 @@ defined there and consumed here.
 
 Every file under `components/ui` keeps the generator's markup, and a regeneration overwrites the
 whole file. A colour that feels wrong is a theme question, and the theme lives in
-`apps/web/src/app/globals.css`; a cursor is a rule in the same file, which is why the pointer on
+`apps/web/src/app/globals.css`, unless the colour is an opacity a primitive applies to a token,
+which only the primitive can change; a cursor is a rule in the same file, which is why the pointer on
 menu and option roles is written there rather than in a primitive.
 
 **Several files carry hand edits, and a regeneration drops them.** `popover.tsx` gained three parts
@@ -98,6 +99,12 @@ what a dialog gets. Before this they were a class string copied into every scree
 dialog, which is how two of them end up a pixel apart. A call site that writes a height or a
 radius by hand is either reaching for a size that does not exist yet, which belongs here, or
 drifting from the rest.
+
+Two hand edits hold the contrast and the focus the accessibility smoke asks for. The primary
+`Button` and a `Badge` rendered as a link darken to `bg-primary/90` under the pointer rather than `/80`, which keeps their text at the contrast
+[web](../../.claude/rules/web.md) asks for while hovered, and the combobox trigger carries the
+same `focus-visible` ring as `Button`, so a picker shows where the keyboard is. A regeneration
+of `button.tsx`, `badge.tsx` or `combobox.tsx` drops them too, so put them back afterwards.
 
 The one thing a new file gets afterwards is `eslint --fix` and Prettier. The generator writes
 double quotes, no semicolons and its own import order, all of which the gate refuses. That

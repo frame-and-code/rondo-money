@@ -19,7 +19,11 @@ export function LocaleSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="outline" size="icon" aria-label={t('common.localeSwitcher.ariaLabel')}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t('common.localeSwitcher.ariaLabel', { code: locale.toUpperCase() })}
+          >
             <span className="text-xs font-medium">{locale.toUpperCase()}</span>
           </Button>
         }

@@ -16,11 +16,15 @@ truth. Every app and package inherits from here, no local copies of rules.
   export default base;
   ```
 
-- `@rondo/config/eslint/ui-primitives` refuses a bare `<select>`, `<input>`, `<textarea>` or
-  `<dialog>` in JSX and names the `@rondo/ui` component to use instead. It is composed on top of
-  the base in `apps/web`, where the screens live. A field inside a composed control is no
-  exception: `InputGroupInput` and `InputGroupTextarea` are the ones that strip the primitive's
-  own frame, which is what a hand-written element was reaching for.
+- `@rondo/config/eslint/ui-primitives` refuses a bare `<select>`, `<input>`, `<textarea>`,
+  `<dialog>` or `<button>` in JSX and names the `@rondo/ui` component to use instead. It is
+  composed on top of the base in `apps/web`, where the screens live. A field inside a composed
+  control is no exception: `InputGroupInput` and `InputGroupTextarea` are the ones that strip the
+  primitive's own frame, which is what a hand-written element was reaching for. Two buttons
+  pass. One is handed to a primitive through `render={<button />}`, which styles it. The other
+  is an empty `<button data-slot="row-open" />` stretched over a row that holds controls of its
+  own, where the row draws the focus ring through `has-[…:focus-visible]` because the button
+  sits under the row's content.
 
 - `@rondo/config/eslint/ui-literals` turns on `rondo/no-ui-literals`, which refuses text with
   letters in JSX and a literal in an attribute someone reads (`aria-label`, `placeholder`,

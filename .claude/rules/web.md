@@ -56,7 +56,7 @@ specification.
 4. Look for the component in this order: `packages/ui`, the shadcn registry
    (`pnpm dlx shadcn@latest add <component>` into `packages/ui`, which stops for
    confirmation), then a composition of primitives. Never bare markup: the lint rule
-   `@rondo/config/eslint/ui-primitives` fails on a bare form control and names the primitive to
+   `@rondo/config/eslint/ui-primitives` fails on a bare form control or button and names the primitive to
    use. Reuse the tokens the neighbouring primitive carries rather than values that look close.
 5. Tailwind utilities and shadcn/ui components only. No hand-written CSS files and no bespoke
    re-implementation of a primitive shadcn/ui ships. An inline `style` is allowed for one thing:
@@ -73,6 +73,30 @@ specification.
    that failed shows [`FailureAlert`](../../apps/web/src/components/failure-alert.tsx): one
    title on every screen, and a body that says what to do next. A cause the reader cannot act
    on is never explained; a refusal the reader can fix names the fix.
+
+### Keyboard and a phone
+
+Every screen is used at 375 pixels wide and with the keyboard alone, so a screen is checked
+both ways before it is done.
+
+- Nothing scrolls sideways on a phone. A dialog becomes a drawer below the `md` breakpoint,
+  and both scroll inside their own maximum height, as the neighbouring one does.
+- A control is a primitive, which is what brings the focus ring. `ui-primitives` refuses a
+  bare `<button>`; the buttons it lets through, and why, are in
+  [`packages/config`](../../packages/config/README.md).
+- Where the element that takes focus cannot show a ring, the element that is seen draws it.
+  A row with an overlay button rings itself with `has-[[data-slot=row-open]:focus-visible]:`
+  as an inset ring, and a choice card wraps a hidden `RadioGroupItem` in a `Label` that rings
+  with `has-focus-visible:`. The radio is hidden with `HIDDEN_RADIO` from
+  [`field-shape.ts`](../../apps/web/src/components/field-shape.ts), because `sr-only` loses
+  to the primitive's own size and position.
+- Text keeps a contrast of 4.5:1 against the surface it sits on, in both themes and on hover.
+  A token is darkened in `globals.css` rather than overridden on one element.
+- A control's accessible name contains the text it shows. A card whose content is its label
+  takes its name from that content, and what it does goes into `aria-describedby`, as on
+  the category tile.
+- `Button` gives every `svg` without a `size-` class a size of its own. A card built on it
+  that draws a sized `svg` takes `[&_svg:not([class*='size-'])]:size-auto`.
 
 ### Colour on an amount
 

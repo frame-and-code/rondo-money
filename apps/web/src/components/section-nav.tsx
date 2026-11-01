@@ -1,5 +1,6 @@
 'use client';
 
+import { buttonVariants } from '@rondo/ui/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -49,8 +50,12 @@ export function SectionNav({ variant, collapsed = false }: SectionNavProps) {
                 href={href}
                 aria-current={isCurrent ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-11 flex-col items-center justify-start gap-0.5 text-xs leading-tight',
-                  isCurrent ? 'font-medium text-foreground' : 'text-muted-foreground',
+                  buttonVariants({ variant: 'ghost' }),
+                  'h-auto min-h-11 flex-col justify-start gap-0.5 rounded-md px-0 text-xs leading-tight whitespace-normal',
+                  'hover:bg-transparent active:not-aria-[haspopup]:translate-y-0 dark:hover:bg-transparent',
+                  isCurrent
+                    ? 'text-foreground hover:text-foreground font-medium'
+                    : 'text-muted-foreground hover:text-muted-foreground font-normal',
                 )}
               >
                 <span className="flex h-5 items-center">
@@ -68,11 +73,12 @@ export function SectionNav({ variant, collapsed = false }: SectionNavProps) {
               aria-current={isCurrent ? 'page' : undefined}
               aria-label={iconOnly ? label : undefined}
               className={cn(
-                'flex h-8 items-center gap-2 rounded-md text-sm transition-colors',
-                iconOnly ? 'w-8 justify-center' : 'w-full px-2',
+                buttonVariants({ variant: 'ghost', size: iconOnly ? 'icon' : 'default' }),
+                'gap-2 rounded-md',
+                iconOnly ? null : 'w-full justify-start px-2',
                 isCurrent
-                  ? 'bg-sidebar-foreground/10 font-medium text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  ? 'bg-sidebar-foreground/10 hover:bg-sidebar-foreground/10 dark:hover:bg-sidebar-foreground/10 text-sidebar-accent-foreground font-medium'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent dark:hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-normal',
               )}
             >
               <Icon className="size-4 shrink-0" />

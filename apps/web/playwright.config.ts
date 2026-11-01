@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export const WEB_URL = 'http://localhost:3001';
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
+const PHONE_SPECS = /\.mobile\.spec\.ts$/;
+
 export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.ts',
@@ -15,7 +17,23 @@ export default defineConfig({
     trace: 'on-first-retry',
     locale: 'en-US',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: PHONE_SPECS,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'phone',
+      testMatch: PHONE_SPECS,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+  ],
   webServer: [
     {
       command: 'pnpm --filter @rondo/api... build && pnpm --filter @rondo/api start',

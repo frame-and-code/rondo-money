@@ -3,7 +3,7 @@ import type { MessageKey, PluralKey } from './ru';
 
 export const pl: Record<MessageKey, string> = {
   'common.themeToggle.trigger': 'Przełącz motyw',
-  'common.localeSwitcher.ariaLabel': 'Zmień język',
+  'common.localeSwitcher.ariaLabel': '{{code}}, zmień język',
   'common.loading': 'Ładowanie…',
   'common.close': 'Zamknij',
   'common.failTitle': 'Wystąpił błąd',

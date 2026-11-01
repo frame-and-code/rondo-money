@@ -5,11 +5,11 @@ the feature**. A feature without tests doesn't count as done (no test debt accru
 
 ## Levels
 
-| Level       | What it checks                                             | Runner                                                                  | Where it lives                                                                                                      | Naming                  |
-| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Unit        | Domain logic, components, the lint rules, no DB or network | Jest (+ fast-check); `node --test` for the lint rules                   | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api`, `packages/config/eslint/*.test.mjs` | see Naming, below       |
-| Integration | API ↔ Postgres (from F0.3)                                 | Jest + supertest, fast-check where a claim holds over a space of inputs | `apps/api/test`                                                                                                     | `*.integration.spec.ts` |
-| E2E         | Browser → web → api → Postgres                             | Playwright                                                              | `apps/web/e2e`                                                                                                      | `*.spec.ts`             |
+| Level       | What it checks                                             | Runner                                                                  | Where it lives                                                                                                      | Naming                                     |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Unit        | Domain logic, components, the lint rules, no DB or network | Jest (+ fast-check); `node --test` for the lint rules                   | `packages/types/test`, `packages/api-client/test`, `apps/web/test`, `apps/api`, `packages/config/eslint/*.test.mjs` | see Naming, below                          |
+| Integration | API ↔ Postgres (from F0.3)                                 | Jest + supertest, fast-check where a claim holds over a space of inputs | `apps/api/test`                                                                                                     | `*.integration.spec.ts`                    |
+| E2E         | Browser → web → api → Postgres                             | Playwright                                                              | `apps/web/e2e`                                                                                                      | `*.spec.ts`, `*.mobile.spec.ts` on a phone |
 
 Plus one that is not a level of the app at all: **the agent guard hooks and `check-docs.mjs`**
 ([`.claude/hooks/hooks.test.sh`](../.claude/hooks/hooks.test.sh), `pnpm test:hooks`, a step
@@ -96,6 +96,22 @@ What follows from that:
   builds, so it fails there. Loudly, which is the point. The fix is a one-line declaration
   file of our own (`/// <reference types="next/image-types/global" />`), not committing the
   generated one back.
+
+### A desktop and a phone
+
+Playwright runs two projects of the same Chromium. A file named `*.mobile.spec.ts` runs only in
+`phone`, which is 375 pixels wide, mobile and touch, and every other spec runs only in
+`chromium` at desktop size. A scenario about the narrow layout goes in a `.mobile.spec.ts` file
+rather than resizing a desktop page, so the screen is drawn at phone width from its first frame
+and picks the drawers a phone gets.
+
+### Accessibility smoke
+
+[`a11y.spec.ts`](../apps/web/e2e/a11y.spec.ts) runs axe over the main screens, one open dialog
+and the dark theme. A violation of `critical` or `serious` impact fails the run, and the failure
+lists each node, with the colours and ratio axe measured for a contrast violation. It scans once the page's animations
+have finished, because a dialog fading in or a theme changing over reads as low contrast. Clerk's
+footer is left out: on the development instance it sits on a banner that production never shows.
 
 ### Auth in e2e (F1.1)
 

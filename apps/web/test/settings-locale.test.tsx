@@ -1,3 +1,4 @@
+import { Button } from '@rondo/ui/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -56,11 +57,7 @@ function SettingsProbe() {
 function Chooser({ to }: { to: Locale }) {
   const { language, choose } = useLanguageChoice();
 
-  return (
-    <button type="button" onClick={() => choose(to)}>
-      chooser:{language}
-    </button>
-  );
+  return <Button onClick={() => choose(to)}>chooser:{language}</Button>;
 }
 
 function App({ children }: { children?: ReactNode }) {
@@ -264,7 +261,11 @@ describe('SettingsLocaleSync', () => {
       </App>,
     );
 
-    await user.click(screen.getByRole('button', { name: en['common.localeSwitcher.ariaLabel'] }));
+    await user.click(
+      screen.getByRole('button', {
+        name: new RegExp(en['common.localeSwitcher.ariaLabel'].replace('{{code}}', '\\w+')),
+      }),
+    );
     await user.click(await screen.findByText(localeLabels.ru));
     expect(await screen.findByText(ru['nav.categories'])).toBeInTheDocument();
 

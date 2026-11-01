@@ -1,3 +1,4 @@
+import { Button } from '@rondo/ui/components/ui/button';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { StrictMode, useState } from 'react';
 
@@ -9,9 +10,7 @@ function Stage({ steps }: { steps: Array<[string, bigint]> }) {
 
   return (
     <>
-      <button type="button" onClick={() => setAt((step) => step + 1)}>
-        next
-      </button>
+      <Button onClick={() => setAt((step) => step + 1)}>next</Button>
       <RollingAmount data-testid="amount" amount={amount} value={value} />
     </>
   );

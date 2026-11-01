@@ -424,7 +424,9 @@ describe('moving between months', () => {
     await screen.findByText('Продукты');
     await user.click(
       screen.getByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
 
@@ -438,7 +440,9 @@ describe('moving between months', () => {
     await screen.findByText('Продукты');
     await user.click(
       screen.getByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
 
@@ -540,7 +544,9 @@ describe('moving between months', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
 
@@ -552,7 +558,7 @@ describe('moving between months', () => {
     await user.keyboard('{Escape}');
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Кафе'),
+        description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', 'Кафе')}`),
       }),
     );
 
@@ -567,7 +573,9 @@ describe('moving between months', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
     await user.click(await screen.findByRole('button', { name: ru['categories.manage'] }));
@@ -605,7 +613,9 @@ describe('moving between months', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
     await user.click(await screen.findByRole('button', { name: ru['categories.manage'] }));
@@ -621,7 +631,9 @@ describe('moving between months', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
     await user.click(await screen.findByRole('button', { name: ru['categories.manage'] }));
@@ -635,7 +647,9 @@ describe('moving between months', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
 
@@ -672,7 +686,9 @@ describe('moving between months', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
 
@@ -703,7 +719,9 @@ describe('moving between months', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
 
@@ -842,7 +860,9 @@ describe('a category closed for the month', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
     await user.click(screen.getByRole('button', { name: ru['categories.paidClose'] }));
@@ -868,7 +888,9 @@ describe('a category closed for the month', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Продукты'),
+        description: new RegExp(
+          `^${ru['categories.moveOpen'].replace('{{category}}', 'Продукты')}`,
+        ),
       }),
     );
     await user.click(screen.getByRole('button', { name: ru['categories.paidClose'] }));
@@ -885,7 +907,7 @@ describe('a category closed for the month', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Аренда'),
+        description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', 'Аренда')}`),
       }),
     );
     await user.click(screen.getByRole('button', { name: ru['categories.paidReopen'] }));
@@ -905,7 +927,7 @@ describe('a category closed for the month', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: ru['categories.moveOpen'].replace('{{category}}', 'Аренда'),
+        description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', 'Аренда')}`),
       }),
     );
     await user.click(screen.getByRole('button', { name: ru['categories.paidReopen'] }));
