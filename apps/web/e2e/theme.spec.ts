@@ -34,7 +34,7 @@ async function expectDarkBeforeTheApp(page: Page): Promise<void> {
 test.describe('a dark system', () => {
   test.use({ colorScheme: 'dark' });
 
-  test('the first frame is dark before any of the app has loaded', async ({ page }) => {
+  test('the page is dark with none of the app loaded', async ({ page }) => {
     await openWithoutTheApp(page);
     await expectDarkBeforeTheApp(page);
   });
@@ -43,7 +43,7 @@ test.describe('a dark system', () => {
 test.describe('a light system', () => {
   test.use({ colorScheme: 'light' });
 
-  test('a dark theme picked earlier wins over the system before any of the app has loaded', async ({
+  test('a dark theme picked earlier wins over the system with none of the app loaded', async ({
     page,
   }) => {
     await page.addInitScript(() => window.localStorage.setItem('theme', 'dark'));
@@ -51,8 +51,20 @@ test.describe('a light system', () => {
     await expectDarkBeforeTheApp(page);
   });
 
-  test('with nothing picked the first frame follows the light system', async ({ page }) => {
+  test('with nothing picked the page follows the light system', async ({ page }) => {
     await openWithoutTheApp(page);
     await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+
+    const { shown, dark } = await page.evaluate(() => {
+      const root = document.documentElement;
+      const seen = getComputedStyle(document.body).backgroundColor;
+
+      root.classList.add('dark');
+      const inDark = getComputedStyle(document.body).backgroundColor;
+      root.classList.remove('dark');
+
+      return { shown: seen, dark: inDark };
+    });
+    expect(shown).not.toBe(dark);
   });
 });

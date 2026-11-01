@@ -57,6 +57,7 @@ tester.run('ui-primitives', builtinRules.get('no-restricted-syntax'), {
       options,
       errors: 1,
     },
+    { code: 'const a = <Field render={<input id="name" />} />;', options, errors: 1 },
     { code: 'const a = <input id="name" />;', options, errors: 1 },
     { code: 'const a = <select id="pick" />;', options, errors: 1 },
   ],

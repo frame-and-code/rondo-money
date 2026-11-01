@@ -109,7 +109,7 @@ and picks the drawers a phone gets.
 
 [`a11y.spec.ts`](../apps/web/e2e/a11y.spec.ts) runs axe over the main screens, one open dialog
 and the dark theme. A violation of `critical` or `serious` impact fails the run, and the failure
-lists each node with the colours and ratio axe measured. It scans once the page's animations
+lists each node, with the colours and ratio axe measured for a contrast violation. It scans once the page's animations
 have finished, because a dialog fading in or a theme changing over reads as low contrast. Clerk's
 footer is left out: on the development instance it sits on a banner that production never shows.
 

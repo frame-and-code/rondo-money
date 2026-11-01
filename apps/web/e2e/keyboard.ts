@@ -1,10 +1,14 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 export async function tabTo(page: Page, target: Locator, limit = 80): Promise<void> {
+  const focused = (): Promise<boolean> =>
+    target.evaluate((node) => node === document.activeElement, null, { timeout: 5000 });
+
+  if (await focused()) return;
+
   for (let press = 0; press < limit; press += 1) {
-    if (await target.evaluate((node) => node === document.activeElement, null, { timeout: 5000 }))
-      return;
     await page.keyboard.press('Tab');
+    if (await focused()) return;
   }
 
   throw new Error(`Tab did not reach ${target.toString()} in ${limit} presses`);
@@ -41,17 +45,23 @@ const showsFocus = (target: Locator): Promise<boolean> =>
           outline: `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`,
         };
       });
+    const clear = (colour: string): boolean =>
+      /\/ 0\)|rgba\([^)]*,\s*0\)|transparent/u.test(colour);
     const opaqueRing = (shadow: string): boolean =>
       shadow.split(/,(?![^(]*\))/u).some((layer) => {
         const spread = Number.parseFloat(layer.match(/-?[\d.]+px/gu)?.[3] ?? '0');
-        const clear = /\/ 0\)|rgba\([^)]*,\s*0\)|transparent/u.test(layer);
 
-        return spread > 0 && !clear;
+        return spread > 0 && !clear(layer);
       });
     const thickOutline = (outline: string): boolean => {
       const [style, width] = outline.split(' ');
 
-      return style !== 'none' && style !== 'auto' && Number.parseFloat(width ?? '0') >= 2;
+      return (
+        style !== 'none' &&
+        style !== 'auto' &&
+        !clear(outline) &&
+        Number.parseFloat(width ?? '0') >= 2
+      );
     };
 
     const focused = look();

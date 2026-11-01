@@ -66,7 +66,10 @@ test('on a phone the sections sit at the bottom of the screen and a tap moves be
   const box = await accounts.boundingBox();
   const viewport = page.viewportSize();
   expect(box).not.toBeNull();
-  expect(box?.y ?? 0).toBeGreaterThan((viewport?.height ?? 0) / 2);
+  expect(viewport).not.toBeNull();
+  if (!box || !viewport) return;
+
+  expect(viewport.height - (box.y + box.height)).toBeLessThanOrEqual(viewport.height * 0.1);
 
   await accounts.click();
   await page.waitForURL('**/accounts');
