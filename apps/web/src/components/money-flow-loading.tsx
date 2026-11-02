@@ -73,7 +73,7 @@ export function MoneyFlowLoading(): ReactNode {
                   <span aria-hidden className="hidden size-8 shrink-0 sm:block" />
                 </header>
 
-                <ul className="bg-card border-border/60 flex flex-col overflow-hidden rounded-[24px] border">
+                <ul className="bg-card border-border dark:border-border/60 flex flex-col overflow-hidden rounded-[24px] border">
                   {day.rows.map((row) => (
                     <Row key={row} testId="loading-record" />
                   ))}

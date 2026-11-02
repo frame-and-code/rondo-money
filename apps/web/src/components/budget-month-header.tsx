@@ -22,14 +22,13 @@ import type { MoneyReader } from '@/lib/money';
 const RESTING = cn(
   'mb-5 flex flex-col gap-3',
   'md:bg-card md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-6',
-  'md:rounded-3xl md:px-6 md:py-5 md:shadow-xs md:ring-1 md:ring-black/5',
-  'md:dark:ring-white/10',
+  'md:rounded-3xl md:px-6 md:py-5 md:shadow-xs md:ring-1 md:ring-border',
 );
 
 const ISLAND_SHAPE = cn(
   'mx-auto flex w-2/3 min-w-2/3 flex-col items-center justify-center rounded-full px-6 py-2',
   'md:flex-row md:justify-between md:gap-4 md:py-1.5 md:pr-1.5 md:pl-1.5',
-  'ring-2 ring-neutral-300/85 dark:ring-neutral-800',
+  'ring-2 ring-border dark:ring-neutral-800',
   'shadow-[0_10px_32px_-10px_rgba(0,0,0,0.28)] dark:shadow-[0_10px_32px_-10px_rgba(0,0,0,0.55)]',
 );
 
@@ -42,7 +41,7 @@ const ISLAND_OVER_SHEET = cn(ISLAND_SHAPE, 'bg-background');
 
 const RESTING_AMOUNT = cn(
   'bg-card order-2 flex flex-col items-center gap-0.5 rounded-3xl px-6 py-5 shadow-xs',
-  'ring-1 ring-black/5 dark:ring-white/10',
+  'ring-1 ring-border',
   'md:order-1 md:items-start md:rounded-none md:bg-transparent md:p-0 md:shadow-none',
   'md:ring-0 md:dark:ring-0',
 );
@@ -232,7 +231,7 @@ export function BudgetMonthHeader({
         </div>
       </div>
 
-      <div className={RESTING}>
+      <div data-testid="month-header" className={RESTING}>
         <div
           className={cn('order-1 flex flex-col items-center gap-2 md:order-2 md:flex-row md:gap-2')}
         >
@@ -244,6 +243,7 @@ export function BudgetMonthHeader({
                 className={cn(
                   'bg-primary/10 text-primary inline-flex h-7 items-center gap-1.5 rounded-2xl',
                   'px-3 text-xs font-medium md:order-1',
+                  'ring-primary/70 ring-1 dark:ring-0',
                 )}
               >
                 <IconCalendar aria-hidden className="size-3.5" />

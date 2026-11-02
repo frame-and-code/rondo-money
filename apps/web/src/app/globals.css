@@ -69,8 +69,8 @@
   --animate-slide-in-right: slide-in-right 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-slide-in-left: slide-in-left 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 
-  --animate-page-in-right: page-in-right 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-page-in-left: page-in-left 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-page-in-right: page-in-right 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-page-in-left: page-in-left 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 
   @keyframes page-in-right {
     from {
@@ -159,7 +159,7 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -177,7 +177,7 @@
   --success: oklch(0.54 0.13 152);
   --warning: oklch(0.62 0.14 72);
   --track-alpha: 10%;
-  --border: oklch(0.92 0.004 286.32);
+  --border: oklch(0.9 0.003 286.32);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.705 0.015 286.067);
   --chart-1: oklch(0.828 0.111 230.318);
@@ -192,7 +192,7 @@
   --sidebar-primary-foreground: oklch(0.977 0.013 236.62);
   --sidebar-accent: oklch(0.967 0.001 286.375);
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-border: oklch(0.9 0.003 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
   --cat-scarlet: oklch(0.58 0.16 15);
   --cat-vermilion: oklch(0.58 0.16 30);

@@ -85,7 +85,7 @@ export function CategoryGroup({
       className={cn(
         'text-muted-foreground h-auto min-h-36 w-full flex-col gap-2 whitespace-normal',
         'rounded-[20px] border-dashed bg-transparent p-4',
-        'duration-[120ms] hover:bg-muted/60 hover:text-foreground',
+        'duration-[120ms] hover:bg-foreground/6 dark:hover:bg-muted/60 hover:text-foreground',
       )}
     >
       <span className="bg-muted flex size-10 items-center justify-center rounded-full">
@@ -102,7 +102,7 @@ export function CategoryGroup({
       style={{
         transform: CSS.Translate.toString(group.transform),
         transition: group.transition,
-        zIndex: group.isDragging ? 1 : 0,
+        zIndex: group.isDragging ? 1 : undefined,
       }}
       className={cn('relative flex flex-col gap-2.5', group.isDragging && 'opacity-90')}
     >
@@ -113,7 +113,7 @@ export function CategoryGroup({
             size="icon-sm"
             data-testid={`reorder-group-${id}`}
             aria-label={t('categories.reorderGroup', { group: name })}
-            className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted/60 cursor-grab rounded-lg duration-[120ms]"
+            className="text-muted-foreground/35 hover:text-muted-foreground hover:bg-foreground/6 dark:hover:bg-muted/60 cursor-grab rounded-lg duration-[120ms]"
             {...group.attributes}
             {...group.listeners}
           >
@@ -139,13 +139,17 @@ export function CategoryGroup({
           <span
             className={cn(
               'rounded-[10px] px-2 py-0.5 transition-colors duration-[120ms]',
-              'group-hover/fold:bg-muted',
+              'group-hover/fold:bg-foreground/6 dark:group-hover/fold:bg-muted',
             )}
           >
             {name}
           </span>
         </Button>
-        <div aria-hidden className="ms-1.5 h-px flex-1 bg-black/6 dark:bg-white/10" />
+        <div
+          aria-hidden
+          data-testid="group-rule"
+          className="ms-1.5 h-px flex-1 bg-foreground/12 dark:bg-white/10"
+        />
         <span className="ms-1.5 flex items-center gap-0.5">
           <Button
             variant="ghost"

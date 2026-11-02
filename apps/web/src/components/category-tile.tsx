@@ -54,7 +54,7 @@ export function CategoryTile({
   const hint = useId();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
-    disabled: !sortable ? true : category.paid ? { draggable: true } : false,
+    disabled: !sortable ? true : category.paid || moveOpen ? { draggable: true } : false,
   });
 
   const handle =
@@ -167,6 +167,7 @@ export function CategoryTile({
               aria-label={t('categories.goalExplain', { category: category.name })}
               onClick={(event) => event.stopPropagation()}
               openOnHover
+              disabled={moveOpen}
               delay={0}
               closeDelay={0}
             >
@@ -177,7 +178,7 @@ export function CategoryTile({
               side="top"
               align="center"
               sideOffset={10}
-              className="bg-background w-72 rounded-2xl border p-3.5 shadow-2xl"
+              className="bg-card dark:bg-background w-72 rounded-2xl border p-3.5 shadow-2xl"
             >
               <PopoverTitle className="sr-only">{category.name}</PopoverTitle>
               <TargetPanel target={target} money={money} color={category.color} />
@@ -234,21 +235,25 @@ export function CategoryTile({
 
   const look = cn(
     'bg-card flex h-full w-full cursor-pointer flex-col gap-3.5 rounded-[20px] p-4 pe-11 text-left',
-    'shadow-xs ring-1 ring-black/5 dark:ring-white/10',
+    'shadow-xs ring-1 ring-border',
     'transition-shadow duration-[120ms] hover:shadow-md hover:shadow-primary/15',
-    'hover:ring-primary/35',
-    'aria-expanded:ring-primary/60 aria-expanded:ring-2 aria-expanded:shadow-md',
+    'hover:ring-primary dark:hover:ring-primary/35',
+    'aria-expanded:ring-primary dark:aria-expanded:ring-primary/60 aria-expanded:ring-2 aria-expanded:shadow-md',
     'aria-expanded:shadow-primary/15',
     'focus-visible:ring-ring/60 outline-none focus-visible:ring-2',
-    attention && 'ring-warning/45 ring-2',
-    failed && 'ring-destructive/45',
+    attention && 'ring-warning dark:ring-warning/45 ring-2',
+    failed && 'ring-destructive dark:ring-destructive/45',
   );
 
   const frame = {
     ref: setNodeRef,
     'data-testid': `category-tile-${category.name}`,
     'data-paid': category.paid ? 'true' : undefined,
-    style: { transform: CSS.Translate.toString(transform), transition, zIndex: isDragging ? 1 : 0 },
+    style: {
+      transform: CSS.Translate.toString(transform),
+      transition,
+      zIndex: isDragging ? 1 : moveOpen && moveInPopover ? 45 : undefined,
+    },
     className: cn(
       'relative h-full',
       category.paid &&

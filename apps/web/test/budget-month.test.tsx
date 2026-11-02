@@ -792,7 +792,7 @@ describe('the categories below zero', () => {
     const card = screen
       .getByTestId('category-tile-Транспорт')
       .querySelector('[data-slot="category-tile"]');
-    expect(card).toHaveClass('ring-warning/45');
+    expect(card).toHaveClass('ring-warning');
     expect(screen.queryByTestId('reorder-Транспорт')).not.toBeInTheDocument();
     expect(screen.queryByTestId('reorder-group-g1')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: ru['categories.overspentShowAll'] })).toHaveAttribute(
