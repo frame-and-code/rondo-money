@@ -107,6 +107,19 @@ test('in the light theme a white card keeps a visible frame on the grey page, an
     page: getComputedStyle(document.body).backgroundColor,
   }));
   expect(fills.card).not.toBe(fills.page);
+  const cardPixel = await cardOf(page, 'Housing').evaluate((node) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('The browser gave no canvas to measure a colour on');
+
+    context.fillStyle = getComputedStyle(node).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+
+    return Array.from(context.getImageData(0, 0, 1, 1).data);
+  });
+  expect(cardPixel).toEqual([255, 255, 255, 255]);
   expect(await frameContrast(cardOf(page, 'Housing'))).toBeGreaterThanOrEqual(VISIBLE_FRAME);
   expect(await frameContrast(page.getByTestId('month-header'))).toBeGreaterThanOrEqual(
     VISIBLE_FRAME,
