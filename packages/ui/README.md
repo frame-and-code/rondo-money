@@ -100,7 +100,13 @@ dialog, which is how two of them end up a pixel apart. A call site that writes a
 radius by hand is either reaching for a size that does not exist yet, which belongs here, or
 drifting from the rest.
 
-Two hand edits hold the contrast and the focus the accessibility smoke asks for. The primary
+The light theme's surfaces rest on hand edits too. `card.tsx` draws its frame in `ring-border`, the
+outline `Button` and the `Calendar` fill with `bg-card`, and the ghost `Button` hovers with
+`bg-foreground/6`, which shows on the grey page and on a `bg-muted` control alike. The `Popover`
+backdrop sits at `z-40`, below the popup, so a card can stay above the blur
+([web](../../.claude/rules/web.md)). A regeneration drops these as well.
+
+Other hand edits hold the contrast and the focus the accessibility smoke asks for. The primary
 `Button` and a `Badge` rendered as a link darken to `bg-primary/90` under the pointer rather than `/80`, which keeps their text at the contrast
 [web](../../.claude/rules/web.md) asks for while hovered, and the combobox trigger carries the
 same `focus-visible` ring as `Button`, so a picker shows where the keyboard is. A regeneration

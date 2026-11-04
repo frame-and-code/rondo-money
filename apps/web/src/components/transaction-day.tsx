@@ -53,7 +53,7 @@ export function TransactionDay({
         </span>
       </header>
 
-      <ul className="bg-card border-border/60 flex flex-col overflow-hidden rounded-[24px] border">
+      <ul className="bg-card border-border dark:border-border/60 flex flex-col overflow-hidden rounded-[24px] border">
         {day.records.map((record) => (
           <TransactionRow
             key={record.id}
