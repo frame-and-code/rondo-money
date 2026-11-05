@@ -95,21 +95,21 @@ export function NewEntryDialog({
   const landed = (): void => {
     setFailed(null);
     setWritten((count) => count + 1);
-    void rereadEntries(queryClient);
   };
 
-  const settled = async (): Promise<void> => {
-    onClose();
-    await rereadEntries(queryClient);
+  const reread = (): void => {
+    void rereadEntries(queryClient);
   };
 
   const write = useMutation({
     ...transactionsControllerCreateMutation(),
+    onSuccess: reread,
     onError: (error) => setFailed(transactionFailure(error)),
   });
 
   const writeTransfer = useMutation({
     ...transfersControllerCreateMutation(),
+    onSuccess: reread,
     onError: (error) => setFailed(transferFailure(error)),
   });
 
@@ -128,7 +128,7 @@ export function NewEntryDialog({
           idempotencyKey: draft.idempotencyKey,
         },
       },
-      { onSuccess: andMore ? landed : settled },
+      { onSuccess: andMore ? landed : onClose },
     );
   };
 
@@ -145,44 +145,63 @@ export function NewEntryDialog({
           idempotencyKey: draft.idempotencyKey,
         },
       },
-      { onSuccess: andMore ? landed : settled },
+      { onSuccess: andMore ? landed : onClose },
     );
   };
 
   const open = accounts.data?.accounts;
 
-  if (money === null || today === null || open === undefined || view.data === undefined) {
+  const unread =
+    (budgets.isError && budgets.data === undefined) ||
+    (accounts.isError && open === undefined) ||
+    (view.isError && view.data === undefined);
+
+  const entry = (): ReactNode => {
+    if (money === null || today === null || open === undefined || view.data === undefined) {
+      return null;
+    }
+
+    const groups = pickableGroups(view.data);
+    const startsOn = open.find((one) => one.id === prefer.accountId) ?? open[0];
+
+    return (
+      <TransactionDialog
+        key={prefer.categoryId ?? 'none'}
+        record={null}
+        accounts={open}
+        groups={groups}
+        kept={null}
+        payees={payees.data?.payees ?? []}
+        money={money}
+        today={today}
+        defaults={{
+          accountId: startsOn?.id ?? '',
+          date: on ?? last.date ?? today,
+          categoryId: offeredCategory(groups, prefer.categoryId ?? last.categoryId),
+          payee: prefer.categoryId === null ? last.payee : null,
+        }}
+        failed={failed}
+        busy={write.isPending || writeTransfer.isPending}
+        written={written}
+        onSave={save}
+        onTransfer={saveTransfer}
+        onCorrectOpening={nothing}
+        onDelete={nothing}
+      />
+    );
+  };
+
+  const surface = unread ? (
+    <p role="alert" className="text-destructive text-sm">
+      {t('transactions.unavailable')}
+    </p>
+  ) : (
+    entry()
+  );
+
+  if (surface === null) {
     return null;
   }
-
-  const groups = pickableGroups(view.data);
-  const startsOn = open.find((one) => one.id === prefer.accountId) ?? open[0];
-
-  const surface = (
-    <TransactionDialog
-      key={prefer.categoryId ?? 'none'}
-      record={null}
-      accounts={open}
-      groups={groups}
-      kept={null}
-      payees={payees.data?.payees ?? []}
-      money={money}
-      today={today}
-      defaults={{
-        accountId: startsOn?.id ?? '',
-        date: on ?? last.date ?? today,
-        categoryId: offeredCategory(groups, prefer.categoryId ?? last.categoryId),
-        payee: prefer.categoryId === null ? last.payee : null,
-      }}
-      failed={failed}
-      busy={write.isPending || writeTransfer.isPending}
-      written={written}
-      onSave={save}
-      onTransfer={saveTransfer}
-      onCorrectOpening={nothing}
-      onDelete={nothing}
-    />
-  );
 
   const close = (next: boolean): void => {
     if (!next) onClose();

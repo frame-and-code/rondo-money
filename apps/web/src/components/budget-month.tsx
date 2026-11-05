@@ -743,7 +743,7 @@ export function BudgetMonth() {
                     name: draft.name,
                     ...(draft.icon === null ? {} : { icon: draft.icon }),
                     ...(draft.color === null ? {} : { color: draft.color }),
-                    ...(draft.defaultAccountId === editing.defaultAccountId
+                    ...(draft.defaultAccountId === undefined
                       ? {}
                       : { defaultAccountId: draft.defaultAccountId }),
                     idempotencyKey: draft.idempotencyKey,

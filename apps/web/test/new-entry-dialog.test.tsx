@@ -13,6 +13,9 @@ const onClose = jest.fn();
 
 let releaseAccounts: (() => void) | null = null;
 let holdAccounts = false;
+let failAccounts = false;
+let releaseWrite: (() => void) | null = null;
+let holdWrite = false;
 
 const budget = {
   id: 'b1',
@@ -96,11 +99,13 @@ jest.mock('@rondo/api-client/react-query', () => ({
   accountsControllerListOptions: () => ({
     queryKey: [{ _id: 'accountsControllerList' }],
     queryFn: () =>
-      holdAccounts
-        ? new Promise((resolve) => {
-            releaseAccounts = () => resolve(accounts);
-          })
-        : Promise.resolve(accounts),
+      failAccounts
+        ? Promise.reject(new Error('the accounts could not be read'))
+        : holdAccounts
+          ? new Promise((resolve) => {
+              releaseAccounts = () => resolve(accounts);
+            })
+          : Promise.resolve(accounts),
   }),
   accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList' }],
   budgetViewControllerReadOptions: () => ({
@@ -118,7 +123,11 @@ jest.mock('@rondo/api-client/react-query', () => ({
     mutationFn: (options: unknown) => {
       written.push(options);
 
-      return Promise.resolve({});
+      return holdWrite
+        ? new Promise((resolve) => {
+            releaseWrite = () => resolve({});
+          })
+        : Promise.resolve({});
     },
   }),
   transfersControllerCreateMutation: () => ({
@@ -130,8 +139,10 @@ jest.mock('@rondo/api-client/react-query', () => ({
   }),
 }));
 
+let client = new QueryClient();
+
 const draw = (prefer: { categoryId: string | null; accountId: string | null }) => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   return render(
     <QueryClientProvider client={client}>
@@ -152,6 +163,9 @@ beforeEach(() => {
   transferred.length = 0;
   holdAccounts = false;
   releaseAccounts = null;
+  failAccounts = false;
+  holdWrite = false;
+  releaseWrite = null;
   jest.clearAllMocks();
   window.localStorage.clear();
 });
@@ -267,5 +281,33 @@ describe('the form a transaction is added in from a category', () => {
 
     await waitFor(() => expect(transferred).toHaveLength(1));
     expect(transferred[0]).toMatchObject({ body: { fromAccountId: 'a2', toAccountId: 'a1' } });
+  });
+
+  it('says the form could not be read rather than opening nothing', async () => {
+    failAccounts = true;
+    draw({ categoryId: 'c1', accountId: 'a2' });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(en['transactions.unavailable']);
+  });
+
+  it('rereads the balances and the feed after a save, even when the form was closed before it landed', async () => {
+    const user = userEvent.setup();
+    holdWrite = true;
+    const view = draw({ categoryId: 'c1', accountId: 'a2' });
+
+    const form = await theForm();
+    await user.type(within(form).getByLabelText(en['transactions.amountLabel']), '12');
+    await user.click(within(form).getByRole('button', { name: en['transactions.save'] }));
+    await waitFor(() => expect(releaseWrite).not.toBeNull());
+
+    const reread = jest.spyOn(client, 'invalidateQueries');
+    view.unmount();
+    releaseWrite?.();
+
+    await waitFor(() =>
+      expect(reread).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: [{ _id: 'accountsControllerList' }] }),
+      ),
+    );
   });
 });

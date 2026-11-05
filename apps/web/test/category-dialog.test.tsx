@@ -291,6 +291,65 @@ describe('the default account of a category', () => {
     expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ defaultAccountId: null }));
   });
 
+  it('leaves the account out of a save when the user never touched it, even if the category moved on meanwhile', async () => {
+    const user = userEvent.setup();
+    const held = {
+      id: 'c1',
+      name: 'Кафе',
+      groupId: 'g1',
+      icon: null,
+      color: null,
+      defaultAccountId: 'a2',
+    };
+    const { rerender } = draw(held);
+
+    rerender(
+      <LocaleProvider>
+        <CategoryDialog
+          category={{ ...held, defaultAccountId: 'a1' }}
+          failed={null}
+          groupId="g1"
+          groups={GROUPS}
+          accounts={ACCOUNTS}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      </LocaleProvider>,
+    );
+    await user.type(screen.getByLabelText(en['categories.nameLabel']), ' и чай');
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ name: 'Кафе и чай' }));
+    expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('defaultAccountId');
+  });
+
+  it('does not call an account it has not read yet "no account"', () => {
+    render(
+      <LocaleProvider>
+        <CategoryDialog
+          category={{
+            id: 'c1',
+            name: 'Кафе',
+            groupId: 'g1',
+            icon: null,
+            color: null,
+            defaultAccountId: 'a2',
+          }}
+          failed={null}
+          groupId="g1"
+          groups={GROUPS}
+          accounts={[]}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    ).not.toHaveTextContent(en['categories.defaultAccountNone']);
+  });
+
   it('is not asked when a category is created', () => {
     draw(null);
 

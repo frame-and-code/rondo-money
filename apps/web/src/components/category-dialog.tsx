@@ -37,7 +37,7 @@ export interface CategoryDraft {
   groupId: string;
   icon: CategoryIcon | null;
   color: CategoryColor | null;
-  defaultAccountId: string | null;
+  defaultAccountId?: string | null;
   idempotencyKey: string;
 }
 
@@ -78,6 +78,7 @@ export function CategoryDialog({
   const [icon, setIcon] = useState<CategoryIcon | null>(category?.icon ?? null);
   const [color, setColor] = useState<CategoryColor | null>(category?.color ?? null);
   const [account, setAccount] = useState(category?.defaultAccountId ?? NO_ACCOUNT);
+  const [startedWith] = useState(account);
   const accountField = useId();
   const [picking, setPicking] = useState(false);
   const field = useRef<HTMLInputElement>(null);
@@ -242,15 +243,15 @@ export function CategoryDialog({
             >
               <SelectValue>
                 {(picked: string) => {
-                  const named = accounts.find((one) => one.id === picked);
+                  if (picked === NO_ACCOUNT) {
+                    return (
+                      <span className="text-muted-foreground">
+                        {t('categories.defaultAccountNone')}
+                      </span>
+                    );
+                  }
 
-                  return named === undefined ? (
-                    <span className="text-muted-foreground">
-                      {t('categories.defaultAccountNone')}
-                    </span>
-                  ) : (
-                    named.name
-                  );
+                  return accounts.find((one) => one.id === picked)?.name ?? null;
                 }}
               </SelectValue>
             </SelectTrigger>
@@ -283,7 +284,9 @@ export function CategoryDialog({
               groupId,
               icon,
               color,
-              defaultAccountId: account === NO_ACCOUNT ? null : account,
+              ...(account === startedWith
+                ? {}
+                : { defaultAccountId: account === NO_ACCOUNT ? null : account }),
               idempotencyKey: key,
             })
           }
