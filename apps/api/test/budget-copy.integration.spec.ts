@@ -169,6 +169,74 @@ describe('POST /budgets with a budget to start from (integration)', () => {
   const seedTemplate = (userId: string, over: Record<string, unknown> = {}) =>
     fullTemplate(harness, userId, over);
 
+  describe('the default account', () => {
+    const defaultsOf = async (budgetId: string) => {
+      const categories = await harness.prisma.category.findMany({
+        where: { budgetId },
+        orderBy: { sortOrder: 'asc' },
+      });
+      const accounts = await harness.prisma.account.findMany({ where: { budgetId } });
+      const named = new Map(accounts.map((account) => [account.id, account.name]));
+
+      return categories.map((category) => ({
+        name: category.name,
+        account:
+          category.defaultAccountId === null
+            ? null
+            : (named.get(category.defaultAccountId) ?? 'foreign'),
+      }));
+    };
+
+    it('points each copied category at the copy of the account its original named', async () => {
+      const budget = await harness.seedBudget(USER, { name: 'Исходный' });
+      const group = await harness.seedGroup(USER, budget.id, 'Еда', 0);
+      const food = await harness.seedCategory(USER, budget.id, group.id, 'Продукты', 0);
+      const cafe = await harness.seedCategory(USER, budget.id, group.id, 'Кафе', 1);
+      await harness.seedCategory(USER, budget.id, group.id, 'Подарки', 2);
+      await seedOpened(USER, budget.id, 'Карта', 0n);
+      await seedOpened(USER, budget.id, 'Старая', 0n, { archivedAt: new Date() });
+      const cash = await seedOpened(USER, budget.id, 'Наличные', 0n);
+      await harness.prisma.category.updateMany({
+        where: { id: { in: [food.id, cafe.id] } },
+        data: { defaultAccountId: cash.id },
+      });
+
+      const response = await copy(USER, budget.id);
+
+      expect(response.status).toBe(201);
+      await expect(defaultsOf(idOf(response.body))).resolves.toEqual([
+        { name: 'Продукты', account: 'Наличные' },
+        { name: 'Кафе', account: 'Наличные' },
+        { name: 'Подарки', account: null },
+      ]);
+    });
+
+    it('leaves the account out when the original named an archived one', async () => {
+      const budget = await harness.seedBudget(USER, { name: 'Исходный' });
+      const group = await harness.seedGroup(USER, budget.id, 'Еда', 0);
+      const food = await harness.seedCategory(USER, budget.id, group.id, 'Продукты', 0);
+      const cafe = await harness.seedCategory(USER, budget.id, group.id, 'Кафе', 1);
+      const card = await seedOpened(USER, budget.id, 'Карта', 0n);
+      const shut = await seedOpened(USER, budget.id, 'Старая', 0n, { archivedAt: new Date() });
+      await harness.prisma.category.update({
+        where: { id: food.id },
+        data: { defaultAccountId: shut.id },
+      });
+      await harness.prisma.category.update({
+        where: { id: cafe.id },
+        data: { defaultAccountId: card.id },
+      });
+
+      const response = await copy(USER, budget.id);
+
+      expect(response.status).toBe(201);
+      await expect(defaultsOf(idOf(response.body))).resolves.toEqual([
+        { name: 'Продукты', account: null },
+        { name: 'Кафе', account: 'Карта' },
+      ]);
+    });
+  });
+
   describe('what the copy carries', () => {
     it('carries the groups, the categories with their look, the accounts, the assets and the liabilities', async () => {
       const { budget } = await seedTemplate(USER);

@@ -1,11 +1,12 @@
 import { clerk, setupClerkTestingToken } from '@clerk/testing/playwright';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { en } from '../src/i18n/messages/en';
 
 import { assign, availableOf, cardOf, moveTo } from './budget';
 import { hasClerkKeys, PHONE_NAV_TEST_EMAIL, PHONE_TEST_EMAIL, recreateTestUser } from './clerk';
 import { onboard, submitAccount, submitBudget } from './onboarding';
+import { expectNoSidewaysScroll, expectOnScreen } from './phone';
 
 test.skip(!process.env.CI && !hasClerkKeys(), 'Clerk keys are not configured');
 
@@ -14,41 +15,6 @@ async function signIn(page: Page, email: string): Promise<void> {
   await setupClerkTestingToken({ page });
   await page.goto('/sign-in');
   await clerk.signIn({ page, signInParams: { strategy: 'email_code', identifier: email } });
-}
-
-async function expectNoSidewaysScroll(page: Page): Promise<void> {
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const scrolling = Array.from(document.querySelectorAll('*')).filter((element) =>
-          ['auto', 'scroll'].includes(getComputedStyle(element).overflowX),
-        );
-        const wide = [document.documentElement, ...scrolling].filter(
-          (element) => element.scrollWidth - element.clientWidth > 1,
-        );
-
-        return wide.map((element) => `${element.tagName.toLowerCase()}.${element.className}`);
-      }),
-    )
-    .toEqual([]);
-}
-
-async function expectOnScreen(page: Page, surface: Locator): Promise<void> {
-  await expect(surface).toBeVisible();
-  await expect
-    .poll(async () => {
-      const viewport = page.viewportSize();
-      const box = await surface.boundingBox();
-      if (!viewport || !box) return false;
-
-      return (
-        box.x >= 0 &&
-        box.y >= 0 &&
-        box.x + box.width <= viewport.width &&
-        box.y + box.height <= viewport.height
-      );
-    })
-    .toBe(true);
 }
 
 const surface = (page: Page) => page.getByRole('dialog').filter({ visible: true }).last();

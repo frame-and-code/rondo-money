@@ -12,6 +12,7 @@ export interface CategoryTreeRecord {
   categorySortOrder: number | null;
   icon: string | null;
   color: string | null;
+  defaultAccountId: string | null;
   targetId: string | null;
   targetKind: TargetKind | null;
   targetAmount: bigint | null;
@@ -21,6 +22,7 @@ export interface CategoryTreeRecord {
 }
 
 export interface OpenAccountRecord {
+  id: string;
   name: string;
   type: AccountType;
 }
@@ -39,7 +41,7 @@ export function categoryTreeStatement(scope: RawQueryScope, budgetId: string): P
       WHERE g.user_id = ${userId} AND g.budget_id = ${budgetId}::uuid AND g.hidden_at IS NULL
     ),
     shown_category AS (
-      SELECT c.id, c.group_id, c.name, c.sort_order, c.icon, c.color
+      SELECT c.id, c.group_id, c.name, c.sort_order, c.icon, c.color, c.default_account_id
       FROM category c
       WHERE c.user_id = ${userId} AND c.budget_id = ${budgetId}::uuid AND c.hidden_at IS NULL
     ),
@@ -57,6 +59,7 @@ export function categoryTreeStatement(scope: RawQueryScope, budgetId: string): P
       sc.sort_order AS "categorySortOrder",
       sc.icon AS "icon",
       sc.color AS "color",
+      sc.default_account_id AS "defaultAccountId",
       goal.id AS "targetId",
       goal.kind::text AS "targetKind",
       goal.amount AS "targetAmount",
@@ -72,7 +75,7 @@ export function categoryTreeStatement(scope: RawQueryScope, budgetId: string): P
 
 export function openAccountsStatement(scope: RawQueryScope, budgetId: string): Prisma.Sql {
   return Prisma.sql`
-    SELECT a.name AS "name", a.type::text AS "type"
+    SELECT a.id AS "id", a.name AS "name", a.type::text AS "type"
     FROM account a
     WHERE a.user_id = ${scope.userId} AND a.budget_id = ${budgetId}::uuid
       AND a.archived_at IS NULL

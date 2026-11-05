@@ -248,6 +248,7 @@ export function CategoryTile({
   const frame = {
     ref: setNodeRef,
     'data-testid': `category-tile-${category.name}`,
+    'data-category-id': category.id,
     'data-paid': category.paid ? 'true' : undefined,
     style: {
       transform: CSS.Translate.toString(transform),

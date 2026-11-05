@@ -32,6 +32,7 @@ export interface BudgetViewRow {
   targetFunded: bigint | null;
   targetAssignedBefore: bigint | null;
   targetActivityBefore: bigint | null;
+  defaultAccountId: string | null;
 }
 
 export interface BudgetViewOptions {
@@ -142,7 +143,8 @@ export function budgetViewStatement(
       COALESCE(tsp.activity_before, 0)::bigint AS "targetActivityBefore",
       COALESCE(g.hidden_at < ${hiddenFrom}, false) AS "groupHidden",
       COALESCE(c.hidden_at < ${hiddenFrom}, false) AS "categoryHidden",
-      (paid.id IS NOT NULL) AS "paid"
+      (paid.id IS NOT NULL) AS "paid",
+      da.id AS "defaultAccountId"
     FROM pool
     LEFT JOIN category_group g
       ON g.user_id = ${userId}
@@ -163,6 +165,11 @@ export function budgetViewStatement(
       AND paid.user_id = ${userId}
       AND paid.budget_id = ${budgetId}::uuid
       AND paid.month = ${monthStart}::date
+    LEFT JOIN account da
+      ON da.id = c.default_account_id
+      AND da.user_id = ${userId}
+      AND da.budget_id = ${budgetId}::uuid
+      AND da.archived_at IS NULL
     ORDER BY g.sort_order, g.name, c.sort_order, c.name
   `;
 }

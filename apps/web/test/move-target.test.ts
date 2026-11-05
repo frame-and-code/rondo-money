@@ -21,6 +21,7 @@ const category = (
   availableAllTime: available,
   hidden: false,
   paid: false,
+  defaultAccountId: null,
   target: null,
 });
 

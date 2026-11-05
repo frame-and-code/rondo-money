@@ -37,14 +37,18 @@ export interface CategoryDraft {
   groupId: string;
   icon: CategoryIcon | null;
   color: CategoryColor | null;
+  defaultAccountId?: string | null;
   idempotencyKey: string;
 }
+
+const NO_ACCOUNT = 'none';
 
 export function CategoryDialog({
   category,
   groupId: into,
   failed,
   groups,
+  accounts,
   onSave,
   onCancel,
 }: {
@@ -54,10 +58,12 @@ export function CategoryDialog({
     groupId: string;
     icon: CategoryIcon | null;
     color: CategoryColor | null;
+    defaultAccountId: string | null;
   } | null;
   groupId: string;
   failed: MessageKey | null;
   groups: { id: string; name: string }[];
+  accounts: { id: string; name: string }[];
   onSave: (draft: CategoryDraft) => void;
   onCancel: () => void;
 }) {
@@ -71,6 +77,9 @@ export function CategoryDialog({
   const [groupId, setGroupId] = useState(category?.groupId ?? into);
   const [icon, setIcon] = useState<CategoryIcon | null>(category?.icon ?? null);
   const [color, setColor] = useState<CategoryColor | null>(category?.color ?? null);
+  const [account, setAccount] = useState(category?.defaultAccountId ?? NO_ACCOUNT);
+  const [startedWith] = useState(account);
+  const accountField = useId();
   const [picking, setPicking] = useState(false);
   const field = useRef<HTMLInputElement>(null);
 
@@ -218,6 +227,48 @@ export function CategoryDialog({
         </Select>
       </div>
 
+      {category === null ? null : (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={accountField}>{t('categories.defaultAccountLabel')}</Label>
+          <Select
+            value={account}
+            onValueChange={(next: string | null) => {
+              if (next !== null) setAccount(next);
+            }}
+          >
+            <SelectTrigger
+              id={accountField}
+              aria-label={t('categories.defaultAccountLabel')}
+              className="w-full"
+            >
+              <SelectValue>
+                {(picked: string) => {
+                  if (picked === NO_ACCOUNT) {
+                    return (
+                      <span className="text-muted-foreground">
+                        {t('categories.defaultAccountNone')}
+                      </span>
+                    );
+                  }
+
+                  return accounts.find((one) => one.id === picked)?.name ?? null;
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_ACCOUNT} className="text-muted-foreground">
+                {t('categories.defaultAccountNone')}
+              </SelectItem>
+              {accounts.map((one) => (
+                <SelectItem key={one.id} value={one.id}>
+                  {one.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {failed === null ? null : <FailureAlert>{t(failed)}</FailureAlert>}
 
       <div className="flex flex-wrap justify-end gap-2">
@@ -227,7 +278,18 @@ export function CategoryDialog({
         <Button
           type="button"
           disabled={!ready}
-          onClick={() => onSave({ name: name.trim(), groupId, icon, color, idempotencyKey: key })}
+          onClick={() =>
+            onSave({
+              name: name.trim(),
+              groupId,
+              icon,
+              color,
+              ...(account === startedWith
+                ? {}
+                : { defaultAccountId: account === NO_ACCOUNT ? null : account }),
+              idempotencyKey: key,
+            })
+          }
         >
           {t('categories.save')}
         </Button>

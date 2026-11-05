@@ -103,6 +103,7 @@ function assemble(rows: BudgetViewRow[], month: CalendarMonth): BudgetViewGroupR
         hidden: row.categoryHidden,
         paid: row.paid,
         target: targetOf(row, month),
+        defaultAccountId: row.defaultAccountId,
       });
     }
   }

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type Category, type Prisma } from '@rondo/db';
 import { isCategoryColor, isCategoryIcon } from '@rondo/types';
 
+import { heldOpenAccount } from '@/accounts/open-accounts';
 import { availableOf, lockCategories, refuseWhatStillHoldsMoney } from '@/categories/available';
 import {
   CreateCategoryDto,
@@ -24,6 +25,7 @@ function serialize(category: Category): Prisma.JsonObject {
     icon: category.icon,
     color: category.color,
     hidden: category.hiddenAt !== null,
+    defaultAccountId: category.defaultAccountId,
   };
 }
 
@@ -32,7 +34,7 @@ function decode(stored: Prisma.JsonValue): CategoryResponse {
     throw new Error(`A stored category is not an object: ${JSON.stringify(stored)}`);
   }
 
-  const { id, groupId, name, sortOrder, icon, color, hidden } = stored;
+  const { id, groupId, name, sortOrder, icon, color, hidden, defaultAccountId } = stored;
   if (
     typeof id !== 'string' ||
     typeof groupId !== 'string' ||
@@ -51,6 +53,7 @@ function decode(stored: Prisma.JsonValue): CategoryResponse {
     icon: isCategoryIcon(icon) ? icon : null,
     color: isCategoryColor(color) ? color : null,
     hidden,
+    defaultAccountId: typeof defaultAccountId === 'string' ? defaultAccountId : null,
   };
 }
 
@@ -111,12 +114,20 @@ export class CategoriesService {
           name: body.name ?? null,
           icon: body.icon ?? null,
           color: body.color ?? null,
+          defaultAccountId: body.defaultAccountId,
         },
         decode,
       },
       async (tx) => {
         await this.activeBudget(tx, intended.id);
         const current = await this.knownCategory(tx, id);
+
+        const account = body.defaultAccountId;
+        if (typeof account === 'string' && account !== current.defaultAccountId) {
+          await heldOpenAccount(this.raw, tx, intended.id, account, (reason) =>
+            refuse(reason, `Account ${account} cannot be the default of category ${id}.`),
+          );
+        }
 
         const moving = body.groupId !== undefined && body.groupId !== current.groupId;
         if (moving && body.groupId !== undefined) {
@@ -129,6 +140,9 @@ export class CategoriesService {
             ...(body.name === undefined ? {} : { name: body.name }),
             ...(body.icon === undefined ? {} : { icon: body.icon }),
             ...(body.color === undefined ? {} : { color: body.color }),
+            ...(body.defaultAccountId === undefined
+              ? {}
+              : { defaultAccountId: body.defaultAccountId }),
             ...(moving && body.groupId !== undefined
               ? {
                   groupId: body.groupId,

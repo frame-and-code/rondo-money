@@ -4,7 +4,12 @@ import { expect, test } from '@playwright/test';
 import { en } from '../src/i18n/messages/en';
 
 import { assign, availableOf, cardOf } from './budget';
-import { hasClerkKeys, MANAGE_TEST_EMAIL, recreateTestUser } from './clerk';
+import {
+  DEFAULT_ACCOUNT_TEST_EMAIL,
+  hasClerkKeys,
+  MANAGE_TEST_EMAIL,
+  recreateTestUser,
+} from './clerk';
 import { onboard } from './onboarding';
 
 test.skip(!process.env.CI && !hasClerkKeys(), 'Clerk keys are not configured');
@@ -101,4 +106,36 @@ test('a category is created, emptied, hidden, and another is dragged into a new 
 
   expect(after).not.toEqual(before);
   expect([...after].sort()).toEqual([...before].sort());
+});
+
+test('a category takes a default account in its own dialog, and shows it when opened again', async ({
+  page,
+}) => {
+  await recreateTestUser(DEFAULT_ACCOUNT_TEST_EMAIL);
+  await setupClerkTestingToken({ page });
+
+  await page.goto('/sign-in');
+  await clerk.signIn({
+    page,
+    signInParams: { strategy: 'email_code', identifier: DEFAULT_ACCOUNT_TEST_EMAIL },
+  });
+
+  await onboard(page);
+
+  const openTheDialog = async () => {
+    await cardOf(page, 'Groceries').click();
+    await page.getByRole('button', { name: en['categories.manage'] }).click();
+    await page.getByRole('button', { name: en['categories.edit'], exact: true }).click();
+
+    return page.getByRole('combobox', { name: en['categories.defaultAccountLabel'] });
+  };
+
+  const field = await openTheDialog();
+  await expect(field).toContainText(en['categories.defaultAccountNone']);
+  await field.click();
+  await page.getByRole('option', { name: 'Main card' }).click();
+  await page.getByRole('button', { name: en['categories.save'] }).click();
+  await expect(field).toBeHidden();
+
+  await expect(await openTheDialog()).toContainText('Main card');
 });

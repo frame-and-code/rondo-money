@@ -463,6 +463,10 @@ export type BudgetViewCategoryResponse = {
      * The goal this category is running in the month that was asked about, and null when it runs none. A category keeps its goals, so which one appears here is decided by the month rather than by which was written last.
      */
     target: BudgetViewTargetResponse | null;
+    /**
+     * The open account a new transaction from this category starts on, or null when it names none or the one it names is archived.
+     */
+    defaultAccountId: string | null;
 };
 
 export type BudgetViewGroupResponse = {
@@ -520,7 +524,7 @@ export type CategoryGroupResponse = {
 /**
  * Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
-export type CategoryRefusal = 'ALREADY_HIDDEN' | 'AVAILABLE_NOT_ZERO' | 'CATEGORY_HIDDEN' | 'DUE_MONTH_PAST' | 'GROUP_HIDDEN' | 'NO_ACTIVE_BUDGET' | 'NO_TARGET' | 'UNKNOWN_CATEGORY' | 'UNKNOWN_GROUP';
+export type CategoryRefusal = 'ACCOUNT_ARCHIVED' | 'ALREADY_HIDDEN' | 'AVAILABLE_NOT_ZERO' | 'CATEGORY_HIDDEN' | 'DUE_MONTH_PAST' | 'GROUP_HIDDEN' | 'NO_ACTIVE_BUDGET' | 'NO_TARGET' | 'UNKNOWN_ACCOUNT' | 'UNKNOWN_CATEGORY' | 'UNKNOWN_GROUP';
 
 export type CategoryRefusedResponse = {
     statusCode: number;
@@ -628,6 +632,10 @@ export type CategoryResponse = {
      * Whether the category carries a hidden marker at all.
      */
     hidden: boolean;
+    /**
+     * The account a new transaction from this category starts on, or null.
+     */
+    defaultAccountId: string | null;
 };
 
 export type ReorderCategoriesDto = {
@@ -650,6 +658,10 @@ export type UpdateCategoryDto = {
      * Minted once when the form opens, never per request. A key per request makes a double click two writes again.
      */
     idempotencyKey: string;
+    /**
+     * The open account a new transaction from this category starts on. Left out, it stays as it is; null takes it off.
+     */
+    defaultAccountId?: string | null;
     /**
      * The group to move it into.
      */

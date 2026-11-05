@@ -7,7 +7,7 @@ generator and an empty `0_init`. `UserSettings` is the first table, then the dom
 arrives in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
 `Transaction`, `IdempotencyKey`. `Assignment` joins them later, with the two columns that give
 a category a look of its own, then `CategoryTarget`, then `CategoryPaidMonth`, then `Asset`
-and `Liability`. No table carries `deletedAt`.
+and `Liability`, then the default account a category offers. No table carries `deletedAt`.
 ADR-006 dropped soft-delete and the change-log journal alike.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum with
@@ -72,6 +72,12 @@ answers or reads and writes inside its own transaction instead.
 `Category` carries an optional `icon` and `color`, each a short name of at most 32 characters
 rather than a component name or a hex value. A group carries neither, and a category without
 them is a normal row.
+
+`Category` may name a default account (`defaultAccountId`), the one a new transaction started
+from that category opens on. It points at the account through `(default_account_id, budget_id)`
+with `ON DELETE RESTRICT`, so an account cannot vanish from under the category that names it;
+erasing a caller deletes categories before accounts. Archiving the account leaves the column
+alone, and the month view reads an archived default as none.
 
 `CategoryTarget` holds what a category is aiming at, and a category keeps every goal it has
 run rather than overwriting them. Three date columns describe when each one applies:

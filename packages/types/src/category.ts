@@ -1,6 +1,7 @@
 import { type CategoryColor, type CategoryIcon } from './category-look.js';
 
 export const CATEGORY_REFUSALS = [
+  'ACCOUNT_ARCHIVED',
   'ALREADY_HIDDEN',
   'AVAILABLE_NOT_ZERO',
   'CATEGORY_HIDDEN',
@@ -8,6 +9,7 @@ export const CATEGORY_REFUSALS = [
   'GROUP_HIDDEN',
   'NO_ACTIVE_BUDGET',
   'NO_TARGET',
+  'UNKNOWN_ACCOUNT',
   'UNKNOWN_CATEGORY',
   'UNKNOWN_GROUP',
 ] as const;
@@ -42,4 +44,6 @@ export interface CategoryDto {
   color: CategoryColor | null;
 
   hidden: boolean;
+
+  defaultAccountId: string | null;
 }

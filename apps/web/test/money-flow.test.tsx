@@ -58,6 +58,7 @@ const view = {
           availableAllTime: '0',
           hidden: false,
           target: null,
+          defaultAccountId: 'a2',
         },
       ],
     },
@@ -427,6 +428,16 @@ describe('the money flow screen', () => {
 
     expect(await screen.findByText(/Old habit/)).toBeInTheDocument();
     expect(viewed.at(-1)).toMatchObject({ includeHidden: true });
+  });
+
+  it('keeps the account of a record being edited, whatever account its category starts new ones on', async () => {
+    draw();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Corner cafe' }));
+
+    expect(
+      await screen.findByRole('combobox', { name: en['transactions.accountLabel'] }),
+    ).toHaveTextContent('Wallet');
   });
 
   it('names the hidden envelope a record already sits in when that record is opened', async () => {

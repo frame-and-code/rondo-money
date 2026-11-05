@@ -564,6 +564,9 @@ describe('every endpoint across tenants', () => {
       body('UNKNOWN_GROUP', (victim, caller) =>
         patch(`/categories/${caller.spare}`, { groupId: victim.group }),
       ),
+      body('UNKNOWN_ACCOUNT', (victim, caller) =>
+        patch(`/categories/${caller.spare}`, { defaultAccountId: victim.account }),
+      ),
     ],
     'POST /categories/{id}/hide': [
       path(

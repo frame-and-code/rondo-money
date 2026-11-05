@@ -50,6 +50,7 @@ const view = {
           availableAllTime: '48000',
           hidden: false,
           paid: false,
+          defaultAccountId: 'a2',
         },
       ],
     },
@@ -70,6 +71,7 @@ const view = {
           availableAllTime: '0',
           hidden: false,
           paid: false,
+          defaultAccountId: null,
         },
       ],
     },
@@ -83,6 +85,26 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
+  accountsControllerListOptions: () => ({
+    queryKey: [{ _id: 'accountsControllerList' }],
+    queryFn: () =>
+      Promise.resolve({
+        accounts: [
+          { id: 'a1', name: 'Card', type: 'DEBIT', balance: '1000', openingEditable: false },
+          { id: 'a2', name: 'Cash', type: 'CASH', balance: '500', openingEditable: false },
+        ],
+        total: '1500',
+      }),
+  }),
+  accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList' }],
+  transactionsControllerPayeesOptions: () => ({
+    queryKey: [{ _id: 'transactionsControllerPayees' }],
+    queryFn: () => Promise.resolve({ payees: [] }),
+  }),
+  transactionsControllerPayeesQueryKey: () => [{ _id: 'transactionsControllerPayees' }],
+  transactionsControllerListQueryKey: () => [{ _id: 'transactionsControllerList' }],
+  transactionsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transfersControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   budgetsControllerListOptions: () => ({
     queryKey: [{ _id: 'budgetsControllerList', baseUrl: 'http://api' }],
     queryFn: () => Promise.resolve([budget]),
@@ -193,6 +215,79 @@ describe('setting up a category from the month', () => {
     expect(updateCategory.mock.calls[0]?.[0]).toMatchObject({
       path: { id: HOME },
       body: { name: 'Квартира', groupId: 'g1' },
+    });
+  });
+});
+
+describe('the default account of a category, from the month', () => {
+  const openTheDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+    await openTheActions(user);
+    await user.click(screen.getByRole('button', { name: en['categories.edit'] }));
+  };
+
+  it('leaves the account out of a rename that did not touch it', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await openTheDialog(user);
+    const field = await screen.findByLabelText(en['categories.nameLabel']);
+    await user.clear(field);
+    await user.type(field, 'Квартира');
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    await waitFor(() => expect(updateCategory).toHaveBeenCalledTimes(1));
+    expect(updateCategory.mock.calls[0]?.[0]).not.toHaveProperty('body.defaultAccountId');
+  });
+
+  it('leaves the account out when the one it already holds is picked again', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await openTheDialog(user);
+    await user.click(
+      await screen.findByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    );
+    await user.click(await screen.findByRole('option', { name: 'Cash' }));
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    await waitFor(() => expect(updateCategory).toHaveBeenCalledTimes(1));
+    expect(updateCategory.mock.calls[0]?.[0]).not.toHaveProperty('body.defaultAccountId');
+  });
+
+  it('sends the account that was picked', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await openTheDialog(user);
+    await user.click(
+      await screen.findByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    );
+    await user.click(await screen.findByRole('option', { name: 'Card' }));
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    await waitFor(() => expect(updateCategory).toHaveBeenCalledTimes(1));
+    expect(updateCategory.mock.calls[0]?.[0]).toMatchObject({
+      path: { id: HOME },
+      body: { defaultAccountId: 'a1' },
+    });
+  });
+
+  it('sends null when the account is taken off', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await openTheDialog(user);
+    await user.click(
+      await screen.findByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    );
+    await user.click(
+      await screen.findByRole('option', { name: en['categories.defaultAccountNone'] }),
+    );
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    await waitFor(() => expect(updateCategory).toHaveBeenCalledTimes(1));
+    expect(updateCategory.mock.calls[0]?.[0]).toMatchObject({
+      body: { defaultAccountId: null },
     });
   });
 });

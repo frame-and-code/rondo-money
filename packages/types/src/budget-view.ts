@@ -24,6 +24,8 @@ export interface BudgetViewCategoryDto {
   paid: boolean;
 
   target: BudgetViewTargetDto | null;
+
+  defaultAccountId: string | null;
 }
 
 export interface BudgetViewGroupDto {

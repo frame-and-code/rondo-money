@@ -141,6 +141,11 @@ published with no response shape, and the client types it `unknown` without fail
   explicit `null` is a 400.
   [`write-net-worth-item.dto.ts`](../../apps/api/src/net-worth/write-net-worth-item.dto.ts) is
   one DTO serving both the write and the change.
+- A `PATCH` that changes only the fields it names leaves an omitted field alone, so a field it
+  can clear takes `null`: `@ValidateIf` skips both `undefined` and `null`, `@ApiProperty`
+  carries `nullable: true`, and the idempotency request passes the value through rather than
+  folding `undefined` into `null`, so leaving and clearing are two intents
+  ([`categories.dto.ts`](../../apps/api/src/categories/categories.dto.ts)).
 - Every body declared as a DTO class is validated by the global pipe
   ([`validation.options.ts`](../../apps/api/src/validation/validation.options.ts)):
   whitelisted, undeclared fields are a 400, implicit conversion off. A `@Body()` typed as an

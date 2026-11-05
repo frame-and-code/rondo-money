@@ -61,6 +61,35 @@ describe('categories belong to one caller (integration)', () => {
       .set('Authorization', `Bearer ${harness.tokenFor(userId)}`)
       .send(body);
 
+  it('refuses an account of another caller or of another budget as the default, and writes nothing', async () => {
+    const ownerBudget = await harness.prisma.budget.findFirstOrThrow({
+      where: { userId: OWNER, active: true },
+    });
+    const strangerBudget = await harness.prisma.budget.findFirstOrThrow({
+      where: { userId: STRANGER },
+    });
+    const strangers = await harness.seedAccount(STRANGER, strangerBudget.id, { name: 'Чужой' });
+    const shelved = await harness.seedBudget(OWNER, { name: 'Другой', active: false });
+    const elsewhere = await harness.seedAccount(OWNER, shelved.id, { name: 'В другом бюджете' });
+    await harness.seedAccount(OWNER, ownerBudget.id, { name: 'Свой' });
+
+    const foreign = await patch(OWNER, `/categories/${ownerCategory.id}`, {
+      defaultAccountId: strangers.id,
+      idempotencyKey: 'default-foreign',
+    }).expect(400);
+    const otherBudget = await patch(OWNER, `/categories/${ownerCategory.id}`, {
+      defaultAccountId: elsewhere.id,
+      idempotencyKey: 'default-other-budget',
+    }).expect(400);
+
+    expect((foreign.body as { reason: string }).reason).toBe('UNKNOWN_ACCOUNT');
+    expect((otherBudget.body as { reason: string }).reason).toBe('UNKNOWN_ACCOUNT');
+    expect(
+      (await harness.prisma.category.findUniqueOrThrow({ where: { id: ownerCategory.id } }))
+        .defaultAccountId,
+    ).toBeNull();
+  });
+
   it('does not show one caller the groups and categories of another', async () => {
     const view = await harness.viewOf(STRANGER, '2026-02');
 

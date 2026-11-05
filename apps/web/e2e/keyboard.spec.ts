@@ -4,8 +4,14 @@ import { expect, test } from '@playwright/test';
 import { en } from '../src/i18n/messages/en';
 
 import { availableOf, cardOf, readyToAssign } from './budget';
-import { hasClerkKeys, KEYBOARD_TEST_EMAIL, recreateTestUser } from './clerk';
+import {
+  hasClerkKeys,
+  KEYBOARD_ENTRY_TEST_EMAIL,
+  KEYBOARD_TEST_EMAIL,
+  recreateTestUser,
+} from './clerk';
 import { expectVisibleFocus, reach } from './keyboard';
+import { onboard } from './onboarding';
 
 test.skip(!process.env.CI && !hasClerkKeys(), 'Clerk keys are not configured');
 
@@ -158,4 +164,64 @@ test('setup, assigning, moving money and a record all work from the keyboard alo
     .filter({ hasText: 'Groceries' })
     .locator('[data-slot="row-open"]');
   await reach(page, written);
+});
+
+test('a transaction is added from a category card and a default account is set, from the keyboard alone', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await recreateTestUser(KEYBOARD_ENTRY_TEST_EMAIL);
+  await setupClerkTestingToken({ page });
+
+  await page.goto('/sign-in');
+  await clerk.signIn({
+    page,
+    signInParams: { strategy: 'email_code', identifier: KEYBOARD_ENTRY_TEST_EMAIL },
+  });
+
+  await onboard(page);
+
+  const card = cardOf(page, 'Groceries');
+  await reach(page, card);
+  await page.keyboard.press('Enter');
+
+  const add = page.getByRole('button', { name: en['categories.addTransaction'] });
+  await reach(page, add);
+  await page.keyboard.press('Enter');
+
+  const form = page.getByRole('dialog', { name: en['transactions.createTitle'], exact: true });
+  await expect(form).toBeVisible();
+
+  const amount = form.getByLabel(en['transactions.amountLabel'], { exact: true });
+  await reach(page, amount);
+  await page.keyboard.type('25');
+
+  const save = form.getByRole('button', { name: en['transactions.save'], exact: true });
+  await reach(page, save);
+  await page.keyboard.press('Enter');
+  await expect(form).toBeHidden();
+
+  await expect(availableOf(page, 'Groceries')).toHaveText('-$25');
+  await expect(card).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  const manage = page.getByRole('button', { name: en['categories.manage'] });
+  await reach(page, manage);
+  await page.keyboard.press('Enter');
+
+  const edit = page.getByRole('button', { name: en['categories.edit'], exact: true });
+  await reach(page, edit);
+  await page.keyboard.press('Enter');
+
+  const field = page.getByRole('combobox', { name: en['categories.defaultAccountLabel'] });
+  await reach(page, field);
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(field).toContainText('Main card');
+
+  const keep = page.getByRole('button', { name: en['categories.save'] });
+  await reach(page, keep);
+  await page.keyboard.press('Enter');
+  await expect(field).toBeHidden();
 });

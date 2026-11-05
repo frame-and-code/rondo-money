@@ -81,6 +81,25 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
+  accountsControllerListOptions: () => ({
+    queryKey: [{ _id: 'accountsControllerList' }],
+    queryFn: () =>
+      Promise.resolve({
+        accounts: [
+          { id: 'a1', name: 'Card', type: 'DEBIT', balance: '1000', openingEditable: false },
+        ],
+        total: '1000',
+      }),
+  }),
+  accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList' }],
+  transactionsControllerPayeesOptions: () => ({
+    queryKey: [{ _id: 'transactionsControllerPayees' }],
+    queryFn: () => Promise.resolve({ payees: [] }),
+  }),
+  transactionsControllerPayeesQueryKey: () => [{ _id: 'transactionsControllerPayees' }],
+  transactionsControllerListQueryKey: () => [{ _id: 'transactionsControllerList' }],
+  transactionsControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
+  transfersControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   budgetsControllerListOptions: () => ({
     queryKey: [{ _id: 'budgetsControllerList', baseUrl: 'http://api' }],
     queryFn: () => Promise.resolve([budget]),
