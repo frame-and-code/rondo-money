@@ -335,7 +335,7 @@ export class BudgetsService {
       const copies = new Map(
         written
           .map(({ id }) => id)
-          .sort()
+          .sort((left, right) => Number(left > right) - Number(left < right))
           .map((id, place) => [String(place), id]),
       );
       template.accounts.forEach((account, place) => {
