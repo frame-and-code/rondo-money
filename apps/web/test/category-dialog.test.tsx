@@ -14,6 +14,11 @@ const GROUPS = [
   { id: 'g2', name: 'Досуг' },
 ];
 
+const ACCOUNTS = [
+  { id: 'a1', name: 'Card' },
+  { id: 'a2', name: 'Cash' },
+];
+
 const draw = (category: Parameters<typeof CategoryDialog>[0]['category'] = null) =>
   render(
     <LocaleProvider>
@@ -22,6 +27,7 @@ const draw = (category: Parameters<typeof CategoryDialog>[0]['category'] = null)
         failed={null}
         groupId={category?.groupId ?? 'g2'}
         groups={GROUPS}
+        accounts={ACCOUNTS}
         onSave={onSave}
         onCancel={onCancel}
       />
@@ -47,7 +53,14 @@ describe('the dialog a category is set up in', () => {
   });
 
   it('puts the caret in the name straight away, with the caret after what is there', () => {
-    draw({ id: 'c1', name: 'Кафе', groupId: 'g1', icon: 'coffee', color: 'rose' });
+    draw({
+      id: 'c1',
+      name: 'Кафе',
+      groupId: 'g1',
+      icon: 'coffee',
+      color: 'rose',
+      defaultAccountId: null,
+    });
 
     const field = screen.getByLabelText(en['categories.nameLabel']);
 
@@ -100,7 +113,14 @@ describe('the dialog a category is set up in', () => {
 
   it('saves the name, the group, the icon and the colour the user picked', async () => {
     const user = userEvent.setup();
-    draw({ id: 'c1', name: 'Кафе', groupId: 'g1', icon: 'coffee', color: 'rose' });
+    draw({
+      id: 'c1',
+      name: 'Кафе',
+      groupId: 'g1',
+      icon: 'coffee',
+      color: 'rose',
+      defaultAccountId: null,
+    });
 
     await user.clear(screen.getByLabelText(en['categories.nameLabel']));
     await user.type(screen.getByLabelText(en['categories.nameLabel']), 'Кафе и рестораны');
@@ -122,7 +142,14 @@ describe('the dialog a category is set up in', () => {
 
   it('moves the category to another group through the picker', async () => {
     const user = userEvent.setup();
-    draw({ id: 'c1', name: 'Кафе', groupId: 'g1', icon: null, color: null });
+    draw({
+      id: 'c1',
+      name: 'Кафе',
+      groupId: 'g1',
+      icon: null,
+      color: null,
+      defaultAccountId: null,
+    });
 
     await user.click(screen.getByRole('combobox', { name: en['categories.groupLabel'] }));
     await user.click(await screen.findByRole('option', { name: 'Досуг' }));
@@ -133,7 +160,14 @@ describe('the dialog a category is set up in', () => {
 
   it('mints one key when it opens, so a double submit writes once', async () => {
     const user = userEvent.setup();
-    draw({ id: 'c1', name: 'Кафе', groupId: 'g1', icon: 'coffee', color: 'rose' });
+    draw({
+      id: 'c1',
+      name: 'Кафе',
+      groupId: 'g1',
+      icon: 'coffee',
+      color: 'rose',
+      defaultAccountId: null,
+    });
 
     const save = screen.getByRole('button', { name: en['categories.save'] });
     await user.click(save);
@@ -155,6 +189,7 @@ describe('the dialog a category is set up in', () => {
           failed="categories.failGroupHidden"
           groupId="g1"
           groups={GROUPS}
+          accounts={ACCOUNTS}
           onSave={onSave}
           onCancel={onCancel}
         />
@@ -166,10 +201,101 @@ describe('the dialog a category is set up in', () => {
 
   it('refuses to save a category with no name', async () => {
     const user = userEvent.setup();
-    draw({ id: 'c1', name: 'Кафе', groupId: 'g1', icon: null, color: null });
+    draw({
+      id: 'c1',
+      name: 'Кафе',
+      groupId: 'g1',
+      icon: null,
+      color: null,
+      defaultAccountId: null,
+    });
 
     await user.clear(screen.getByLabelText(en['categories.nameLabel']));
 
     expect(screen.getByRole('button', { name: en['categories.save'] })).toBeDisabled();
+  });
+});
+
+describe('the default account of a category', () => {
+  const editing = (defaultAccountId: string | null) =>
+    draw({
+      id: 'c1',
+      name: 'Кафе',
+      groupId: 'g1',
+      icon: 'coffee',
+      color: 'rose',
+      defaultAccountId,
+    });
+
+  it('sits third, after the name and the group', () => {
+    editing(null);
+
+    const fields = [
+      screen.getByLabelText(en['categories.nameLabel']),
+      screen.getByRole('combobox', { name: en['categories.groupLabel'] }),
+      screen.getByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    ];
+
+    for (const [index, field] of fields.entries()) {
+      const next = fields[index + 1];
+      if (next) {
+        expect(field.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      }
+    }
+  });
+
+  it('shows the account the category holds, or none when it holds nothing', () => {
+    editing('a2');
+    expect(
+      screen.getByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    ).toHaveTextContent('Cash');
+
+    cleanup();
+    editing(null);
+    expect(
+      screen.getByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    ).toHaveTextContent(en['categories.defaultAccountNone']);
+  });
+
+  it('offers no account first, then the accounts it was given and nothing else', async () => {
+    const user = userEvent.setup();
+    editing(null);
+
+    await user.click(screen.getByRole('combobox', { name: en['categories.defaultAccountLabel'] }));
+
+    expect((await screen.findAllByRole('option')).map((one) => one.textContent)).toEqual([
+      en['categories.defaultAccountNone'],
+      'Card',
+      'Cash',
+    ]);
+  });
+
+  it('saves the account picked, and saves none when none is picked', async () => {
+    const user = userEvent.setup();
+    editing(null);
+
+    await user.click(screen.getByRole('combobox', { name: en['categories.defaultAccountLabel'] }));
+    await user.click(await screen.findByRole('option', { name: 'Cash' }));
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ defaultAccountId: 'a2' }));
+
+    cleanup();
+    editing('a2');
+    await user.click(screen.getByRole('combobox', { name: en['categories.defaultAccountLabel'] }));
+    await user.click(
+      await screen.findByRole('option', { name: en['categories.defaultAccountNone'] }),
+    );
+    await user.click(screen.getByRole('button', { name: en['categories.save'] }));
+
+    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ defaultAccountId: null }));
+  });
+
+  it('is not asked when a category is created', () => {
+    draw(null);
+
+    expect(
+      screen.queryByRole('combobox', { name: en['categories.defaultAccountLabel'] }),
+    ).not.toBeInTheDocument();
   });
 });

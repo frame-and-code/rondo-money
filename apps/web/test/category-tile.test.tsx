@@ -43,6 +43,7 @@ const category = (
   availableAllTime: String(parts.available),
   hidden: false,
   paid: false,
+  defaultAccountId: null,
   target,
 });
 

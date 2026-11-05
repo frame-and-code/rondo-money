@@ -8,7 +8,8 @@ protection, the shadcn/ui base from `@rondo/ui`, the settings screen and the typ
 Query. Server state lives in that cache, not in component state. Categories is a real screen:
 it draws a month of the budget, moves money between its envelopes, assigning included, and lets
 the user arrange the categories themselves, creating, renaming, repainting, reordering and
-hiding them. Money flow is a real screen too: the accounts sit on the left with what each of them
+hiding them. A category can name the account its transactions start on, and its panel opens
+the record form money flow uses, on that category and that account. Money flow is a real screen too: the accounts sit on the left with what each of them
 holds and what they hold together, the records run beside them as a feed by days, and the
 screen takes an account, a rename and an income, an expense or a transfer from its dialogs. The
 opening balance of an account is corrected in that same form while the account is still empty,
@@ -106,7 +107,9 @@ src/
                               # it (the accounts panel, the feed by days and its rows, the
                               # record form, which writes a transfer as well and picks the
                               # second account where the envelope would be, the account field
-                              # both of its sides are built from, the payee field, the filters,
+                              # both of its sides are built from, the surface a new record is
+                              # written in, which the categories screen opens as well, the
+                              # payee field, the filters,
                               # the empty states and the delete confirmation), the dialog an
                               # account is created and
                               # renamed from, the confirmation an account is archived behind,
@@ -116,7 +119,9 @@ src/
                               # and the categories screen: the month
                               # header, a group, a tile that opens the move dialog, its spend
                               # ring, the fields that move money between envelopes, the
-                              # actions folded under them, the dialog a category is set up in,
+                              # actions folded under them and the row above them that opens
+                              # the record form on the category, the dialog a category is set
+                              # up in, with the account its transactions start on,
                               # the one a group is, the two that hide a category and a group,
                               # the one that closes a category for the month,
                               # the badge with its tooltip and the panel that explain a goal,
@@ -156,6 +161,10 @@ src/
                               # were. The day is remembered too, from a transfer as well, but
                               # only until the next one starts: it carries the day it was
                               # stored, and a memory from an earlier day opens on today instead
+  lib/pickable-groups.ts      # the groups and categories a record can name, read from the
+                              # month, the same list on both screens the record form opens on
+  lib/reread-entries.ts       # what a written record makes stale, reread the same way by
+                              # every screen that writes one
   lib/budget-month.ts         # which month the screen shows, its label, and the two arcs a
                               # tile's ring is drawn with, from the goal when there is one and
                               # from the envelope when there is not. Today comes from the

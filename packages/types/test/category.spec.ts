@@ -3,6 +3,7 @@ import { CATEGORY_REFUSALS, isCategoryRefusal } from '@rondo/types';
 describe('the reasons a change to a category is refused', () => {
   it('names every refusal the screen has to tell apart', () => {
     expect([...CATEGORY_REFUSALS]).toEqual([
+      'ACCOUNT_ARCHIVED',
       'ALREADY_HIDDEN',
       'AVAILABLE_NOT_ZERO',
       'CATEGORY_HIDDEN',
@@ -10,6 +11,7 @@ describe('the reasons a change to a category is refused', () => {
       'GROUP_HIDDEN',
       'NO_ACTIVE_BUDGET',
       'NO_TARGET',
+      'UNKNOWN_ACCOUNT',
       'UNKNOWN_CATEGORY',
       'UNKNOWN_GROUP',
     ]);

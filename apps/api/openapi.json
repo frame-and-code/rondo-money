@@ -4453,6 +4453,12 @@
                 "$ref": "#/components/schemas/BudgetViewTargetResponse"
               }
             ]
+          },
+          "defaultAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The open account a new transaction from this category starts on, or null when it names none or the one it names is archived."
           }
         },
         "required": [
@@ -4466,7 +4472,8 @@
           "availableAllTime",
           "hidden",
           "paid",
-          "target"
+          "target",
+          "defaultAccountId"
         ]
       },
       "BudgetViewGroupResponse": {
@@ -4578,6 +4585,7 @@
       "CategoryRefusal": {
         "type": "string",
         "enum": [
+          "ACCOUNT_ARCHIVED",
           "ALREADY_HIDDEN",
           "AVAILABLE_NOT_ZERO",
           "CATEGORY_HIDDEN",
@@ -4585,6 +4593,7 @@
           "GROUP_HIDDEN",
           "NO_ACTIVE_BUDGET",
           "NO_TARGET",
+          "UNKNOWN_ACCOUNT",
           "UNKNOWN_CATEGORY",
           "UNKNOWN_GROUP"
         ],
@@ -4825,6 +4834,12 @@
           "hidden": {
             "type": "boolean",
             "description": "Whether the category carries a hidden marker at all."
+          },
+          "defaultAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The account a new transaction from this category starts on, or null."
           }
         },
         "required": [
@@ -4834,7 +4849,8 @@
           "sortOrder",
           "icon",
           "color",
-          "hidden"
+          "hidden",
+          "defaultAccountId"
         ]
       },
       "ReorderCategoriesDto": {
@@ -4875,6 +4891,12 @@
             "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
             "minLength": 1,
             "maxLength": 64
+          },
+          "defaultAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The open account a new transaction from this category starts on. Left out, it stays as it is; null takes it off."
           },
           "groupId": {
             "type": "string",

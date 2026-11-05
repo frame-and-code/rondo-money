@@ -54,4 +54,12 @@ export class CategoryResponse implements CategoryDto {
 
   @ApiProperty({ description: 'Whether the category carries a hidden marker at all.' })
   hidden!: boolean;
+
+  @ApiProperty({
+    format: 'uuid',
+    type: String,
+    nullable: true,
+    description: 'The account a new transaction from this category starts on, or null.',
+  })
+  defaultAccountId!: string | null;
 }

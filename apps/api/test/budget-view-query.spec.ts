@@ -17,10 +17,11 @@ const TABLES = [
   'transaction',
   'category_target',
   'category_paid_month',
+  'account',
 ] as const;
 
 const TABLE_REFERENCE =
-  /\b(?:from|join)\s+"?(category_group|category_target|category_paid_month|category|assignment|transaction)"?\b/gi;
+  /\b(?:from|join)\s+"?(category_group|category_target|category_paid_month|category|assignment|transaction|account)"?\b/gi;
 
 function scopeOfEachTable(text: string): { table: string; scoped: boolean }[] {
   const references = [...text.matchAll(TABLE_REFERENCE)];
@@ -62,6 +63,21 @@ describe('the budget view statement', () => {
 
     expect([...new Set(read.map((entry) => entry.table))].sort()).toEqual([...TABLES].sort());
     expect(read.filter((entry) => !entry.scoped)).toEqual([]);
+  });
+
+  it("names a category's default account only while that account is open", () => {
+    const { text } = budgetViewStatement({ userId: USER }, BUDGET, BOUNDS);
+
+    expect(text).toContain('"defaultAccountId"');
+    const joined =
+      /join\s+"?account"?\s+(\w+)[\s\S]*?default_account_id[\s\S]*?archived_at\s+is\s+null/i.exec(
+        text,
+      );
+
+    expect(joined).not.toBeNull();
+    expect(text).toMatch(
+      new RegExp(`\\b${joined?.[1] ?? '_'}\\.id\\s+AS\\s+"defaultAccountId"`, 'i'),
+    );
   });
 
   it('keeps both visibility filters when the caller has not asked for the hidden ones', () => {

@@ -341,7 +341,8 @@ export const zBudgetViewCategoryResponse = z.object({
     availableAllTime: z.string().max(20).regex(/^(0|-?[1-9]\d*)$/),
     hidden: z.boolean(),
     paid: z.boolean(),
-    target: zBudgetViewTargetResponse.nullable()
+    target: zBudgetViewTargetResponse.nullable(),
+    defaultAccountId: z.uuid().nullable()
 });
 
 export const zBudgetViewGroupResponse = z.object({
@@ -373,6 +374,7 @@ export const zCategoryGroupResponse = z.object({
  * Why the change was refused, for a screen that answers each refusal differently rather than by reading the message. It is absent when the body itself was refused, because the pipe answers before the domain has a reason to give.
  */
 export const zCategoryRefusal = z.enum([
+    'ACCOUNT_ARCHIVED',
     'ALREADY_HIDDEN',
     'AVAILABLE_NOT_ZERO',
     'CATEGORY_HIDDEN',
@@ -380,6 +382,7 @@ export const zCategoryRefusal = z.enum([
     'GROUP_HIDDEN',
     'NO_ACTIVE_BUDGET',
     'NO_TARGET',
+    'UNKNOWN_ACCOUNT',
     'UNKNOWN_CATEGORY',
     'UNKNOWN_GROUP'
 ]);
@@ -432,7 +435,8 @@ export const zCategoryResponse = z.object({
     sortOrder: z.number(),
     icon: zCategoryIcon.nullable(),
     color: zCategoryColor.nullable(),
-    hidden: z.boolean()
+    hidden: z.boolean(),
+    defaultAccountId: z.uuid().nullable()
 });
 
 export const zReorderCategoriesDto = z.object({
@@ -443,6 +447,7 @@ export const zReorderCategoriesDto = z.object({
 
 export const zUpdateCategoryDto = z.object({
     idempotencyKey: z.string().min(1).max(64),
+    defaultAccountId: z.uuid().nullish(),
     groupId: z.uuid().optional(),
     name: z.string().max(60).optional(),
     icon: zCategoryIcon.optional(),

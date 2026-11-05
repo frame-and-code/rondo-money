@@ -4,6 +4,7 @@ import type { MessageKey } from '@/i18n/messages';
 import { saveFailureKind, type SaveFailureKind } from '@/lib/save-failure';
 
 const BY_REASON: Record<CategoryRefusal, MessageKey> = {
+  ACCOUNT_ARCHIVED: 'categories.failAccountArchived',
   ALREADY_HIDDEN: 'categories.failAlreadyHidden',
   AVAILABLE_NOT_ZERO: 'categories.hideBlocked',
   CATEGORY_HIDDEN: 'categories.failOther',
@@ -11,6 +12,7 @@ const BY_REASON: Record<CategoryRefusal, MessageKey> = {
   GROUP_HIDDEN: 'categories.failGroupHidden',
   NO_ACTIVE_BUDGET: 'categories.failBudget',
   NO_TARGET: 'categories.failNoTarget',
+  UNKNOWN_ACCOUNT: 'categories.failBudget',
   UNKNOWN_CATEGORY: 'categories.failOther',
   UNKNOWN_GROUP: 'categories.failOther',
 };

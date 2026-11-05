@@ -93,7 +93,8 @@ same reason. The 404 says nothing about whether the row exists elsewhere.
   running a goal in that month also carries it, with what the goal asks of the month and what
   it counts as gathered; a category running none carries null. Which goal a month gets is
   decided by the month rather than by which goal was written last, because a category keeps
-  every goal it has run.
+  every goal it has run. A category also names its default account, the one a new transaction
+  from it starts on, or null when it names none or the one it names has been archived.
 - `POST /categories/{id}/target` sets the goal of a category. It starts one, or edits the one
   the category is running. Changing the kind of a goal started in an earlier month closes that
   one and starts a new one, so the history stays; changing the kind of a goal started in this
@@ -112,7 +113,9 @@ same reason. The 404 says nothing about whether the row exists elsewhere.
   budget, so creating one deactivates the previous. Given `templateId`, the same transaction
   starts the budget from another one of the caller's: its visible groups and categories, its
   open accounts, its assets and its liabilities are written into the new budget, each account
-  opening at zero and each asset and liability at zero with no day. No record, assignment or
+  opening at zero and each asset and liability at zero with no day. A category whose default
+  account is one of those open accounts points at that account's copy, and one whose default is
+  archived comes without one. No record, assignment or
   paid mark comes along, and a goal does only when the currency and its digit count are the
   same. A budget to start from and the starter set together are refused. Refusals name a
   reason: `TEMPLATE_WITH_DEFAULTS`, `UNKNOWN_BUDGET` for a budget to start from that the
@@ -228,7 +231,11 @@ same reason. The 404 says nothing about whether the row exists elsewhere.
   categories in one transaction and only when each of them holds nothing, the already hidden
   ones included, because a category is never left without a group. Refusals name a reason:
   `AVAILABLE_NOT_ZERO`, `ALREADY_HIDDEN`, `GROUP_HIDDEN`, `UNKNOWN_CATEGORY`, `UNKNOWN_GROUP`,
-  `NO_ACTIVE_BUDGET`. Hiding what is already hidden is refused rather than repeated: a second
+  `UNKNOWN_ACCOUNT`, `ACCOUNT_ARCHIVED`, `NO_ACTIVE_BUDGET`. `PATCH /categories/:id` changes only
+  the fields it names, and `defaultAccountId` is the one field it also takes as null: left out
+  it stays, null takes it off, and an id has to name an open account of the active budget. The
+  account it already names is accepted again even after it was archived, so a rename never
+  fails on it. Hiding what is already hidden is refused rather than repeated: a second
   marker would move the first, and the months that had stopped showing the row would show it
   again.
   A reordering may name fewer rows than the group holds, because the month it came from lists

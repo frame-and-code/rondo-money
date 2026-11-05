@@ -11,6 +11,7 @@ export interface TemplateTreeRow {
   categorySortOrder: number | null;
   icon: string | null;
   color: string | null;
+  defaultAccountId: string | null;
   targetId: string | null;
   targetKind: TargetKind | null;
   targetAmount: bigint | null;
@@ -31,6 +32,7 @@ export interface CopiedCategory {
   sortOrder: number;
   icon: string | null;
   color: string | null;
+  defaultAccountId: string | null;
   goal: CopiedGoal | null;
 }
 
@@ -58,6 +60,7 @@ interface CategoryInProgress {
   name: string;
   icon: string | null;
   color: string | null;
+  defaultAccountId: string | null;
   goals: GoalRow[];
 }
 
@@ -108,6 +111,7 @@ function gathered(rows: readonly TemplateTreeRow[]): GroupInProgress[] {
       name: row.categoryName,
       icon: row.icon,
       color: row.color,
+      defaultAccountId: row.defaultAccountId,
       goals: [],
     };
     group.categories.set(row.categoryId, category);
@@ -146,6 +150,7 @@ export function copiedTree(
       sortOrder: categoryIndex,
       icon: category.icon,
       color: category.color,
+      defaultAccountId: category.defaultAccountId,
       goal: startingOver(category.goals),
     })),
   }));

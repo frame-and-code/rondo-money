@@ -177,20 +177,27 @@ model Category {
   /// the row is the caller erasing everything they own.
   hiddenAt DateTime? @map("hidden_at")
 
+  /// The account a new transaction from this category starts on. It names an account of the
+  /// same budget, which the composite key holds; an archived one stays referenced and reads
+  /// as none.
+  defaultAccountId String? @map("default_account_id") @db.Uuid
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  budget       Budget           @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
-  group        CategoryGroup    @relation(fields: [groupId, budgetId], references: [id, budgetId], onDelete: Restrict)
-  transactions Transaction[]
-  assignments  Assignment[]
-  targets      CategoryTarget[]
-  paidMonths   CategoryPaidMonth[]
+  budget         Budget              @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
+  group          CategoryGroup       @relation(fields: [groupId, budgetId], references: [id, budgetId], onDelete: Restrict)
+  defaultAccount Account?            @relation(fields: [defaultAccountId, budgetId], references: [id, budgetId], onDelete: Restrict)
+  transactions   Transaction[]
+  assignments    Assignment[]
+  targets        CategoryTarget[]
+  paidMonths     CategoryPaidMonth[]
 
   /// The target of every child's `(categoryId, budgetId)` foreign key.
   @@unique([id, budgetId])
   @@index([userId, budgetId])
   @@index([groupId])
+  @@index([defaultAccountId])
   @@map("category")
 }
 
@@ -213,8 +220,10 @@ model Account {
 
   budget       Budget        @relation(fields: [budgetId, userId], references: [id, userId], onDelete: Restrict)
   transactions Transaction[]
+  defaultFor   Category[]
 
-  /// The target of `Transaction`'s `(accountId, budgetId)` foreign key.
+  /// The target of `Transaction`'s `(accountId, budgetId)` and `Category`'s
+  /// `(defaultAccountId, budgetId)` foreign keys.
   @@unique([id, budgetId])
   @@index([userId, budgetId])
   @@map("account")

@@ -31,6 +31,7 @@ const row = (over: Partial<BudgetViewRow> = {}): BudgetViewRow => ({
   targetFunded: null,
   targetAssignedBefore: null,
   targetActivityBefore: null,
+  defaultAccountId: null,
   ...over,
 });
 
@@ -62,6 +63,7 @@ describe('BudgetViewService', () => {
         groupName: 'Дом',
         categoryId: 'c1',
         categoryName: 'Аренда',
+        defaultAccountId: '0199c1a8-9ecf-71c7-a617-c575df073799',
         assigned: 7_000n,
         activity: -2_500n,
         available: 4_500n,
@@ -94,6 +96,7 @@ describe('BudgetViewService', () => {
               hidden: false,
               paid: false,
               target: null,
+              defaultAccountId: '0199c1a8-9ecf-71c7-a617-c575df073799',
             },
             {
               id: 'c2',
@@ -107,6 +110,7 @@ describe('BudgetViewService', () => {
               hidden: false,
               paid: false,
               target: null,
+              defaultAccountId: null,
             },
           ],
         },

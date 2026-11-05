@@ -36,6 +36,7 @@ const category: BudgetViewCategoryDto = {
   availableAllTime: '48000',
   hidden: false,
   paid: false,
+  defaultAccountId: null,
   target: null,
 };
 

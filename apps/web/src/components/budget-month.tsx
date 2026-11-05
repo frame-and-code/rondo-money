@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { type CreateMoveDto } from '@rondo/api-client';
 import {
+  accountsControllerListOptions,
   budgetViewControllerReadOptions,
   budgetViewControllerReadQueryKey,
   budgetsControllerListOptions,
@@ -61,6 +62,7 @@ import { GroupDialog } from '@/components/group-dialog';
 import { HideCategoryDialog } from '@/components/hide-category-dialog';
 import { HideGroupDialog } from '@/components/hide-group-dialog';
 import { MoveFields } from '@/components/move-fields';
+import { NewEntryDialog } from '@/components/new-entry-dialog';
 import { PaidDialog } from '@/components/paid-dialog';
 import { SaveFailureBanner } from '@/components/save-failure-banner';
 import { SpendRing } from '@/components/spend-ring';
@@ -127,6 +129,8 @@ export function BudgetMonth() {
   );
 
   const budgets = useQuery(budgetsControllerListOptions());
+  const accounts = useQuery(accountsControllerListOptions());
+  const [entry, setEntry] = useState<{ categoryId: string } | null>(null);
   const budget = budgets.data?.find((candidate) => candidate.active) ?? null;
 
   const today = budget === null ? null : monthNow(budget.timezone);
@@ -395,8 +399,16 @@ export function BudgetMonth() {
     }
   };
 
+  const enter = (categoryId: string): void => {
+    discard();
+    setRefused(null);
+    setManaging(null);
+    setEntry({ categoryId });
+  };
+
   const manage = (next: Managing): void => {
     discard();
+    setEntry(null);
     intents.current = new Map();
     setRefused(null);
     setManaging(next);
@@ -641,6 +653,7 @@ export function BudgetMonth() {
         category={shown}
         currentMonth={showing === today}
         onEdit={() => manage({ kind: 'editCategory', categoryId })}
+        onAddTransaction={() => enter(categoryId)}
         onHide={() => manage({ kind: 'hideCategory', categoryId })}
         onGoal={() => manage({ kind: 'goal', categoryId })}
         onPaid={() =>
@@ -701,6 +714,7 @@ export function BudgetMonth() {
               groupId: groupOf(managedCategory.id)?.id ?? '',
               icon: managedCategory.icon,
               color: managedCategory.color,
+              defaultAccountId: managedCategory.defaultAccountId,
             };
 
       return (
@@ -709,6 +723,7 @@ export function BudgetMonth() {
           failed={refused}
           groupId={managing.kind === 'newCategory' ? managing.groupId : (editing?.groupId ?? '')}
           groups={groupList}
+          accounts={(accounts.data?.accounts ?? []).map(({ id, name }) => ({ id, name }))}
           onCancel={closeManaging}
           onSave={(draft) =>
             editing === null
@@ -728,6 +743,9 @@ export function BudgetMonth() {
                     name: draft.name,
                     ...(draft.icon === null ? {} : { icon: draft.icon }),
                     ...(draft.color === null ? {} : { color: draft.color }),
+                    ...(draft.defaultAccountId === editing.defaultAccountId
+                      ? {}
+                      : { defaultAccountId: draft.defaultAccountId }),
                     idempotencyKey: draft.idempotencyKey,
                   },
                 })
@@ -951,7 +969,7 @@ export function BudgetMonth() {
       ) : null}
 
       <BudgetMonthHeader
-        covered={managing !== null}
+        covered={managing !== null || entry !== null}
         month={showing}
         stepping={stepping}
         floating={moveDrawerOpen || moveDialogOpen}
@@ -1068,6 +1086,22 @@ export function BudgetMonth() {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {entry === null ? null : (
+        <NewEntryDialog
+          prefer={{
+            categoryId: entry.categoryId,
+            accountId:
+              categories.find((one) => one.id === entry.categoryId)?.defaultAccountId ?? null,
+          }}
+          onClose={() => setEntry(null)}
+          returnFocus={() =>
+            document.querySelector<HTMLElement>(
+              `[data-category-id="${CSS.escape(entry.categoryId)}"] [data-slot="category-tile"]`,
+            )
+          }
+        />
+      )}
 
       <Dialog open={managing !== null} onOpenChange={(next) => (next ? null : closeManaging())}>
         <DialogContent

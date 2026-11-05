@@ -20,6 +20,7 @@ const row = (over: Partial<TemplateTreeRow> = {}): TemplateTreeRow => ({
   categorySortOrder: 0,
   icon: 'home',
   color: 'blue',
+  defaultAccountId: null,
   ...NO_GOAL,
   ...over,
 });
@@ -114,7 +115,14 @@ describe('the order a copy is written in', () => {
     const [group] = copied([row({ icon: 'bolt', color: 'amber' })]);
 
     expect(group?.categories).toEqual([
-      { name: 'Жильё', sortOrder: 0, icon: 'bolt', color: 'amber', goal: null },
+      {
+        name: 'Жильё',
+        sortOrder: 0,
+        icon: 'bolt',
+        color: 'amber',
+        defaultAccountId: null,
+        goal: null,
+      },
     ]);
   });
 });
@@ -207,5 +215,19 @@ describe('whether goals come along into the copy', () => {
     expect(
       goalsComeAlong({ currency: 'PLN', minorDigits: 3 }, { currency: 'PLN', minorDigits: 2 }),
     ).toBe(false);
+  });
+});
+
+describe('the default account a copy carries', () => {
+  it('keeps the account each category of the template named, and leaves the others without one', () => {
+    const groups = copied([
+      row({ categoryId: 'c-card', categoryName: 'Продукты', defaultAccountId: 'account-card' }),
+      row({ categoryId: 'c-none', categoryName: 'Кафе', categorySortOrder: 1 }),
+    ]);
+
+    expect(groups[0]?.categories.map((one) => one.defaultAccountId)).toEqual([
+      'account-card',
+      null,
+    ]);
   });
 });

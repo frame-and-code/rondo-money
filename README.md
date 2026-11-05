@@ -42,7 +42,9 @@ amount, set one aside every month, reach one by a chosen month, or save towards 
 deadline. The card then says how much of what the goal asks for this month is already inside,
 and clicking it opens the move form with the rest of it filled in. A category whose bill is
 paid can be closed for the month: its card dims and moves behind the open ones, no amount
-changes, and the next month opens it again. When envelopes are below zero, a notice beside
+changes, and the next month opens it again. A transaction can be started from a category's card too: the
+usual record form opens on an expense in that category, on the account the category names as
+its default. When envelopes are below zero, a notice beside
 ready to assign counts them and filters the screen down to them, a choice that lives in the
 address like the month does. Money flow is a screen of its own: the accounts sit beside a feed of
 what was recorded, day by day, and income, expenses and transfers between two accounts are

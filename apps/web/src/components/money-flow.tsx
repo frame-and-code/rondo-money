@@ -4,21 +4,15 @@ import {
   accountsControllerArchiveMutation,
   accountsControllerCreateMutation,
   accountsControllerListOptions,
-  accountsControllerListQueryKey,
   accountsControllerCorrectOpeningMutation,
   accountsControllerReconcileMutation,
   accountsControllerRenameMutation,
   budgetViewControllerReadOptions,
-  budgetViewControllerReadQueryKey,
   budgetsControllerListOptions,
-  transactionsControllerCreateMutation,
   transactionsControllerListInfiniteOptions,
-  transactionsControllerListQueryKey,
   transactionsControllerPayeesOptions,
-  transactionsControllerPayeesQueryKey,
   transactionsControllerRemoveMutation,
   transactionsControllerUpdateMutation,
-  transfersControllerCreateMutation,
   transfersControllerRemoveMutation,
   transfersControllerUpdateMutation,
 } from '@rondo/api-client/react-query';
@@ -50,6 +44,7 @@ import { AccountDialog, type AccountDraft } from '@/components/account-dialog';
 import { AccountPanel } from '@/components/account-panel';
 import { ArchiveAccountDialog } from '@/components/archive-account-dialog';
 import { DeleteTransactionDialog } from '@/components/delete-transaction-dialog';
+import { NewEntryDialog } from '@/components/new-entry-dialog';
 import {
   ReconcileAccountDialog,
   type ReconciliationDraft,
@@ -59,7 +54,6 @@ import {
   TransactionDialog,
   type OpeningDraft,
   type PickableCategory,
-  type PickableGroup,
   type TransactionDraft,
   type TransferDraft,
 } from '@/components/transaction-dialog';
@@ -77,15 +71,15 @@ import type { MessageKey } from '@/i18n/messages';
 import { accountFailure as openingFailure } from '@/lib/account-failure';
 import { dayOf } from '@/lib/calendar-day';
 import { calendarLocale } from '@/lib/calendar-locale';
-import { NO_LAST_ENTRY, readLastEntry, storeLastEntry, type LastEntry } from '@/lib/last-entry';
 import { moneyOf } from '@/lib/money';
+import { pickableGroups } from '@/lib/pickable-groups';
+import { rereadEntries } from '@/lib/reread-entries';
 import { keepsTheKey, saveFailureKind, type SaveFailureKind } from '@/lib/save-failure';
 import { transactionFailure } from '@/lib/transaction-failure';
 import { feedDays } from '@/lib/transaction-feed';
 import { transferFailure } from '@/lib/transfer-failure';
 
 type Editing =
-  | { kind: 'create'; on?: string }
   | { kind: 'edit'; record: TransactionDto }
   | { kind: 'delete'; record: TransactionDto; key: string }
   | { kind: 'account' }
@@ -108,19 +102,12 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
   const [failed, setFailed] = useState<MessageKey | null>(null);
   const [accountFailure, setAccountFailure] = useState<SaveFailureKind | null>(null);
   const [sent, setSent] = useState(false);
-  const [last, setLast] = useState<LastEntry>(NO_LAST_ENTRY);
-  const [written, setWritten] = useState(0);
+  const [entering, setEntering] = useState<{ on?: string } | null>(null);
 
   const budgets = useQuery(budgetsControllerListOptions());
   const budget = budgets.data?.find((candidate) => candidate.active) ?? null;
 
-  const budgetId = budget?.id ?? null;
-
   const today = budget === null ? null : todayIn(budget.timezone);
-
-  useEffect(() => {
-    setLast(budgetId === null || today === null ? NO_LAST_ENTRY : readLastEntry(budgetId, today));
-  }, [budgetId, today]);
 
   const accounts = useQuery(accountsControllerListOptions());
   const payees = useQuery(transactionsControllerPayeesOptions());
@@ -185,21 +172,7 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
     [budget, locale],
   );
 
-  const groups: PickableGroup[] = (view.data?.groups ?? [])
-    .filter((group) => !group.hidden)
-    .map((group) => ({
-      id: group.id,
-      name: group.name,
-      categories: group.categories
-        .filter((category) => !category.hidden)
-        .map((category) => ({
-          id: category.id,
-          name: category.name,
-          icon: category.icon,
-          color: category.color,
-        })),
-    }))
-    .filter((group) => group.categories.length > 0);
+  const groups = pickableGroups(view.data);
 
   const looks = new Map<string, CategoryLookOf>(
     (view.data?.groups ?? []).flatMap((group) =>
@@ -217,11 +190,6 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
     (accounts.data?.accounts ?? []).map((account) => [account.id, account.name]),
   );
 
-  const offered = (id: string | null): string | null =>
-    id !== null && groups.some((group) => group.categories.some((one) => one.id === id))
-      ? id
-      : null;
-
   const keptOf = (id: string | null): PickableCategory | null => {
     const look = id === null ? null : (looks.get(id) ?? null);
 
@@ -230,16 +198,7 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
       : { id, name: look.name, icon: look.icon, color: look.color };
   };
 
-  const reread = async (): Promise<void> => {
-    const [view] = budgetViewControllerReadQueryKey({ query: { month: '' } });
-    const [entries] = transactionsControllerListQueryKey();
-    const [known] = transactionsControllerPayeesQueryKey();
-
-    await queryClient.invalidateQueries({ queryKey: accountsControllerListQueryKey() });
-    await queryClient.invalidateQueries({ queryKey: [{ _id: view._id }] });
-    await queryClient.invalidateQueries({ queryKey: [{ _id: entries._id }] });
-    await queryClient.invalidateQueries({ queryKey: [{ _id: known._id }] });
-  };
+  const reread = (): Promise<void> => rereadEntries(queryClient);
 
   const settled = async (): Promise<void> => {
     setEditing(null);
@@ -257,8 +216,6 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
     setFailed(transferFailure(error));
   };
 
-  const write = useMutation({ ...transactionsControllerCreateMutation(), onError: refused });
-
   const change = useMutation({
     ...transactionsControllerUpdateMutation(),
     onSuccess: settled,
@@ -269,11 +226,6 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
     ...transactionsControllerRemoveMutation(),
     onSuccess: settled,
     onError: refused,
-  });
-
-  const writeTransfer = useMutation({
-    ...transfersControllerCreateMutation(),
-    onError: refusedTransfer,
   });
 
   const changeTransfer = useMutation({
@@ -359,20 +311,7 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
   const days = feedDays(records, totals, today);
   const filtered = Object.values(filters).some((value) => value !== null);
 
-  const remember = (entry: LastEntry): void => {
-    setLast(entry);
-    if (budgetId !== null) {
-      storeLastEntry(budgetId, entry, today);
-    }
-  };
-
-  const landed = (): void => {
-    setFailed(null);
-    setWritten((count) => count + 1);
-    void reread();
-  };
-
-  const save = (draft: TransactionDraft, andMore: boolean): void => {
+  const save = (draft: TransactionDraft): void => {
     const body = {
       accountId: draft.accountId,
       type: draft.type,
@@ -385,16 +324,10 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
 
     if (editing?.kind === 'edit') {
       change.mutate({ path: { id: editing.record.id }, body });
-
-      return;
     }
-
-    remember({ date: draft.date, categoryId: draft.categoryId, payee: draft.payee });
-
-    write.mutate({ body }, { onSuccess: andMore ? landed : settled });
   };
 
-  const saveTransfer = (draft: TransferDraft, andMore: boolean): void => {
+  const saveTransfer = (draft: TransferDraft): void => {
     const body = {
       fromAccountId: draft.fromAccountId,
       toAccountId: draft.toAccountId,
@@ -407,13 +340,7 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
 
     if (held !== null) {
       changeTransfer.mutate({ path: { transferId: held }, body });
-
-      return;
     }
-
-    remember({ ...last, date: draft.date });
-
-    writeTransfer.mutate({ body }, { onSuccess: andMore ? landed : settled });
   };
 
   const saveOpening = (draft: OpeningDraft): void => {
@@ -468,10 +395,8 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
   };
 
   const busy =
-    write.isPending ||
     change.isPending ||
     drop.isPending ||
-    writeTransfer.isPending ||
     changeTransfer.isPending ||
     dropTransfer.isPending ||
     correctOpening.isPending ||
@@ -486,39 +411,35 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
     if (open?.kind === 'reconcile') return t('accounts.reconcileTitle', { name: open.name });
     if (open?.kind === 'account') return t('accounts.createTitle');
 
-    return t('transactions.createTitle');
+    return t('transactions.editTitle');
   };
 
   const surface = (
     <>
-      {editing?.kind === 'create' || editing?.kind === 'edit' ? (
+      {editing?.kind === 'edit' ? (
         <TransactionDialog
-          record={editing.kind === 'edit' ? editing.record : null}
+          record={editing.record}
           accounts={accounts.data.accounts}
           groups={groups}
-          kept={editing.kind === 'edit' ? keptOf(editing.record.categoryId) : null}
+          kept={keptOf(editing.record.categoryId)}
           payees={payees.data?.payees ?? []}
           money={money}
           today={today}
           defaults={{
             accountId: accountId ?? accounts.data.accounts[0]?.id ?? '',
-            date: editing.kind === 'create' ? (editing.on ?? last.date ?? today) : today,
-            categoryId: offered(last.categoryId),
-            payee: last.payee,
+            date: today,
+            categoryId: null,
+            payee: null,
           }}
           failed={failed}
           busy={busy}
-          written={written}
+          written={0}
           onSave={save}
           onTransfer={saveTransfer}
           onCorrectOpening={saveOpening}
           onDelete={() => {
             setFailed(null);
-            setEditing(
-              editing.kind === 'edit'
-                ? { kind: 'delete', record: editing.record, key: crypto.randomUUID() }
-                : editing,
-            );
+            setEditing({ kind: 'delete', record: editing.record, key: crypto.randomUUID() });
           }}
         />
       ) : null}
@@ -686,7 +607,7 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
             </div>
 
             {isMobile ? null : (
-              <Button type="button" size="lg" onClick={() => setEditing({ kind: 'create' })}>
+              <Button type="button" size="lg" onClick={() => setEntering({})}>
                 <IconPlus className="size-4" />
                 {t('transactions.add')}
               </Button>
@@ -721,7 +642,7 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
                 heading={`${t('transactions.today')}, ${format(dayOf(today), 'd MMMM', {
                   locale: calendarLocale(locale),
                 })}`}
-                onAdd={() => setEditing({ kind: 'create', on: today })}
+                onAdd={() => setEntering({ on: today })}
               />
             ) : null}
 
@@ -755,12 +676,20 @@ export function MoneyFlow({ accountId }: { accountId: string | null }): ReactNod
         <Button
           type="button"
           className="fixed right-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 h-12 rounded-full px-5 shadow-lg"
-          onClick={() => setEditing({ kind: 'create' })}
+          onClick={() => setEntering({})}
         >
           <IconPlus className="size-4" />
           {t('transactions.add')}
         </Button>
       ) : null}
+
+      {entering === null ? null : (
+        <NewEntryDialog
+          prefer={{ categoryId: null, accountId }}
+          on={entering.on}
+          onClose={() => setEntering(null)}
+        />
+      )}
 
       {isMobile ? (
         <Drawer
