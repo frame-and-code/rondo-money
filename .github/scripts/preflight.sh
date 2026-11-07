@@ -10,7 +10,7 @@
 #   IS_FORK         the pull request comes from a fork (empty on a push)
 #   IS_DEPENDABOT   Dependabot triggered the run, which reads only its own secret store
 
-set -uo pipefail
+set -euo pipefail
 
 has_clerk_keys="${HAS_CLERK_KEYS:-false}"
 has_sonar_token="${HAS_SONAR_TOKEN:-false}"

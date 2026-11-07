@@ -4,6 +4,8 @@ import { Prisma } from '@rondo/db';
 import { type AuthFailureCounter, type FailureCount } from '@/auth/auth-failure-limiter';
 import { PrismaService } from '@/prisma/prisma.service';
 
+const SWEPT_PER_FAILURE = 100;
+
 interface CountedRow {
   hits: number;
   window_end: Date;
@@ -22,7 +24,14 @@ export class AuthFailureStore implements AuthFailureCounter {
           DO UPDATE SET hits = auth_failure.hits + 1
         RETURNING hits, window_start
       ), swept AS (
-        DELETE FROM auth_failure WHERE window_start < date_trunc('minute', now())
+        DELETE FROM auth_failure
+        WHERE (client_key, window_start) IN (
+          SELECT client_key, window_start FROM auth_failure
+          WHERE window_start < date_trunc('minute', now())
+          ORDER BY window_start
+          LIMIT ${SWEPT_PER_FAILURE}
+          FOR UPDATE SKIP LOCKED
+        )
       )
       SELECT hits, window_start + interval '1 minute' AS window_end FROM counted
     `);

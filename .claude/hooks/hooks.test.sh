@@ -862,6 +862,16 @@ run_preflight both-missing HAS_CLERK_KEYS=false HAS_SONAR_TOKEN=false IS_FORK=fa
 expect_preflight 'both missing: the Clerk refusal is reported' 1 stdout 'CLERK_SECRET_KEY'
 expect_preflight 'both missing: the Sonar refusal in the same run' 1 stdout 'SONAR_TOKEN'
 
+run_preflight own-pr-no-sonar HAS_CLERK_KEYS=true HAS_SONAR_TOKEN=false IS_FORK=false IS_DEPENDABOT=false
+expect_preflight 'a pull request of this repository without SONAR_TOKEN fails even with the Clerk keys' 1 stdout 'SONAR_TOKEN'
+
+run_preflight push-no-sonar HAS_CLERK_KEYS=true HAS_SONAR_TOKEN=false IS_FORK= IS_DEPENDABOT=false
+expect_preflight 'a push to main without SONAR_TOKEN fails even with the Clerk keys' 1 stdout 'SONAR_TOKEN'
+
+run_preflight no-output HAS_CLERK_KEYS=true HAS_SONAR_TOKEN=true IS_FORK=false IS_DEPENDABOT=false \
+  GITHUB_OUTPUT="$SANDBOX/preflight-missing-dir/output"
+expect_preflight 'a run whose answers cannot be written fails rather than passing with none' 1 stdout 'output'
+
 run_preflight unset
 expect_preflight 'a run that passes no answers at all fails rather than skipping' 1 stdout '::error::'
 

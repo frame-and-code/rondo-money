@@ -66,7 +66,7 @@ migrate deploy --config packages/db/prisma.config.ts`). That is why `prisma` and
      tell you: the old key is still a well-formed key, so the start-up check passes it, the
      api starts, `/health` stays 200 because it is public, the deploy goes green, and every
      authenticated request answers 401. Until the api checks its key against the published
-     JWKS at boot (tracked in the Notion backlog page "Улучшения", Improvements), this note is
+     JWKS at boot (tracked on the improvements page of the Notion backlog), this note is
      the only safeguard;
 
      **`CLIENT_IP_HEADER`** = `x-real-ip`. Railway's edge names the client's address in that

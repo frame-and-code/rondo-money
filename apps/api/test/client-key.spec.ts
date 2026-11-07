@@ -40,8 +40,13 @@ describe('the key a failed authentication is counted under', () => {
     });
   });
 
-  it('counts an IPv4 address written as IPv6 as the IPv4 one', () => {
-    expect(clientKeyOf(from({}, '::ffff:198.51.100.4'), undefined)).toBe('198.51.100.4');
+  it.each([
+    '::ffff:198.51.100.4',
+    '::ffff:c633:6404',
+    '0:0:0:0:0:ffff:198.51.100.4',
+    '::FFFF:C633:6404',
+  ])('counts the IPv4 address written as IPv6 in the form %s as the IPv4 one', (address) => {
+    expect(clientKeyOf(from({}, address), undefined)).toBe('198.51.100.4');
   });
 
   it('counts every address of one IPv6 /64 as one client, since one client holds all of it', () => {

@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 
 import { ApiProvider } from '@/lib/api';
+
+const RETRY_DELAYS_MS = 1_000 + 2_000 + 4_000;
 
 const mockGetToken = jest.fn();
 const mockConfigureApiClient = jest.fn();
@@ -118,6 +120,10 @@ describe('ApiProvider', () => {
   });
 
   describe('a read the API refused', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     function Screen({ read }: { read: () => Promise<string> }) {
       const { status } = useQuery({ queryKey: ['refused'], queryFn: read });
       return <p>{`read:${status}`}</p>;
@@ -139,7 +145,8 @@ describe('ApiProvider', () => {
       expect(read).toHaveBeenCalledTimes(1);
     });
 
-    it('is repeated after a failure a repeat may fix, as before', async () => {
+    it('is repeated three times after a failure a repeat may fix, as before', async () => {
+      jest.useFakeTimers();
       const read = jest.fn(() => Promise.reject({ statusCode: 503, message: 'down' }));
 
       render(
@@ -148,7 +155,10 @@ describe('ApiProvider', () => {
         </ApiProvider>,
       );
 
-      await waitFor(() => expect(read).toHaveBeenCalledTimes(2), { timeout: 3000 });
+      await act(() => jest.advanceTimersByTimeAsync(RETRY_DELAYS_MS));
+
+      expect(await screen.findByText('read:error')).toBeInTheDocument();
+      expect(read).toHaveBeenCalledTimes(4);
     });
   });
 });

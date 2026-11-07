@@ -416,7 +416,7 @@ by someone else is `401`, with no hint in the body about which of those it was.
   without another write; a valid token still passes, so a person signing in again behind a
   blocked address is not locked out. The client is the address in the header
   `CLIENT_IP_HEADER` names, or the connection's address when it names none; an IPv6 address
-  counts by its /64. A request whose configured header holds no address is a plain `401` and is
+  counts by its /64, and an IPv4 address written as IPv6 counts as the IPv4 one. A request whose configured header holds no address is a plain `401` and is
   not counted. When the count cannot be written the guard logs a warning and answers `401`,
   and it writes only a few counts at a time, so a flood of failures cannot take the connection
   pool from the healthcheck. A fixed window lets a client fail up to twice the limit across the
@@ -529,9 +529,10 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    keeps the second out of domain code, are in
    [api](../../.claude/rules/api.md).
    `MUTATION_GUARDED_MODELS` in [`scoped-models.ts`](src/prisma/scoped-models.ts) says which
-   models it covers, and the exemption list beside it holds the two the mutator does not force
-   itself on: a user's settings, whose row their own first read creates, and the idempotency
-   key, which the mutation service writes on its own transaction. Being exempt does not bar
+   models it covers, and the exemption list beside it holds the ones the mutator does not force
+   itself on: a user's settings, whose row their own first read creates, the idempotency
+   key, which the mutation service writes on its own transaction, and the failed-authentication
+   count, which the guard writes before anyone is signed in. Being exempt does not bar
    them from a mutation, which [api](../../.claude/rules/api.md) states. A new
    model has to be classified before
    its tests pass. What the raw path may do inside a

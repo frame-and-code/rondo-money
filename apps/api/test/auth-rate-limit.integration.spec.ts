@@ -10,6 +10,7 @@ import { AppModule } from '@/app.module';
 import { CurrentUserId } from '@/auth/current-user.decorator';
 import { resolveWebOrigin } from '@/cors';
 import { PrismaService } from '@/prisma/prisma.service';
+import { AuthFailureStore } from '@/raw-sql/auth-failure-store';
 
 import { createTestSigningKey, type TestSigningKey } from './clerk-token';
 
@@ -166,6 +167,41 @@ describe('failed authentication is limited per client (integration)', () => {
     }
 
     expect((await fail(second, client)).status).toBe(429);
+  }, 30_000);
+
+  it('loses no failure that two instances record for one client at the same moment', async () => {
+    await untilAFreshMinute();
+    const client = clientKeyOf(freshClient());
+    const [one, other] = [first.get(AuthFailureStore), second.get(AuthFailureStore)];
+
+    await Promise.all(
+      Array.from({ length: LIMIT }, (_unused, index) =>
+        (index % 2 === 0 ? one : other).record(client),
+      ),
+    );
+
+    const [row] = await prisma.authFailure.findMany({ where: { clientKey: client } });
+    expect(row?.hits).toBe(LIMIT);
+  }, 30_000);
+
+  it('sweeps ended windows a bounded batch at a time', async () => {
+    await untilAFreshMinute();
+    const thisMinute = new Date(Math.floor(Date.now() / 60_000) * 60_000);
+    const ended = { lt: thisMinute };
+    const stale = Array.from({ length: 150 }, () => clientKeyOf(freshClient()));
+    await prisma.authFailure.createMany({
+      data: stale.map((clientKey) => ({
+        clientKey,
+        windowStart: new Date(thisMinute.getTime() - 5 * 60_000),
+        hits: 1,
+      })),
+    });
+    const before = await prisma.authFailure.count({ where: { windowStart: ended } });
+
+    await fail(first, freshClient());
+
+    expect(before - (await prisma.authFailure.count({ where: { windowStart: ended } }))).toBe(100);
+    await prisma.authFailure.deleteMany({ where: { windowStart: ended } });
   }, 30_000);
 
   it('counts in the database minute and sweeps the windows that have ended', async () => {
