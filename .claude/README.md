@@ -125,7 +125,8 @@ requires; the rest take their input from `git`.
 ### The guards have tests
 
 [`hooks.test.sh`](hooks/hooks.test.sh) runs as `pnpm test:hooks`, and it is a step of the CI
-`unit` job. The two blocking guards decide by inspecting a command, so their failure mode is
+`unit` job. It also covers `check-docs.mjs` and the CI preflight script, which decides when a
+missing secret may skip a job. The two blocking guards decide by inspecting a command, so their failure mode is
 silence. A rule that stops matching still exits 0 and the command goes through. That is why
 they have cases and why a new blocking hook lands with its own.
 

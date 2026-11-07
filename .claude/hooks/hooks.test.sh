@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Tests for the guard hooks and for check-docs.mjs. Run: pnpm test:hooks (also part of /check
-# and the CI gate).
+# Tests for the guard hooks, for check-docs.mjs and for the CI preflight script. Run:
+# pnpm test:hooks (also part of /check and the CI gate).
 #
 # Why they exist: guard-bash.sh and guard-db.sh are the only mechanical stop between an
 # agent's shortcut and a burned secret or a wiped remote database, and neither announces a
@@ -549,6 +549,8 @@ expect_names "$(stop_fixture agent-setup .claude/hooks/new-guard.sh)" '.claude/R
   'the agent setup changed, its README did not'
 expect_names "$(stop_fixture_untracked new-workspace apps/newapp/src/index.ts)" 'apps/newapp/README.md' \
   'a brand-new untracked workspace is named, not collapsed to one entry'
+expect_names "$(stop_fixture ci-script .github/scripts/preflight.sh)" 'the job graph and the required checks' \
+  'a CI script changed, docs/ci.md did not'
 expect_quiet_about "$(stop_fixture prose-only README.md)" 'stale' \
   'prose alone is not a reason to warn'
 expect_quiet_about "$(stop_fixture untouched)" 'stale' \
@@ -794,6 +796,74 @@ printf 'It sees top-level operations only.\n\n## Real heading\n' > "$D/owner.md"
 printf 'See [it](owner.md#real-heading).\n' > "$D/other.md"
 expect_docs_ok "$D" 'a link to a heading that exists passes'
 
+
+# --- .github/scripts/preflight.sh -----------------------------------------------------
+# The gate counts a skipped job as passing, so a run that loses its Clerk keys would go green
+# without one browser scenario. These pin which runs may skip and which must fail instead.
+
+echo "preflight.sh — which runs may skip a job for want of a secret"
+
+PREFLIGHT="$REPO_ROOT/.github/scripts/preflight.sh"
+
+run_preflight() {
+  local dir="$SANDBOX/preflight-$1"
+  shift
+  rm -rf "$dir"
+  mkdir -p "$dir"
+  : >"$dir/output"
+  : >"$dir/summary"
+  PREFLIGHT_STDOUT=$(env -i PATH="$PATH" GITHUB_OUTPUT="$dir/output" GITHUB_STEP_SUMMARY="$dir/summary" \
+    "$@" bash "$PREFLIGHT" 2>&1)
+  PREFLIGHT_EXIT=$?
+  PREFLIGHT_OUTPUT=$(cat "$dir/output")
+  PREFLIGHT_SUMMARY=$(cat "$dir/summary")
+}
+
+expect_preflight() {
+  local name="$1" exit_code="$2" stream="$3" needle="$4" haystack
+  case "$stream" in
+    stdout) haystack="$PREFLIGHT_STDOUT" ;;
+    output) haystack="$PREFLIGHT_OUTPUT" ;;
+    summary) haystack="$PREFLIGHT_SUMMARY" ;;
+  esac
+  if [ "$PREFLIGHT_EXIT" -ne "$exit_code" ]; then
+    fail "$name" "expected exit $exit_code, got $PREFLIGHT_EXIT: $PREFLIGHT_STDOUT"
+  elif ! printf '%s' "$haystack" | grep -qF -- "$needle"; then
+    fail "$name" "expected $stream to contain '$needle', got: ${haystack:-<empty>}"
+  else
+    pass "$name"
+  fi
+}
+
+run_preflight all-present HAS_CLERK_KEYS=true HAS_SONAR_TOKEN=true IS_FORK=false IS_DEPENDABOT=false
+expect_preflight 'every secret present: e2e and sonar run' 0 output 'has_clerk_keys=true'
+expect_preflight 'every secret present: sonar runs too' 0 output 'has_sonar_token=true'
+
+run_preflight own-pr HAS_CLERK_KEYS=false HAS_SONAR_TOKEN=true IS_FORK=false IS_DEPENDABOT=false
+expect_preflight 'a pull request of this repository without the Clerk keys fails' 1 stdout '::error::'
+expect_preflight 'and names the keys it misses' 1 stdout 'CLERK_JWT_KEY'
+
+run_preflight push HAS_CLERK_KEYS=false HAS_SONAR_TOKEN=true IS_FORK= IS_DEPENDABOT=false
+expect_preflight 'a push to main without the Clerk keys fails' 1 stdout '::error::'
+
+run_preflight fork HAS_CLERK_KEYS=false HAS_SONAR_TOKEN=false IS_FORK=true IS_DEPENDABOT=false
+expect_preflight 'a fork pull request skips e2e' 0 output 'has_clerk_keys=false'
+expect_preflight 'and says why in the summary' 0 summary 'E2E will be skipped'
+expect_preflight 'a fork pull request skips sonar too' 0 summary 'Sonar analysis will be skipped'
+
+run_preflight dependabot HAS_CLERK_KEYS=false HAS_SONAR_TOKEN=true IS_FORK=false IS_DEPENDABOT=true
+expect_preflight 'a Dependabot run skips e2e' 0 output 'has_clerk_keys=false'
+expect_preflight 'and says why in the summary' 0 summary 'E2E will be skipped'
+
+run_preflight dependabot-no-sonar HAS_CLERK_KEYS=false HAS_SONAR_TOKEN=false IS_FORK=false IS_DEPENDABOT=true
+expect_preflight 'a Dependabot run without SONAR_TOKEN still fails' 1 stdout 'SONAR_TOKEN'
+
+run_preflight both-missing HAS_CLERK_KEYS=false HAS_SONAR_TOKEN=false IS_FORK=false IS_DEPENDABOT=false
+expect_preflight 'both missing: the Clerk refusal is reported' 1 stdout 'CLERK_SECRET_KEY'
+expect_preflight 'both missing: the Sonar refusal in the same run' 1 stdout 'SONAR_TOKEN'
+
+run_preflight unset
+expect_preflight 'a run that passes no answers at all fails rather than skipping' 1 stdout '::error::'
 
 echo
 if [ "$FAILED" -gt 0 ]; then

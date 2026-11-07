@@ -468,3 +468,16 @@ model Liability {
   @@index([userId, budgetId])
   @@map("liability")
 }
+
+/// Failed authentications from one client in one window. It belongs to no user: the client
+/// failed to prove who it is, so the row is keyed by what it counts, the client's address and
+/// the window, rather than by a uuid. Read and written only by the api's failed-auth limiter.
+model AuthFailure {
+  clientKey   String   @map("client_key") @db.VarChar(64)
+  windowStart DateTime @map("window_start") @db.Timestamptz(3)
+  hits        Int
+
+  @@id([clientKey, windowStart])
+  @@index([windowStart])
+  @@map("auth_failure")
+}

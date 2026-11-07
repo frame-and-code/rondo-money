@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
 
 import { ApiProvider } from '@/lib/api';
@@ -115,5 +115,40 @@ describe('ApiProvider', () => {
     await screen.findByText('caller:user_b');
 
     expect(mounts).toBe(1);
+  });
+
+  describe('a read the API refused', () => {
+    function Screen({ read }: { read: () => Promise<string> }) {
+      const { status } = useQuery({ queryKey: ['refused'], queryFn: read });
+      return <p>{`read:${status}`}</p>;
+    }
+
+    it.each([
+      ['401, which a repeat cannot fix', 401],
+      ['429, which a repeat only prolongs', 429],
+    ])('is not repeated after a %s', async (_case, statusCode) => {
+      const read = jest.fn(() => Promise.reject({ statusCode, message: 'refused' }));
+
+      render(
+        <ApiProvider>
+          <Screen read={read} />
+        </ApiProvider>,
+      );
+
+      expect(await screen.findByText('read:error')).toBeInTheDocument();
+      expect(read).toHaveBeenCalledTimes(1);
+    });
+
+    it('is repeated after a failure a repeat may fix, as before', async () => {
+      const read = jest.fn(() => Promise.reject({ statusCode: 503, message: 'down' }));
+
+      render(
+        <ApiProvider>
+          <Screen read={read} />
+        </ApiProvider>,
+      );
+
+      await waitFor(() => expect(read).toHaveBeenCalledTimes(2), { timeout: 3000 });
+    });
   });
 });

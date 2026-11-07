@@ -43,4 +43,5 @@ export const MUTATION_GUARDED_MODELS: ReadonlySet<Prisma.ModelName> = new Set([
 export const MUTATION_EXEMPT_MODELS: ReadonlySet<Prisma.ModelName> = new Set([
   Prisma.ModelName.UserSettings,
   Prisma.ModelName.IdempotencyKey,
+  Prisma.ModelName.AuthFailure,
 ]);
