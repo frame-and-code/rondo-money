@@ -38,9 +38,10 @@ migrate deploy --config packages/db/prisma.config.ts`). That is why `prisma` and
    - Settings → **Config file path**: `apps/api/railway.json`;
    - Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`, `WEB_ORIGIN` = the web URL
      (step 4), and **`CLERK_JWT_KEY`** = the instance's PEM public key (dashboard.clerk.com
-     → API Keys → **JWKS Public Key** in the right-hand column; F1.2). The api verifies every
-     token itself and **refuses to start** with no key at all, so a forgotten one fails the
-     deploy's healthcheck instead of answering 401 to every authenticated request.
+     → API Keys → **JWKS Public Key** in the right-hand column). The api verifies every
+     token itself and **refuses to start** with no key, or with one not in the form Clerk prints, so a
+     forgotten or mangled key fails the deploy's healthcheck instead of answering 401 to every
+     authenticated request.
 
      `CLERK_SECRET_KEY` satisfies the same requirement, but no environment uses it any
      more. Local, CI and Railway all run the PEM key. Do not put it on a service exposed
@@ -52,20 +53,25 @@ migrate deploy --config packages/db/prisma.config.ts`). That is why `prisma` and
      set.
 
      Paste the PEM into the Railway field **exactly as copied**, real line breaks and all.
-     The `\n` escape form does not work: nothing expands it outside a `.env` file, the two
-     characters stay inside the key, and the request is then rejected as an invalid
-     signature, a config typo wearing the costume of a forged token. Stripping the line
-     breaks instead happens to pass `@clerk/backend` (it removes newlines before decoding)
-     but produces something no other tool accepts as a PEM, so don't.
+     Anything else stops the api at start: the `\n` escape form (nothing expands it outside
+     a `.env` file), the key on one line, a stray space, or another encoding of the same key.
+     The Clerk SDK reads the key by cutting text out of the PEM, so a stray space or another
+     encoding would load as a wrong key and refuse every token. A key on one line would load,
+     and the start-up check refuses it anyway, because it accepts the one form Clerk prints.
      (In `apps/api/.env.local` the `\n` form _is_ the correct one: dotenv expands it inside
      double quotes, and the api sees real newlines.) Don't set `PORT`, since Railway injects
      its own;
 
      ⚠️ **Rotating the Clerk signing key means updating this variable**, and nothing will
-     tell you: the api starts, `/health` stays 200 because it is public, the deploy goes
-     green, and every authenticated request answers 401. Until the api checks its key
-     against the published JWKS at boot (tracked in the Notion backlog page "Улучшения",
-     Improvements), this note is the only safeguard;
+     tell you: the old key is still a well-formed key, so the start-up check passes it, the
+     api starts, `/health` stays 200 because it is public, the deploy goes green, and every
+     authenticated request answers 401. Until the api checks its key against the published
+     JWKS at boot (tracked on the improvements page of the Notion backlog), this note is
+     the only safeguard;
+
+     **`CLIENT_IP_HEADER`** = `x-real-ip`. Railway's edge names the client's address in that
+     header, and the api counts failed authentications per address. Without it every client
+     shares the proxy's address and one bad client blocks everyone;
 
      **`NODE_ENV`** (F1.4) decides whether the API serves its own documentation at `/docs`,
      and it does everywhere except production. The image sets `NODE_ENV=production` itself
@@ -183,15 +189,16 @@ Two gotchas. The second looks like "the frontend cannot reach the API"; the firs
 
 ## Environment variables (dev)
 
-| Service | Variable                            | Value                                        | When it applies                             |
-| ------- | ----------------------------------- | -------------------------------------------- | ------------------------------------------- |
-| api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`                 | runtime + pre-deploy                        |
-| api     | `WEB_ORIGIN`                        | the public web URL (exact, for CORS + `azp`) | runtime (start fails without)               |
-| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key, **use this one**       | runtime (start fails if neither key is set) |
-| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2             | runtime (only if no JWT key)                |
-| web     | `NEXT_PUBLIC_API_URL`               | the public api URL                           | **build** (baked into bundle)               |
-| web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)             | **build** (baked into bundle)               |
-| web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)                  | runtime (never in the image)                |
+| Service | Variable                            | Value                                        | When it applies                                                       |
+| ------- | ----------------------------------- | -------------------------------------------- | --------------------------------------------------------------------- |
+| api     | `DATABASE_URL`                      | `${{Postgres.DATABASE_URL}}`                 | runtime + pre-deploy                                                  |
+| api     | `WEB_ORIGIN`                        | the public web URL (exact, for CORS + `azp`) | runtime (start fails without)                                         |
+| api     | `CLERK_JWT_KEY`                     | Clerk PEM public key, **use this one**       | runtime (start fails if neither key is set, or this one is malformed) |
+| api     | `CLERK_SECRET_KEY`                  | accepted instead, but see step 2             | runtime (only if no JWT key)                                          |
+| api     | `CLIENT_IP_HEADER`                  | `x-real-ip`                                  | runtime (the address failed sign-ins are counted under)               |
+| web     | `NEXT_PUBLIC_API_URL`               | the public api URL                           | **build** (baked into bundle)                                         |
+| web     | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_...`)             | **build** (baked into bundle)                                         |
+| web     | `CLERK_SECRET_KEY`                  | Clerk secret key (`sk_...`)                  | runtime (never in the image)                                          |
 
 ## Verification (DoD)
 
@@ -201,7 +208,18 @@ Two gotchas. The second looks like "the frontend cannot reach the API"; the firs
 - merging a green PR into `main` → both services redeployed on their own;
 - a commit touching only `packages/db` redeploys **both** services, since `/packages/**` is
   watched by each, and the api logs show the pre-deploy migration; a commit touching only
-  `docs/` or `.claude/` redeploys nothing (watch paths).
+  `docs/` or `.claude/` redeploys nothing (watch paths);
+- a client cannot choose the address its failures are counted under. Send 21 requests with a
+  bad token and `X-Real-IP: 203.0.113.7`, then one more with a bad token and no such header.
+  The last one has to answer 429, which means Railway replaced the header with the real
+  address. A 401 means the header passes through as sent, and the limit can be dodged or
+  aimed at someone else's address:
+
+  ```bash
+  for i in $(seq 21); do curl -s -o /dev/null -w '%{http_code} ' \
+    -H 'Authorization: Bearer x' -H 'X-Real-IP: 203.0.113.7' https://<api-url>/me; done
+  curl -s -o /dev/null -w '%{http_code}\n' -H 'Authorization: Bearer x' https://<api-url>/me
+  ```
 
 Local dry run (the same sequence as on Railway):
 

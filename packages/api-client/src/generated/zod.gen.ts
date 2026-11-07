@@ -729,6 +729,11 @@ export const zNetWorthResponse = z.object({
     liabilities: z.array(zNetWorthItemResponse)
 });
 
+export const zTooManyRequestsResponse = z.object({
+    statusCode: z.number(),
+    message: z.string()
+});
+
 /**
  * The database answered.
  */

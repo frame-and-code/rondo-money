@@ -1,5 +1,7 @@
 import { verifyToken } from '@clerk/backend';
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -9,12 +11,21 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 
+import { AuthFailureLimiter } from '@/auth/auth-failure-limiter';
 import { type AuthenticatedRequest } from '@/auth/authenticated-request';
 import { resolveClerkVerifyOptions } from '@/auth/clerk-verification';
+import { clientKeyOf, type ClientSource } from '@/auth/client-key';
 import { IS_PUBLIC_KEY } from '@/auth/public.decorator';
 import { RequestContextService } from '@/request-context/request-context.service';
 
 const BEARER_SCHEME = 'bearer ';
+const MISSING_TOKEN = 'Missing bearer token';
+const INVALID_TOKEN = 'Invalid session token';
+const TOO_MANY_FAILURES = 'Too many failed authentication attempts';
+
+interface HeaderSink {
+  setHeader(name: string, value: string): unknown;
+}
 
 function extractBearerToken(header: string | undefined): string | undefined {
   if (header?.slice(0, BEARER_SCHEME.length).toLowerCase() !== BEARER_SCHEME) {
@@ -32,6 +43,7 @@ export class ClerkAuthGuard implements CanActivate {
     private readonly config: ConfigService,
     private readonly reflector: Reflector,
     private readonly context: RequestContextService,
+    private readonly limiter: AuthFailureLimiter,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -43,27 +55,51 @@ export class ClerkAuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const http = context.switchToHttp();
+    const request = http.getRequest<AuthenticatedRequest & ClientSource>();
     const token = extractBearerToken(request.headers.authorization);
-    if (!token) {
-      throw new UnauthorizedException('Missing bearer token');
-    }
+    const userId = token === undefined ? undefined : await this.verify(token);
 
-    const verifyOptions = resolveClerkVerifyOptions(this.config);
-
-    let userId: string;
-    try {
-      const payload = await verifyToken(token, verifyOptions);
-      userId = payload.sub;
-    } catch (error) {
-      this.logger.debug(
-        `Rejected a session token: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      throw new UnauthorizedException('Invalid session token');
+    if (userId === undefined) {
+      return this.refuse(request, http.getResponse<HeaderSink>(), token);
     }
 
     this.context.setUserId(userId);
     request.auth = { userId };
     return true;
+  }
+
+  private async verify(token: string): Promise<string | undefined> {
+    try {
+      const payload = await verifyToken(token, resolveClerkVerifyOptions(this.config));
+      return payload.sub;
+    } catch (error) {
+      this.logger.debug(
+        `Rejected a session token: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return undefined;
+    }
+  }
+
+  private async refuse(
+    request: ClientSource,
+    response: HeaderSink,
+    token: string | undefined,
+  ): Promise<never> {
+    const refusal = new UnauthorizedException(token === undefined ? MISSING_TOKEN : INVALID_TOKEN);
+    const clientKey = clientKeyOf(request, this.config.get<string>('CLIENT_IP_HEADER'));
+    if (clientKey === null) {
+      throw refusal;
+    }
+
+    const blockedUntil =
+      this.limiter.blockedUntil(clientKey) ?? (await this.limiter.recordFailure(clientKey));
+    if (blockedUntil === null) {
+      throw refusal;
+    }
+
+    const seconds = Math.max(1, Math.ceil((blockedUntil.getTime() - Date.now()) / 1000));
+    response.setHeader('Retry-After', String(seconds));
+    throw new HttpException(TOO_MANY_FAILURES, HttpStatus.TOO_MANY_REQUESTS);
   }
 }

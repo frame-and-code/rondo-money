@@ -472,6 +472,33 @@ describe('OpenAPI document', () => {
       expect(document.paths['/me']?.get?.security).toBeUndefined();
     });
 
+    it('publishes the refusal of a client that failed too often on every protected operation', () => {
+      const unpublished: string[] = [];
+      for (const [path, pathItem] of Object.entries(document.paths)) {
+        for (const method of HTTP_METHODS) {
+          const operation = pathItem[method];
+          if (operation && !(PUBLIC_OPERATION_EXTENSION in operation)) {
+            const refusal = operation.responses['429'];
+            const published =
+              refusal !== undefined &&
+              'content' in refusal &&
+              refusal.content?.['application/json']?.schema !== undefined &&
+              refusal.headers?.['Retry-After'] !== undefined;
+            if (!published) {
+              unpublished.push(`${method.toUpperCase()} ${path}`);
+            }
+          }
+        }
+      }
+
+      expect(unpublished).toEqual([]);
+      expect(document.components?.schemas?.TooManyRequestsResponse).toBeDefined();
+    });
+
+    it('leaves the refusal off a @Public() endpoint, which the limit never reaches', () => {
+      expect(document.paths['/health']?.get?.responses['429']).toBeUndefined();
+    });
+
     it('exempts a @Public() endpoint, and says so in the spec', () => {
       const health = document.paths['/health']?.get;
 

@@ -39,8 +39,8 @@ note_pair() {
   STALE="$STALE$3"$'\n'
 }
 
-note_pair '^\.github/workflows/' '^docs/ci\.md$' \
-  '- `docs/ci.md` — the job graph and the required checks; a workflow changed.'
+note_pair '^\.github/' '^docs/ci\.md$' \
+  '- `docs/ci.md` — the job graph and the required checks; a workflow or a CI script changed.'
 note_pair '(railway\.json|^docker-compose|^Dockerfile|^apps/[^/]+/Dockerfile)' '^docs/deploy-railway\.md$' \
   '- `docs/deploy-railway.md` — services, variables, domains and ports; the deployment configuration changed.'
 note_pair '(test|spec|playwright\.config|jest\.config)' '^docs/testing\.md$' \

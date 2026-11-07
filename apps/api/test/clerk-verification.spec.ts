@@ -1,7 +1,15 @@
+import { generateKeyPairSync } from 'node:crypto';
+
 import { ConfigService } from '@nestjs/config';
 
-import { resolveClerkVerifyOptions } from '@/auth/clerk-verification';
+import {
+  assertClerkJwtKeyLoadable,
+  assertClerkVerificationConfigured,
+  resolveClerkVerifyOptions,
+} from '@/auth/clerk-verification';
 import { assertWebOriginConfigured, DEFAULT_WEB_ORIGIN } from '@/cors';
+
+import { createTestSigningKey } from './clerk-token';
 
 describe('resolveClerkVerifyOptions', () => {
   const config = new ConfigService();
@@ -71,6 +79,95 @@ describe('resolveClerkVerifyOptions', () => {
 
   it('fails loudly when neither is configured, instead of 401-ing every caller', () => {
     expect(() => resolveClerkVerifyOptions(config)).toThrow(/CLERK_JWT_KEY|CLERK_SECRET_KEY/);
+  });
+});
+
+describe('the PEM public key checked at start', () => {
+  const canonical = createTestSigningKey().publicKeyPem;
+
+  const rsaKey = (modulusLength: number, publicExponent = 65537) =>
+    generateKeyPairSync('rsa', { modulusLength, publicExponent }).publicKey;
+
+  it('accepts the key exactly as the Clerk dashboard gives it', () => {
+    expect(() => assertClerkJwtKeyLoadable(canonical)).not.toThrow();
+  });
+
+  it('accepts the same key with Windows line breaks', () => {
+    expect(() => assertClerkJwtKeyLoadable(canonical.replace(/\n/g, '\r\n'))).not.toThrow();
+  });
+
+  it.each([
+    ['with literal \\n instead of line breaks', canonical.trimEnd().replace(/\n/g, '\\n')],
+    ['with a space at the end of a line', canonical.replace('\n', ' \n')],
+    ['in the PKCS#1 form', rsaKey(2048).export({ type: 'pkcs1', format: 'pem' }).toString()],
+    ['of 4096 bits', rsaKey(4096).export({ type: 'spki', format: 'pem' }).toString()],
+    [
+      'with an exponent other than 65537',
+      rsaKey(2048, 3).export({ type: 'spki', format: 'pem' }).toString(),
+    ],
+    ['that is not a PEM at all', 'not a key'],
+  ])('refuses a key %s, which the Clerk SDK would misread', (_case, pem) => {
+    expect(() => assertClerkJwtKeyLoadable(pem)).toThrow(/CLERK_JWT_KEY/);
+  });
+
+  it('refuses a key on a single line too, though the Clerk SDK would load it', () => {
+    expect(() => assertClerkJwtKeyLoadable(canonical.replace(/\n/g, ''))).toThrow(/CLERK_JWT_KEY/);
+  });
+
+  it('never repeats the key in the message', () => {
+    const broken = canonical.replace(/\n/g, '');
+    const body = canonical.split('\n')[1] ?? '';
+
+    expect(() => assertClerkJwtKeyLoadable(broken)).toThrow(/CLERK_JWT_KEY/);
+    try {
+      assertClerkJwtKeyLoadable(broken);
+    } catch (error) {
+      expect(String(error)).not.toContain(body.slice(10, 40));
+    }
+  });
+});
+
+describe('assertClerkVerificationConfigured', () => {
+  const config = new ConfigService();
+  const original = {
+    jwtKey: process.env.CLERK_JWT_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY,
+  };
+
+  beforeEach(() => {
+    delete process.env.CLERK_JWT_KEY;
+    delete process.env.CLERK_SECRET_KEY;
+  });
+
+  afterAll(() => {
+    for (const [name, value] of [
+      ['CLERK_JWT_KEY', original.jwtKey],
+      ['CLERK_SECRET_KEY', original.secretKey],
+    ] as const) {
+      if (value === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = value;
+      }
+    }
+  });
+
+  it('stops the start on a PEM key that is not in the form Clerk prints', () => {
+    process.env.CLERK_JWT_KEY = createTestSigningKey().publicKeyPem.replace(/\n/g, '');
+
+    expect(() => assertClerkVerificationConfigured(config)).toThrow(/CLERK_JWT_KEY/);
+  });
+
+  it('starts on a well-formed PEM key', () => {
+    process.env.CLERK_JWT_KEY = createTestSigningKey().publicKeyPem;
+
+    expect(() => assertClerkVerificationConfigured(config)).not.toThrow();
+  });
+
+  it('starts on the secret key alone, as before', () => {
+    process.env.CLERK_SECRET_KEY = 'sk_test_not_a_real_key';
+
+    expect(() => assertClerkVerificationConfigured(config)).not.toThrow();
   });
 });
 

@@ -20,7 +20,8 @@ preflight          ─┤
 ```
 
 `preflight` is a member of `gate` in its own right, not only a prerequisite of the two jobs it
-feeds. It fails the gate directly when `SONAR_TOKEN` is missing outside a fork.
+feeds. It fails the gate directly when a secret is missing from a run that should have it:
+`SONAR_TOKEN` outside a fork, the Clerk keys outside a fork or a Dependabot run.
 
 `gate` runs with `if: always()` and fails unless every job it needs ended in `success` or
 `skipped`. Without `always()` a red dependency would leave the gate itself skipped, which
@@ -68,8 +69,8 @@ status check keeps the exact id `gate` that branch rules point at.
   are also caught earlier by the pre-commit hook, but as with the secret scan the hook is
   convenience and the job is the guarantee.
 - **`unit` carries one test suite that is not the app's**, `pnpm test:hooks`, which covers the
-  guard hooks and `check-docs.mjs`
-  (`.claude/hooks/hooks.test.sh`, F1.9). The guard hooks are what stop an agent from skipping
+  guard hooks, `check-docs.mjs` and the `preflight` script
+  (`.claude/hooks/hooks.test.sh`). The guard hooks are what stop an agent from skipping
   the secret scan or running a migration against dev, they belong to no workspace, so
   `turbo run test:unit` never sees them, and a mistake in either is silent. The refusal that
   never fires looks exactly like the command that was fine. It needs no database and no
@@ -166,17 +167,27 @@ status check keeps the exact id `gate` that branch rules point at.
   possibly work. The orphan is cleared between attempts for that reason, and it is the sort of
   thing that only shows up in a log. Both attempts are announced as warnings so the next
   failure is readable.
-- **Clerk keys in e2e** (F1.1): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
-  come from repository secrets (GitHub → Settings → Secrets → Actions). The whole web app
-  is behind auth, so without them not a single page serves. GitHub hides those secrets from
-  pull requests **from forks** and from **Dependabot-triggered** runs, and the `secrets`
-  context can be read in neither a job `if` nor a step `if`. So the answer is materialised
-  by a tiny `preflight` job as an output, and `e2e` branches on it
-  (`if: needs.preflight.outputs.has_clerk_keys == 'true'`); the rest of the gate still
-  runs, and the step summary spells out why e2e was skipped. Skipping the whole job rather
+- **Clerk keys in e2e**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` and
+  `CLERK_JWT_KEY` come from repository secrets (GitHub → Settings → Secrets → Actions). The
+  whole web app is behind auth, so without them not a single page serves. The `secrets`
+  context can be read in neither a job `if` nor a step `if`, so a tiny `preflight` job
+  materialises the answer as an output, and `e2e` branches on it
+  (`if: needs.preflight.outputs.has_clerk_keys == 'true'`). Skipping the whole job rather
   than each of its steps is the point: a job that reports success while silently doing
-  nothing is exactly what once hid a broken build. When the keys _are_ present but broken,
-  e2e fails loudly. A green gate must never mean "auth was never tested".
+  nothing is exactly what once hid a broken build.
+
+  A skip is legal only where GitHub withholds the keys by design: a pull request **from a
+  fork**, and a run whose actor is **Dependabot**, which reads its own secret store and the
+  Clerk keys are not in it. The step summary says why e2e was skipped, and the rest of the
+  gate still runs. On every other run (a pull request from a branch of this repository, a
+  push to `main`, a person's commit pushed onto a Dependabot branch, and any trigger added
+  later) missing keys are a broken configuration, and `preflight` fails rather than letting
+  the gate go green without one browser scenario. The decision lives in
+  [`.github/scripts/preflight.sh`](../.github/scripts/preflight.sh), which `pnpm test:hooks`
+  covers and nothing lints; the job checks the repository out to run it. When the
+  keys _are_ present but broken, e2e fails loudly. A green gate must never mean "auth was
+  never tested".
+
 - **`sonar`, the SonarQube Cloud analysis** (F1.12): cognitive complexity, cross-workspace
   duplication, security hotspots, test coverage and a quality gate on **new** code. Those are
   the signals ESLint, Prettier and `strict` TypeScript don't carry. Scanner configuration
@@ -295,8 +306,8 @@ Details that are not obvious from the file:
   requests by default, which re-runs the gate and lets auto-merge fire again. The queue
   drains by itself, just not instantly. (It stops rebasing a PR left unmerged for 30 days;
   `@dependabot rebase` in a comment restarts it.)
-- **`e2e` is skipped on these runs.** The Clerk secrets are hidden from Dependabot, and
-  `gate` counts `skipped` as passing. So an auto-merged dependency bump was proven by
+- **`e2e` is skipped on these runs**, one of the two legal skips described under the Clerk
+  keys above, and `gate` counts `skipped` as passing. So an auto-merged dependency bump was proven by
   everything except the browser scenarios. That is the deliberate trade behind the
   `preflight` mechanism above, and the reason `build` exists as its own job: it is what
   catches a dependency that breaks the toolchain when Playwright is not there to.
