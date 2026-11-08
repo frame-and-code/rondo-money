@@ -260,6 +260,11 @@ and passes it explicitly, in this same `src/lib/api` module rather than in a han
 in as someone else on the same tab starts from nothing rather than serving the previous user's
 data, including to screens that were already on the page.
 
+A read the api refused with 401 or 429 is not repeated. A repeat cannot fix a missing session,
+and every failed authentication counts towards the api's per-client limit, so the default three
+retries would let one screen with a stale token block its own address. Any other failure is
+retried as TanStack Query does by default.
+
 That last part is the whole point, and it is why the provider _clears_ one cache instead of
 handing out a new one, which is what it did until F1.6. `useBaseQuery` binds its observer to a
 client once and never rebinds it (verified against the installed

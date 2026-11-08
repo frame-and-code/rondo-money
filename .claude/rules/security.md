@@ -3,13 +3,18 @@
 ## Tenant isolation without RLS (ADR-005)
 
 Row-level security is deliberately not used, so everything it would have guaranteed is
-ordinary code, and code fails silently. Every record carries `userId` (and `budgetId` where it
+ordinary code, and code fails silently. Every domain record carries `userId` (and `budgetId` where it
 applies). The guard ([`ClerkAuthGuard`](../../apps/api/src/auth/auth.guard.ts)) is global: an
 endpoint is closed unless it carries `@Public()`, the identity comes from the verified token's
 `sub` via `@CurrentUserId()` and never from the request, and the token's `azp` must equal
 `WEB_ORIGIN`. Domain code reads through the auto-scoped client, raw SQL only through the
 scoped repository, a new model joins the registry with a cross-tenant test in the same change,
 and lint fails the gate on the unscoped spellings. The mechanics are in [api](api.md).
+
+The guard also refuses a client that keeps failing authentication with `429`, counted in the
+database so every replica sees one count, and lets a valid token through even then. Where a
+request reads the client's address and what happens when the count cannot be written are in
+[`apps/api/README.md`](../../apps/api/README.md).
 
 ## Secrets
 

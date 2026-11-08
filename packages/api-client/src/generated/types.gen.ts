@@ -1160,6 +1160,11 @@ export type NetWorthResponse = {
     liabilities: Array<NetWorthItemResponse>;
 };
 
+export type TooManyRequestsResponse = {
+    statusCode: number;
+    message: string;
+};
+
 export type HealthControllerCheckData = {
     body?: never;
     path?: never;
@@ -1197,6 +1202,10 @@ export type MeControllerIdentifyErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type MeControllerIdentifyError = MeControllerIdentifyErrors[keyof MeControllerIdentifyErrors];
@@ -1230,6 +1239,10 @@ export type MeControllerEraseErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type MeControllerEraseError = MeControllerEraseErrors[keyof MeControllerEraseErrors];
@@ -1261,6 +1274,10 @@ export type UserSettingsControllerReadErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type UserSettingsControllerReadError = UserSettingsControllerReadErrors[keyof UserSettingsControllerReadErrors];
@@ -1294,6 +1311,10 @@ export type UserSettingsControllerUpdateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type UserSettingsControllerUpdateError = UserSettingsControllerUpdateErrors[keyof UserSettingsControllerUpdateErrors];
@@ -1319,6 +1340,10 @@ export type BudgetsControllerListErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type BudgetsControllerListError = BudgetsControllerListErrors[keyof BudgetsControllerListErrors];
@@ -1352,6 +1377,10 @@ export type BudgetsControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type BudgetsControllerCreateError = BudgetsControllerCreateErrors[keyof BudgetsControllerCreateErrors];
@@ -1391,6 +1420,10 @@ export type BudgetsControllerRenameErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type BudgetsControllerRenameError = BudgetsControllerRenameErrors[keyof BudgetsControllerRenameErrors];
@@ -1430,6 +1463,10 @@ export type BudgetsControllerActivateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type BudgetsControllerActivateError = BudgetsControllerActivateErrors[keyof BudgetsControllerActivateErrors];
@@ -1459,6 +1496,10 @@ export type AccountsControllerListErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AccountsControllerListError = AccountsControllerListErrors[keyof AccountsControllerListErrors];
@@ -1492,6 +1533,10 @@ export type AccountsControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AccountsControllerCreateError = AccountsControllerCreateErrors[keyof AccountsControllerCreateErrors];
@@ -1531,6 +1576,10 @@ export type AccountsControllerRenameErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AccountsControllerRenameError = AccountsControllerRenameErrors[keyof AccountsControllerRenameErrors];
@@ -1570,6 +1619,10 @@ export type AccountsControllerArchiveErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AccountsControllerArchiveError = AccountsControllerArchiveErrors[keyof AccountsControllerArchiveErrors];
@@ -1609,6 +1662,10 @@ export type AccountsControllerCorrectOpeningErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AccountsControllerCorrectOpeningError = AccountsControllerCorrectOpeningErrors[keyof AccountsControllerCorrectOpeningErrors];
@@ -1648,6 +1705,10 @@ export type AccountsControllerReconcileErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AccountsControllerReconcileError = AccountsControllerReconcileErrors[keyof AccountsControllerReconcileErrors];
@@ -1686,6 +1747,10 @@ export type BudgetViewControllerReadErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type BudgetViewControllerReadError = BudgetViewControllerReadErrors[keyof BudgetViewControllerReadErrors];
@@ -1719,6 +1784,10 @@ export type CategoryGroupsControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryGroupsControllerCreateError = CategoryGroupsControllerCreateErrors[keyof CategoryGroupsControllerCreateErrors];
@@ -1752,6 +1821,10 @@ export type CategoryGroupsControllerReorderErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryGroupsControllerReorderError = CategoryGroupsControllerReorderErrors[keyof CategoryGroupsControllerReorderErrors];
@@ -1791,6 +1864,10 @@ export type CategoryGroupsControllerUpdateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryGroupsControllerUpdateError = CategoryGroupsControllerUpdateErrors[keyof CategoryGroupsControllerUpdateErrors];
@@ -1830,6 +1907,10 @@ export type CategoryGroupsControllerHideErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryGroupsControllerHideError = CategoryGroupsControllerHideErrors[keyof CategoryGroupsControllerHideErrors];
@@ -1869,6 +1950,10 @@ export type CategoryGroupsControllerUnhideErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryGroupsControllerUnhideError = CategoryGroupsControllerUnhideErrors[keyof CategoryGroupsControllerUnhideErrors];
@@ -1902,6 +1987,10 @@ export type CategoriesControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoriesControllerCreateError = CategoriesControllerCreateErrors[keyof CategoriesControllerCreateErrors];
@@ -1935,6 +2024,10 @@ export type CategoriesControllerReorderErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoriesControllerReorderError = CategoriesControllerReorderErrors[keyof CategoriesControllerReorderErrors];
@@ -1974,6 +2067,10 @@ export type CategoriesControllerUpdateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoriesControllerUpdateError = CategoriesControllerUpdateErrors[keyof CategoriesControllerUpdateErrors];
@@ -2013,6 +2110,10 @@ export type CategoriesControllerHideErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoriesControllerHideError = CategoriesControllerHideErrors[keyof CategoriesControllerHideErrors];
@@ -2052,6 +2153,10 @@ export type CategoriesControllerUnhideErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoriesControllerUnhideError = CategoriesControllerUnhideErrors[keyof CategoriesControllerUnhideErrors];
@@ -2091,6 +2196,10 @@ export type CategoryTargetsControllerSetErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryTargetsControllerSetError = CategoryTargetsControllerSetErrors[keyof CategoryTargetsControllerSetErrors];
@@ -2130,6 +2239,10 @@ export type CategoryTargetsControllerCloseErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryTargetsControllerCloseError = CategoryTargetsControllerCloseErrors[keyof CategoryTargetsControllerCloseErrors];
@@ -2169,6 +2282,10 @@ export type CategoryPaidControllerMarkErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryPaidControllerMarkError = CategoryPaidControllerMarkErrors[keyof CategoryPaidControllerMarkErrors];
@@ -2208,6 +2325,10 @@ export type CategoryPaidControllerUnmarkErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type CategoryPaidControllerUnmarkError = CategoryPaidControllerUnmarkErrors[keyof CategoryPaidControllerUnmarkErrors];
@@ -2241,6 +2362,10 @@ export type MovesControllerMoveErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type MovesControllerMoveError = MovesControllerMoveErrors[keyof MovesControllerMoveErrors];
@@ -2303,6 +2428,10 @@ export type TransactionsControllerListErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransactionsControllerListError = TransactionsControllerListErrors[keyof TransactionsControllerListErrors];
@@ -2336,6 +2465,10 @@ export type TransactionsControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransactionsControllerCreateError = TransactionsControllerCreateErrors[keyof TransactionsControllerCreateErrors];
@@ -2365,6 +2498,10 @@ export type TransactionsControllerPayeesErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransactionsControllerPayeesError = TransactionsControllerPayeesErrors[keyof TransactionsControllerPayeesErrors];
@@ -2404,6 +2541,10 @@ export type TransactionsControllerUpdateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransactionsControllerUpdateError = TransactionsControllerUpdateErrors[keyof TransactionsControllerUpdateErrors];
@@ -2443,6 +2584,10 @@ export type TransactionsControllerRemoveErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransactionsControllerRemoveError = TransactionsControllerRemoveErrors[keyof TransactionsControllerRemoveErrors];
@@ -2476,6 +2621,10 @@ export type TransfersControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransfersControllerCreateError = TransfersControllerCreateErrors[keyof TransfersControllerCreateErrors];
@@ -2515,6 +2664,10 @@ export type TransfersControllerUpdateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransfersControllerUpdateError = TransfersControllerUpdateErrors[keyof TransfersControllerUpdateErrors];
@@ -2554,6 +2707,10 @@ export type TransfersControllerRemoveErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type TransfersControllerRemoveError = TransfersControllerRemoveErrors[keyof TransfersControllerRemoveErrors];
@@ -2583,6 +2740,10 @@ export type AssetsControllerListErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AssetsControllerListError = AssetsControllerListErrors[keyof AssetsControllerListErrors];
@@ -2616,6 +2777,10 @@ export type AssetsControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AssetsControllerCreateError = AssetsControllerCreateErrors[keyof AssetsControllerCreateErrors];
@@ -2655,6 +2820,10 @@ export type AssetsControllerChangeErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AssetsControllerChangeError = AssetsControllerChangeErrors[keyof AssetsControllerChangeErrors];
@@ -2694,6 +2863,10 @@ export type AssetsControllerRemoveErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type AssetsControllerRemoveError = AssetsControllerRemoveErrors[keyof AssetsControllerRemoveErrors];
@@ -2723,6 +2896,10 @@ export type LiabilitiesControllerListErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type LiabilitiesControllerListError = LiabilitiesControllerListErrors[keyof LiabilitiesControllerListErrors];
@@ -2756,6 +2933,10 @@ export type LiabilitiesControllerCreateErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type LiabilitiesControllerCreateError = LiabilitiesControllerCreateErrors[keyof LiabilitiesControllerCreateErrors];
@@ -2795,6 +2976,10 @@ export type LiabilitiesControllerChangeErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type LiabilitiesControllerChangeError = LiabilitiesControllerChangeErrors[keyof LiabilitiesControllerChangeErrors];
@@ -2834,6 +3019,10 @@ export type LiabilitiesControllerRemoveErrors = {
      * The idempotency key was claimed by a different request.
      */
     409: ConflictResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type LiabilitiesControllerRemoveError = LiabilitiesControllerRemoveErrors[keyof LiabilitiesControllerRemoveErrors];
@@ -2863,6 +3052,10 @@ export type NetWorthControllerReadErrors = {
      * The token was missing, malformed, expired or not minted for this app.
      */
     401: UnauthorizedResponse;
+    /**
+     * This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.
+     */
+    429: TooManyRequestsResponse;
 };
 
 export type NetWorthControllerReadError = NetWorthControllerReadErrors[keyof NetWorthControllerReadErrors];

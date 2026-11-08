@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 
 import { ApiProvider } from '@/lib/api';
+
+const RETRY_DELAYS_MS = 1_000 + 2_000 + 4_000;
 
 const mockGetToken = jest.fn();
 const mockConfigureApiClient = jest.fn();
@@ -115,5 +117,48 @@ describe('ApiProvider', () => {
     await screen.findByText('caller:user_b');
 
     expect(mounts).toBe(1);
+  });
+
+  describe('a read the API refused', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    function Screen({ read }: { read: () => Promise<string> }) {
+      const { status } = useQuery({ queryKey: ['refused'], queryFn: read });
+      return <p>{`read:${status}`}</p>;
+    }
+
+    it.each([
+      ['401, which a repeat cannot fix', 401],
+      ['429, which a repeat only prolongs', 429],
+    ])('is not repeated after a %s', async (_case, statusCode) => {
+      const read = jest.fn(() => Promise.reject({ statusCode, message: 'refused' }));
+
+      render(
+        <ApiProvider>
+          <Screen read={read} />
+        </ApiProvider>,
+      );
+
+      expect(await screen.findByText('read:error')).toBeInTheDocument();
+      expect(read).toHaveBeenCalledTimes(1);
+    });
+
+    it('is repeated three times after a failure a repeat may fix, as before', async () => {
+      jest.useFakeTimers();
+      const read = jest.fn(() => Promise.reject({ statusCode: 503, message: 'down' }));
+
+      render(
+        <ApiProvider>
+          <Screen read={read} />
+        </ApiProvider>,
+      );
+
+      await act(() => jest.advanceTimersByTimeAsync(RETRY_DELAYS_MS));
+
+      expect(await screen.findByText('read:error')).toBeInTheDocument();
+      expect(read).toHaveBeenCalledTimes(4);
+    });
   });
 });

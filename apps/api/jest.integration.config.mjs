@@ -5,4 +5,5 @@ export default {
   ...baseConfig,
   coverageDirectory: '<rootDir>/coverage/integration',
   testRegex: '\\.integration\\.spec\\.ts$',
+  setupFiles: [...baseConfig.setupFiles, '<rootDir>/test/integration.setup.ts'],
 };
