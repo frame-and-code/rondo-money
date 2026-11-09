@@ -23,11 +23,11 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",
     "@rondo/config": "workspace:*",
-    "@swc/core": "^1.16.18",
+    "@swc/core": "^1.16.21",
     "@swc/jest": "^0.2.39",
     "@tanstack/react-query": "^5.104.4",
     "@types/jest": "^30.0.0",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "jest": "^30.5.2",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3"
