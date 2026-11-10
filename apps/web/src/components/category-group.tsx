@@ -203,14 +203,14 @@ export function CategoryGroup({
         <div
           inert={!open}
           className={cn(
-            'overflow-hidden transition-opacity duration-200 ease-out',
+            '@container overflow-hidden transition-opacity duration-200 ease-out',
             'motion-reduce:transition-none',
             open ? 'opacity-100' : 'opacity-0',
           )}
         >
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={dropped}>
             <SortableContext items={categoryIds} strategy={rectSortingStrategy}>
-              <div className="grid gap-4 px-1 py-1 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 px-1 py-1 @2xl:grid-cols-2 @5xl:grid-cols-3">
                 {categoryIds.length === 0 ? empty : children}
               </div>
             </SortableContext>

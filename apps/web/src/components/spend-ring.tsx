@@ -43,7 +43,7 @@ export function SpendRing({
   return (
     <span
       aria-hidden
-      className="relative shrink-0"
+      className="relative block shrink-0"
       style={{ width: size, height: size }}
       data-slot="spend-ring"
     >
