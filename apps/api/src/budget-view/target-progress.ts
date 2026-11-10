@@ -57,11 +57,15 @@ export function targetProgress(
     };
   }
 
-  const progress = carriedInAtStart + sums.fundedFromStart;
-  const remaining = atLeastZero(target.amount - progress);
-
   if (target.kind === 'ACCUMULATE') {
-    return { monthTarget: null, needed: null, progress, remaining };
+    const progress = carriedInAtStart + sums.fundedFromStart;
+
+    return {
+      monthTarget: null,
+      needed: null,
+      progress,
+      remaining: atLeastZero(target.amount - progress),
+    };
   }
 
   if (target.dueMonth === null) {
@@ -71,9 +75,15 @@ export function targetProgress(
     );
   }
 
+  const progress = sums.available;
+  const gatheredBefore = month === target.startMonth ? 0n : carryover;
   const monthTarget =
-    atLeastZero(target.amount - (progress - laid)) /
-    BigInt(monthsInclusive(month, target.dueMonth));
+    atLeastZero(target.amount - gatheredBefore) / BigInt(monthsInclusive(month, target.dueMonth));
 
-  return { monthTarget, needed: atLeastZero(monthTarget - laid), progress, remaining };
+  return {
+    monthTarget,
+    needed: atLeastZero(monthTarget - laid),
+    progress,
+    remaining: atLeastZero(target.amount - progress),
+  };
 }

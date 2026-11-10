@@ -412,7 +412,7 @@ export type BudgetViewTargetResponse = {
      */
     needed?: string;
     /**
-     * What the goal counts as gathered. Spending in the month being read never lowers it. A goal that refills the envelope counts what earlier months left in it, so spending before this month does.
+     * What the goal counts as gathered. A goal saving by a date counts what the envelope holds, so any spending since it started lowers it, though spending in the month being read never raises what that month asks. A goal that refills the envelope counts what earlier months left in it plus what this month was given. A goal saving with no date counts what the envelope carried in when it started plus what was put in since, so spending after its start does not lower it. A goal putting in an amount every month counts what this month was given.
      */
     progress: string;
     /**
