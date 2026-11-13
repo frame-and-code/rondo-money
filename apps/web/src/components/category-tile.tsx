@@ -116,6 +116,12 @@ export function CategoryTile({
     </>
   );
 
+  const row = cn(
+    'flex flex-col items-start justify-center gap-x-2',
+    '@xs:min-h-8 @xs:flex-row @xs:items-center @xs:justify-between',
+  );
+  const rowLabel = 'text-muted-foreground max-w-full min-w-0 truncate text-xs leading-tight';
+
   const card = (
     <>
       <span className="flex items-start justify-between gap-3">
@@ -133,7 +139,7 @@ export function CategoryTile({
           ) : null}
           <span
             data-testid="category-name"
-            className="text-left text-[15px] leading-tight font-medium md:text-base"
+            className="min-w-0 text-left text-[15px] leading-tight font-medium wrap-break-word md:text-base"
           >
             {category.name}
           </span>
@@ -155,7 +161,7 @@ export function CategoryTile({
         </span>
       </span>
 
-      <span className="flex items-center gap-3 md:gap-4">
+      <span data-slot="tile-figures" className="mt-auto flex items-center gap-3 md:gap-4">
         {target === null || !moveInPopover ? (
           disc
         ) : (
@@ -186,14 +192,15 @@ export function CategoryTile({
           </Popover>
         )}
 
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex min-h-8 flex-wrap items-center justify-between gap-x-2">
-            <span className="text-muted-foreground text-xs">
+        <span className="@container flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className={row}>
+            <span className={rowLabel}>
               {t(ring.incoming ? 'categories.incoming' : 'categories.spent')}
             </span>
             <span
+              data-testid={`spent-${category.name}`}
               className={cn(
-                'text-[13px] font-medium tabular-nums',
+                'shrink-0 text-[13px] leading-tight font-medium whitespace-nowrap tabular-nums',
                 activity === 0n && 'text-muted-foreground',
               )}
             >
@@ -201,26 +208,31 @@ export function CategoryTile({
             </span>
           </span>
 
-          <span className="flex min-h-8 flex-wrap items-center justify-between gap-x-2">
-            <span className="text-muted-foreground min-w-0 truncate text-xs">
+          <span className={row}>
+            <span className={rowLabel}>
               {t(monthly ? 'categories.goalMonthlyTarget' : 'categories.assigned')}
             </span>
             <span
               data-testid={`assigned-${category.name}`}
               className={cn(
-                'inline-flex items-center justify-end whitespace-nowrap',
-                'text-[13px] font-medium tabular-nums',
+                'inline-flex max-w-full shrink-0 flex-col items-start whitespace-nowrap',
+                '@xs:flex-row @xs:items-center',
+                'text-[13px] leading-tight font-medium tabular-nums',
                 !monthly && laid === 0n && 'text-muted-foreground',
                 laid < 0n && 'text-destructive',
               )}
             >
               {monthly ? (
                 <>
-                  <TargetBadge needed={needed} money={money} />
-                  <span className="font-semibold">{money.pairStart(laid)}</span>
-                  <span className="text-muted-foreground">{' / '}</span>
-                  <span className="text-muted-foreground font-normal">
-                    {money.format(monthTarget)}
+                  <span className="inline-flex items-center">
+                    <TargetBadge needed={needed} money={money} />
+                    <span className="font-semibold">{money.pairStart(laid)}</span>
+                  </span>
+                  <span className="inline-flex">
+                    <span className="text-muted-foreground">{' / '}</span>
+                    <span className="text-muted-foreground font-normal">
+                      {money.format(monthTarget)}
+                    </span>
                   </span>
                 </>
               ) : (

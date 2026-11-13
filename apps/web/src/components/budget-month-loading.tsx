@@ -44,7 +44,7 @@ export function BudgetMonthLoading() {
 
         <div className="flex flex-col gap-5.5">
           {GROUPS.map((tiles, group) => (
-            <div key={group} className="flex flex-col gap-2.5">
+            <div key={group} className="@container flex flex-col gap-2.5">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-[30px] w-44 rounded-[10px]" />
                 <div className="h-px flex-1 bg-foreground/12 dark:bg-white/10" />
@@ -55,7 +55,7 @@ export function BudgetMonthLoading() {
                 <Skeleton className="h-4 w-28" />
               </div>
 
-              <div className="grid gap-4 px-1 py-1 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 px-1 py-1 @2xl:grid-cols-2 @5xl:grid-cols-3">
                 {Array.from({ length: tiles }, (_, tile) => (
                   <div key={tile} data-testid="loading-tile" className={TILE}>
                     <span className="flex items-start justify-between gap-3">

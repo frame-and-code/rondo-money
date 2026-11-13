@@ -67,6 +67,10 @@ export const KEYBOARD_ENTRY_TEST_EMAIL = 'e2e-keyboard-entry+clerk_test@example.
 export const A11Y_TEST_EMAIL = 'e2e-a11y+clerk_test@example.com';
 export const FRAMES_TEST_EMAIL = 'e2e-frames+clerk_test@example.com';
 
+export const TABLET_TEST_EMAIL = 'e2e-tablet+clerk_test@example.com';
+
+export const PHONE_CARDS_TEST_EMAIL = 'e2e-phone-cards+clerk_test@example.com';
+
 export function hasClerkKeys(): boolean {
   return Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }
