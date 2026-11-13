@@ -134,6 +134,16 @@ export class BudgetViewCategoryResponse implements BudgetViewCategoryDto {
       'month rather than by which was written last.',
   })
   target!: BudgetViewTargetResponse | null;
+
+  @ApiProperty({
+    format: 'uuid',
+    type: String,
+    nullable: true,
+    description:
+      'The open account a new transaction from this category starts on, or null when it names ' +
+      'none or the one it names is archived.',
+  })
+  defaultAccountId!: string | null;
 }
 
 export class BudgetViewGroupResponse implements BudgetViewGroupDto {

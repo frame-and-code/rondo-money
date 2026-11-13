@@ -7,7 +7,8 @@ generator and an empty `0_init`. `UserSettings` is the first table, then the dom
 arrives in a single migration: `Budget`, `CategoryGroup`, `Category`, `Account`,
 `Transaction`, `IdempotencyKey`. `Assignment` joins them later, with the two columns that give
 a category a look of its own, then `CategoryTarget`, then `CategoryPaidMonth`, then `Asset`
-and `Liability`. No table carries `deletedAt`.
+and `Liability`, then the default account a category offers, then `AuthFailure`, the count of
+failed authentications per client that the api's limiter keeps. No table carries `deletedAt`.
 ADR-006 dropped soft-delete and the change-log journal alike.
 
 `UserSettings` carries identity, timestamps and the interface language (`Language` enum with
@@ -72,6 +73,12 @@ answers or reads and writes inside its own transaction instead.
 `Category` carries an optional `icon` and `color`, each a short name of at most 32 characters
 rather than a component name or a hex value. A group carries neither, and a category without
 them is a normal row.
+
+`Category` may name a default account (`defaultAccountId`), the one a new transaction started
+from that category opens on. It points at the account through `(default_account_id, budget_id)`
+with `ON DELETE RESTRICT`, so an account cannot vanish from under the category that names it;
+erasing a caller deletes categories before accounts. Archiving the account leaves the column
+alone, and the month view reads an archived default as none.
 
 `CategoryTarget` holds what a category is aiming at, and a category keeps every goal it has
 run rather than overwriting them. Three date columns describe when each one applies:
@@ -177,8 +184,10 @@ Set by the first table and followed by every later one:
   Phases 4–5 are hand-written SQL, and `where user_id = $1` needs no quoting where
   `where "userId" = $1` does;
 - ids are `String @id @default(uuid(7)) @db.Uuid`, time-ordered, and a real `uuid` column
-  rather than `text`, which is what `@db.Uuid` buys;
-- every table carrying user data has `userId`, and joins the scoped-model registry in
+  rather than `text`, which is what `@db.Uuid` buys. `AuthFailure` is the exception: a counter
+  keyed by what it counts, the client and the minute, has nothing for a uuid to name;
+- every table carrying user data has `userId` (`AuthFailure` carries none, because its
+  client has not proved who it is), and joins the scoped-model registry in
   `apps/api/src/prisma/scoped-models.ts` **in the same change** (ADR-005). A table that
   belongs to one budget carries `budgetId` too, joins the budget registry beside it, and gets
   the dependency statistic on `(user_id, budget_id)` in the migration that creates it;

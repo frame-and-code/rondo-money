@@ -97,7 +97,7 @@ describe('the mutation-guarded-model registry', () => {
     expect(both).toEqual([]);
   });
 
-  it('guards the domain models and exempts the two no mutation owns', () => {
+  it('guards the domain models and exempts the three no mutation owns', () => {
     expect([...MUTATION_GUARDED_MODELS].sort()).toEqual([
       'Account',
       'Asset',
@@ -110,6 +110,10 @@ describe('the mutation-guarded-model registry', () => {
       'Liability',
       'Transaction',
     ]);
-    expect([...MUTATION_EXEMPT_MODELS].sort()).toEqual(['IdempotencyKey', 'UserSettings']);
+    expect([...MUTATION_EXEMPT_MODELS].sort()).toEqual([
+      'AuthFailure',
+      'IdempotencyKey',
+      'UserSettings',
+    ]);
   });
 });

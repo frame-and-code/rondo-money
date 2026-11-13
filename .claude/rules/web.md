@@ -92,6 +92,12 @@ both ways before it is done.
   to the primitive's own size and position.
 - Text keeps a contrast of 4.5:1 against the surface it sits on, in both themes and on hover.
   A token is darkened in `globals.css` rather than overridden on one element.
+- In the light theme the page takes the navigation panel's colour and a card sits on it in white.
+  A frame takes `ring-border` or `border-border` rather than a colour with a low alpha, and a
+  future month chip's edge keeps 3:1 against the page. A rule between rows inside a card stays at
+  `border-border/60`, because the card already holds them together.
+- A card whose menu opens over a blur stays above that blur and its neighbours go under it, so no
+  ancestor of the card may open a stacking context while the card is at rest.
 - A control's accessible name contains the text it shows. A card whose content is its label
   takes its name from that content, and what it does goes into `aria-describedby`, as on
   the category tile.
@@ -110,12 +116,12 @@ overspent envelope.
 
 A glyph may carry a colour an amount may not: the badge in the assigned row is `warning` while
 the month is short of its goal and `success` once covered, and it never spreads to a number.
-A frame or a dimming says something about a card, never about an amount: `ring-warning/45` only
+A frame or a dimming says something about a card, never about an amount: `ring-warning` only
 while the screen is filtered to the categories below zero, reduced opacity for a category
 closed for the month with a `success` check and screen-reader text, drawn behind the open
 ones without moving in the stored order, so a drop is written back through `storedOrder` and
-never as the order shown, `ring-destructive/45` for a
-save that failed. Every colour is a theme token.
+never as the order shown, `ring-destructive` for a
+save that failed, each at 45% in the dark theme. Every colour is a theme token.
 
 Two screens stop that rule. On money flow an expense is the ordinary case, so a negative amount
 stays plain, money arriving on an account takes `text-success`, and red stays with an account

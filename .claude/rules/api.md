@@ -55,7 +55,8 @@ is the write path. [`add-a-domain-module`](../skills/add-a-domain-module/SKILL.m
   ([`aggregate-query`](../skills/aggregate-query/SKILL.md)). `execute` is the raw write path: it
   refuses outside a mutation and takes that mutation's client as a required argument. `query`
   reads, and inside a mutation it refuses the pooled client the same way. `DatabaseProbe`
-  holds the one deliberately unscoped statement, the healthcheck. A write spelled as a
+  and `AuthFailureStore` hold the deliberately unscoped statements, the healthcheck and the
+  failed-authentication count, which belongs to no user. A write spelled as a
   `$queryRaw` is caught by nothing but review.
 - A new model joins [`scoped-models.ts`](../../apps/api/src/prisma/scoped-models.ts) in the
   same change, both registries where it belongs to a budget, and gets a cross-tenant test
@@ -81,8 +82,9 @@ them.
 A write to a model in `MUTATION_GUARDED_MODELS` happens inside
 [`MutationService.run`](../../apps/api/src/mutations/mutation.service.ts), and the scoping
 extension throws on one that is not. Every model is either in that registry or in the
-exemption list beside it: a user's settings, whose row their own first read creates, and the
-idempotency key, which the service writes on its own transaction. Exempt means the mutator
+exemption list beside it: a user's settings, whose row their own first read creates, the
+idempotency key, which the service writes on its own transaction, and the failed-authentication
+count, which the guard writes before anyone is signed in. Exempt means the mutator
 does not force itself on the model; the settings row is created by a read and
 changed inside a mutation like anything else.
 
@@ -141,6 +143,11 @@ published with no response shape, and the client types it `unknown` without fail
   explicit `null` is a 400.
   [`write-net-worth-item.dto.ts`](../../apps/api/src/net-worth/write-net-worth-item.dto.ts) is
   one DTO serving both the write and the change.
+- A `PATCH` that changes only the fields it names leaves an omitted field alone, so a field it
+  can clear takes `null`: `@ValidateIf` skips both `undefined` and `null`, `@ApiProperty`
+  carries `nullable: true`, and the idempotency request passes the value through rather than
+  folding `undefined` into `null`, so leaving and clearing are two intents
+  ([`categories.dto.ts`](../../apps/api/src/categories/categories.dto.ts)).
 - Every body declared as a DTO class is validated by the global pipe
   ([`validation.options.ts`](../../apps/api/src/validation/validation.options.ts)):
   whitelisted, undeclared fields are a 400, implicit conversion off. A `@Body()` typed as an

@@ -43,6 +43,7 @@ const category = (
   availableAllTime: String(parts.available),
   hidden: false,
   paid: false,
+  defaultAccountId: null,
   target,
 });
 
@@ -70,6 +71,7 @@ const draw = (
   shown: readonly BudgetViewCategoryDto[],
   money = moneyOf('ru-RU', 'PLN', 2, { signed: true }),
   onMoveOpen: () => void = () => {},
+  moveOpen = false,
 ) =>
   render(
     <LocaleProvider>
@@ -81,7 +83,7 @@ const draw = (
               category={one}
               money={money}
               failed={false}
-              moveOpen={false}
+              moveOpen={moveOpen}
               movePanel={null}
               moveInPopover
               onMoveOpen={onMoveOpen}
@@ -175,6 +177,26 @@ describe('what a goal puts on the card', () => {
 
     await user.unhover(icon);
     expect(screen.queryByTestId('target-panel')).not.toBeInTheDocument();
+  });
+
+  it('keeps the whole-goal panel shut while the card has its own menu open', async () => {
+    const user = userEvent.setup();
+    draw([SHORT], undefined, undefined, true);
+
+    await user.hover(within(tileOf('Vacation')).getByTestId('target-hover'));
+
+    expect(screen.queryByTestId('target-panel')).not.toBeInTheDocument();
+  });
+
+  it('lets a card be picked up only while its menu is shut', () => {
+    const { unmount } = draw([SHORT]);
+
+    expect(screen.getByTestId('reorder-Vacation')).not.toHaveAttribute('aria-disabled', 'true');
+    unmount();
+
+    draw([SHORT], undefined, undefined, true);
+
+    expect(screen.getByTestId('reorder-Vacation')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('leaves the badge off a goal that asks for no month, and off a category with none', () => {
@@ -388,7 +410,7 @@ describe('a category closed for the month', () => {
     const card = screen
       .getByTestId('category-tile-Transport')
       .querySelector('[data-slot="category-tile"]');
-    expect(card).toHaveClass('ring-warning/45');
-    expect(card).not.toHaveClass('ring-destructive/45');
+    expect(card).toHaveClass('ring-warning');
+    expect(card).not.toHaveClass('ring-destructive');
   });
 });

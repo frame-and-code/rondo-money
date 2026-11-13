@@ -224,7 +224,8 @@ export function BalancesForm() {
                             disabled={sending}
                             className={cn(
                               FIELD,
-                              failed.has(account.id) && 'ring-destructive/45 ring-3',
+                              failed.has(account.id) &&
+                                'ring-destructive dark:ring-destructive/45 ring-3',
                             )}
                             onChange={(next) => {
                               typed(account.id, next);

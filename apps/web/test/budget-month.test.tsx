@@ -12,6 +12,7 @@ const unmarkPaid = jest.fn();
 const setTarget = jest.fn();
 const closeTarget = jest.fn();
 const push = jest.fn();
+const writeTransaction = jest.fn();
 const replace = jest.fn();
 
 let search = '';
@@ -37,6 +38,32 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@rondo/api-client/react-query', () => ({
+  accountsControllerListOptions: () => ({
+    queryKey: [{ _id: 'accountsControllerList', baseUrl: 'http://api' }],
+    queryFn: () =>
+      Promise.resolve({
+        accounts: [
+          { id: 'a1', name: 'Карта', type: 'DEBIT', balance: '100000', openingEditable: false },
+          { id: 'a2', name: 'Наличные', type: 'CASH', balance: '20000', openingEditable: false },
+        ],
+        total: '120000',
+      }),
+  }),
+  accountsControllerListQueryKey: () => [{ _id: 'accountsControllerList', baseUrl: 'http://api' }],
+  transactionsControllerPayeesOptions: () => ({
+    queryKey: [{ _id: 'transactionsControllerPayees', baseUrl: 'http://api' }],
+    queryFn: () => Promise.resolve({ payees: [] }),
+  }),
+  transactionsControllerPayeesQueryKey: () => [
+    { _id: 'transactionsControllerPayees', baseUrl: 'http://api' },
+  ],
+  transactionsControllerListQueryKey: () => [
+    { _id: 'transactionsControllerList', baseUrl: 'http://api' },
+  ],
+  transactionsControllerCreateMutation: () => ({
+    mutationFn: (options: unknown) => writeTransaction(options) as unknown,
+  }),
+  transfersControllerCreateMutation: () => ({ mutationFn: () => Promise.resolve({}) }),
   budgetsControllerListOptions: () => ({
     queryKey: [{ _id: 'budgetsControllerList', baseUrl: 'http://api' }],
     queryFn: () => Promise.resolve(budget === null ? [] : [budget]),
@@ -119,6 +146,7 @@ beforeEach(() => {
   search = '';
   reads = 0;
   viewFails = false;
+  writeTransaction.mockResolvedValue({});
   setTarget.mockResolvedValue({});
   closeTarget.mockResolvedValue({});
   budget = {
@@ -792,7 +820,7 @@ describe('the categories below zero', () => {
     const card = screen
       .getByTestId('category-tile-Транспорт')
       .querySelector('[data-slot="category-tile"]');
-    expect(card).toHaveClass('ring-warning/45');
+    expect(card).toHaveClass('ring-warning');
     expect(screen.queryByTestId('reorder-Транспорт')).not.toBeInTheDocument();
     expect(screen.queryByTestId('reorder-group-g1')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: ru['categories.overspentShowAll'] })).toHaveAttribute(
@@ -964,5 +992,176 @@ describe('the order of the groups', () => {
       ).toBeInTheDocument();
     }
     expect(screen.getByTestId('empty-group-g2')).toBeInTheDocument();
+  });
+});
+
+describe('a transaction added from a category', () => {
+  const twoCategories = () => ({
+    month: '2026-08',
+    readyToAssign: '85000',
+    groups: [
+      {
+        id: 'g1',
+        name: 'Повседневные расходы',
+        categories: [
+          category({ defaultAccountId: 'a2' }),
+          category({
+            id: 'c2',
+            name: 'Кафе',
+            icon: 'coffee',
+            color: 'rose',
+            defaultAccountId: null,
+          }),
+        ],
+      },
+    ],
+  });
+
+  const openFrom = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+    await user.click(
+      await screen.findByRole('button', {
+        description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', name)}`),
+      }),
+    );
+    await user.click(await screen.findByRole('button', { name: ru['categories.addTransaction'] }));
+
+    return screen.findByRole('dialog', { name: ru['transactions.createTitle'] });
+  };
+
+  it('closes the card panel and opens the form on the category and its account', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = twoCategories();
+    draw();
+
+    const form = await openFrom(user, 'Продукты');
+
+    expect(screen.queryByTestId('move-dialog')).not.toBeInTheDocument();
+    expect(
+      within(form).getByRole('combobox', { name: ru['transactions.categoryLabel'] }),
+    ).toHaveTextContent('Продукты');
+    expect(
+      within(form).getByRole('combobox', { name: ru['transactions.accountLabel'] }),
+    ).toHaveTextContent('Наличные');
+  });
+
+  it('writes the record, closes the form and reads the month again', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = twoCategories();
+    draw();
+
+    const form = await openFrom(user, 'Продукты');
+    const before = reads;
+    await user.type(within(form).getByLabelText(ru['transactions.amountLabel']), '54');
+    await user.click(within(form).getByRole('button', { name: ru['transactions.save'] }));
+
+    await waitFor(() => expect(writeTransaction).toHaveBeenCalledTimes(1));
+    expect(writeTransaction.mock.calls[0]?.[0]).toMatchObject({
+      body: { type: 'EXPENSE', categoryId: 'c1', accountId: 'a2' },
+    });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: ru['transactions.createTitle'] }),
+      ).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(reads).toBeGreaterThan(before));
+  });
+
+  it('keeps the form on the same category and account after saving and adding another', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = twoCategories();
+    draw();
+
+    const form = await openFrom(user, 'Продукты');
+    const before = reads;
+    await user.type(within(form).getByLabelText(ru['transactions.amountLabel']), '54');
+    await user.click(within(form).getByRole('button', { name: ru['transactions.saveAndMore'] }));
+
+    await waitFor(() => expect(writeTransaction).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(reads).toBeGreaterThan(before));
+    expect(screen.getByRole('dialog', { name: ru['transactions.createTitle'] })).toBe(form);
+    expect(within(form).getByLabelText(ru['transactions.amountLabel'])).toHaveValue('');
+    expect(
+      within(form).getByRole('combobox', { name: ru['transactions.categoryLabel'] }),
+    ).toHaveTextContent('Продукты');
+    expect(
+      within(form).getByRole('combobox', { name: ru['transactions.accountLabel'] }),
+    ).toHaveTextContent('Наличные');
+  });
+
+  it('gives the focus back to the card the form came from, even when another card shares its name', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    window.innerWidth = 1280;
+    view = {
+      month: '2026-08',
+      readyToAssign: '85000',
+      groups: [
+        { id: 'g1', name: 'Семья', categories: [category({ id: 'c1', name: 'Подарки' })] },
+        { id: 'g2', name: 'Друзья', categories: [category({ id: 'c2', name: 'Подарки' })] },
+      ],
+    };
+    draw();
+
+    const cards = await screen.findAllByRole('button', {
+      description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', 'Подарки')}`),
+    });
+    const second = cards[1];
+    if (second === undefined) throw new Error('the second card is not on the screen');
+
+    await user.click(second);
+    await user.click(await screen.findByRole('button', { name: ru['categories.addTransaction'] }));
+    await screen.findByRole('dialog', { name: ru['transactions.createTitle'] });
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(second).toHaveFocus());
+  });
+
+  it('gives the focus back to the card on a phone too, where the form is a drawer', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    window.innerWidth = 390;
+    view = {
+      month: '2026-08',
+      readyToAssign: '85000',
+      groups: [
+        { id: 'g1', name: 'Семья', categories: [category({ id: 'c1', name: 'Подарки' })] },
+        { id: 'g2', name: 'Друзья', categories: [category({ id: 'c2', name: 'Подарки' })] },
+      ],
+    };
+    draw();
+
+    const cards = await screen.findAllByRole('button', {
+      description: new RegExp(`^${ru['categories.moveOpen'].replace('{{category}}', 'Подарки')}`),
+    });
+    const second = cards[1];
+    if (second === undefined) throw new Error('the second card is not on the screen');
+
+    await user.click(second);
+    await user.click(await screen.findByRole('button', { name: ru['categories.addTransaction'] }));
+    await screen.findByRole('dialog', { name: ru['transactions.createTitle'] });
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(second).toHaveFocus());
+  });
+
+  it('opens on the second category and its own account after the first was closed', async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    view = twoCategories();
+    draw();
+
+    await openFrom(user, 'Продукты');
+    await user.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: ru['transactions.createTitle'] }),
+      ).not.toBeInTheDocument(),
+    );
+
+    const form = await openFrom(user, 'Кафе');
+
+    expect(
+      within(form).getByRole('combobox', { name: ru['transactions.categoryLabel'] }),
+    ).toHaveTextContent('Кафе');
+    expect(
+      within(form).getByRole('combobox', { name: ru['transactions.accountLabel'] }),
+    ).toHaveTextContent('Карта');
   });
 });

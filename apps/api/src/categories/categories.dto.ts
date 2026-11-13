@@ -76,6 +76,20 @@ export class CreateCategoryDto extends KeyedDto {
 }
 
 export class UpdateCategoryDto extends KeyedDto {
+  @ApiProperty({
+    format: 'uuid',
+    type: String,
+    required: false,
+    nullable: true,
+    description:
+      'The open account a new transaction from this category starts on. Left out, it stays as ' +
+      'it is; null takes it off.',
+  })
+  @ValidateIf((_, value) => value !== undefined && value !== null)
+  @Transform(lowercased)
+  @IsUUID()
+  defaultAccountId?: string | null;
+
   @ApiProperty({ format: 'uuid', required: false, description: 'The group to move it into.' })
   @ValidateIf((_, value) => value !== undefined)
   @Transform(lowercased)

@@ -37,6 +37,7 @@ export interface ViewCategory {
   hidden: boolean;
   paid: boolean;
   target: ViewTarget | null;
+  defaultAccountId: string | null;
 }
 
 export interface ViewGroup {

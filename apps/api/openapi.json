@@ -61,6 +61,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "The authenticated caller",
@@ -124,6 +143,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Erase everything the caller owns",
@@ -164,6 +202,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -225,6 +282,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -291,6 +367,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Create a budget",
@@ -322,6 +417,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -407,6 +521,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Rename a budget",
@@ -489,6 +622,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Make a budget the active one",
@@ -552,6 +704,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Create an account",
@@ -590,6 +761,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -675,6 +865,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Rename an account",
@@ -754,6 +963,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -839,6 +1067,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Correct what an account opened with",
@@ -921,6 +1168,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Settle an account against what it really holds",
@@ -983,6 +1249,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -1049,6 +1334,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Create a category group",
@@ -1112,6 +1416,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -1193,6 +1516,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -1278,6 +1620,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Hide a group with everything in it",
@@ -1360,6 +1721,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Bring a hidden group back",
@@ -1420,6 +1800,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -1486,6 +1885,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -1571,6 +1989,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Rename a category, move it or change its look",
@@ -1650,6 +2087,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -1735,6 +2191,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Bring a hidden category back",
@@ -1814,6 +2289,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -1899,6 +2393,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Close the goal of a category",
@@ -1978,6 +2491,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -2063,6 +2595,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Take the paid mark off a category for one month",
@@ -2126,6 +2677,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Move money between two envelopes",
@@ -2186,6 +2756,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -2313,6 +2902,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "The records of a budget, newest first",
@@ -2353,6 +2961,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -2438,6 +3065,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Change a record",
@@ -2520,6 +3166,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Remove a record",
@@ -2580,6 +3245,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -2665,6 +3349,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Change a transfer",
@@ -2747,6 +3450,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Remove a transfer",
@@ -2810,6 +3532,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Write down an asset",
@@ -2848,6 +3589,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -2933,6 +3693,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Change an asset",
@@ -3015,6 +3794,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Delete an asset",
@@ -3078,6 +3876,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Write down a liability",
@@ -3116,6 +3933,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -3201,6 +4037,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Change a liability",
@@ -3283,6 +4138,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
+                }
+              }
+            }
           }
         },
         "summary": "Delete a liability",
@@ -3323,6 +4197,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This client failed authentication too often in the current minute. A valid session token is still accepted; anything else is refused until the minute ends.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the refusal ends.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsResponse"
                 }
               }
             }
@@ -4453,6 +5346,12 @@
                 "$ref": "#/components/schemas/BudgetViewTargetResponse"
               }
             ]
+          },
+          "defaultAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The open account a new transaction from this category starts on, or null when it names none or the one it names is archived."
           }
         },
         "required": [
@@ -4466,7 +5365,8 @@
           "availableAllTime",
           "hidden",
           "paid",
-          "target"
+          "target",
+          "defaultAccountId"
         ]
       },
       "BudgetViewGroupResponse": {
@@ -4578,6 +5478,7 @@
       "CategoryRefusal": {
         "type": "string",
         "enum": [
+          "ACCOUNT_ARCHIVED",
           "ALREADY_HIDDEN",
           "AVAILABLE_NOT_ZERO",
           "CATEGORY_HIDDEN",
@@ -4585,6 +5486,7 @@
           "GROUP_HIDDEN",
           "NO_ACTIVE_BUDGET",
           "NO_TARGET",
+          "UNKNOWN_ACCOUNT",
           "UNKNOWN_CATEGORY",
           "UNKNOWN_GROUP"
         ],
@@ -4825,6 +5727,12 @@
           "hidden": {
             "type": "boolean",
             "description": "Whether the category carries a hidden marker at all."
+          },
+          "defaultAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The account a new transaction from this category starts on, or null."
           }
         },
         "required": [
@@ -4834,7 +5742,8 @@
           "sortOrder",
           "icon",
           "color",
-          "hidden"
+          "hidden",
+          "defaultAccountId"
         ]
       },
       "ReorderCategoriesDto": {
@@ -4875,6 +5784,12 @@
             "description": "Minted once when the form opens, never per request. A key per request makes a double click two writes again.",
             "minLength": 1,
             "maxLength": 64
+          },
+          "defaultAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The open account a new transaction from this category starts on. Left out, it stays as it is; null takes it off."
           },
           "groupId": {
             "type": "string",
@@ -6007,6 +6922,23 @@
           "accounts",
           "assets",
           "liabilities"
+        ]
+      },
+      "TooManyRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 429
+          },
+          "message": {
+            "type": "string",
+            "example": "Too many failed authentication attempts"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message"
         ]
       }
     }

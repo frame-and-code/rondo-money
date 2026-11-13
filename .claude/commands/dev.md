@@ -23,7 +23,8 @@ first step that fails rather than reporting a green stack that isn't.
    If it has not come up in about 30 seconds, read the server output and report the actual
    error rather than waiting longer.
    The api also needs a Clerk key in `apps/api/.env.local` and **exits at startup** without
-   one (`assertClerkVerificationConfigured`). That death is instant, so
+   one, or with a `CLERK_JWT_KEY` that is not the PEM exactly as Clerk prints it
+   (`assertClerkVerificationConfigured`). That death is instant, so
    don't spend the 30 seconds on it. If the health check fails, read the output first. On
    that error the answer is `pnpm env:setup`, exactly as for web below.
 4. **Web.** Start it through `preview_start` with the `web` configuration from

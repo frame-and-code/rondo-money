@@ -10,20 +10,19 @@ const GROUPS = [3, 4, 3];
 const HEADER = cn(
   'mb-5 flex flex-col gap-3',
   'md:bg-card md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-6',
-  'md:rounded-3xl md:px-6 md:py-5 md:shadow-xs md:ring-1 md:ring-black/5',
-  'md:dark:ring-white/10',
+  'md:rounded-3xl md:px-6 md:py-5 md:shadow-xs md:ring-1 md:ring-border',
 );
 
 const HEADER_AMOUNT = cn(
   'bg-card order-2 flex flex-col items-center gap-1.5 rounded-3xl px-6 py-5 shadow-xs',
-  'ring-1 ring-black/5 dark:ring-white/10',
+  'ring-1 ring-border',
   'md:order-1 md:items-start md:rounded-none md:bg-transparent md:p-0 md:shadow-none',
   'md:ring-0 md:dark:ring-0',
 );
 
 const TILE = cn(
   'bg-card flex flex-col gap-3.5 rounded-[20px] p-4 pe-11',
-  'shadow-xs ring-1 ring-black/5 dark:ring-white/10',
+  'shadow-xs ring-1 ring-border',
 );
 
 export function BudgetMonthLoading() {
@@ -48,7 +47,7 @@ export function BudgetMonthLoading() {
             <div key={group} className="flex flex-col gap-2.5">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-[30px] w-44 rounded-[10px]" />
-                <div className="h-px flex-1 bg-black/6 dark:bg-white/10" />
+                <div className="h-px flex-1 bg-foreground/12 dark:bg-white/10" />
                 <span className="flex items-center gap-0.5">
                   <Skeleton className="size-7 rounded-lg" />
                   <Skeleton className="size-7 rounded-lg" />

@@ -93,7 +93,8 @@ same reason. The 404 says nothing about whether the row exists elsewhere.
   running a goal in that month also carries it, with what the goal asks of the month and what
   it counts as gathered; a category running none carries null. Which goal a month gets is
   decided by the month rather than by which goal was written last, because a category keeps
-  every goal it has run.
+  every goal it has run. A category also names its default account, the one a new transaction
+  from it starts on, or null when it names none or the one it names has been archived.
 - `POST /categories/{id}/target` sets the goal of a category. It starts one, or edits the one
   the category is running. Changing the kind of a goal started in an earlier month closes that
   one and starts a new one, so the history stays; changing the kind of a goal started in this
@@ -112,7 +113,9 @@ same reason. The 404 says nothing about whether the row exists elsewhere.
   budget, so creating one deactivates the previous. Given `templateId`, the same transaction
   starts the budget from another one of the caller's: its visible groups and categories, its
   open accounts, its assets and its liabilities are written into the new budget, each account
-  opening at zero and each asset and liability at zero with no day. No record, assignment or
+  opening at zero and each asset and liability at zero with no day. A category whose default
+  account is one of those open accounts points at that account's copy, and one whose default is
+  archived comes without one. No record, assignment or
   paid mark comes along, and a goal does only when the currency and its digit count are the
   same. A budget to start from and the starter set together are refused. Refusals name a
   reason: `TEMPLATE_WITH_DEFAULTS`, `UNKNOWN_BUDGET` for a budget to start from that the
@@ -228,7 +231,11 @@ same reason. The 404 says nothing about whether the row exists elsewhere.
   categories in one transaction and only when each of them holds nothing, the already hidden
   ones included, because a category is never left without a group. Refusals name a reason:
   `AVAILABLE_NOT_ZERO`, `ALREADY_HIDDEN`, `GROUP_HIDDEN`, `UNKNOWN_CATEGORY`, `UNKNOWN_GROUP`,
-  `NO_ACTIVE_BUDGET`. Hiding what is already hidden is refused rather than repeated: a second
+  `UNKNOWN_ACCOUNT`, `ACCOUNT_ARCHIVED`, `NO_ACTIVE_BUDGET`. `PATCH /categories/:id` changes only
+  the fields it names, and `defaultAccountId` is the one field it also takes as null: left out
+  it stays, null takes it off, and an id has to name an open account of the active budget. The
+  account it already names is accepted again even after it was archived, so a rename never
+  fails on it. Hiding what is already hidden is refused rather than repeated: a second
   marker would move the first, and the months that had stopped showing the row would show it
   again.
   A reordering may name fewer rows than the group holds, because the month it came from lists
@@ -403,16 +410,33 @@ by someone else is `401`, with no hint in the body about which of those it was.
   subdomain being replayed here. If a real browser token ever answers 401, that is the check
   talking. The guard's debug log names the claim and the value it expected; fix `WEB_ORIGIN`
   rather than dropping the check.
+- **A client that keeps failing is refused with `429`.** Every missing or rejected token is
+  counted per client and per minute in the `auth_failure` table, so every replica sees one
+  count. Past twenty in a minute the client gets `429` with `Retry-After` until the minute ends,
+  without another write; a valid token still passes, so a person signing in again behind a
+  blocked address is not locked out. The client is the address in the header
+  `CLIENT_IP_HEADER` names, or the connection's address when it names none; an IPv6 address
+  counts by its /64, and an IPv4 address written as IPv6 counts as the IPv4 one. A request whose configured header holds no address is a plain `401` and is
+  not counted. When the count cannot be written the guard logs a warning and answers `401`,
+  and it writes only a few counts at a time, so a flood of failures cannot take the connection
+  pool from the healthcheck. A fixed window lets a client fail up to twice the limit across the
+  turn of a minute.
 
 ### Configuration
 
-| Variable           | Meaning                                                                                                       |
-| ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `CLERK_JWT_KEY`    | the instance's PEM public key. The api checks signatures locally, with no call to Clerk. Wins over the other. |
-| `CLERK_SECRET_KEY` | an accepted fallback. It resolves the JWKS from Clerk (cached five minutes). Nothing here uses it; see below. |
+| Variable           | Meaning                                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `CLERK_JWT_KEY`    | the instance's PEM public key. The api checks signatures locally, with no call to Clerk. Wins over the other.                     |
+| `CLERK_SECRET_KEY` | an accepted fallback. It resolves the JWKS from Clerk (cached five minutes). Nothing here uses it; see below.                     |
+| `CLIENT_IP_HEADER` | the request header that carries the client's address behind a proxy, `x-real-ip` on Railway. Unset: the connection's own address. |
 
-One of the two is **required**. With neither, the process exits at startup (`main.ts`)
-instead of answering 401 to every caller. **Every environment uses `CLERK_JWT_KEY`**:
+One of the two is **required**. With neither, or with a `CLERK_JWT_KEY` that is not the
+2048-bit RSA public key in the canonical PEM form Clerk prints, the process exits at startup
+(`main.ts`) instead of answering 401 to every caller. The check is strict on purpose: the Clerk
+SDK cuts the modulus out of the PEM text rather than parsing it, so a key with a stray space
+or in another encoding loads as a wrong key and fails every token. A key on one line would
+load, and the check refuses it too, because it accepts only the form Clerk prints. A well-formed
+key that Clerk has since rotated still passes the check. **Every environment uses `CLERK_JWT_KEY`**:
 locally from `apps/api/.env.local` ([`.env.local.tpl`](.env.local.tpl) via `pnpm
 env:setup`), in CI from a repository secret, on Railway from the service's variables. The
 api holds no Clerk secret at all. It only ever verifies signatures, and the public key is
@@ -473,8 +497,9 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
      caller put on the nested rows. A transfer's two legs sidestep the question: they are two
      top-level writes inside one mutation, which is the shape the extension does cover.
 3. **The registry.** [`scoped-models.ts`](src/prisma/scoped-models.ts) classifies every model
-   in the schema: everything scoped to a user, the subset a budget owns, and the ones only a
-   mutation may write. A new table joins each set it belongs to in the same change that creates
+   in the schema: everything scoped to a user, the subset a budget owns, the ones only a
+   mutation may write, and the few no mutation owns, the failed-authentication counter among
+   them. A new table joins each set it belongs to in the same change that creates
    it.
    [`test/scoped-models.spec.ts`](test/scoped-models.spec.ts) catches a forgotten one by
    walking the schema and failing when a model with a `userId` or `budgetId` column is missing
@@ -485,8 +510,10 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    `$executeRaw` bypass it entirely. They live in [`src/raw-sql`](src/raw-sql):
    [`ScopedRawRepository`](src/raw-sql/scoped-raw.repository.ts) hands the statement builder a
    scope taken from the request context (no context → it throws before any SQL is sent), and
-   [`DatabaseProbe`](src/raw-sql/database-probe.ts) holds the one deliberately unscoped query,
-   the healthcheck's `SELECT 1`. Everywhere else the restriction `prisma-raw`, composed into
+   two classes hold the deliberately unscoped statements:
+   [`DatabaseProbe`](src/raw-sql/database-probe.ts), the healthcheck's `SELECT 1`, and
+   [`AuthFailureStore`](src/raw-sql/auth-failure-store.ts), the failed-authentication count,
+   which belongs to no user because its client has not proved who it is. Everywhere else the restriction `prisma-raw`, composed into
    `@rondo/config/eslint/tenant-isolation`, fails the gate, and there are no inline exemptions.
    The scope it hands out carries the caller and nothing else, so an aggregate over a model a
    budget owns adds the budget itself; how one is written is
@@ -502,9 +529,10 @@ is ordinary code here, and code fails silently. The mechanisms that carry it, in
    keeps the second out of domain code, are in
    [api](../../.claude/rules/api.md).
    `MUTATION_GUARDED_MODELS` in [`scoped-models.ts`](src/prisma/scoped-models.ts) says which
-   models it covers, and the exemption list beside it holds the two the mutator does not force
-   itself on: a user's settings, whose row their own first read creates, and the idempotency
-   key, which the mutation service writes on its own transaction. Being exempt does not bar
+   models it covers, and the exemption list beside it holds the ones the mutator does not force
+   itself on: a user's settings, whose row their own first read creates, the idempotency
+   key, which the mutation service writes on its own transaction, and the failed-authentication
+   count, which the guard writes before anyone is signed in. Being exempt does not bar
    them from a mutation, which [api](../../.claude/rules/api.md) states. A new
    model has to be classified before
    its tests pass. What the raw path may do inside a

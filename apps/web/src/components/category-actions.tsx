@@ -7,6 +7,7 @@ import {
   IconCircleCheck,
   IconEyeOff,
   IconPencil,
+  IconPlus,
   IconRotateClockwise,
   IconTarget,
 } from '@tabler/icons-react';
@@ -47,6 +48,7 @@ export function CategoryActions({
   onHide,
   onGoal,
   onPaid,
+  onAddTransaction,
 }: {
   category: { id: string; name: string; hidden: boolean; paid: boolean };
   currentMonth: boolean;
@@ -54,6 +56,7 @@ export function CategoryActions({
   onHide: () => void;
   onGoal: () => void;
   onPaid: () => void;
+  onAddTransaction: () => void;
 }) {
   const { t } = useTranslations();
   const shut: MessageKey | null = category.hidden
@@ -67,6 +70,13 @@ export function CategoryActions({
   return (
     <div className="flex flex-col" data-testid={`category-actions-${category.id}`}>
       <div aria-hidden className="bg-border/60 mb-1 h-px w-full" />
+
+      <Row
+        label={t('categories.addTransaction')}
+        icon={<IconPlus />}
+        disabled={category.hidden}
+        onClick={onAddTransaction}
+      />
 
       <Row
         label={t(category.paid ? 'categories.paidReopen' : 'categories.paidClose')}

@@ -11,7 +11,8 @@ the feature**. A feature without tests doesn't count as done (no test debt accru
 | Integration | API ↔ Postgres (from F0.3)                                 | Jest + supertest, fast-check where a claim holds over a space of inputs | `apps/api/test`                                                                                                     | `*.integration.spec.ts`                    |
 | E2E         | Browser → web → api → Postgres                             | Playwright                                                              | `apps/web/e2e`                                                                                                      | `*.spec.ts`, `*.mobile.spec.ts` on a phone |
 
-Plus one that is not a level of the app at all: **the agent guard hooks and `check-docs.mjs`**
+Plus one that is not a level of the app at all: **the agent guard hooks, `check-docs.mjs` and
+the CI preflight script**
 ([`.claude/hooks/hooks.test.sh`](../.claude/hooks/hooks.test.sh), `pnpm test:hooks`, a step
 of the CI `unit` job). `guard-bash.sh` and `guard-db.sh` are what stop a secret-scan bypass
 or a migration against the dev database, and neither announces a miss: `guard-db.sh` matches
@@ -27,7 +28,7 @@ pnpm test               # all levels in all workspaces (turbo run test)
 pnpm test:unit          # unit only
 pnpm test:integration   # integration only (needs Postgres)
 pnpm test:e2e           # e2e only (needs Postgres; Playwright starts the servers itself)
-pnpm test:hooks         # the guard hooks and the docs checker — bash, no DB, no secrets
+pnpm test:hooks         # guard hooks, docs checker, CI preflight: bash, no DB, no secrets
 ```
 
 The same, targeted: `pnpm --filter @rondo/api test:integration` etc.
@@ -167,6 +168,11 @@ none of them may reach Clerk over the network:
 - Since F1.3 a token also needs an **`azp` claim equal to the app's `WEB_ORIGIN`**, or the
   guard rejects it. Read the origin from the booted app (`resolveWebOrigin(app.get(ConfigService))`)
   rather than hardcoding it, since `WEB_ORIGIN` may be set in the environment.
+- A refused token is counted against the client it came from, and the count lives in the
+  database, so every suite's 401s would add up under one local address and turn into 429s.
+  [`integration.setup.ts`](../apps/api/test/integration.setup.ts) sets `CLIENT_IP_HEADER`, and
+  a request without that header is not counted. A spec that tests the limit sends the header
+  itself: [`auth-rate-limit.integration.spec.ts`](../apps/api/test/auth-rate-limit.integration.spec.ts).
 
 ### Scoped queries in api tests (F1.3)
 

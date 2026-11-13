@@ -9,6 +9,7 @@ const onEdit = jest.fn();
 const onHide = jest.fn();
 const onGoal = jest.fn();
 const onPaid = jest.fn();
+const onAddTransaction = jest.fn();
 
 const draw = (options: { hidden?: boolean; currentMonth?: boolean; paid?: boolean } = {}) =>
   render(
@@ -25,6 +26,7 @@ const draw = (options: { hidden?: boolean; currentMonth?: boolean; paid?: boolea
         onHide={onHide}
         onGoal={onGoal}
         onPaid={onPaid}
+        onAddTransaction={onAddTransaction}
       />
     </LocaleProvider>,
   );
@@ -65,7 +67,7 @@ describe('the actions under the move fields', () => {
 
     await user.click(screen.getByRole('button', { name: en['categories.manage'] }));
 
-    expect(screen.getAllByRole('button')).toHaveLength(5);
+    expect(screen.getAllByRole('button')).toHaveLength(6);
   });
 
   it('sends each row to its own dialog', async () => {
@@ -101,7 +103,7 @@ describe('the actions under the move fields', () => {
     expect(
       screen
         .getAllByRole('button')
-        .slice(2)
+        .slice(3)
         .map((row) => row.textContent),
     ).toEqual([en['categories.goal'], en['categories.edit'], en['categories.hide']]);
   });
@@ -161,8 +163,11 @@ describe('closing the category for the month', () => {
   it('sits above the folded actions and is reachable without unfolding them', () => {
     draw();
 
-    const [first] = screen.getAllByRole('button');
-    expect(first).toHaveTextContent(en['categories.paidClose']);
+    const rows = screen.getAllByRole('button').map((row) => row.textContent);
+    expect(rows.indexOf(en['categories.paidClose'])).toBeGreaterThanOrEqual(0);
+    expect(rows.indexOf(en['categories.paidClose'])).toBeLessThan(
+      rows.indexOf(en['categories.manage']),
+    );
     expect(screen.queryByRole('button', { name: en['categories.edit'] })).not.toBeInTheDocument();
   });
 
@@ -182,5 +187,38 @@ describe('closing the category for the month', () => {
     await user.click(screen.getByRole('button', { name: en['categories.paidClose'] }));
 
     expect(onPaid).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers to add a transaction right before the paid mark, outside the folded actions', () => {
+    draw();
+
+    const rows = screen.getAllByRole('button').map((row) => row.textContent);
+
+    expect(rows.slice(0, 3)).toEqual([
+      en['categories.addTransaction'],
+      en['categories.paidClose'],
+      en['categories.manage'],
+    ]);
+  });
+
+  it('sends the add row to the transaction form and nothing else', async () => {
+    const user = userEvent.setup();
+    draw();
+
+    await user.click(screen.getByRole('button', { name: en['categories.addTransaction'] }));
+
+    expect(onAddTransaction).toHaveBeenCalledTimes(1);
+    expect(onPaid).not.toHaveBeenCalled();
+  });
+
+  it('refuses to add a transaction to a hidden category, which no new record may land in', async () => {
+    const user = userEvent.setup();
+    draw({ hidden: true });
+
+    const add = screen.getByRole('button', { name: en['categories.addTransaction'] });
+
+    expect(add).toBeDisabled();
+    await user.click(add);
+    expect(onAddTransaction).not.toHaveBeenCalled();
   });
 });

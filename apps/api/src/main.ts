@@ -13,7 +13,7 @@ async function bootstrap(): Promise<void> {
   const app = await createHttpApp(AppModule);
   const config = app.get(ConfigService);
   app.enableShutdownHooks();
-  assertClerkVerificationConfigured(app);
+  assertClerkVerificationConfigured(config);
   assertWebOriginConfigured(config);
   if (areApiDocsEnabled(config)) {
     SwaggerModule.setup(API_DOCS_PATH, app, buildOpenApiDocument(app));

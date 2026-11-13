@@ -3,6 +3,7 @@ import { type ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule, type OpenAPIObject } from '@nestjs/swagger';
 
 import { PUBLIC_OPERATION_EXTENSION } from '@/auth/public.decorator';
+import { TooManyRequestsResponse } from '@/auth/too-many-requests.response';
 import { resolveEnvironment } from '@/environment';
 
 export const SESSION_TOKEN_SCHEME = 'clerkSessionToken';
@@ -67,7 +68,40 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addSecurityRequirements(SESSION_TOKEN_SCHEME)
     .build();
 
-  return closeRequestBodies(openPublicOperations(SwaggerModule.createDocument(app, config)));
+  const document = SwaggerModule.createDocument(app, config, {
+    extraModels: [TooManyRequestsResponse],
+  });
+
+  return closeRequestBodies(refuseRepeatedFailures(openPublicOperations(document)));
+}
+
+function refuseRepeatedFailures(document: OpenAPIObject): OpenAPIObject {
+  for (const pathItem of Object.values(document.paths)) {
+    for (const method of HTTP_METHODS) {
+      const operation = pathItem[method];
+
+      if (operation && !(PUBLIC_OPERATION_EXTENSION in operation)) {
+        operation.responses['429'] = {
+          description:
+            'This client failed authentication too often in the current minute. A valid ' +
+            'session token is still accepted; anything else is refused until the minute ends.',
+          headers: {
+            'Retry-After': {
+              description: 'Seconds until the refusal ends.',
+              schema: { type: 'integer', minimum: 1 },
+            },
+          },
+          content: {
+            'application/json': {
+              schema: { $ref: `#/components/schemas/${TooManyRequestsResponse.name}` },
+            },
+          },
+        };
+      }
+    }
+  }
+
+  return document;
 }
 
 function openPublicOperations(document: OpenAPIObject): OpenAPIObject {

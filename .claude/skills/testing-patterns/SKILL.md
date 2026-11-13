@@ -67,7 +67,7 @@ against a mocked client proves the mock.
 - **A sideways scroll hides in every scroller, not only in the document.** The shell
   scrolls `main`, so a screen too wide for a phone leaves the document exactly as wide as the
   viewport. Check each element whose `overflow-x` scrolls
-  ([`navigation.mobile.spec.ts`](../../../apps/web/e2e/navigation.mobile.spec.ts)).
+  ([`phone.ts`](../../../apps/web/e2e/phone.ts)).
 - **A theme that does not flash is proved with the app switched off.** Block
   `/_next/static/chunks/**/*.js`, not the whole chunks directory, which holds the stylesheet
   too. Count the refused requests, so a test that blocked nothing fails, then read the class on

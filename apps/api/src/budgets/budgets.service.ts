@@ -56,6 +56,7 @@ function treeRow(record: CategoryTreeRecord): TemplateTreeRow {
     categorySortOrder: record.categorySortOrder,
     icon: record.icon,
     color: record.color,
+    defaultAccountId: record.defaultAccountId,
     targetId: record.targetId,
     targetKind: record.targetKind,
     targetAmount: record.targetAmount,
@@ -325,20 +326,33 @@ export class BudgetsService {
       withGoals: goalsComeAlong(template.budget, budget),
     });
 
-    if (tree.length > 0) {
-      await this.writeTree(tx, userId, budgetId, tree);
-    }
-
+    const accountIds = new Map<string, string>();
     if (template.accounts.length > 0) {
-      const accounts = await tx.account.createManyAndReturn({
+      const written = await tx.account.createManyAndReturn({
         data: template.accounts.map(({ name, type }) => ({ userId, budgetId, name, type })),
         select: { id: true },
       });
+      const copies = new Map(
+        written
+          .map(({ id }) => id)
+          .sort((left, right) => Number(left > right) - Number(left < right))
+          .map((id, place) => [String(place), id]),
+      );
+      template.accounts.forEach((account, place) => {
+        accountIds.set(account.id, writtenAt(copies, String(place)));
+      });
+    }
+
+    if (tree.length > 0) {
+      await this.writeTree(tx, userId, budgetId, tree, accountIds);
+    }
+
+    if (accountIds.size > 0) {
       await tx.transaction.createMany({
-        data: accounts.map((account) => ({
+        data: [...accountIds.values()].map((accountId) => ({
           userId,
           budgetId,
-          accountId: account.id,
+          accountId,
           date: toDbDate(createdOn),
           amount: 0n,
           type: TransactionType.INCOME,
@@ -365,6 +379,7 @@ export class BudgetsService {
     userId: string,
     budgetId: string,
     tree: ReturnType<typeof copiedTree>,
+    accountIds: ReadonlyMap<string, string>,
   ): Promise<void> {
     const groups = await tx.categoryGroup.createManyAndReturn({
       data: tree.map(({ name, sortOrder }) => ({ userId, budgetId, name, sortOrder })),
@@ -391,6 +406,10 @@ export class BudgetsService {
         sortOrder: category.sortOrder,
         icon: category.icon,
         color: category.color,
+        defaultAccountId:
+          category.defaultAccountId === null
+            ? null
+            : (accountIds.get(category.defaultAccountId) ?? null),
       })),
       select: { id: true, groupId: true, sortOrder: true },
     });

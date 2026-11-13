@@ -100,6 +100,10 @@ describe('POST /me/erase (integration)', () => {
     const card = await prisma.account.create({
       data: { userId, budgetId: budget.id, name: 'Card', type: 'DEBIT' },
     });
+    await prisma.category.update({
+      where: { id: category.id },
+      data: { defaultAccountId: card.id },
+    });
 
     const date = toDbDate(parseCalendarDate('2026-02-10'));
     const month = toDbMonth(parseCalendarMonth('2026-02'));

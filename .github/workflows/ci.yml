@@ -55,7 +55,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -93,7 +93,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -169,7 +169,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -182,7 +182,7 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
 
-      - name: Guard hook tests
+      - name: Hook, docs checker and CI script tests
         run: pnpm test:hooks
 
   integration:
@@ -215,7 +215,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -241,37 +241,17 @@ jobs:
       has_sonar_token: ${{ steps.probe.outputs.has_sonar_token }}
 
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - id: probe
         env:
-          HAS_CLERK_KEYS: ${{ secrets.CLERK_SECRET_KEY != '' && secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY != '' }}
+          HAS_CLERK_KEYS: ${{ secrets.CLERK_SECRET_KEY != '' && secrets.CLERK_JWT_KEY != '' && secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY != '' }}
           HAS_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN != '' }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
-        run: |
-          echo "has_clerk_keys=${HAS_CLERK_KEYS}" >> "$GITHUB_OUTPUT"
-          echo "has_sonar_token=${HAS_SONAR_TOKEN}" >> "$GITHUB_OUTPUT"
-          if [ "${HAS_CLERK_KEYS}" != 'true' ]; then
-            {
-              echo "### E2E will be skipped"
-              echo
-              echo "The Clerk dev-instance keys are not exposed to this run (a fork pull request;"
-              echo "Dependabot reads its own copy from the Dependabot secrets store), and in CI the"
-              echo "e2e build refuses to start without them. Every other job in the gate still runs,"
-              echo "the image one included: it boots the app on placeholders."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
-          if [ "${HAS_SONAR_TOKEN}" != 'true' ] && [ "${IS_FORK}" != 'true' ]; then
-            echo "::error::SONAR_TOKEN is not readable from this run, and this is not a fork pull request — the Sonar quality gate would be skipped without anyone noticing. Check the secret in Settings → Secrets → Actions (and the Dependabot store)."
-            exit 1
-          fi
-          if [ "${HAS_SONAR_TOKEN}" != 'true' ]; then
-            {
-              echo "### Sonar analysis will be skipped"
-              echo
-              echo "SONAR_TOKEN is not exposed to this run — a fork pull request (Dependabot"
-              echo "runs have their own copy in the Dependabot secrets store). Every other"
-              echo "job still runs."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          IS_DEPENDABOT: ${{ github.actor == 'dependabot[bot]' }}
+        run: bash .github/scripts/preflight.sh
 
   e2e:
     name: E2E tests (Playwright)
@@ -305,7 +285,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -423,7 +403,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -442,7 +422,7 @@ jobs:
       - name: Integration tests with coverage
         run: pnpm test:integration
 
-      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+      - uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
         with:
           args: -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
         env:
