@@ -49,33 +49,178 @@ describe('a goal that puts an amount in every month', () => {
 });
 
 describe('spending in the month that is being read', () => {
+  const byDate = target({
+    kind: 'BY_DATE',
+    amount: 100_000n,
+    startMonth: '2026-07',
+    dueMonth: '2026-10',
+  });
+  const accumulate = target({ kind: 'ACCUMULATE', amount: 300_000n, startMonth: '2026-07' });
   const KINDS: ActiveTarget[] = [
     target({ kind: 'REFILL_TO', amount: 55_000n }),
     target({ kind: 'CONTRIBUTE', amount: 40_000n }),
-    target({
-      kind: 'BY_DATE',
-      amount: 100_000n,
-      startMonth: '2026-07',
-      dueMonth: '2026-10',
-    }),
-    target({ kind: 'ACCUMULATE', amount: 300_000n, startMonth: '2026-07' }),
+    byDate,
+    accumulate,
   ];
+  const dry = sums({ assigned: 20_000n, available: 40_000n, fundedFromStart: 40_000n });
+  const spent = sums({
+    assigned: 20_000n,
+    activity: -15_000n,
+    available: 25_000n,
+    fundedFromStart: 40_000n,
+  });
 
   it.each(KINDS)('does not reopen a $kind goal', (one) => {
-    const dry = sums({ assigned: 43_000n, available: 48_000n, fundedFromStart: 43_000n });
-    const spent = sums({
-      assigned: 43_000n,
-      activity: -21_000n,
-      available: 27_000n,
-      fundedFromStart: 43_000n,
-    });
-
     expect(targetProgress(one, '2026-08', spent).needed).toBe(
       targetProgress(one, '2026-08', dry).needed,
     );
     expect(targetProgress(one, '2026-08', spent).monthTarget).toBe(
       targetProgress(one, '2026-08', dry).monthTarget,
     );
+  });
+
+  it('lowers the progress of a goal saving by a date at once', () => {
+    const answer = targetProgress(byDate, '2026-08', spent);
+
+    expect(targetProgress(byDate, '2026-08', dry).progress).toBe(40_000n);
+    expect(answer.progress).toBe(25_000n);
+    expect(answer.remaining).toBe(75_000n);
+    expect(answer.monthTarget).toBe(26_666n);
+    expect(answer.needed).toBe(6_666n);
+  });
+
+  it('leaves the progress of a goal saving with no date at what was laid', () => {
+    expect(targetProgress(accumulate, '2026-08', spent).progress).toBe(
+      targetProgress(accumulate, '2026-08', dry).progress,
+    );
+  });
+});
+
+describe('money moving inside the window of a goal saving by a date', () => {
+  const wakacje = target({
+    kind: 'BY_DATE',
+    amount: 100_000n,
+    startMonth: '2026-07',
+    dueMonth: '2026-10',
+  });
+  const spentInAugust = sums({ available: 25_000n, fundedFromStart: 40_000n });
+
+  it('is not counted as gathered once the envelope has been emptied', () => {
+    const answer = targetProgress(
+      target({
+        kind: 'BY_DATE',
+        amount: 300_000n,
+        startMonth: '2026-07',
+        dueMonth: '2026-12',
+      }),
+      '2026-10',
+      sums({ available: 0n, fundedFromStart: 300_000n }),
+    );
+
+    expect(answer.progress).toBe(0n);
+    expect(answer.remaining).toBe(300_000n);
+    expect(answer.monthTarget).toBe(100_000n);
+    expect(answer.needed).toBe(100_000n);
+  });
+
+  it('raises the instalment of the month after a spend', () => {
+    const answer = targetProgress(wakacje, '2026-09', spentInAugust);
+
+    expect(answer.progress).toBe(25_000n);
+    expect(answer.monthTarget).toBe(37_500n);
+    expect(answer.needed).toBe(37_500n);
+  });
+
+  it('asks a spend back in full in the month the goal is due', () => {
+    const answer = targetProgress(wakacje, '2026-10', spentInAugust);
+
+    expect(answer.monthTarget).toBe(75_000n);
+    expect(answer.needed).toBe(75_000n);
+  });
+
+  it('lowers the progress in the month the goal started without raising what it asks', () => {
+    const answer = targetProgress(
+      wakacje,
+      '2026-07',
+      sums({ assigned: 20_000n, activity: -15_000n, available: 5_000n, fundedFromStart: 20_000n }),
+    );
+
+    expect(answer.progress).toBe(5_000n);
+    expect(answer.remaining).toBe(95_000n);
+    expect(answer.monthTarget).toBe(25_000n);
+    expect(answer.needed).toBe(5_000n);
+  });
+
+  it('still counts what the envelope carried in as laid when the start month is spent from', () => {
+    const answer = targetProgress(
+      wakacje,
+      '2026-07',
+      sums({
+        assigned: 20_000n,
+        activity: -15_000n,
+        available: 15_000n,
+        fundedFromStart: 20_000n,
+        assignedBeforeStart: 10_000n,
+      }),
+    );
+
+    expect(answer.progress).toBe(15_000n);
+    expect(answer.monthTarget).toBe(25_000n);
+    expect(answer.needed).toBe(0n);
+  });
+
+  it('counts a spend after the start against what the envelope carried in', () => {
+    const before = {
+      fundedFromStart: 20_000n,
+      assignedBeforeStart: 30_000n,
+      activityBeforeStart: -10_000n,
+    };
+    const august = targetProgress(
+      wakacje,
+      '2026-08',
+      sums({ ...before, activity: -15_000n, available: 25_000n }),
+    );
+
+    expect(august.progress).toBe(25_000n);
+    expect(august.remaining).toBe(75_000n);
+    expect(august.monthTarget).toBe(20_000n);
+    expect(august.needed).toBe(20_000n);
+    expect(
+      targetProgress(wakacje, '2026-09', sums({ ...before, available: 25_000n })).monthTarget,
+    ).toBe(37_500n);
+  });
+
+  it('counts money coming back into the envelope as gathered', () => {
+    const august = targetProgress(
+      wakacje,
+      '2026-08',
+      sums({ assigned: 20_000n, activity: 5_000n, available: 45_000n, fundedFromStart: 40_000n }),
+    );
+    const september = targetProgress(
+      wakacje,
+      '2026-09',
+      sums({ available: 45_000n, fundedFromStart: 40_000n }),
+    );
+
+    expect(august.progress).toBe(45_000n);
+    expect(august.remaining).toBe(55_000n);
+    expect(august.monthTarget).toBe(26_666n);
+    expect(august.needed).toBe(6_666n);
+    expect(september.monthTarget).toBe(27_500n);
+    expect(september.needed).toBe(27_500n);
+  });
+
+  it('takes the progress below zero when the envelope is overspent and asks the overspend back', () => {
+    const answer = targetProgress(
+      wakacje,
+      '2026-09',
+      sums({ available: -10_000n, fundedFromStart: 40_000n }),
+    );
+
+    expect(answer.progress).toBe(-10_000n);
+    expect(answer.remaining).toBe(110_000n);
+    expect(answer.monthTarget).toBe(55_000n);
+    expect(answer.needed).toBe(55_000n);
   });
 });
 

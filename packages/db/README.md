@@ -115,8 +115,9 @@ back as an idempotency conflict it never made
 ([`pick-the-active-row`](../../.claude/skills/pick-the-active-row/SKILL.md)).
 
 What the envelope carried in when a goal started is summed on read rather than stored: the
-assignments and the transactions before the starting month. A goal saving toward a total
-counts its progress from that sum, and a goal asking for a monthly amount ignores it. So
+assignments and the transactions before the starting month. A goal saving with no date counts
+its progress from that sum, a goal saving by a date counts it as laid in its first month, and the
+goals asking for the same amount every month ignore it. So
 correcting a record in a month before the goal started corrects the goal's progress with it,
 and the envelope and the goal never drift apart.
 

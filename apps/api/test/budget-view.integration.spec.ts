@@ -1063,7 +1063,7 @@ describe('/budget-view (integration)', () => {
       });
     });
 
-    it('does not raise what the month asks because the category was spent from', async () => {
+    it('lowers the progress at once and asks the spent money back from the next month', async () => {
       const userId = user('TargetSpent');
       const { budget, category } = await saving(userId);
       const account = await seedAccount(userId, budget.id);
@@ -1075,8 +1075,134 @@ describe('/budget-view (integration)', () => {
 
       expect(named(await viewOf(userId, '2026-02'), 'Отпуск').target).toMatchObject({
         needed: '6666',
-        progress: '40000',
+        progress: '25000',
       });
+      expect(named(await viewOf(userId, '2026-03'), 'Отпуск').target).toMatchObject({
+        monthTarget: '37500',
+        needed: '37500',
+        progress: '25000',
+      });
+    });
+
+    it('counts a goal saving by a date as gathered only while the money is still in the envelope', async () => {
+      const userId = user('TargetSpentOut');
+      const budget = await seedBudget(userId);
+      const account = await seedAccount(userId, budget.id);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Машина');
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'BY_DATE',
+        amount: 300_000n,
+        startMonth: '2026-01',
+        dueMonth: '2026-06',
+      });
+      for (const month of ['2026-01', '2026-02', '2026-03'] as const) {
+        await seedAssignment(userId, budget.id, category.id, month, 50_000n);
+      }
+      await seedTransaction(userId, budget.id, account.id, {
+        date: '2026-04-10',
+        amount: -150_000n,
+        categoryId: category.id,
+      });
+
+      const april = named(await viewOf(userId, '2026-04'), 'Машина');
+
+      expect(april.available).toBe('0');
+      expect(april.target).toMatchObject({
+        progress: '0',
+        remaining: '300000',
+        monthTarget: '50000',
+        needed: '50000',
+      });
+      expect(named(await viewOf(userId, '2026-05'), 'Машина').target).toMatchObject({
+        progress: '0',
+        monthTarget: '150000',
+        needed: '150000',
+      });
+    });
+
+    it('counts spending on the last day of the month before in what the month asks, and on its first day not', async () => {
+      const lastDay = user('TargetSpentLastDay');
+      const firstDay = user('TargetSpentFirstDay');
+
+      for (const [userId, date] of [
+        [lastDay, '2026-02-28'],
+        [firstDay, '2026-03-01'],
+      ] as const) {
+        const { budget, category } = await saving(userId);
+        const account = await seedAccount(userId, budget.id);
+        await seedTransaction(userId, budget.id, account.id, {
+          date,
+          amount: -10_000n,
+          categoryId: category.id,
+        });
+      }
+
+      expect(named(await viewOf(lastDay, '2026-03'), 'Отпуск').target).toMatchObject({
+        progress: '30000',
+        monthTarget: '35000',
+        needed: '35000',
+      });
+      expect(named(await viewOf(firstDay, '2026-03'), 'Отпуск').target).toMatchObject({
+        progress: '30000',
+        monthTarget: '30000',
+        needed: '30000',
+      });
+    });
+
+    it('counts a spend after the start against what the envelope carried in', async () => {
+      const userId = user('TargetCarriedSpent');
+      const { budget, category } = await saving(userId);
+      const account = await seedAccount(userId, budget.id);
+      await seedAssignment(userId, budget.id, category.id, '2025-12', 50_000n);
+      await seedTransaction(userId, budget.id, account.id, {
+        date: '2025-12-20',
+        amount: -10_000n,
+        categoryId: category.id,
+      });
+      await seedTransaction(userId, budget.id, account.id, {
+        date: '2026-02-14',
+        amount: -15_000n,
+        categoryId: category.id,
+      });
+
+      const february = named(await viewOf(userId, '2026-02'), 'Отпуск');
+
+      expect(february.available).toBe('65000');
+      expect(february.target).toMatchObject({
+        progress: '65000',
+        remaining: '35000',
+        monthTarget: '13333',
+        needed: '0',
+      });
+      expect(named(await viewOf(userId, '2026-03'), 'Отпуск').target).toMatchObject({
+        progress: '65000',
+        monthTarget: '17500',
+      });
+    });
+
+    it('leaves a goal saving with no date at what was laid after the category was spent from', async () => {
+      const userId = user('TargetAccumulateSpent');
+      const budget = await seedBudget(userId);
+      const account = await seedAccount(userId, budget.id);
+      const group = await seedGroup(userId, budget.id, 'Цели');
+      const category = await seedCategory(userId, budget.id, group.id, 'Подушка');
+      await seedTarget(userId, budget.id, category.id, {
+        kind: 'ACCUMULATE',
+        amount: 300_000n,
+        startMonth: '2026-01',
+      });
+      await seedAssignment(userId, budget.id, category.id, '2026-01', 100_000n);
+      await seedTransaction(userId, budget.id, account.id, {
+        date: '2026-02-14',
+        amount: -60_000n,
+        categoryId: category.id,
+      });
+
+      const february = named(await viewOf(userId, '2026-02'), 'Подушка');
+
+      expect(february.available).toBe('40000');
+      expect(february.target).toMatchObject({ progress: '100000', remaining: '200000' });
     });
 
     it('still costs one query when the budget is full of goals', async () => {

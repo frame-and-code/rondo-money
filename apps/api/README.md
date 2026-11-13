@@ -81,8 +81,9 @@ same reason. The 404 says nothing about whether the row exists elsewhere.
   categories of the active budget with what each holds this month, plus the money that has no
   job yet, and the icon and the colour each category is drawn with. What a month holds is
   computed from transactions and assignments in one statement and cached nowhere; a goal's own
-  columns are read from its row, and a goal saving toward a total counts its progress from what
-  the envelope carried in when it started, summed the same way. The look is a
+  columns are read from its row. A goal saving by a date counts as its progress what the
+  envelope holds, so spending inside its window lowers it, and a goal saving with no date counts
+  what the envelope carried in when it started, summed the same way, plus what was put in since. The look is a
   domain name rather than the name of a component, so a category the user has not given one
   answers with null and so does a stored name this app no longer draws. The month is required, because a default would make the answer depend on a
   clock rather than on what the user is looking at. A category or a group hidden later than the
