@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { localeLabels } from '../src/i18n/locales';
 import { en } from '../src/i18n/messages/en';
 import { pl } from '../src/i18n/messages/pl';
+import { APP_NAME } from '../src/lib/sections';
 
 import {
   FINISHED_TEST_EMAIL,
@@ -24,7 +25,17 @@ async function signInAsFresh(page: Page, email: string) {
   await clerk.signIn({ page, signInParams: { strategy: 'email_code', identifier: email } });
 }
 
-test('a new user is taken through setup and lands in the app', async ({ page }) => {
+async function insertTitleAheadLikeReact(page: Page, title: string): Promise<void> {
+  await page.evaluate((stale) => {
+    const late = document.createElement('title');
+    late.textContent = stale;
+    document.head.insertBefore(late, document.head.querySelector('head > title'));
+  }, title);
+}
+
+test('a new user is taken through setup and lands in the app, and the tab keeps naming the section when a title is written late', async ({
+  page,
+}) => {
   await signInAsFresh(page, ONBOARDING_TEST_EMAIL);
 
   await page.goto('/categories');
@@ -64,10 +75,22 @@ test('a new user is taken through setup and lands in the app', async ({ page }) 
 
   const finish = page.getByRole('button', { name: pl['newAccount.submit'] });
   await expect(finish).toBeEnabled();
+  await expect(page).toHaveTitle(APP_NAME);
+  await page.evaluate(() => {
+    document.documentElement.dataset['beforeTheHandoff'] = 'yes';
+  });
   await finish.click();
 
   await expect(page).toHaveURL(/\/categories$/);
   await expect(page.getByTestId('ready-to-assign')).toBeVisible();
+  await expect(page.locator('html[data-before-the-handoff]')).toHaveCount(1);
+
+  const categoriesTab = `${pl['nav.categories']} - ${APP_NAME}`;
+  await expect(page).toHaveTitle(categoriesTab);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
+
+  await insertTitleAheadLikeReact(page, APP_NAME);
+  await expect(page).toHaveTitle(categoriesTab);
 });
 
 test('a user who finished setup cannot repeat the account step, and is offered another budget on the first', async ({
