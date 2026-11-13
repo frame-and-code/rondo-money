@@ -2825,7 +2825,12 @@
             "in": "query",
             "description": "One kind of record. An opening balance is income like any other, so it is in that answer too.",
             "schema": {
-              "$ref": "#/components/schemas/TransactionType"
+              "example": "EXPENSE",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/TransactionType"
+                }
+              ]
             }
           },
           {
