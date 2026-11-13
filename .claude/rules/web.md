@@ -74,6 +74,19 @@ specification.
    title on every screen, and a body that says what to do next. A cause the reader cannot act
    on is never explained; a refusal the reader can fix names the fix.
 
+### Beside the sidebar
+
+The sidebar takes part of the window from `md` up, so the window's width says little about the
+room a screen gets.
+
+- A grid of cards beside the sidebar picks its column count from a container query on its own
+  width, and its loading skeleton uses the same query. A row inside a card that pairs a label
+  with an amount switches layout on the width of its column, never on the amount, so every
+  card in one grid looks alike.
+- A box that sets its own width and height also sets its `display`. A wrapper that renders a
+  `span` leaves it inline, where its width and height do nothing, and WebKit then also misplaces
+  what is positioned over it.
+
 ### Keyboard and a phone
 
 Every screen is used at 375 pixels wide and with the keyboard alone, so a screen is checked
